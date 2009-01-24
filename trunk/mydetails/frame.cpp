@@ -47,6 +47,8 @@ Boston, MA 02111-1307, USA.
 #define MWM_STATUS_MSG_CHANGED	(WM_USER+13)
 #define MWM_AVATAR_CHANGED		(WM_USER+14)
 #define MWM_LISTENINGTO_CHANGED	(WM_USER+15)
+#define MWM_LOCK_CHANGED		(WM_USER+16)
+#define MWM_EMAIL_COUNT_CHANGED (WM_USER+17)
 
 
 HWND hwnd_frame = NULL;
@@ -233,7 +235,7 @@ struct SimpleItem
 	virtual void update(HWND hwnd, SkinFieldState *item)
 	{
 		draw = item->isVisible();
-		alignRight = FALSE;
+		alignRight = ( item->getHorizontalAlign() == SKN_HALIGN_RIGHT );
 
 		if (draw)
 		{
@@ -244,12 +246,6 @@ struct SimpleItem
 		{
 			tt.removeTooltip();
 		}
-	}
-
-	virtual void update(HWND hwnd, SkinTextFieldState *item)
-	{
-		update(hwnd, (SkinFieldState *) item);
-		alignRight = ( item->getHorizontalAlign() == SKN_HALIGN_RIGHT );
 	}
 
 	virtual BOOL hitTest(const POINT &p)
@@ -341,6 +337,7 @@ struct MyDetailsFrameData
 	IconAndItem status;
 	SimpleItem away_msg;
 	IconAndItem listening_to;
+	IconAndItem email;
 
 	int protocol_number;
 
@@ -358,6 +355,7 @@ struct MyDetailsFrameData
 		items.push_back(&status);
 		items.push_back(&away_msg);
 		items.push_back(&listening_to);
+		items.push_back(&email);
 	}
 };
 
@@ -679,28 +677,44 @@ void DrawTextWithRect(HDC hdc, const char *text, RECT rc, RECT rc_internal, UINT
 	free(tmp2);
 }
 
-int Width(const RECT &rc)
+static int Width(const RECT &rc)
 {
 	return rc.right - rc.left;
 }
 
-int Height(const RECT &rc)
+static int Height(const RECT &rc)
 {
 	return rc.bottom - rc.top;
 }
+
+static HICON CreateOverlayedIcon(HICON icon, HICON overlay)
+{
+	HIMAGELIST il = ImageList_Create(
+				GetSystemMetrics(SM_CXICON),
+				GetSystemMetrics(SM_CYICON),
+				ILC_COLOR32|ILC_MASK, 2, 2);
+	ImageList_AddIcon(il, icon);
+	ImageList_AddIcon(il, overlay);
+	HIMAGELIST newImage = ImageList_Merge(il,0,il,1,0,0);
+	ImageList_Destroy(il);
+	HICON hIcon = ImageList_GetIcon(newImage, 0, 0);
+	ImageList_Destroy(newImage);
+	return hIcon; // the result should be destroyed by DestroyIcon()
+}
+
 
 void Draw(HWND hwnd, HDC hdc_orig)
 {
 	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 	Protocol *proto = protocols->Get(data->protocol_number);
 
-	proto->data_changed = false;
-
 	if (proto == NULL)
 	{
 		EraseBackground(hwnd, hdc_orig);
 		return;
 	}
+
+	proto->data_changed = false;
 
 	if (ServiceExists(MS_CLIST_FRAMES_SETFRAMEOPTIONS) && frame_id != -1)
 	{
@@ -739,16 +753,11 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			data->status.hide();
 			data->away_msg.hide();
 			data->listening_to.hide();
-			data->listening_to.hide();
+			data->email.hide();
 
 			return;
 		}
 	}
-
-
-	// TODO
-	//if (opts.resize_frame)
-	//	r.bottom = 0x7FFFFFFF;
 
 
 	RECT r_full;
@@ -765,17 +774,33 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 
 	HICON hStatusIcon;
+	bool freeStatusIcon = false;
 	if (proto->custom_status != 0 && ProtoServiceExists(proto->name, PS_ICQ_GETCUSTOMSTATUSICON))
-		hStatusIcon = (HICON) CallProtoService(proto->name, PS_ICQ_GETCUSTOMSTATUSICON, proto->custom_status, 0);
+		hStatusIcon = (HICON) CallProtoService(proto->name, PS_ICQ_GETCUSTOMSTATUSICON, proto->custom_status, LR_SHARED);
 	else
 		hStatusIcon = LoadSkinnedProtoIcon(proto->name, proto->status);
 
+	if (proto->locked)
+	{
+		HICON hLockOverlay = LoadSkinnedIcon(SKINICON_OTHER_STATUS_LOCKED);
+		if (hLockOverlay != NULL)
+		{
+			freeStatusIcon = true;
+			hStatusIcon = CreateOverlayedIcon(hStatusIcon, hLockOverlay);
+		}
+	}
+
+
 	HICON hListeningIcon = LoadIconEx("LISTENING_TO_ICON");
+	HICON hEmailIcon = LoadIconEx("MYDETAILS_EMAIL");
 	HICON hNextIcon = LoadIconEx("MYDETAILS_NEXT_PROTOCOL");
 	HICON hPrevIcon = LoadIconEx("MYDETAILS_PREV_PROTOCOL");
 
 	{
-		dialog->setSize(Width(r_full), Height(r_full));
+		if (opts.resize_frame)
+			dialog->setSize(Width(r_full), 0x1FFFFFFF);
+		else
+			dialog->setSize(Width(r_full), Height(r_full));
 
 
 		SkinImageField avatar = dialog->getImageField("avatar");
@@ -831,6 +856,26 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			listening.setText(_T(""));
 		}
 
+		SkinIconField email_icon = dialog->getIconField("email_icon");
+		SkinTextField email = dialog->getTextField("email");
+		if (proto->CanGetEmailCount()) 
+		{
+			email_icon.setEnabled(TRUE);
+			email.setEnabled(TRUE);
+			email_icon.setIcon(hEmailIcon);
+
+			TCHAR tmp[64];
+			_sntprintf(tmp, MAX_REGS(tmp), _T("%d"), proto->emails);
+			email.setText(tmp);
+		}
+		else
+		{
+			email_icon.setEnabled(FALSE);
+			email.setEnabled(FALSE);
+			email_icon.setIcon(NULL);
+			email.setText(_T(""));
+		}
+
 		SkinIconField next_proto = dialog->getIconField("next_proto");
 		SkinIconField prev_proto = dialog->getIconField("prev_proto");
 		prev_proto.setIcon(hPrevIcon);
@@ -846,6 +891,8 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	SkinTextFieldState status_msg = state.getTextField("status_msg");
 	SkinIconFieldState listening_icon = state.getIconField("listening_icon");
 	SkinTextFieldState listening = state.getTextField("listening");
+	SkinIconFieldState email_icon = state.getIconField("email_icon");
+	SkinTextFieldState email = state.getTextField("email");
 	SkinIconFieldState next_proto = state.getIconField("next_proto");
 	SkinIconFieldState prev_proto = state.getIconField("prev_proto");
 		
@@ -859,6 +906,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		data->status.update(hwnd, &status_icon, &status_name);
 		data->away_msg.update(hwnd, &status_msg);
 		data->listening_to.update(hwnd, &listening_icon, &listening);
+		data->email.update(hwnd, &email_icon, &email);
 	}
 
 	// Erase
@@ -869,7 +917,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	UINT uFormat = DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS 
 					| (opts.draw_text_rtl ? DT_RTLREADING : 0);
 
-#define ALIGN( _F_ )  ( _F_.getHorizontalAlign() == SKN_HALIGN_RIGHT ? DT_RIGHT : ( _F_.getHorizontalAlign() == SKN_HALIGN_CENTER ? DT_CENTER : DT_LEFT ) )
+#define HALIGN( _F_ )  ( _F_.getHorizontalAlign() == SKN_HALIGN_RIGHT ? DT_RIGHT : ( _F_.getHorizontalAlign() == SKN_HALIGN_CENTER ? DT_CENTER : DT_LEFT ) )
 
 	// Image
 	if (avatar.isVisible() && proto->CanGetAvatar() && proto->avatar_bmp != NULL)
@@ -923,7 +971,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, nickname.getFontColor());
 
 		DrawTextWithRect(hdc, nickname.getText(), nickname.getRect(), nickname.getInsideRect(), 
-						 uFormat | ALIGN(nickname), data->nick.mouseOver && proto->CanSetNick(), proto);
+						 uFormat | HALIGN(nickname), data->nick.mouseOver && proto->CanSetNick(), proto);
 	}
 
 	// Protocol cycle icon
@@ -961,7 +1009,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SelectObject(hdc, protocol.getFont());
 		SetTextColor(hdc, protocol.getFontColor());
 
-		DrawText(hdc, protocol.getText(), -1, &rc, uFormat | ALIGN(protocol));
+		DrawText(hdc, protocol.getText(), -1, &rc, uFormat | HALIGN(protocol));
 
 		// Clipping rgn
 		SelectClipRgn(hdc, NULL);
@@ -996,7 +1044,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			SelectObject(hdc, status_name.getFont());
 			SetTextColor(hdc, status_name.getFontColor());
 
-			DrawText(hdc, status_name.getText(), -1, &rc, uFormat | ALIGN(status_name));
+			DrawText(hdc, status_name.getText(), -1, &rc, uFormat | HALIGN(status_name));
 
 			SelectClipRgn(hdc, NULL);
 			DeleteObject(rgn);			
@@ -1013,7 +1061,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, status_msg.getFontColor());
 
 		DrawTextWithRect(hdc, status_msg.getText(), status_msg.getRect(), status_msg.getInsideRect(), 
-						 uFormat | ALIGN(protocol), data->away_msg.mouseOver && proto->CanSetStatusMsg(), proto);
+						 uFormat | HALIGN(protocol), data->away_msg.mouseOver && proto->CanSetStatusMsg(), proto);
 	}
 
 	// Listening to
@@ -1040,7 +1088,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			SelectObject(hdc, listening.getFont());
 			SetTextColor(hdc, listening.getFontColor());
 			
-			DrawText(hdc, listening.getText(), -1, &rc, uFormat | ALIGN(listening));
+			DrawText(hdc, listening.getText(), -1, &rc, uFormat | HALIGN(listening));
 			
 			SelectClipRgn(hdc, NULL);
 			DeleteObject(rgn);			
@@ -1050,6 +1098,36 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			FrameRect(hdc, &data->listening_to.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
 	}
 
+	// Unread email count
+	if (email_icon.isVisible() || email.isVisible())
+	{
+		if (email_icon.isVisible())
+		{
+			RECT rc = email_icon.getInsideRect();
+			HRGN rgn = CreateRectRgnIndirect(&rc);
+			SelectClipRgn(hdc, rgn);
+			
+			DrawIconEx(hdc, rc.left, rc.top, email_icon.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
+			
+			SelectClipRgn(hdc, NULL);
+			DeleteObject(rgn);
+		}
+		
+		if (email.isVisible())
+		{
+			RECT rc = email.getInsideRect();
+			HRGN rgn = CreateRectRgnIndirect(&rc);
+			SelectClipRgn(hdc, rgn);
+			
+			SelectObject(hdc, email.getFont());
+			SetTextColor(hdc, email.getFontColor());
+			
+			DrawText(hdc, email.getText(), -1, &rc, uFormat | HALIGN(email));
+			
+			SelectClipRgn(hdc, NULL);
+			DeleteObject(rgn);			
+		}
+	}
 	SelectObject(hdc, old_font);
 	SetTextColor(hdc, old_color);
 	SetBkMode(hdc, old_bk_mode);
@@ -1059,22 +1137,33 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	DeleteDC(hdc);
 	DeleteObject(hBmp);
 
-	
-	DeleteObject(hStatusIcon);
+
+	if (freeStatusIcon)
+		DestroyIcon(hStatusIcon);
 	ReleaseIconEx(hListeningIcon);
+	ReleaseIconEx(hEmailIcon);
 	ReleaseIconEx(hPrevIcon);
 	ReleaseIconEx(hNextIcon);
-
-// TODO	r.bottom = max(next_top - SPACE_TEXT_TEXT, avatar_bottom);
 
 	if (opts.resize_frame && ServiceExists(MS_CLIST_FRAMES_SETFRAMEOPTIONS) && frame_id != -1)
 	{
 		RECT rf;
 		GetClientRect(hwnd, &rf);
 
-		int size = r_full.bottom + state.getBorders().bottom;
+		int currentSize = Height(r_full);
 
-		if (rf.bottom - rf.top != size)
+		int expectedSize = 0;
+		for(size_t i = 0; i < data->items.size(); ++i)
+		{
+			SimpleItem *item = data->items[i];
+			if (!item->draw)
+				continue;
+
+			expectedSize = max(expectedSize, item->rc.bottom);
+		}
+		expectedSize += state.getBorders().bottom;
+
+		if (expectedSize != expectedSize)
 		{
 			if (FrameIsFloating()) 
 			{
@@ -1090,7 +1179,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 					if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME))
 						diff += (r_window.top - rp_window.top);
 
-					SetWindowPos(parent, 0, 0, 0, rp_window.right - rp_window.left, size + diff, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+					SetWindowPos(parent, 0, 0, 0, rp_window.right - rp_window.left, expectedSize + diff, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
 				}
 			}
 			else if (IsWindowVisible(hwnd) && ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
@@ -1098,7 +1187,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 				int flags = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLAGS, frame_id), 0);
 				if(flags & F_VISIBLE) 
 				{
-					CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), (LPARAM)(size));
+					CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), (LPARAM) expectedSize);
 					CallService(MS_CLIST_FRAMES_UPDATEFRAME, (WPARAM)frame_id, (LPARAM)(FU_TBREDRAW | FU_FMREDRAW | FU_FMPOS));
 				}
 			}
@@ -2091,6 +2180,28 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			RefreshFrameAndCalcRects();
 			break;
 		}
+
+		case MWM_LOCK_CHANGED:
+		{
+			Protocol *proto = protocols->Get((const char *) wParam);
+			if (proto != NULL)
+			{
+				proto->GetLocked();
+				RefreshFrameAndCalcRects();
+			}
+			break;
+		}
+
+		case MWM_EMAIL_COUNT_CHANGED:
+		{
+			Protocol *proto = protocols->Get((const char *) wParam);
+			if (proto != NULL)
+			{
+				proto->GetEmailCount();
+				RefreshFrameAndCalcRects();
+			}
+			break;
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -2378,6 +2489,10 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam)
 		{
 			PostMessage(hwnd_frame, MWM_LISTENINGTO_CHANGED, (WPARAM) proto->name, 0);
 		}
+		else if (proto != NULL && strcmp(cws->szSetting,"LockMainStatus") == 0)
+		{
+			PostMessage(hwnd_frame, MWM_LOCK_CHANGED, (WPARAM) proto->name, 0);
+		}
 	}
 
 	return 0;
@@ -2416,6 +2531,13 @@ int ProtoAckHook(WPARAM wParam, LPARAM lParam)
 
 		if (proto != NULL)
 			PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, (WPARAM) proto->name, 0);
+	}
+	else if (ack->type == ACKTYPE_EMAIL)
+	{
+		Protocol *proto = protocols->Get((const char *) ack->szModule);
+
+		if (proto != NULL)
+			PostMessage(hwnd_frame, MWM_EMAIL_COUNT_CHANGED, (WPARAM) proto->name, 0);
 	}
 
 	return 0;

@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,2,0),
+	PLUGIN_MAKE_VERSION(0,0,2,1),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci, Drugwash",
 	"",
@@ -215,6 +215,16 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 		SKINICONDESC sid = {0};
 		sid.cbSize = sizeof(SKINICONDESC);
 		sid.ptszSection = "My Details";
+		sid.ptszDescription = "Email";
+		sid.pszName = "MYDETAILS_EMAIL";
+		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_EMAIL));
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+	}
+
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.ptszSection = "My Details";
 		sid.ptszDescription = "Previous protocol";
 		sid.pszName = "MYDETAILS_PREV_PROTOCOL";
 		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LEFT_ARROW));
@@ -246,6 +256,8 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 	dialog->addTextField("status_msg", "Status Message");
 	dialog->addIconField("listening_icon", "Listening To Icon");
 	dialog->addTextField("listening", "Listening To");
+	dialog->addIconField("email_icon", "Unread Email Count Icon");
+	dialog->addTextField("email", "Unread Email Count");
 	dialog->addIconField("next_proto", "Next Protocol");
 	dialog->addIconField("prev_proto", "Previous Protocol");
 	dialog->setSkinChangedCallback(SkinChanged, NULL);

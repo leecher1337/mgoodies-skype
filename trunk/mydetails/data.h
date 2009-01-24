@@ -32,6 +32,7 @@ protected:
 	bool can_set_nick;
 	bool can_have_avatar;
 	bool can_have_listening_to;
+	bool can_have_email_count;
 	int PF3;
 
 	void lcopystr(TCHAR *dest, TCHAR *src, int maxlen);
@@ -51,6 +52,8 @@ public:
 	HBITMAP avatar_bmp;
 	int status;
 	int custom_status;
+	bool locked;
+	int emails;
 
 	int avatar_max_width;
 	int avatar_max_height;
@@ -95,6 +98,11 @@ public:
 	bool CanSetStatusMsg(int aStatus);
 	void SetStatusMsg(const TCHAR *message);
 	void SetStatusMsg(int aStatus, const TCHAR *message);
+
+	bool GetLocked();
+
+	bool CanGetEmailCount();
+	int GetEmailCount();		// Copy to cache
 };
 
 
