@@ -5,6 +5,7 @@ Changelog:
 . 0.0.2.1
   + Show lock icon over status
   + Show unread mail count
+  * Resize frame is working again
   * Still work in progress
 
 . 0.0.2.0

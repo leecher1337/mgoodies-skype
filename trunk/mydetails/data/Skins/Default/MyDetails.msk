@@ -140,6 +140,9 @@ function draw()
 	if (listening.enabled && listening.text == "")
 		listening.text = "<nothing playing>"
 	
+	if (info.protocol.locked)
+		status_name.text += " (locked)"
+	
 	
 	// ToolTips
 	nickname.toolTip = nickname.text
@@ -183,22 +186,37 @@ function draw()
 	email.borders = BORDER_SPACE
 	
 	
-	if (prev_proto.visible)
+	if (info.resize_frame)
 	{
-		prev_proto.left = 0
-		prev_proto.bottom = window.height
+		if (avatar.visible)
+		{
+			if (opts.avatar_use_fixed_size)
+				resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
+			else
+				resize(avatar, window.width/2.5, window.height, opts.avatar_allow_grow)
+		}
+	}
+	else
+	{
+		if (prev_proto.visible)
+		{
+			prev_proto.left = 0
+			prev_proto.bottom = window.height
+			
+			next_proto.right = window.width
+			next_proto.bottom = window.height
+		}
 		
-		next_proto.right = window.width
-		next_proto.bottom = window.height
+		if (avatar.visible)
+		{
+			if (opts.avatar_use_fixed_size)
+				resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
+			else
+				resize(avatar, window.width/2.5, window.height - (prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
+		}
 	}
 	
-	if (avatar.visible)
-	{
-		if (opts.avatar_use_fixed_size)
-			resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
-		else
-			resize(avatar, window.width/2.5, window.height - (prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
-	}
+	var top = 0
 	
 	if (opts.align_right)
 	{
@@ -211,7 +229,6 @@ function draw()
 		
 		
 		var right = window.right
-		var top = 0
 		
 		function updateTopRight(val)
 		{
@@ -240,9 +257,7 @@ function draw()
 			
 			if (email.visible)
 			{
-				email_icon.borders.left = 0
 				email_icon.right = protocol.left - 10
-				
 				email.right = email_icon.left
 				
 				var bottom = valign_center(top, protocol, email_icon, email)
@@ -264,9 +279,7 @@ function draw()
 		
 		if (status_name.visible)
 		{
-			status_icon.borders.left = 0
 			status_icon.right = right
-			
 			status_name.right = status_icon.left
 			
 			var bottom = valign_center(top, status_icon, status_name)	
@@ -295,7 +308,6 @@ function draw()
 	else
 	{
 		var left = 0
-		var top = 0
 		
 		function updateTopLeft(val)
 		{
@@ -324,9 +336,7 @@ function draw()
 			
 			if (email.visible)
 			{
-				email_icon.borders.right = 0
 				email_icon.left = protocol.right + 10
-				
 				email.left = email_icon.right
 				
 				var bottom = valign_center(top, protocol, email_icon, email)
@@ -348,9 +358,7 @@ function draw()
 		
 		if (status_name.visible)
 		{
-			status_icon.borders.right = 0
 			status_icon.left = left
-			
 			status_name.left = status_icon.right
 			
 			var bottom = valign_center(top, status_icon, status_name)	
@@ -374,6 +382,20 @@ function draw()
 			
 			var bottom = valign_center(top, listening_icon, listening)
 			updateTopLeft(bottom)
+		}
+	}
+	
+	if (info.resize_frame)
+	{
+		if (prev_proto.visible)
+		{
+			top = Math.max(avatar.bottom, top)
+			
+			prev_proto.left = 0
+			prev_proto.top = top
+			
+			next_proto.right = window.width
+			next_proto.top = top
 		}
 	}
 }
