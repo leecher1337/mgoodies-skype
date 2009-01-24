@@ -28,6 +28,10 @@ function configure()
 	opts.show_protocol.type = CHECKBOX
 	opts.show_protocol.value = true
 	
+	opts.show_email.description = "Show unread mail count"
+	opts.show_email.type = CHECKBOX
+	opts.show_email.value = true
+	
 	opts.show_status.description = "Show status"
 	opts.show_status.type = CHECKBOX
 	opts.show_status.value = true
@@ -140,13 +144,12 @@ function draw()
 	// ToolTips
 	nickname.toolTip = nickname.text
 	protocol.toolTip = protocol.text
-	status_icon.toolTip = status_name.text
-	status_name.toolTip = status_name.text
+	status_icon.toolTip = status_name.toolTip = status_name.text
 	status_msg.toolTip = status_msg.text
-	listening_icon.toolTip = listening.text
-	listening.toolTip = listening.text
+	listening_icon.toolTip = listening.toolTip = listening.text
 	next_proto.toolTip = "Show next protocol"
 	prev_proto.toolTip = "Show previous protocol"
+	email_icon.toolTip = email.toolTip = "Unread Email Count: " + email.text
 	
 	
 	// Borders
@@ -157,12 +160,14 @@ function draw()
 	
 	
 	// Visible
+	nickname.visible = true
 	prev_proto.visible = next_proto.visible = opts.show_protocol_cycle && !IsEmpty(next_proto, prev_proto)
-	avatar.visible = opts.show_avatar && !IsEmpty(avatar)
-	protocol.visible = opts.show_protocol
-	status_icon.visible = status_name.visible = opts.show_status
+	avatar.visible = opts.show_avatar && avatar.enabled && !IsEmpty(avatar)
+	protocol.visible = opts.show_protocol && protocol.enabled
+	status_icon.visible = status_name.visible = opts.show_status && status_name.enabled
 	status_msg.visible = opts.show_status_msg && !IsEmpty(status_msg)
 	listening_icon.visible = listening.visible = opts.show_listening && !IsEmpty(listening_icon, listening)
+	email_icon.visible = email.visible = opts.show_email && email.enabled && !IsEmpty(email_icon, email) && email.text > 0
 	
 	
 	// Space to draw the frame around
@@ -174,6 +179,9 @@ function draw()
 	status_msg.borders = BORDER_SPACE
 	listening_icon.borders = BORDER_SPACE
 	listening.borders = BORDER_SPACE
+	email_icon.borders = BORDER_SPACE
+	email.borders = BORDER_SPACE
+	
 	
 	if (prev_proto.visible)
 	{
@@ -189,7 +197,7 @@ function draw()
 		if (opts.avatar_use_fixed_size)
 			resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
 		else
-			resize(avatar, window.width/3, window.height - (prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
+			resize(avatar, window.width/2.5, window.height - (prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
 	}
 	
 	if (opts.align_right)
@@ -230,7 +238,28 @@ function draw()
 			protocol.right = right
 			protocol.top = top
 			
-			updateTopRight(protocol.bottom)
+			if (email.visible)
+			{
+				email_icon.borders.left = 0
+				email_icon.right = protocol.left - 10
+				
+				email.right = email_icon.left
+				
+				var bottom = valign_center(top, protocol, email_icon, email)
+				updateTopRight(bottom)
+			}
+			else
+				updateTopRight(protocol.bottom)
+		} 
+		else if (email.visible)
+		{
+			email_icon.borders.left = 0
+			email_icon.right = right
+			
+			email.right = email_icon.left
+			
+			var bottom = valign_center(top, email_icon, email)
+			updateTopRight(bottom)
 		}
 		
 		if (status_name.visible)
@@ -259,7 +288,7 @@ function draw()
 			
 			listening.right = listening_icon.left
 			
-			var bottom = valign_center(top, listening_icon, listening_icon)
+			var bottom = valign_center(top, listening_icon, listening)
 			updateTopRight(bottom)
 		}
 	}
@@ -293,7 +322,28 @@ function draw()
 			protocol.left = left
 			protocol.top = top
 			
-			updateTopLeft(protocol.bottom)
+			if (email.visible)
+			{
+				email_icon.borders.right = 0
+				email_icon.left = protocol.right + 10
+				
+				email.left = email_icon.right
+				
+				var bottom = valign_center(top, protocol, email_icon, email)
+				updateTopLeft(bottom)
+			}
+			else
+				updateTopLeft(protocol.bottom)
+		}
+		else if (email.visible)
+		{
+			email_icon.borders.right = 0
+			email_icon.left = left
+			
+			email.left = email_icon.right
+			
+			var bottom = valign_center(top, email_icon, email)
+			updateTopLeft(bottom)
 		}
 		
 		if (status_name.visible)
@@ -322,7 +372,7 @@ function draw()
 			
 			listening.left = listening_icon.right
 			
-			var bottom = valign_center(top, listening_icon, listening_icon)
+			var bottom = valign_center(top, listening_icon, listening)
 			updateTopLeft(bottom)
 		}
 	}

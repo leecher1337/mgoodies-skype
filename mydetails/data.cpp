@@ -83,6 +83,8 @@ Protocol::Protocol(const char *aName)
 	avatar_bmp = NULL;
 	custom_status = 0;
 	data_changed = true;
+	locked = false;
+	emails = 0;
 
 	// Load services
 
@@ -112,11 +114,15 @@ Protocol::Protocol(const char *aName)
 
 	can_set_nick = ProtoServiceExists(name, PS_SETMYNICKNAME) != FALSE;
 
+	can_have_email_count = ProtoServiceExists(name, PS_GETUNREADEMAILCOUNT) != FALSE;
+
 	// Initial value
 	GetStatus();
 	GetStatusMsg();
 	GetNick();
 	GetAvatar();
+	GetLocked();
+	GetEmailCount();
 }
 
 Protocol::~Protocol()
@@ -601,6 +607,27 @@ TCHAR * Protocol::GetListeningTo()
 	DBFreeVariant(&dbv);
 
 	return listening_to;
+}
+
+bool Protocol::GetLocked()
+{
+	locked = (DBGetContactSettingByte(NULL, name, "LockMainStatus", 0) != 0);
+	return locked;
+}
+
+bool Protocol::CanGetEmailCount()
+{
+	return can_have_email_count && status > ID_STATUS_OFFLINE;
+}
+
+int Protocol::GetEmailCount()
+{
+	if (!CanGetEmailCount())
+		emails = 0;
+	else
+		emails = max(0, CallProtoService(name, PS_GETUNREADEMAILCOUNT, 0, 0));
+
+	return emails;
 }
 
 

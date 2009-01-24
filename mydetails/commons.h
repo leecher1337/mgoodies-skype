@@ -97,6 +97,7 @@ extern SkinDialog *dialog;
 #define PS_SETMYAVATAR "/SetMyAvatar"
 #define PS_GETMYAVATAR "/GetMyAvatar"
 #define PS_GETMYAVATARMAXSIZE "/GetMyAvatarMaxSize"
+#define PS_GETUNREADEMAILCOUNT "%s/GetUnreadEmailCount"
 
 #define PS_SETMYNICKNAME "/SetNickname"
 

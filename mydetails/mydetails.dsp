@@ -136,6 +136,10 @@ SOURCE=.\res\listening_to.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\mail.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.rc
 # End Source File
 # Begin Source File
