@@ -744,16 +744,9 @@ void Draw(HWND hwnd, HDC hdc_orig)
 					}
 				}
 			}
-			
-			data->proto.hide();
-			data->proto_cycle_next.hide();
-			data->proto_cycle_prev.hide();
-			data->avatar.hide();
-			data->nick.hide();
-			data->status.hide();
-			data->away_msg.hide();
-			data->listening_to.hide();
-			data->email.hide();
+
+			for (size_t i = 0; i < data->items.size(); ++i)
+				data->items[i]->hide();
 
 			return;
 		}
@@ -797,10 +790,15 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	HICON hPrevIcon = LoadIconEx("MYDETAILS_PREV_PROTOCOL");
 
 	{
+		dialog->setInfoBool("resize_frame", opts.resize_frame);
+		dialog->setInfoBool("protocol.locked", proto->locked);
+
+
 		if (opts.resize_frame)
 			dialog->setSize(Width(r_full), 0x1FFFFFFF);
 		else
 			dialog->setSize(Width(r_full), Height(r_full));
+
 
 
 		SkinImageField avatar = dialog->getImageField("avatar");
@@ -1163,7 +1161,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		}
 		expectedSize += state.getBorders().bottom;
 
-		if (expectedSize != expectedSize)
+		if (expectedSize != currentSize)
 		{
 			if (FrameIsFloating()) 
 			{
