@@ -97,7 +97,7 @@ extern SkinDialog *dialog;
 #define PS_SETMYAVATAR "/SetMyAvatar"
 #define PS_GETMYAVATAR "/GetMyAvatar"
 #define PS_GETMYAVATARMAXSIZE "/GetMyAvatarMaxSize"
-#define PS_GETUNREADEMAILCOUNT "%s/GetUnreadEmailCount"
+#define PS_GETUNREADEMAILCOUNT "/GetUnreadEmailCount"
 
 #define PS_SETMYNICKNAME "/SetNickname"
 
@@ -116,21 +116,6 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 	return ServiceExists(str);
 }
 
-
-// Helper
-static __inline int DRAW_TEXT(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT uFormat, const char *protocol, 
-					 SmileysParseInfo parseInfo)
-{
-	if (opts.replace_smileys)
-	{
-		return Smileys_DrawText(hDC, lpString, nCount, lpRect, uFormat | (opts.resize_smileys ? DT_RESIZE_SMILEYS : 0), 
-			opts.use_contact_list_smileys ? "clist" : protocol, parseInfo);
-	}
-	else
-	{
-		return DrawText(hDC, lpString, nCount, lpRect, uFormat);
-	}
-}
 
 
 

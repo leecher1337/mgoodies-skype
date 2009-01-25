@@ -2,6 +2,13 @@ My Details
 
 Changelog:
 
+. 0.0.2.2
+  * Fix for email count
+  * Better handling of hover
+  * Better handling of small sizes
+  * If fixed avatar size is set, use it even if no avatar present
+  + If windows uses RTL, it is selected by default
+
 . 0.0.2.1
   + Show lock icon over status
   + Show unread mail count
