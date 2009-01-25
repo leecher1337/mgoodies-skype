@@ -36,9 +36,9 @@ static BOOL CALLBACK DlgProcOpts(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 
 static OptPageControl pageControls[] = { 
+	{ &opts.draw_text_rtl,						CONTROL_CHECKBOX,	IDC_TEXT_RTL, "TextRTL", (BYTE) 0 },
 	{ &opts.cycle_through_protocols,			CONTROL_CHECKBOX,	IDC_CYCLE_THROUGH_PROTOS, "CicleThroughtProtocols", (BYTE) 1 },
 	{ &opts.seconds_to_show_protocol,			CONTROL_SPIN,		IDC_CYCLE_TIME, "CicleTime", (WORD) 5, IDC_CYCLE_TIME_SPIN, (WORD) 1, (WORD) 255 },
-	{ &opts.draw_text_rtl,						CONTROL_CHECKBOX,	IDC_TEXT_RTL, "TextRTL", (BYTE) 0 },
 	{ &opts.replace_smileys,					CONTROL_CHECKBOX,	IDC_REPLACE_SMILEYS, "ReplaceSmileys", (BYTE) 1 },
 	{ &opts.resize_smileys,						CONTROL_CHECKBOX,	IDC_RESIZE_SMILEYS, "ResizeSmileys", (BYTE) 0 },
 	{ &opts.use_contact_list_smileys,			CONTROL_CHECKBOX,	IDC_USE_CONTACT_LIST_SMILEYS, "UseContactListSmileys", (BYTE) 0 },
@@ -59,6 +59,9 @@ static OptPageControl pageControls[] = {
 // Initializations needed by options
 void LoadOptions()
 {
+	if (GetSystemMetrics(SM_MIDEASTENABLED))
+		pageControls[0].dwDefValue = TRUE;
+
 	LoadOpts(pageControls, MAX_REGS(pageControls), MODULE_NAME);
 
 	// This is created here to assert that this key always exists

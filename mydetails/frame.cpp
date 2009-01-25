@@ -88,7 +88,7 @@ int ListeningtoEnableStateChangedHook(WPARAM wParam,LPARAM lParam);
 
 
 void ExternalRect(RECT &ret, const RECT r1, const RECT r2);
-BOOL InsideRect(const POINT &p, const RECT &r);
+bool InsideRect(const POINT &p, const RECT &r);
 
 
 int operator==(const RECT& left, const RECT& right)
@@ -214,10 +214,10 @@ private:
 struct SimpleItem
 {
 	RECT rc;
-	BOOL draw;
-	BOOL mouseOver;
+	bool draw;
+	bool mouseOver;
 	ToolTipArea tt;
-	BOOL alignRight;
+	bool alignRight;
 
 	SimpleItem() : draw(FALSE), mouseOver(FALSE), alignRight(FALSE)
 	{ 
@@ -227,8 +227,8 @@ struct SimpleItem
 
 	virtual void hide()
 	{
-		draw = FALSE;
-		mouseOver = FALSE;
+		draw = false;
+		mouseOver = false;
 		tt.removeTooltip();
 	}
 
@@ -248,7 +248,7 @@ struct SimpleItem
 		}
 	}
 
-	virtual BOOL hitTest(const POINT &p)
+	virtual bool hitTest(const POINT &p)
 	{
 		return draw && InsideRect(p, rc);
 	}
@@ -257,6 +257,18 @@ struct SimpleItem
 	{
 		return tt.getTextFor(hwndFrom);
 	}
+
+	bool setMouseOver(POINT *mousePos)
+	{
+		bool over = (mousePos != NULL && hitTest(*mousePos));
+
+		if (mouseOver == over)
+			return FALSE; 
+
+		mouseOver = over;
+		return TRUE; 
+	}
+
 };
 
 struct IconAndItem : public SimpleItem
@@ -341,11 +353,13 @@ struct MyDetailsFrameData
 
 	int protocol_number;
 
-	BOOL showing_menu;
+	bool showing_menu;
 
-	BOOL get_status_messages;
+	bool tracking_exit;
 
-	MyDetailsFrameData() : protocol_number(0), showing_menu(FALSE), get_status_messages(FALSE) 
+	bool get_status_messages;
+
+	MyDetailsFrameData() : protocol_number(0), showing_menu(false), get_status_messages(false), tracking_exit(false)
 	{
 		items.push_back(&proto);
 		items.push_back(&proto_cycle_next);
@@ -648,35 +662,6 @@ HBITMAP CreateBitmap32(int cx, int cy)
 	DeleteObject(hB);
 }
 
-void DrawTextWithRect(HDC hdc, const char *text, RECT rc, RECT rc_internal, UINT uFormat, 
-					  BOOL mouse_over, Protocol *proto, BOOL replace_smileys = true)
-{
-	const char *tmp = text;
-
-	// Only first line
-	char *tmp2 = strdup(tmp);
-	char *pos = strchr(tmp2, '\r');
-	if (pos != NULL) pos[0] = '\0';
-	pos = strchr(tmp2, '\n');
-	if (pos != NULL) pos[0] = '\0';
-
-	HRGN rgn = CreateRectRgnIndirect(&rc_internal);
-	SelectClipRgn(hdc, rgn);
-
-	if (replace_smileys)
-		DRAW_TEXT(hdc, tmp2, strlen(tmp2), &rc_internal, uFormat, proto->name, NULL);
-	else
-		DrawText(hdc, tmp2, strlen(tmp2), &rc_internal, uFormat);
-
-	SelectClipRgn(hdc, NULL);
-	DeleteObject(rgn);
-
-	if (mouse_over)
-		FrameRect(hdc, &rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
-
-	free(tmp2);
-}
-
 static int Width(const RECT &rc)
 {
 	return rc.right - rc.left;
@@ -700,6 +685,77 @@ static HICON CreateOverlayedIcon(HICON icon, HICON overlay)
 	HICON hIcon = ImageList_GetIcon(newImage, 0, 0);
 	ImageList_Destroy(newImage);
 	return hIcon; // the result should be destroyed by DestroyIcon()
+}
+
+void Draw(HDC hdc, SkinIconFieldState &state)
+{
+	if (!state.isVisible())
+		return;
+
+	RECT rc = state.getInsideRect();
+	HRGN rgn = CreateRectRgnIndirect(&rc);
+	SelectClipRgn(hdc, rgn);
+
+	rc = state.getInsideRect(true);
+
+	DrawIconEx(hdc, rc.left, rc.top, state.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
+
+	SelectClipRgn(hdc, NULL);
+	DeleteObject(rgn);
+}
+
+void Draw(HDC hdc, SkinTextFieldState &state, BOOL replace_smileys = FALSE, const char *protocol = NULL)
+{
+	if (!state.isVisible())
+		return;
+
+	RECT rc = state.getInsideRect();
+	HRGN rgn = CreateRectRgnIndirect(&rc);
+	SelectClipRgn(hdc, rgn);
+
+	HGDIOBJ oldFont = SelectObject(hdc, state.getFont());
+	COLORREF oldColor = SetTextColor(hdc, state.getFontColor());
+
+	UINT uFormat = DT_NOPREFIX | DT_END_ELLIPSIS | (opts.draw_text_rtl ? DT_RTLREADING : 0);
+
+	switch(state.getHorizontalAlign())
+	{
+		case SKN_HALIGN_RIGHT:
+			uFormat |= DT_RIGHT;
+			break;
+		case SKN_HALIGN_CENTER:
+			uFormat |= DT_CENTER;
+			break;
+		case SKN_HALIGN_LEFT:
+			uFormat |= DT_LEFT;
+			break;
+	}
+
+	if (replace_smileys && opts.replace_smileys)
+	{
+		uFormat |= DT_SINGLELINE;
+
+		// Draw only first line of text
+		char *tmp = strdup(state.getText());
+		char *pos = strchr(tmp, '\r');
+		if (pos != NULL) 
+			pos[0] = '\0';
+		pos = strchr(tmp, '\n');
+		if (pos != NULL) 
+			pos[0] = '\0';
+
+		Smileys_DrawText(hdc, tmp, -1, &rc, uFormat | (opts.resize_smileys ? DT_RESIZE_SMILEYS : 0), 
+			opts.use_contact_list_smileys ? "clist" : protocol, NULL);
+	}
+	else
+		DrawText(hdc, state.getText(), -1, &rc, uFormat);
+
+
+	SelectObject(hdc, oldFont);
+	SetTextColor(hdc, oldColor);
+
+	SelectClipRgn(hdc, NULL);
+	DeleteObject(rgn);			
 }
 
 
@@ -856,7 +912,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 		SkinIconField email_icon = dialog->getIconField("email_icon");
 		SkinTextField email = dialog->getTextField("email");
-		if (proto->CanGetEmailCount()) 
+		if (proto->CanGetEmailCount())
 		{
 			email_icon.setEnabled(TRUE);
 			email.setEnabled(TRUE);
@@ -905,6 +961,14 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		data->away_msg.update(hwnd, &status_msg);
 		data->listening_to.update(hwnd, &listening_icon, &listening);
 		data->email.update(hwnd, &email_icon, &email);
+
+		
+		POINT p = {0};
+		GetCursorPos(&p);
+		ScreenToClient(hwnd, &p);
+
+		for(size_t i = 0; i < data->items.size(); ++i)
+			data->items[i]->setMouseOver(&p);
 	}
 
 	// Erase
@@ -915,14 +979,14 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	UINT uFormat = DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS 
 					| (opts.draw_text_rtl ? DT_RTLREADING : 0);
 
-#define HALIGN( _F_ )  ( _F_.getHorizontalAlign() == SKN_HALIGN_RIGHT ? DT_RIGHT : ( _F_.getHorizontalAlign() == SKN_HALIGN_CENTER ? DT_CENTER : DT_LEFT ) )
-
 	// Image
 	if (avatar.isVisible() && proto->CanGetAvatar() && proto->avatar_bmp != NULL)
 	{
 		RECT rc = avatar.getInsideRect();
 		HRGN rgn = CreateRectRgnIndirect(&rc);
 		SelectClipRgn(hdc, rgn);
+
+		rc = avatar.getInsideRect(true);
 
 		int width = Width(rc);
 		int height = Height(rc);
@@ -963,169 +1027,51 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	}
 
 	// Nick
-	if (nickname.isVisible())
-	{
-		SelectObject(hdc, nickname.getFont());
-		SetTextColor(hdc, nickname.getFontColor());
+	Draw(hdc, nickname, TRUE, proto->name);
 
-		DrawTextWithRect(hdc, nickname.getText(), nickname.getRect(), nickname.getInsideRect(), 
-						 uFormat | HALIGN(nickname), data->nick.mouseOver && proto->CanSetNick(), proto);
-	}
+	if (data->nick.draw && data->nick.mouseOver && proto->CanSetNick())
+		FrameRect(hdc, &nickname.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
 
-	// Protocol cycle icon
-	if (next_proto.isVisible())
-	{
-		RECT rc = next_proto.getInsideRect();
-		HRGN rgn = CreateRectRgnIndirect(&rc);
-		SelectClipRgn(hdc, rgn);
-
-		DrawIconEx(hdc, rc.left, rc.top, next_proto.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
-
-		SelectClipRgn(hdc, NULL);
-		DeleteObject(rgn);
-	}
-
-	if (prev_proto.isVisible())
-	{
-		RECT rc = prev_proto.getInsideRect();
-		HRGN rgn = CreateRectRgnIndirect(&rc);
-		SelectClipRgn(hdc, rgn);
-
-		DrawIconEx(hdc, rc.left, rc.top, prev_proto.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
-
-		SelectClipRgn(hdc, NULL);
-		DeleteObject(rgn);
-	}
 
 	// Protocol
-	if (protocol.isVisible())
-	{
-		RECT rc = protocol.getInsideRect();
-		HRGN rgn = CreateRectRgnIndirect(&rc);
-		SelectClipRgn(hdc, rgn);
+	Draw(hdc, protocol);
 
-		SelectObject(hdc, protocol.getFont());
-		SetTextColor(hdc, protocol.getFontColor());
-
-		DrawText(hdc, protocol.getText(), -1, &rc, uFormat | HALIGN(protocol));
-
-		// Clipping rgn
-		SelectClipRgn(hdc, NULL);
-		DeleteObject(rgn);
-
-		if (data->proto.mouseOver)
-			FrameRect(hdc, &protocol.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
-	}
+	if (data->proto.draw && data->proto.mouseOver)
+		FrameRect(hdc, &protocol.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
+	
 
 	// Status
-	if (status_icon.isVisible() || status_name.isVisible())
-	{
-		if (status_icon.isVisible())
-		{
-			RECT rc = status_icon.getInsideRect();
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
+	Draw(hdc, status_icon);
+	Draw(hdc, status_name);
 
-			DrawIconEx(hdc, rc.left, rc.top, status_icon.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
-			
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);
-		}
-
-		if (status_name.isVisible())
-		{
-			RECT rc = status_name.getInsideRect();
-
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
-
-			SelectObject(hdc, status_name.getFont());
-			SetTextColor(hdc, status_name.getFontColor());
-
-			DrawText(hdc, status_name.getText(), -1, &rc, uFormat | HALIGN(status_name));
-
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);			
-		}
-
-		if (data->status.mouseOver)
-			FrameRect(hdc, &data->status.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
-	}
+	if (data->status.draw && data->status.mouseOver)
+		FrameRect(hdc, &data->status.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
+	
 
 	// Away message
-	if (status_msg.isVisible())
-	{
-		SelectObject(hdc, status_msg.getFont());
-		SetTextColor(hdc, status_msg.getFontColor());
+	Draw(hdc, status_msg, TRUE, proto->name);
 
-		DrawTextWithRect(hdc, status_msg.getText(), status_msg.getRect(), status_msg.getInsideRect(), 
-						 uFormat | HALIGN(protocol), data->away_msg.mouseOver && proto->CanSetStatusMsg(), proto);
-	}
+	if (data->away_msg.draw && data->away_msg.mouseOver && proto->CanSetStatusMsg())
+		FrameRect(hdc, &status_msg.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
+	
 
 	// Listening to
-	if (listening_icon.isVisible() || listening.isVisible())
-	{
-		if (listening_icon.isVisible())
-		{
-			RECT rc = listening_icon.getInsideRect();
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
-			
-			DrawIconEx(hdc, rc.left, rc.top, listening_icon.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
-			
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);
-		}
-		
-		if (listening.isVisible())
-		{
-			RECT rc = listening.getInsideRect();
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
-			
-			SelectObject(hdc, listening.getFont());
-			SetTextColor(hdc, listening.getFontColor());
-			
-			DrawText(hdc, listening.getText(), -1, &rc, uFormat | HALIGN(listening));
-			
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);			
-		}
-		
-		if (data->listening_to.mouseOver && protocols->CanSetListeningTo())
-			FrameRect(hdc, &data->listening_to.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
-	}
+	Draw(hdc, listening_icon);
+	Draw(hdc, listening);
+	
+	if (data->listening_to.draw && data->listening_to.mouseOver && protocols->CanSetListeningTo())
+		FrameRect(hdc, &data->listening_to.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
+	
 
 	// Unread email count
-	if (email_icon.isVisible() || email.isVisible())
-	{
-		if (email_icon.isVisible())
-		{
-			RECT rc = email_icon.getInsideRect();
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
-			
-			DrawIconEx(hdc, rc.left, rc.top, email_icon.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
-			
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);
-		}
-		
-		if (email.isVisible())
-		{
-			RECT rc = email.getInsideRect();
-			HRGN rgn = CreateRectRgnIndirect(&rc);
-			SelectClipRgn(hdc, rgn);
-			
-			SelectObject(hdc, email.getFont());
-			SetTextColor(hdc, email.getFontColor());
-			
-			DrawText(hdc, email.getText(), -1, &rc, uFormat | HALIGN(email));
-			
-			SelectClipRgn(hdc, NULL);
-			DeleteObject(rgn);			
-		}
-	}
+	Draw(hdc, email_icon);
+	Draw(hdc, email);
+
+	// Protocol cycle icon
+	Draw(hdc, next_proto);
+	Draw(hdc, prev_proto);
+
+
 	SelectObject(hdc, old_font);
 	SetTextColor(hdc, old_color);
 	SetBkMode(hdc, old_bk_mode);
@@ -1193,32 +1139,9 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	}
 }
 
-BOOL InsideRect(const POINT &p, const RECT &r)
+bool InsideRect(const POINT &p, const RECT &r)
 {
 	return p.x >= r.left && p.x < r.right && p.y >= r.top && p.y < r.bottom;
-}
-
-void MakeHover(HWND hwnd, POINT *p, SimpleItem *item)
-{
-	if (p != NULL && item->hitTest(*p))
-	{
-		item->mouseOver = TRUE;
-
-		InvalidateRect(hwnd, NULL, FALSE);
-
-		TRACKMOUSEEVENT tme;
-		tme.cbSize = sizeof(TRACKMOUSEEVENT);
-		tme.dwFlags = TME_LEAVE;
-		tme.hwndTrack = hwnd;
-		tme.dwHoverTime = HOVER_DEFAULT;
-		TrackMouseEvent(&tme);
-	}
-	else 
-	{
-		item->mouseOver = FALSE;
-
-		InvalidateRect(hwnd, NULL, FALSE);
-	}
 }
 
 int ShowPopupMenu(HWND hwnd, HMENU submenu, SimpleItem &item)
@@ -1405,13 +1328,6 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			SetCycleTime(hwnd);
 			SetStatusMessageRefreshTime(hwnd);
 
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_HOVER | TME_LEAVE;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
-
 			return TRUE;
 		}
 
@@ -1499,8 +1415,17 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			p.x = LOWORD(lParam); 
 			p.y = HIWORD(lParam); 
 
+			// In proto cycle button?
+			if (data->proto_cycle_next.hitTest(p))
+			{
+				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
+			}
+			else if (data->proto_cycle_prev.hitTest(p))
+			{
+				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
+			}
 			// In image?
-			if (data->avatar.hitTest(p) && proto->CanSetAvatar())
+			else if (data->avatar.hitTest(p) && proto->CanSetAvatar())
 			{
 				if (opts.global_on_avatar)
 					CallService(MS_MYDETAILS_SETMYAVATARUI, 0, 0);
@@ -1514,15 +1439,6 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, 0);
 				else
 					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->name);
-			}
-			// In proto cycle button?
-			else if (data->proto_cycle_next.hitTest(p))
-			{
-				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
-			}
-			else if (data->proto_cycle_prev.hitTest(p))
-			{
-				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
 			}
 			// In status message?
 			else if (data->away_msg.hitTest(p) && proto->CanSetStatusMsg())
@@ -1612,8 +1528,17 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 			data->showing_menu = true;
 
+			// In proto cycle button?
+			if (data->proto_cycle_next.hitTest(p))
+			{
+				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
+			}
+			else if (data->proto_cycle_prev.hitTest(p))
+			{
+				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
+			}
 			// In image?
-			if (data->avatar.hitTest(p))
+			else if (data->avatar.hitTest(p))
 			{
 				HMENU menu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
 				HMENU submenu = GetSubMenu(menu, 4);
@@ -1703,15 +1628,6 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						break;
 					}
 				}
-			}
-			// In proto cycle button?
-			else if (data->proto_cycle_next.hitTest(p))
-			{
-				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
-			}
-			else if (data->proto_cycle_prev.hitTest(p))
-			{
-				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
 			}
 			// In status message?
 			else if (data->away_msg.hitTest(p))
@@ -2013,38 +1929,26 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			break;
 		}
 
+		case WM_NCMOUSELEAVE:
 		case WM_MOUSELEAVE:
 		{
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_HOVER;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
+			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
+			data->tracking_exit = false;
 		}
 		case WM_NCMOUSEMOVE:
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 
-			MakeHover(hwnd, NULL, &data->avatar);
-			MakeHover(hwnd, NULL, &data->nick);
-			MakeHover(hwnd, NULL, &data->proto);
-			MakeHover(hwnd, NULL, &data->status);
-			MakeHover(hwnd, NULL, &data->away_msg);
-			MakeHover(hwnd, NULL, &data->listening_to);
+			bool changed = false;
+			for(size_t i = 0; i < data->items.size(); ++i)
+				changed = changed || data->items[i]->setMouseOver(NULL);
+
+			if (changed)
+				InvalidateRect(hwnd, NULL, FALSE);
 
 			break;
 		}
 
-		case WM_MOUSEHOVER:
-		{
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_LEAVE;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
-		}
 		case WM_MOUSEMOVE:
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
@@ -2052,16 +1956,28 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			if (proto == NULL)
 				break;
 
+			if (!data->tracking_exit)
+			{
+				TRACKMOUSEEVENT tme;
+				tme.cbSize = sizeof(TRACKMOUSEEVENT);
+				tme.dwFlags = TME_LEAVE;
+				tme.hwndTrack = hwnd;
+				tme.dwHoverTime = HOVER_DEFAULT;
+				TrackMouseEvent(&tme);
+
+				data->tracking_exit = true;
+			}
+
 			POINT p;
 			p.x = LOWORD(lParam); 
 			p.y = HIWORD(lParam); 
 
-			MakeHover(hwnd, &p, &data->avatar);
-			MakeHover(hwnd, &p, &data->nick);
-			MakeHover(hwnd, &p, &data->proto);
-			MakeHover(hwnd, &p, &data->status);
-			MakeHover(hwnd, &p, &data->away_msg);
-			MakeHover(hwnd, &p, &data->listening_to);
+			bool changed = false;
+			for(size_t i = 0; i < data->items.size(); ++i)
+				changed = changed || data->items[i]->setMouseOver(&p);
+
+			if (changed)
+				InvalidateRect(hwnd, NULL, FALSE);
 
 			break;
 		}
