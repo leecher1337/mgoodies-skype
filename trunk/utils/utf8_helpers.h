@@ -149,7 +149,7 @@ public:
 		if (tmp == NULL)
 			throw _T("mir_alloc returned NULL");
 
-		MultiByteToWideChar(CP_UTF8, 0, str, -1, tmp, size);
+		MultiByteToWideChar(CP_ACP, 0, str, -1, tmp, size);
 
 		tchar = tmp;
 
