@@ -52,7 +52,6 @@ static OptPageControl pageControls[] = {
 	{ &opts.draw_avatar_use_custom_corner_size, CONTROL_CHECKBOX,	IDC_AVATAR_CUSTOM_CORNER_SIZE_CHECK, "AvatarUseCustomCornerSize", (BYTE) 0 },
 	{ &opts.draw_avatar_custom_corner_size,		CONTROL_SPIN,		IDC_AVATAR_CUSTOM_CORNER_SIZE, "AvatarCustomCornerSize", (WORD) 4, IDC_AVATAR_CUSTOM_CORNER_SIZE_SPIN, (WORD) 1, (WORD) 255 },
 	{ &opts.resize_frame,						CONTROL_CHECKBOX,	IDC_RESIZE_FRAME, "ResizeFrame", (BYTE) 0 },
-	{ &opts.bkg_color,							CONTROL_COLOR,		IDC_AVATAR_BKG_COLOR, "BackgroundColor", (DWORD) GetSysColor(COLOR_BTNFACE) }
 };
 
 

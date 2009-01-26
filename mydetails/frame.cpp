@@ -657,7 +657,7 @@ HBITMAP CreateBitmap32(int cx, int cy)
 	RECT r;
 	GetClientRect(hwnd, &r);
 
-	HBRUSH hB = CreateSolidBrush((COLORREF) DBGetContactSettingDword(NULL,"MyDetails","BackgroundColor",GetSysColor(COLOR_BTNFACE)));
+	HBRUSH hB = CreateSolidBrush(opts.bkg_color);
 	FillRect(hdc, &r, hB);
 	DeleteObject(hB);
 }
