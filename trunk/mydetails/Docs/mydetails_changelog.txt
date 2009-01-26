@@ -2,6 +2,9 @@ My Details
 
 Changelog:
 
+. 0.0.2.3
+  * Moved background color to font service settings
+
 . 0.0.2.2
   * Fix for email count
   * Better handling of hover

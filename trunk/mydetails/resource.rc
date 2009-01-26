@@ -142,26 +142,22 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,105,60,96,14
     CONTROL         "Global on status message",IDC_GLOBAL_ON_STATUS_MESSAGE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,207,61,96,14
-    GROUPBOX        " Frame Options ",IDC_STATIC,7,80,302,31
-    LTEXT           "Background Color:",IDC_AVATAR_BKG_COLOR_L,13,94,66,10
-    CONTROL         "",IDC_AVATAR_BKG_COLOR,"ColourPicker",WS_TABSTOP,84,92,
-                    17,13
-    GROUPBOX        " Avatar ",IDC_STATIC,7,114,302,59
+    GROUPBOX        " Avatar ",IDC_STATIC,7,80,302,59
     CONTROL         "Draw border on avatar",IDC_AVATAR_DRAW_BORDER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,129,103,9
-    LTEXT           "Border Color:",IDC_AVATAR_BORDER_COLOR_L,123,129,53,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,95,103,9
+    LTEXT           "Border Color:",IDC_AVATAR_BORDER_COLOR_L,123,95,53,10
     CONTROL         "",IDC_AVATAR_BORDER_COLOR,"ColourPicker",WS_TABSTOP,180,
-                    126,17,13
+                    92,17,13
     CONTROL         "Round corners of avatars",IDC_AVATAR_ROUND_CORNERS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,143,280,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,109,280,8
     CONTROL         "Custom corner size:",
                     IDC_AVATAR_CUSTOM_CORNER_SIZE_CHECK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,27,156,93,11
-    EDITTEXT        IDC_AVATAR_CUSTOM_CORNER_SIZE,127,155,35,12,ES_NUMBER
+                    BS_AUTOCHECKBOX | WS_TABSTOP,27,122,93,11
+    EDITTEXT        IDC_AVATAR_CUSTOM_CORNER_SIZE,127,121,35,12,ES_NUMBER
     CONTROL         "",IDC_AVATAR_CUSTOM_CORNER_SIZE_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS | UDS_HOTTRACK,165,155,11,12
-    LTEXT           "pixels",IDC_STATIC,179,158,41,11
+                    UDS_NOTHOUSANDS | UDS_HOTTRACK,165,121,11,12
+    LTEXT           "pixels",IDC_STATIC,179,124,41,11
 END
 
 IDD_SETSTATUSMESSAGE DIALOG DISCARDABLE  0, 0, 283, 68

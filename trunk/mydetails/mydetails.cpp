@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,2,1),
+	PLUGIN_MAKE_VERSION(0,0,2,3),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci, Drugwash",
 	"",
@@ -53,6 +53,7 @@ HANDLE hTTB = NULL;
 // Hooks
 HANDLE hModulesLoadedHook = NULL;
 HANDLE hPreShutdownHook = NULL;
+HANDLE hColorChangedHook = NULL;
 
 long nickname_dialog_open;
 HWND hwndSetNickname;
@@ -191,6 +192,21 @@ static void SkinChanged(void *param, SKINNED_DIALOG dlg)
 }
 
 
+static int ColorChanged(WPARAM wparam, LPARAM lparam)
+{
+	ColourID cid = {0};
+	cid.cbSize = sizeof(ColourID);
+	lstrcpynA(cid.group, "My Details", sizeof(cid.group));
+	lstrcpynA(cid.name, "Background", sizeof(cid.name));
+
+	opts.bkg_color = (COLORREF) CallService(MS_COLOUR_GET, (WPARAM) &cid, 0);
+
+	RefreshFrame();
+
+	return 0;
+}
+
+
 // Hook called after init
 static int MainInit(WPARAM wparam,LPARAM lparam) 
 {	
@@ -240,6 +256,22 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 	}
+
+	{
+		ColourID cid = {0};
+		cid.cbSize = sizeof(ColourID);
+		lstrcpynA(cid.group, "My Details", sizeof(cid.group));
+		lstrcpynA(cid.name, "Background", sizeof(cid.name));
+		lstrcpynA(cid.dbSettingsGroup, MODULE_NAME, sizeof(cid.dbSettingsGroup));
+		lstrcpynA(cid.setting, "BackgroundColor", sizeof(cid.setting));
+		cid.defcolour = GetSysColor(COLOR_BTNFACE);
+
+		CallService(MS_COLOUR_REGISTER, (WPARAM) &cid, 0);
+
+		ColorChanged(0,0);
+
+		hColorChangedHook = HookEvent(ME_COLOUR_RELOAD, ColorChanged);
+	}
 	
 	dialog = new SkinDialog("MyDetails", "My Details", MODULE_NAME);
 	if (!dialog->isValid())
@@ -251,13 +283,13 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 	dialog->addImageField("avatar", "Avatar");
 	dialog->addTextField("nickname", "Nickname");
 	dialog->addTextField("protocol", "Protocol");
+	dialog->addIconField("email_icon", "Unread Email Count Icon");
+	dialog->addTextField("email", "Unread Email Count");
 	dialog->addIconField("status_icon", "Status Icon");
 	dialog->addTextField("status_name", "Status");
 	dialog->addTextField("status_msg", "Status Message");
 	dialog->addIconField("listening_icon", "Listening To Icon");
 	dialog->addTextField("listening", "Listening To");
-	dialog->addIconField("email_icon", "Unread Email Count Icon");
-	dialog->addTextField("email", "Unread Email Count");
 	dialog->addIconField("next_proto", "Next Protocol");
 	dialog->addIconField("prev_proto", "Previous Protocol");
 	dialog->setSkinChangedCallback(SkinChanged, NULL);

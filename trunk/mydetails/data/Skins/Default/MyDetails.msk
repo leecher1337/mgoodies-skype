@@ -87,6 +87,10 @@ function configure()
 	protocol.font.size = 8
 	protocol.font.color = RGB(0,0,0)
 	
+	email.font.face = "Tahoma"
+	email.font.size = 8
+	email.font.color = RGB(0,0,0)
+	
 	status_name.font.face = "Tahoma"
 	status_name.font.size = 8
 	status_name.font.color = RGB(0,0,0)
@@ -101,7 +105,6 @@ function configure()
 	listening.font.italic = true
 	listening.font.color = RGB(150,150,150)
 }
-
 	
 function valign_center(top)
 {
@@ -118,9 +121,6 @@ function resize(field, maxWidth, maxHeight, allowGrow)
 {
 	if (allowGrow == null)
 		allowGrow = true
-	
-	maxWidth = Math.min(maxWidth, window.width)
-	maxHeight = Math.min(maxHeight, window.height)
 	
 	var factor = Math.min(maxWidth / field.width, maxHeight / field.height)
 	if (!allowGrow && factor >= 1)
@@ -186,35 +186,26 @@ function draw()
 	email.borders = BORDER_SPACE
 	
 	
-	if (info.resize_frame)
+	if (avatar.visible)
 	{
-		if (avatar.visible)
-		{
-			if (opts.avatar_use_fixed_size)
-				resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
-			else
-				resize(avatar, window.width/2.5, window.height, opts.avatar_allow_grow)
-		}
+		if (opts.avatar_use_fixed_size)
+			resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
+		else
+			resize(avatar, window.width/2.5, window.height - (!info.resize_frame && prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
 	}
-	else
+	
+	if (!info.resize_frame && prev_proto.visible)
 	{
-		if (prev_proto.visible)
-		{
-			prev_proto.left = 0
-			prev_proto.bottom = window.height
-			
-			next_proto.right = window.width
-			next_proto.bottom = window.height
-		}
+		prev_proto.left = 0
+		prev_proto.bottom = window.height
 		
-		if (avatar.visible)
-		{
-			if (opts.avatar_use_fixed_size)
-				resize(avatar, opts.avatar_fixed_size, opts.avatar_fixed_size, opts.avatar_allow_grow)
-			else
-				resize(avatar, window.width/2.5, window.height - (prev_proto.visible ? prev_proto.height : 0), opts.avatar_allow_grow)
-		}
+		next_proto.right = window.width
+		next_proto.bottom = window.height
 	}
+
+	var avatar_bottom = avatar.bottom
+	if (opts.show_avatar && opts.avatar_use_fixed_size)
+		avatar_bottom = opts.avatar_fixed_size
 	
 	var top = 0
 	
@@ -233,7 +224,7 @@ function draw()
 		function updateTopRight(val)
 		{
 			top = val
-			if (opts.use_under_avatar && top > avatar.bottom)
+			if (opts.use_under_avatar && top > avatar_bottom)
 				right = window.right
 		}
 		
@@ -244,6 +235,9 @@ function draw()
 			
 			right = avatar.left - 6
 		}
+		
+		if (opts.show_avatar && opts.avatar_use_fixed_size)
+			right = window.right - opts.avatar_fixed_size - 6
 		
 		nickname.right = right
 		nickname.top = top
@@ -312,7 +306,7 @@ function draw()
 		function updateTopLeft(val)
 		{
 			top = val
-			if (opts.use_under_avatar && top > avatar.bottom)
+			if (opts.use_under_avatar && top > avatar_bottom)
 				left = 0
 		}
 		
@@ -323,6 +317,9 @@ function draw()
 			
 			left = avatar.right + 6
 		}
+		
+		if (opts.show_avatar && opts.avatar_use_fixed_size)
+			left = opts.avatar_fixed_size + 6
 		
 		nickname.left = left
 		nickname.top = top
@@ -378,6 +375,7 @@ function draw()
 			listening_icon.borders.right = 0
 			listening_icon.left = left
 			
+			listening.borders.left = 0
 			listening.left = listening_icon.right
 			
 			var bottom = valign_center(top, listening_icon, listening)
