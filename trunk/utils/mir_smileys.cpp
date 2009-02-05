@@ -108,6 +108,9 @@ int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT u
 	SmileysParseInfo info;
 	int ret;
 
+	if (nCount < 0)
+		nCount = strlen(lpString);
+
 	// Get parse info
 	if (parseInfo == NULL)
 		info = Smileys_PreParse(lpString, nCount, protocol);

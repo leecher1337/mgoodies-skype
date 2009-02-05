@@ -141,17 +141,7 @@ public:
 
 #ifdef UNICODE
 
-		int size = MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
-		if (size <= 0)
-			throw _T("Could not convert string to WCHAR");
-
-		WCHAR *tmp = (WCHAR *) mir_alloc(size * sizeof(WCHAR));
-		if (tmp == NULL)
-			throw _T("mir_alloc returned NULL");
-
-		MultiByteToWideChar(CP_ACP, 0, str, -1, tmp, size);
-
-		tchar = tmp;
+		tchar = mir_a2u(str);
 
 #else
 
@@ -209,15 +199,7 @@ public:
 
 #else
 
-		int size = WideCharToMultiByte(CP_ACP, 0, str, -1, NULL, 0, NULL, NULL);
-		if (size <= 0)
-			throw _T("Could not convert string to ACP");
-
-		tchar = (TCHAR *) mir_alloc(size);
-		if (tchar == NULL)
-			throw _T("mir_alloc returned NULL");
-
-		WideCharToMultiByte(CP_ACP, 0, str, -1, tchar, size, NULL, NULL);
+		tchar = mir_u2a(str);
 
 #endif
 	}
@@ -259,6 +241,42 @@ private:
 
 
 
+class CharToWchar
+{
+public:
+	CharToWchar(const char *str) : wchar(NULL)
+	{
+		if (str == NULL)
+			return;
+
+		wchar = mir_a2u(str);
+	}
+
+
+	~CharToWchar()
+	{
+		if (wchar != NULL)
+			mir_free(wchar);
+	}
+
+	WCHAR *detach()
+	{
+		WCHAR *ret = wchar;
+		wchar = NULL;
+		return ret;
+	}
+
+	operator const WCHAR *()
+	{
+		return wchar;
+	}
+
+private:
+	WCHAR *wchar;
+};
+
+
+
 class TcharToChar
 {
 public:
@@ -269,15 +287,7 @@ public:
 
 #ifdef UNICODE
 
-		int size = WideCharToMultiByte(CP_ACP, 0, str, -1, NULL, 0, NULL, NULL);
-		if (size <= 0)
-			throw _T("Could not convert string to ACP");
-
-		val = (char *) mir_alloc(size);
-		if (val == NULL)
-			throw _T("mir_alloc returned NULL");
-
-		WideCharToMultiByte(CP_ACP, 0, str, -1, val, size, NULL, NULL);
+		val = mir_u2a(str);
 
 #else
 
@@ -335,15 +345,7 @@ public:
 
 #else
 
-		int size = MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
-		if (size <= 0)
-			throw _T("Could not convert string to WCHAR");
-
-		val = (WCHAR *) mir_alloc(size * sizeof(WCHAR));
-		if (val == NULL)
-			throw _T("mir_alloc returned NULL");
-
-		MultiByteToWideChar(CP_UTF8, 0, str, -1, val, size);
+		val = mir_a2u(str);
 
 #endif
 	}
