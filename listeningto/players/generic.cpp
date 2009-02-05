@@ -30,6 +30,45 @@ static UINT hTimer = NULL;
 GenericPlayer *singleton = NULL;
 
 
+int m_log(const TCHAR *function, const TCHAR *fmt, ...)
+{
+#if 0
+    va_list va;
+    TCHAR text[1024];
+	size_t len;
+
+	mir_sntprintf(text, MAX_REGS(text) - 10, _T("[%08u - %08u] [%s] "), 
+				 GetCurrentThreadId(), GetTickCount(), function);
+	len = lstrlen(text);
+
+    va_start(va, fmt);
+    mir_vsntprintf(&text[len], MAX_REGS(text) - len, fmt, va);
+    va_end(va);
+
+	BOOL writeBOM = (GetFileAttributes(_T("c:\\miranda_listeningto.log.txt")) == INVALID_FILE_ATTRIBUTES);
+
+	FILE *fp = _tfopen(_T("c:\\miranda_listeningto.log.txt"), _T("ab"));
+
+	if (fp != NULL)
+	{
+#ifdef UNICODE
+		if (writeBOM)
+			fwprintf(fp, L"\xFEFF");
+#endif
+
+		_ftprintf(fp, _T("%s\r\n"), text);
+		fclose(fp);
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+#else
+	return 0;
+#endif
+}
+
 
 GenericPlayer::GenericPlayer()
 {
@@ -53,7 +92,13 @@ GenericPlayer::GenericPlayer()
 GenericPlayer::~GenericPlayer()
 {
 	if (hTimer != NULL)
+	{
 		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
+
+	DestroyWindow(hWnd);
+	hWnd = NULL;
 
 	UnregisterClass(MIRANDA_WINDOWCLASS, hInst);
 	singleton = NULL;
@@ -72,6 +117,11 @@ void GenericPlayer::ProcessReceived()
 
 	if (received[0] == L'\0' || p1 == NULL)
 	{
+		if (received[0] == L'\0')
+			m_log(_T("ProcessReceived"), _T("ERROR: Empty text"));
+		else
+			m_log(_T("ProcessReceived"), _T("ERROR: No \\0 found"));
+
 		// Ignore
 		LeaveCriticalSection(&cs);
 		return;
@@ -88,10 +138,14 @@ void GenericPlayer::ProcessReceived()
 		p = p1 + 2;
 		p1 = wcsstr(p, L"\\0");
 	} while( p1 != NULL && pCount < 10 );
+	if (p1 != NULL)
+		*p1 = L'\0';
 	parts[pCount] = p;
 
 	if (pCount < 5)
 	{
+		m_log(_T("ProcessReceived"), _T("ERROR: Too little pieces"));
+
 		// Ignore
 		LeaveCriticalSection(&cs);
 		return;
@@ -114,6 +168,8 @@ void GenericPlayer::ProcessReceived()
 	if ((i == NUM_PLAYERS && !opts.enable_other_players) 
 		|| (i != NUM_PLAYERS && !players[i]->enabled))
 	{
+		m_log(_T("ProcessReceived"), _T("END: Player disabled"));
+
 		// Ignore
 		LeaveCriticalSection(&cs);
 		return;
@@ -125,6 +181,11 @@ void GenericPlayer::ProcessReceived()
 
 	if (wcscmp(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
 	{
+		if (wcscmp(L"1", parts[0]) != 0)
+			m_log(_T("ProcessReceived"), _T("END: Stoped playing"));
+		else
+			m_log(_T("ProcessReceived"), _T("ERROR: not enought info"));
+
 		// Stoped playing or not enought info
 		LeaveCriticalSection(&cs);
 		NotifyInfoChanged();
@@ -168,12 +229,16 @@ void GenericPlayer::ProcessReceived()
 	// Put back the '\\'s
 	for(i = 1; i <= pCount; i++)
 		*(parts[i] - 2) = L'\\';
+	if (p1 != NULL)
+		*p1 = L'\\';
 
 	wcscpy(last_received, received);
 
 	LeaveCriticalSection(&cs);
 
 	NotifyInfoChanged();
+
+	m_log(_T("ProcessReceived"), _T("END: Success"));
 }
 
 
@@ -182,25 +247,46 @@ static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD
 	KillTimer(NULL, hTimer);
 	hTimer = NULL;
 
+	m_log(_T("SendTimerProc"), _T("It's time to process"));
+
 	if (singleton != NULL)
 		singleton->ProcessReceived();
 }
 
 
-void GenericPlayer::NewData(WCHAR *data, size_t len)
+void GenericPlayer::NewData(const WCHAR *data, size_t len)
 {
+	m_log(_T("NewData"), _T("Processing"));
+
 	if (data[0] == L'\0')
+	{
+		m_log(_T("NewData"), _T("ERROR: Text is empty"));
 		return;
+	}
 
 	EnterCriticalSection(&cs);
 
-	if (wcsncmp(received, data, min(len, 1024)) != 0)
+	len = min(len, 1023);
+	if (wcsncmp(received, data, len) != 0)
 	{
-		wcsncpy(received, data, min(len, 1024));
+		m_log(_T("NewData"), _T("Got new text, scheduling update"));
+
+		wcsncpy(received, data, len);
+		received[len] = L'\0';
+
+#ifdef UNICODE
+		m_log(_T("NewData"), _T("Text: %s"), received);
+#else
+		m_log(_T("NewData"), _T("Text: %S"), received);
+#endif
 
 		if (hTimer)
 			KillTimer(NULL, hTimer);
 		hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
+	}
+	else
+	{
+		m_log(_T("NewData"), _T("END: Text is the same as last time"));
 	}
 
 	LeaveCriticalSection(&cs);
@@ -213,12 +299,27 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 	{
 		case WM_COPYDATA:
 		{
+			m_log(_T("ReceiverWndProc"), _T("START: Received message"));
+
 			COPYDATASTRUCT* pData = (PCOPYDATASTRUCT) lParam;
 			if (pData == NULL || pData->dwData != MIRANDA_DW_PROTECTION 
 					|| pData->cbData == 0 || pData->lpData == NULL)
-				return FALSE;
+			{
+				if (pData == NULL)
+					m_log(_T("ReceiverWndProc"), _T("ERROR: COPYDATASTRUCT* is NULL"));
+				else if (pData->dwData != MIRANDA_DW_PROTECTION)
+					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->dwData is incorrect"));
+				else if (pData->cbData == 0)
+					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->cbData is 0"));
+				else if (pData->lpData == NULL)
+					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->lpData is NULL"));
 
-			singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
+				return FALSE;
+			}
+
+			m_log(_T("ReceiverWndProc"), _T("Going to process"));
+			if (singleton != NULL)
+				singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
 
 			return TRUE;
 		}

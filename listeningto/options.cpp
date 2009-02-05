@@ -186,6 +186,7 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 	EnableWindow(GetDlgItem(hwndDlg, IDC_XSTATUS_L), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_SET_XSTATUS), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_CHECK_XSTATUS), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHECK_XSTATUS_MUSIC), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_IGNORE_XSTATUS), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_CONTACTS_G), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_OVERRIDE_CONTACTS_TEMPLATE), enabled);

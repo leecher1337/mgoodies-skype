@@ -95,20 +95,21 @@ PollPlayer::PollPlayer()
 
 
 
-CallbackPlayer::CallbackPlayer()
+CallbackPlayer::CallbackPlayer() : changed(FALSE), csFreed(FALSE)
 {
-	changed = FALSE;
 	InitializeCriticalSection(&cs);
 }
 
 CallbackPlayer::~CallbackPlayer()
 {
 	DeleteCriticalSection(&cs);
+	csFreed = TRUE;
 }
 
 void CallbackPlayer::FreeData()
 {
-	EnterCriticalSection(&cs);
+	if (!csFreed)
+		EnterCriticalSection(&cs);
 
 	if (listening_info.cbSize != 0)
 	{
@@ -116,7 +117,8 @@ void CallbackPlayer::FreeData()
 		changed = TRUE;
 	}
 
-	LeaveCriticalSection(&cs);
+	if (!csFreed)
+		LeaveCriticalSection(&cs);
 }
 
 int CallbackPlayer::ChangedListeningInfo()

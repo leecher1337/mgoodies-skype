@@ -54,11 +54,14 @@ Boston, MA 02111-1307, USA.
 #include <m_variables.h>
 #include <m_clui.h>
 #include "m_cluiframes.h"
+#include <m_hotkeys.h>
+
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
 #include "../utils/mir_buffer.h"
+#include "../utils/utf8_helpers.h"
 
 #include "m_listeningto.h"
 #include "music.h"
@@ -76,9 +79,6 @@ extern PLUGINLINK *pluginLink;
 
 #define MIR_FREE(_X_) { mir_free(_X_); _X_ = NULL; }
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
-
-#define DEFAULT_TEMPLATE_CHANGED "changed his/her nickname to %s"
-#define DEFAULT_TEMPLATE_REMOVED "removed his/her nickname"
 
 
 #ifdef UNICODE

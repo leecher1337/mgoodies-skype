@@ -38,7 +38,10 @@ void InitMusic()
 void FreeMusic()
 {
 	for(int i = 0; i < NUM_PLAYERS; i++)
+	{
 		delete players[i];
+		players[i] = NULL;
+	}
 }
 
 

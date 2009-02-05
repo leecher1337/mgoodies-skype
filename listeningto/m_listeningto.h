@@ -29,6 +29,15 @@ Boston, MA 02111-1307, USA.
 #define MIRANDA_WINDOWCLASS _T("Miranda.ListeningTo")
 #define MIRANDA_DW_PROTECTION 0x8754
 
+#define LISTENINGTO_ANSI 1
+#define LISTENINGTO_UNICODE 2
+
+#ifdef UNICODE
+# define LISTENINGTO_TCHAR LISTENINGTO_UNICODE
+#else
+# define LISTENINGTO_TCHAR LISTENINGTO_ANSI
+#endif
+
 
 /*
 Return TRUE if sending listening to is enabled for this protocol
@@ -60,10 +69,11 @@ lParam: BOOL - enabled
 /*
 Provide new info about a song change to listening to
 
-wParam: WCHAR * - song data, in format L"<Status 0-stoped 1-playing>\\0<Player>\\0<Type>\\0<Title>\\0<Artist>\\0<Album>\\0<Track>\\0<Year>\\0<Genre>\\0<Length (secs)>\\0<Radio Station>\\0"
-lParam: ignored
+wParam: WCHAR * or char * - song data, in format "<Status 0-stoped 1-playing>\\0<Player>\\0<Type>\\0<Title>\\0<Artist>\\0<Album>\\0<Track>\\0<Year>\\0<Genre>\\0<Length (secs)>\\0<Radio Station>\\0"
+lParam: format of wParam: one of LISTENINGTO_ANSI or LISTENINGTO_UNICODE . Anything else will be handled as unicode
 */
 #define MS_LISTENINGTO_SET_NEW_SONG		"ListeningTo/SetNewSong"
+
 
 
 #endif // __M_LISTENINGTO_H__

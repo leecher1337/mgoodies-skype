@@ -21,7 +21,7 @@ Boston, MA 02111-1307, USA.
 #include "..\\commons.h"
 
 
-WATrack *instance = NULL;
+static WATrack *instance = NULL;
 
 int NewStatusCallback(WPARAM wParam, LPARAM lParam) 
 {
@@ -42,7 +42,11 @@ WATrack::WATrack()
 WATrack::~WATrack()
 {
 	if (hNewStatusHook != NULL) 
+	{
 		UnhookEvent(hNewStatusHook);
+		hNewStatusHook = NULL;
+	}
+	instance = NULL;
 }
 
 
