@@ -57,6 +57,7 @@ class CallbackPlayer : public Player
 {
 protected:
 	BOOL changed;
+	BOOL csFreed;
 
 public:
 	CRITICAL_SECTION cs;

@@ -30,5 +30,5 @@ public:
 	WCHAR received[1024];
 	WCHAR last_received[1024];
 	void ProcessReceived();
-	void NewData(WCHAR *data, size_t len);
+	void NewData(const WCHAR *data, size_t len);
 };

@@ -56,7 +56,13 @@ WindowsMediaPlayer::WindowsMediaPlayer()
 WindowsMediaPlayer::~WindowsMediaPlayer()
 {
 	if (hTimer != NULL)
+	{
 		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
+
+	DestroyWindow(hWnd);
+	hWnd = NULL;
 
 	UnregisterClass(WMP_WINDOWCLASS, hInst);
 	singleton = NULL;
@@ -97,6 +103,8 @@ void WindowsMediaPlayer::ProcessReceived()
 		p = p1 + 2;
 		p1 = wcsstr(p, L"\\0");
 	} while( p1 != NULL && pCount < 7 );
+	if (p1 != NULL)
+		*p1 = L'\0';
 	parts[pCount] = p;
 
 	// Fill cache
@@ -115,6 +123,8 @@ void WindowsMediaPlayer::ProcessReceived()
 	// Put back the '\\'s
 	for(int i = 1; i <= pCount; i++)
 		*(parts[i] - 2) = L'\\';
+	if (p1 != NULL)
+		*p1 = L'\\';
 
 	LeaveCriticalSection(&cs);
 
@@ -146,10 +156,11 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 			EnterCriticalSection(&singleton->cs);
 
-			if (wcsncmp(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
+			size_t len = min(pData->cbData / 2, 1023);
+			if (wcsncmp(singleton->received, (WCHAR*) pData->lpData, len) != 0)
 			{
-				wcsncpy(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
-				singleton->received[1023] = L'\0';
+				wcsncpy(singleton->received, (WCHAR*) pData->lpData, len);
+				singleton->received[len] = L'\0';
 
 				if (hTimer)
 					KillTimer(NULL, hTimer);
@@ -159,7 +170,6 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 			LeaveCriticalSection(&singleton->cs);
 
 			return TRUE;
-			break;
 		}
 		case WM_DESTROY :
 			PostQuitMessage(0);

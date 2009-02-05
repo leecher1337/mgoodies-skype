@@ -19,15 +19,20 @@ Boston, MA 02111-1307, USA.
 
 
 #include "commons.h"
+#include <vector>
 
 
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 // Service called by the main menu
-#define MS_LISTENINGTO_MAINMENU		"ListeningTo/MainMenu"
+#define MS_LISTENINGTO_MAINMENU				"ListeningTo/MainMenu"
 
 // Service called by toptoolbar
-#define MS_LISTENINGTO_TTB		"ListeningTo/TopToolBar"
+#define MS_LISTENINGTO_TTB					"ListeningTo/TopToolBar"
+
+// Services called by hotkeys
+#define MS_LISTENINGTO_HOTKEYS_ENABLE		"ListeningTo/HotkeysEnable"
+#define MS_LISTENINGTO_HOTKEYS_DISABLE		"ListeningTo/HotkeysDisable"
 
 #define ICON_NAME "LISTENING_TO_ICON"
 
@@ -39,12 +44,12 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,2,2),
+	PLUGIN_MAKE_VERSION(0,1,3,0),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/listeningto",
+	"© 2006-2009 Ricardo Pescuma Domenecci",
+	"http://pescuma.org/miranda/listeningto",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -57,9 +62,11 @@ PLUGININFOEX pluginInfo={
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+struct MM_INTERFACE mmi;
+struct UTF8_INTERFACE utfi;
 
-static HANDLE hHooks[6] = {0};
-static HANDLE hServices[8] = {0};
+static std::vector<HANDLE> hHooks;
+static std::vector<HANDLE> hServices;
 static HANDLE hEnableStateChangedEvent = NULL;
 
 static HANDLE hTTB = NULL;
@@ -99,6 +106,8 @@ int GetUnknownText(WPARAM wParam,LPARAM lParam);
 int SetNewSong(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 void SetListeningInfos(LISTENINGTOINFO *lti);
+int HotkeysEnable(WPARAM wParam,LPARAM lParam);
+int HotkeysDisable(WPARAM wParam,LPARAM lParam);
 
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai);
@@ -174,24 +183,27 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink = link;
 
-	init_mir_malloc();
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 
 	CoInitialize(NULL);
 
 	// Services
-	hServices[0] = CreateServiceFunction(MS_LISTENINGTO_ENABLED, ListeningToEnabled);
-	hServices[1] = CreateServiceFunction(MS_LISTENINGTO_ENABLE, EnableListeningTo);
-	hServices[2] = CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat);
-	hServices[3] = CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat);
-	hServices[4] = CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption);
-	hServices[5] = CreateServiceFunction(MS_LISTENINGTO_GETUNKNOWNTEXT, GetUnknownText);
-	hServices[6] = CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked);
-	hServices[7] = CreateServiceFunction(MS_LISTENINGTO_SET_NEW_SONG, SetNewSong);
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_ENABLED, ListeningToEnabled) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_ENABLE, EnableListeningTo) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_GETUNKNOWNTEXT, GetUnknownText) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_SET_NEW_SONG, SetNewSong) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_HOTKEYS_ENABLE, HotkeysEnable) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_HOTKEYS_DISABLE, HotkeysDisable) );
 	
 	// Hooks
-	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
-	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
+	hHooks.push_back( HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded) );
+	hHooks.push_back( HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown) );
+	hHooks.push_back( HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged) );
 
 	hEnableStateChangedEvent = CreateHookableEvent(ME_LISTENINGTO_ENABLE_STATE_CHANGED);
 
@@ -256,7 +268,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	if (ServiceExists(MS_CLIST_EXTRA_ADD_ICON))
 	{
-		hHooks[4] = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
+		hHooks.push_back( HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild) );
 	}
 
     // updater plugin support
@@ -270,14 +282,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/listeningto_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/listeningto#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/listeningto_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/listeningto#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/listeningtoW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/listeningtoW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/listeningto.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/listeningto.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -362,7 +374,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		proto_itens_num++;
 	}
 
-	hHooks[5] = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
+	hHooks.push_back( HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded) );
 
 	// Variables support
 	if (ServiceExists(MS_VARS_REGISTERTOKEN))
@@ -423,6 +435,62 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
 	}
 
+	// Hotkeys support
+	if (ServiceExists(MS_HOTKEY_REGISTER))
+	{
+		HOTKEYDESC hkd = {0};
+		hkd.cbSize = sizeof(hkd);
+		hkd.pszSection = Translate("Listening to");
+
+		hkd.pszService = MS_LISTENINGTO_HOTKEYS_ENABLE;
+		hkd.pszName = Translate("ListeningTo/EnableAll");
+		hkd.pszDescription = Translate("Send to all protocols");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.pszService = MS_LISTENINGTO_HOTKEYS_DISABLE;
+		hkd.pszName = Translate("ListeningTo/DisableAll");
+		hkd.pszDescription = Translate("Don't send to any protocols");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		PROTOCOLDESCRIPTOR **protos;
+		int count;
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+		for (int i = 0; i < count; i++)
+		{
+			if (protos[i]->type != PROTOTYPE_PROTOCOL)
+				continue;
+			
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO) &&
+				!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
+				continue;
+
+			char name[128];
+			CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(name), (LPARAM)name);
+
+			char pszName[128];
+			char pszDescription[256];
+
+			mir_snprintf(pszName, MAX_REGS(pszName), "ListeningTo/Enable%s", protos[i]->szName);
+			mir_snprintf(pszDescription, MAX_REGS(pszDescription), "Send to %s", name);
+
+			hkd.pszService = MS_LISTENINGTO_HOTKEYS_ENABLE;
+			hkd.pszName = Translate(pszName);
+			hkd.pszDescription = Translate(pszDescription);
+			hkd.lParam = (LPARAM) protos[i]->szName;
+			CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+			mir_snprintf(pszName, MAX_REGS(pszName), "ListeningTo/Disable%s", protos[i]->szName);
+			mir_snprintf(pszDescription, MAX_REGS(pszDescription), "Don't send to %s", name);
+
+			hkd.pszService = MS_LISTENINGTO_HOTKEYS_DISABLE;
+			hkd.pszName = Translate(pszName);
+			hkd.pszDescription = Translate(pszDescription);
+			hkd.lParam = (LPARAM) protos[i]->szName;
+			CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+		}
+	}
+
 	ReleaseIconEx(hIcon);
 
 	loaded = TRUE;
@@ -436,21 +504,22 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
+	if (hTimer != NULL)
+	{
+		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
+
 	DeInitOptions();
 
 	DestroyHookableEvent(hEnableStateChangedEvent);
 
 	int i;
-	for(i = 0; i < MAX_REGS(hHooks); i++)
-		if (hHooks[i] != NULL)
-			UnhookEvent(hHooks[i]);
+	for(i = 0; i < hHooks.size(); i++)
+		UnhookEvent(hHooks[i]);
 
-	for(i = 0; i < MAX_REGS(hServices); i++)
-		if (hServices[i] != NULL)
-			DestroyServiceFunction(hServices[i]);
-
-	if (hTimer != NULL)
-		KillTimer(NULL, hTimer);
+	for(i = 0; i < hServices.size(); i++)
+		DestroyServiceFunction(hServices[i]);
 
 	FreeMusic();
 
@@ -477,7 +546,7 @@ int TopToolBarLoaded(WPARAM wParam, LPARAM lParam)
 {
 	BOOL enabled = ListeningToEnabled(NULL);
 
-	CreateServiceFunction(MS_LISTENINGTO_TTB, TopToolBarClick);
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_TTB, TopToolBarClick) );
 
 	TTBButton ttb = {0};
 	ttb.cbSize = sizeof(ttb);
@@ -798,6 +867,18 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 }
 
 
+int HotkeysEnable(WPARAM wParam,LPARAM lParam) 
+{
+	return EnableListeningTo(lParam, TRUE);
+}
+
+
+int HotkeysDisable(WPARAM wParam,LPARAM lParam) 
+{
+	return EnableListeningTo(lParam, FALSE);
+}
+
+
 int GetTextFormat(WPARAM wParam,LPARAM lParam) 
 {
 	if (!loaded)
@@ -1048,11 +1129,21 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 
 int SetNewSong(WPARAM wParam,LPARAM lParam)
 {
-	WCHAR *data = (WCHAR *) wParam;
-	if (data == NULL)
+	if (lParam == NULL)
 		return -1;
 
-	((GenericPlayer *) players[GENERIC])->NewData(data, wcslen(data));
+	if (lParam == LISTENINGTO_ANSI)
+	{
+		CharToWchar data((char *) wParam);
+		((GenericPlayer *) players[GENERIC])->NewData(data, wcslen(data));
+	}
+	else
+	{
+		WCHAR *data = (WCHAR *) wParam;
+		((GenericPlayer *) players[GENERIC])->NewData(data, wcslen(data));
+	}
+
+
 	return 0;
 }
 
