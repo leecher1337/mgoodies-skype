@@ -100,4 +100,14 @@ void StartTimer();
 int ProtoServiceExists(const char *szModule, const char *szService);
 
 
+struct ProtocolInfo
+{
+	char *proto;
+	HANDLE hMenu;
+	int old_xstatus;
+	TCHAR old_xstatus_name[1024];
+	TCHAR old_xstatus_message[1024];
+};
+
+
 #endif // __COMMONS_H__

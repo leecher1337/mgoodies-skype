@@ -28,6 +28,12 @@ HANDLE hOptHook = NULL;
 
 Options opts;
 
+extern ProtocolInfo *proto_itens;
+extern int proto_itens_num;
+
+BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
+
+
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -248,6 +254,16 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
+				for (int i = 0; i < proto_itens_num; i++)
+				{
+					CLISTMENUITEM clmi = {0};
+					clmi.cbSize = sizeof(clmi);
+					clmi.flags = CMIM_FLAGS 
+								| (ListeningToEnabled(proto_itens[i].proto, TRUE) ? CMIF_CHECKED : 0) 
+								| (opts.enable_sending ? 0 : CMIF_GRAYED);
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[i].hMenu, (LPARAM) &clmi);
+				}
+
 				StartTimer();
 			}
 
