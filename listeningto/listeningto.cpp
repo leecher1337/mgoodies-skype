@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.
 // Services called by hotkeys
 #define MS_LISTENINGTO_HOTKEYS_ENABLE		"ListeningTo/HotkeysEnable"
 #define MS_LISTENINGTO_HOTKEYS_DISABLE		"ListeningTo/HotkeysDisable"
+#define MS_LISTENINGTO_HOTKEYS_TOGGLE		"ListeningTo/HotkeysToggle"
 
 #define ICON_NAME "LISTENING_TO_ICON"
 
@@ -76,15 +77,7 @@ static UINT hTimer = 0;
 static HANDLE hExtraImage = NULL;
 static DWORD lastInfoSetTime = 0;
 
-struct ProtocolInfo
-{
-	char *proto;
-	HANDLE hMenu;
-	int old_xstatus;
-	TCHAR old_xstatus_name[1024];
-	TCHAR old_xstatus_message[1024];
-
-} *proto_itens = NULL;
+ProtocolInfo *proto_itens = NULL;
 int proto_itens_num = 0;
 
 
@@ -96,7 +89,7 @@ int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam);
 int SettingChanged(WPARAM wParam,LPARAM lParam);
 
 int MainMenuClicked(WPARAM wParam, LPARAM lParam);
-BOOL ListeningToEnabled(char *proto);
+BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
 int ListeningToEnabled(WPARAM wParam, LPARAM lParam);
 int EnableListeningTo(WPARAM wParam,LPARAM lParam);
 int GetTextFormat(WPARAM wParam,LPARAM lParam);
@@ -108,6 +101,7 @@ void SetExtraIcon(HANDLE hContact, BOOL set);
 void SetListeningInfos(LISTENINGTOINFO *lti);
 int HotkeysEnable(WPARAM wParam,LPARAM lParam);
 int HotkeysDisable(WPARAM wParam,LPARAM lParam);
+int HotkeysToggle(WPARAM wParam,LPARAM lParam);
 
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai);
@@ -199,6 +193,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_SET_NEW_SONG, SetNewSong) );
 	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_HOTKEYS_ENABLE, HotkeysEnable) );
 	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_HOTKEYS_DISABLE, HotkeysDisable) );
+	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_HOTKEYS_TOGGLE, HotkeysToggle) );
 	
 	// Hooks
 	hHooks.push_back( HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded) );
@@ -321,7 +316,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// Add all protos
 
 	mi.pszName = Translate("Send to all protocols");
-	mi.flags = CMIF_CHILDPOPUP | (ListeningToEnabled(NULL) ? CMIF_CHECKED : 0);
+	mi.flags = CMIF_CHILDPOPUP 
+			| (ListeningToEnabled(NULL, TRUE) ? CMIF_CHECKED : 0)
+			| (opts.enable_sending ? 0 : CMIF_GRAYED);
 	proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
 	proto_itens[proto_itens_num].proto = NULL;
 	proto_itens[proto_itens_num].old_xstatus = 0;
@@ -361,7 +358,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 
 		mi.pszName = text;
-		mi.flags = CMIF_CHILDPOPUP | (ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0);
+		mi.flags = CMIF_CHILDPOPUP 
+				| (ListeningToEnabled(protos[i]->szName, TRUE) ? CMIF_CHECKED : 0)
+				| (opts.enable_sending ? 0 : CMIF_GRAYED);
 
 		proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
 		proto_itens[proto_itens_num].proto = protos[i]->szName;
@@ -443,13 +442,18 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		hkd.pszSection = Translate("Listening to");
 
 		hkd.pszService = MS_LISTENINGTO_HOTKEYS_ENABLE;
-		hkd.pszName = Translate("ListeningTo/EnableAll");
+		hkd.pszName = "ListeningTo/EnableAll";
 		hkd.pszDescription = Translate("Send to all protocols");
 		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
 
 		hkd.pszService = MS_LISTENINGTO_HOTKEYS_DISABLE;
-		hkd.pszName = Translate("ListeningTo/DisableAll");
+		hkd.pszName = "ListeningTo/DisableAll";
 		hkd.pszDescription = Translate("Don't send to any protocols");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.pszService = MS_LISTENINGTO_HOTKEYS_TOGGLE;
+		hkd.pszName = "ListeningTo/ToggleAll";
+		hkd.pszDescription = Translate("Toggle send to all protocols");
 		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
 
 		PROTOCOLDESCRIPTOR **protos;
@@ -475,7 +479,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			mir_snprintf(pszDescription, MAX_REGS(pszDescription), "Send to %s", name);
 
 			hkd.pszService = MS_LISTENINGTO_HOTKEYS_ENABLE;
-			hkd.pszName = Translate(pszName);
+			hkd.pszName = pszName;
 			hkd.pszDescription = Translate(pszDescription);
 			hkd.lParam = (LPARAM) protos[i]->szName;
 			CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
@@ -484,7 +488,16 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			mir_snprintf(pszDescription, MAX_REGS(pszDescription), "Don't send to %s", name);
 
 			hkd.pszService = MS_LISTENINGTO_HOTKEYS_DISABLE;
-			hkd.pszName = Translate(pszName);
+			hkd.pszName = pszName;
+			hkd.pszDescription = Translate(pszDescription);
+			hkd.lParam = (LPARAM) protos[i]->szName;
+			CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+			mir_snprintf(pszName, MAX_REGS(pszName), "ListeningTo/Toggle%s", protos[i]->szName);
+			mir_snprintf(pszDescription, MAX_REGS(pszDescription), "Toggle send to %s", name);
+
+			hkd.pszService = MS_LISTENINGTO_HOTKEYS_TOGGLE;
+			hkd.pszName = pszName;
 			hkd.pszDescription = Translate(pszDescription);
 			hkd.lParam = (LPARAM) protos[i]->szName;
 			CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
@@ -531,11 +544,9 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 int TopToolBarClick(WPARAM wParam, LPARAM lParam)
 {
-	BOOL enabled = !ListeningToEnabled(NULL);
+	BOOL enabled = !ListeningToEnabled(NULL, TRUE);
 
 	EnableListeningTo(NULL, enabled);
-
-	CallService(MS_TTB_SETBUTTONSTATE, (WPARAM) hTTB, (LPARAM) (enabled ? TTBST_PUSHED : TTBST_RELEASED));
 
 	return 0;
 }
@@ -544,7 +555,7 @@ int TopToolBarClick(WPARAM wParam, LPARAM lParam)
 // Toptoolbar hook to put an icon in the toolbar
 int TopToolBarLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	BOOL enabled = ListeningToEnabled(NULL);
+	BOOL enabled = ListeningToEnabled(NULL, TRUE);
 
 	hServices.push_back( CreateServiceFunction(MS_LISTENINGTO_TTB, TopToolBarClick) );
 
@@ -573,14 +584,14 @@ int MainMenuClicked(WPARAM wParam, LPARAM lParam)
 	if (pos >= proto_itens_num || pos < 0)
 		return 0;
 
-	EnableListeningTo((WPARAM) proto_itens[pos].proto, (LPARAM) !ListeningToEnabled(proto_itens[pos].proto));
+	EnableListeningTo((WPARAM) proto_itens[pos].proto, (LPARAM) !ListeningToEnabled(proto_itens[pos].proto, TRUE));
 	return 0;
 }
 
 
-BOOL ListeningToEnabled(char *proto) 
+BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal) 
 {
-	if (!opts.enable_sending)
+	if (!ignoreGlobal && !opts.enable_sending)
 		return FALSE;
 
 	if (proto == NULL)
@@ -601,7 +612,7 @@ BOOL ListeningToEnabled(char *proto)
 				!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
 				continue;
 
-			if (!ListeningToEnabled(protos[i]->szName))
+			if (!ListeningToEnabled(protos[i]->szName, TRUE))
 			{
 				enabled = FALSE;
 				break;
@@ -834,7 +845,9 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 			{
 				CLISTMENUITEM clmi = {0};
 				clmi.cbSize = sizeof(clmi);
-				clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
+				clmi.flags = CMIM_FLAGS 
+						| (lParam ? CMIF_CHECKED : 0)
+						| (opts.enable_sending ? 0 : CMIF_GRAYED);
 				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[i].hMenu, (LPARAM) &clmi);
 
 				LISTENINGTOINFO lti = {0};
@@ -848,11 +861,13 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 		}
 
 		// Set all protos info
-		BOOL enabled = (lParam && ListeningToEnabled(NULL));
+		BOOL enabled = (lParam && ListeningToEnabled(NULL, TRUE));
 
 		CLISTMENUITEM clmi = {0};
 		clmi.cbSize = sizeof(clmi);
-		clmi.flags = CMIM_FLAGS | (enabled ? CMIF_CHECKED : 0);
+		clmi.flags = CMIM_FLAGS 
+				| (enabled ? CMIF_CHECKED : 0)
+				| (opts.enable_sending ? 0 : CMIF_GRAYED);
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[0].hMenu, (LPARAM) &clmi);
 
 		if (hTTB != NULL)
@@ -876,6 +891,12 @@ int HotkeysEnable(WPARAM wParam,LPARAM lParam)
 int HotkeysDisable(WPARAM wParam,LPARAM lParam) 
 {
 	return EnableListeningTo(lParam, FALSE);
+}
+
+
+int HotkeysToggle(WPARAM wParam,LPARAM lParam) 
+{
+	return EnableListeningTo(lParam, !ListeningToEnabled((char *)lParam, TRUE));
 }
 
 
@@ -1198,8 +1219,9 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	else \
 	{ \
 		ai->flags = AIF_DONTPARSE; \
+		TCHAR *ret = mir_tstrdup(lti.__field__); \
 		FreeListeningInfo(&lti); \
-		return mir_tstrdup(lti.__field__); \
+		return ret; \
 	} \
 	FreeListeningInfo(&lti)
 

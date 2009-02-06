@@ -15,11 +15,10 @@ If you want this to implement some other player, I need a link to a page that ex
 
 One last thing: when reporting bugs, please post the name and version of the player you are using.
 
-It also support Variables plugin to format the info, but it has to be the lastest version of the plugin (avaiable at http://pboonplugins.googlecode.com/). This version allows to use temporary variables in the replacement too, so you can use %artist%.
+It also support Variables plugin to format the info, but it has to be the lastest version of the plugin. This version allows to use temporary variables in the replacement too, so you can use %artist%.
 
 Todo:
 - Better support for iTunes (it is not good now)
-- For Quintessential player you can use this one: http://www.quinnware.com/list_plugins.php?plugin=149
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=10912
 
