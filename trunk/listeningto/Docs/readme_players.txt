@@ -12,6 +12,7 @@ You also can install this plugins into the player yourself (and avoid the above 
 - Winamp: copy the gen_mlt.dll to <WinampDir>\Plugins\gen_mlt.dll
 - foobar2000: copy the foo_mlt.dll to <FoobarDir>\components\foo_mlt.dll
 - QCD: can be found at http://test.quinnware.com/list_plugins.php?plugin=149
+- Songbird: you can use WMP support from http://addons.songbirdnest.com/addon/1204
 
 PS: Auto loading does not work on Win 9X
 
