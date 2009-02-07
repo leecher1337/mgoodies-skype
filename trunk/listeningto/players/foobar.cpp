@@ -20,11 +20,16 @@ Boston, MA 02111-1307, USA.
 
 #include "..\\commons.h"
 
-
+static TCHAR *wcs[] = {
+		_T("{DA7CD0DE-1602-45e6-89A1-C2CA151E008E}/1"),	// Foobar 0.9.1
+		_T("{DA7CD0DE-1602-45e6-89A1-C2CA151E008E}"),
+		_T("{97E27FAA-C0B3-4b8e-A693-ED7881E99FC1}"),	// Foobar 0.9.5.3
+		_T("{E7076D1C-A7BF-4f39-B771-BCBE88F2A2A8}"),	// Foobar Columns UI
+};
 
 Foobar::Foobar()
 { 
 	name = _T("foobar2000");
-	window_class = _T("{DA7CD0DE-1602-45e6-89A1-C2CA151E008E}/1");
-	window_name = NULL;
+	window_classes = wcs;
+	num_window_classes = MAX_REGS(wcs);
 }

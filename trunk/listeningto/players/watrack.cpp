@@ -95,16 +95,26 @@ void WATrack::EnableDisable()
 
 void WATrack::GetData()
 {
+#ifdef UNICODE
+
 	SONGINFO *si = NULL;
 
-	int playing = CallService(MS_WAT_GETMUSICINFO, 0, (LPARAM) &si);
+	int playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_UNICODE, (LPARAM) &si);
+
+#else
+
+	SONGINFOA *si = NULL;
+
+	int playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_ANSI, (LPARAM) &si);
+
+#endif
 
 	// See if something is playing
-	if (playing !=  0
+	if (playing !=  WAT_PLS_NORMAL
 		|| si == NULL
 		|| si->status != 1
-		|| ( (si->artist == NULL || si->artist[0] == L'0') 
-			 && (si->title == NULL || si->title[0] == L'0') ) )
+		|| ( (si->artist == NULL || si->artist[0] == _T('0')) 
+			 && (si->title == NULL || si->title[0] == _T('0')) ) )
 	{
 		if (listening_info.cbSize != 0)
 		{
@@ -120,16 +130,16 @@ void WATrack::GetData()
 	FreeData();
 
 	if (si->album != NULL && si->album[0] != L'\0')
-		listening_info.ptszAlbum = mir_u2t(si->album);
+		listening_info.ptszAlbum = mir_tstrdup(si->album);
 
 	if (si->artist != NULL && si->artist[0] != L'\0')
-		listening_info.ptszArtist = mir_u2t(si->artist);
+		listening_info.ptszArtist = mir_tstrdup(si->artist);
 
 	if (si->title != NULL && si->title[0] != L'\0')
-		listening_info.ptszTitle = mir_u2t(si->title);
+		listening_info.ptszTitle = mir_tstrdup(si->title);
 
 	if (si->year != NULL && si->year[0] != L'\0')
-		listening_info.ptszYear = mir_u2t(si->year);
+		listening_info.ptszYear = mir_tstrdup(si->year);
 
 	if (si->track > 0)
 	{
@@ -138,7 +148,7 @@ void WATrack::GetData()
 	}
 
 	if (si->genre != NULL && si->genre[0] != L'\0')
-		listening_info.ptszGenre = mir_u2t(si->genre);
+		listening_info.ptszGenre = mir_tstrdup(si->genre);
 
 	if (si->total > 0)
 	{
@@ -159,7 +169,7 @@ void WATrack::GetData()
 	else
 		listening_info.ptszType = mir_tstrdup(_T("Music"));
 
-	listening_info.ptszPlayer = mir_u2t(si->player);
+	listening_info.ptszPlayer = mir_tstrdup(si->player);
 
 	listening_info.cbSize = sizeof(listening_info);
 	listening_info.dwFlags = LTI_TCHAR;

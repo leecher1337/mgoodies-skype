@@ -81,20 +81,9 @@ extern PLUGINLINK *pluginLink;
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
-#ifdef UNICODE
-
-#define TCHAR_TO_CHAR(dest, orig)	mir_snprintf(dest, MAX_REGS(dest), "%S", orig)
-#define CHAR_TO_TCHAR(dest, orig)	mir_sntprintf(dest, MAX_REGS(dest), "%S", orig)
-
-#else
-
-#define TCHAR_TO_CHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
-#define CHAR_TO_TCHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
-
-#endif
-
 
 #define MIN_TIME_BEETWEEN_SETS 10000 // ms
+
 
 void StartTimer();
 int ProtoServiceExists(const char *szModule, const char *szService);

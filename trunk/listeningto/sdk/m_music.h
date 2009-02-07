@@ -1,6 +1,8 @@
 #ifndef M_MUSIC
 #define M_MUSIC
 
+#define MIID_WATRACK {0xfc6c81f4, 0x837e, 0x4430, {0x96, 0x01, 0xa0, 0xaa, 0x43, 0x17, 0x7a, 0xe3}}
+
 typedef struct tSongInfoA {
     CHAR *artist;
     CHAR *title;
@@ -30,9 +32,10 @@ typedef struct tSongInfoA {
     int fps;
     __int64 date;
     CHAR *txtver;
-    // not implemented yet
-    HANDLE cover;   //TBITMAP?
-    WCHAR *lyric;
+    CHAR *lyric;
+    CHAR *cover;
+    int volume;
+    CHAR *url;
 } SONGINFOA, *LPSONGINFOA;
 
 typedef struct tSongInfo {
@@ -65,17 +68,47 @@ typedef struct tSongInfo {
     __int64 date;
     WCHAR txtver;
     // not implemented yet
-    HANDLE cover;   //TBITMAP?
     WCHAR *lyric;
+    WCHAR *cover;
+    int volume;
+    WCHAR *url;
 } SONGINFO, *LPSONGINFO;
 
+#if defined(_UNICODE)
+  #define WAT_INF_TCHAR WAT_INF_UNICODE
+  #define SongInfoT tSongInfo
+#else
+  #define WAT_INF_TCHAR WAT_INF_ANSI
+  #define SongInfoT tSongInfoA
+#endif 
+
+  // result codes
+#define WAT_RES_UNKNOWN     -2
+#define WAT_RES_NOTFOUND    -1
+#define WAT_RES_ERROR       WAT_RES_NOTFOUND
+#define WAT_RES_OK          0
+#define WAT_RES_ENABLED     WAT_RES_OK
+#define WAT_RES_DISABLED    1
+  // internal
+#define WAT_RES_NEWFILE     3
+
+#define WAT_PLS_NORMAL   WAT_RES_OK
+#define WAT_PLS_NOMUSIC  WAT_RES_DISABLED
+#define WAT_PLS_NOTFOUND WAT_RES_NOTFOUND
+
+#define WAT_INF_UNICODE 0
+#define WAT_INF_ANSI    1
+#define WAT_INF_UTF8    2
+#define WAT_INF_CHANGES 0x100
+
 /*
-  wParam : 0 - Unicode strings, 1 - ANSI, other - UTF8
+  wParam : WAT_INF_* constant
   lParam : pointer to LPSONGINGO (Unicode) or LPSONGINFOA (ANSI/UTF8)
   Affects: Fill structure by currently played music info
-  returns: 0 if unsuccesful, 1 if song played, 2 if only player is run
+  returns: WAT_PLS_* constant
   note: pointer will be point to global SONGINFO structure of plugin
   warning: Non-Unicode data filled only by request
+  if lParam=0 only internal SongInfo structure will be filled
   Example:
     LPSONGINFO p;
     PluginLink->CallService(MS_WAT_GETMUSICINFO,0,(DWORD)&p);
@@ -84,17 +117,77 @@ typedef struct tSongInfo {
 #define MS_WAT_GETMUSICINFO  "WATrack/GetMusicInfo"
 
 /*
+  wParam:0
+  lParam : pointer to pSongInfo (Unicode)
+  Affects: Fill structure by info from file named in SongInfo.mfile
+  returns: 0, if success
+  note: fields, which values can't be obtained, leaves old values.
+    you must free given strings by miranda mmi.free
+*/
+#define MS_WAT_GETFILEINFO "WATrack/GetFileInfo"
+
+/*
+  Get user's Music Info
+*/
+#define MS_WAT_GETCONTACTINFO = "WATrack/GetContactInfo"
+
+#define WAT_CTRL_PREV   1
+#define WAT_CTRL_PLAY   2
+#define WAT_CTRL_PAUSE  3
+#define WAT_CTRL_STOP   4
+#define WAT_CTRL_NEXT   5
+#define WAT_CTRL_VOLDN  6
+#define WAT_CTRL_VOLUP  7
+#define WAT_CTRL_SEEK   8 // lParam is new position (sec)
+/*
+  wParam: button code (WAT_CTRL_* const)
+  lParam: 0, or value (see WAT_CTRL_* const comments)
+  Affects: emulate player button pressing
+  returns: 0 if unsuccesful
+*/
+#define MS_WAT_PRESSBUTTON  "WATrack/PressButton"
+
+// ------------ Plugin/player status ------------
+
+/*
+  wParam: 1  - switch off plugin
+          0  - switch on plugin
+          -1 - switch plugin status
+          other - get plugin status
+  lParam: 0
+  Affects: Switch plugin status to enabled or disabled
+  returns: old plugin status, 0, if was enabled
+*/
+
+#define MS_WAT_PLUGINSTATUS "WATrack/PluginStatus"
+
+#define ME_WAT_MODULELOADED "WATrack/ModuleLoaded"
+
+#define WAT_EVENT_PLAYERSTATUS    1 // 0-normal; 1-no music (possibly stopped); 2-not found
+#define WAT_EVENT_NEWTRACK        2
+#define WAT_EVENT_PLUGINSTATUS    3 // 0-enabled; 1-dis.temporary; 2-dis.permanent
+#define WAT_EVENT_NEWPLAYER       4 //
+#define WAT_EVENT_NEWTEMPLATE     5 // TM_* constant
+
+/*
+  Plugin or player status changed:
+  wParam: type of event (see above)
+  lParam: value
+*/
+#define ME_WAT_NEWSTATUS    "WATrack/NewStatus"
+
+// ---------- Popup module ------------
+
+/*
   wParam: not used
   lParam: not used
   Affects: Show popup or Info window with current music information
   note: Only Info window will be showed if Popup plugin disabled
 */
 
-#define MS_NORMAL   0
-#define MS_NOMUSIC  1
-#define MS_NOTFOUND 2
-
 #define MS_WAT_SHOWMUSICINFO "WATrack/ShowMusicInfo"
+
+// --------- Statistic (report) module -------------
 
 /*
   wParam: pointer to log file name or NULL
@@ -112,83 +205,44 @@ typedef struct tSongInfo {
 #define MS_WAT_PACKLOG = "WATrack/PackLog"
 
 /*
-  wParam, lParam: not used
-  returns: pointer to INI file path (ANSI, do not free!)
+  wParam: not used
+  lParam: pointer to SongInfo
 */
-#define MS_WAT_GETINIPATH   "WATrack/GetINIPath"
+#define MS_WAT_ADDTOLOG = "WATrack/AddToLog"
 
-/*
-  wParam: 1  - switch off plugin
-          0  - switch on plugin
-          -1 - switch plugin status
-          other - get plugin status
-  lParam: 0
-  Affects: Switch plugin status to enabled or disabled
-  returns: old plugin status, 0, if was enabled
-*/
+// ----------- Formats and players -----------
 
-#define MS_WAT_PLUGINSTATUS "WATrack/PluginStatus"
+// media file status
 
-
-#define WAT_CTRL_PREV   1
-#define WAT_CTRL_PLAY   2
-#define WAT_CTRL_PAUSE  3
-#define WAT_CTRL_STOP   4
-#define WAT_CTRL_NEXT   5
-#define WAT_CTRL_VOLDN  6
-#define WAT_CTRL_VOLUP  7
-#define WAT_CTRL_SEEK   8 // lParam is new position (sec)
-// #define WAT_CTRL_OPEN   9
-
-/*
-  wParam: button code (WAT_CTRL_* const)
-  lParam: 0, or value (see WAT_CTRL_* const comments)
-  Affects: emulate player button pressing
-  returns: 0 if unsuccesful
-*/
-
-#define MS_WAT_PRESSBUTTON  "WATrack/PressButton"
-
-#define ME_WAT_MODULELOADED "WATrack/ModuleLoaded"
-
-
-#define WAT_EVENT_PLAYERSTATUS    1 // 0-normal; 1-no music (possibly stopped); 2-not found
-#define WAT_EVENT_NEWTRACK        2
-#define WAT_EVENT_PLUGINSTATUS    3 // 0-enabled; 1-dis.temporary; 2-dis.permanent
-
-/*
-  Plugin or player status changed:
-  wParam: type of event (see above)
-  lParam: value
-*/
-
-#define ME_WAT_NEWSTATUS    "WATrack/NewStatus"
+#define WAT_MES_STOPPED 0
+#define WAT_MES_PLAYING 1
+#define WAT_MES_PAUSED  2
+#define WAT_MES_UNKNOWN -1
 
 #define WAT_ACT_REGISTER    1
 #define WAT_ACT_UNREGISTER  2
 #define WAT_ACT_DISABLE     3
 #define WAT_ACT_ENABLE      4
 #define WAT_ACT_GETSTATUS   5         // not found/enabled/disabled
+#define WAT_ACT_SETACTIVE   6
 #define WAT_ACT_REPLACE     0x10000   // can be combined with WAT_REGISTERFORMAT
 
-  // result codes
-#define WAT_RES_NOTFOUND    -1
-#define WAT_RES_ERROR       WAT_RES_NOTFOUND
-#define WAT_RES_OK          0
-#define WAT_RES_DISABLED    1
-#define WAT_RES_ENABLED     2
-  // internal
-#define WAT_RES_NEWFILE     3
-
   // flags
-#define WAT_OPT_DISABLED    0x01	// format registered but disabled
-#define WAT_OPT_ONLYONE     0x02	// format can't be overwriten
-#define WAT_OPT_PLAYERINFO  0x04	// song info from player
-#define WAT_OPT_WINAMPAPI   0x08	// Winamp API support
-#define WAT_OPT_CHECKTIME   0x10	// check file time for changes
-#define WAT_OPT_USEOLE      0x20	// use COM/OLE interface
-#define WAT_OPT_LAST        0x40	// (for Winamp Clone) put to the end of queue
-#define WAT_OPT_INTERNAL    0x80  // internal. Do not use this flag!!!
+#define WAT_OPT_DISABLED    0x0001 // format registered but disabled
+#define WAT_OPT_ONLYONE     0x0002 // format can't be overwriten
+#define WAT_OPT_PLAYERINFO  0x0004 // song info from player
+#define WAT_OPT_WINAMPAPI   0x0008 // Winamp API support
+#define WAT_OPT_CHECKTIME   0x0010 // check file time for changes
+#define WAT_OPT_VIDEO       0x0020 // only for format registering used
+#define WAT_OPT_LAST        0x0040 // (internal)
+#define WAT_OPT_FIRS        0x0080 // (internal)
+#define WAT_OPT_TEMPLATE    0x0100 // (internal)
+#define WAT_OPT_IMPLANTANT  0x0200 // use process implantation
+#define WAT_OPT_HASURL      0x0400 // (player registration) URL field present
+#define WAT_OPT_CHANGES     0x0800 // obtain only chaged values
+                                   // (volume, status, window text, elapsed time)
+#define WAT_OPT_MULTITHREAD 0x8000 // Use multithread scan
+#define WAT_OPT_KEEPOLD     0x4000 // Keep Old opened file
 
 
 typedef BOOL (__cdecl *LPREADFORMATPROC)(LPSONGINFO Info);
@@ -230,11 +284,12 @@ typedef int (__cdecl *LPCOMMANDPROC)(int command, int value);
 typedef struct tPlayerCell {
     CHAR *Desc;
     int flags;
-    HICON Icon;                 // can be 0. for registration only
-    LPCHECKPROC Check;          // check player 
-    LPNAMEPROC GetName;         // can be NULL. get media filename
-    LPINFOPROC GetInfo;         // can be NULL. get info from player
-    LPCOMMANDPROC Command;      // can be NULL. send command to player
+    HICON Icon;            // can be 0. for registration only
+    LPCHECKPROC Check;     // check player 
+    LPNAMEPROC GetName;    // can be NULL. get media filename
+    LPINFOPROC GetInfo;    // can be NULL. get info from player
+    LPCOMMANDPROC Command; // can be NULL. send command to player
+    CHAR *URL;             // only if WAT_OPT_HASURL flag present
 } PLAYERCELL, *LPPLAYERCELL;
 
 /*
@@ -245,5 +300,46 @@ typedef struct tPlayerCell {
 */
 
 #define MS_WAT_PLAYER   "WATrack/Player"
+
+// --------- Templates ----------
+
+//templates
+#define TM_MESSAGE    0 // privat message
+#define TM_CHANNEL    1 // chat
+#define TM_STAT_TITLE 2 // xstatus title
+#define TM_STAT_TEXT  3 // [x]status text
+#define TM_POPTITLE   4 // popup title
+#define TM_POPTEXT    5 // popup text
+#define TM_EXPORT     6 // other app
+#define TM_FRAMEINFO  7 // frame
+
+#define TM_SETTEXT    0x100 // only for service
+#define TM_GETTEXT    0     // only for service
+
+/*
+  wParam: not used
+  lParam: Unicode template
+  returns: New Unicode (replaced) string
+*/
+#define MS_WAT_REPLACETEXT "WATrack/ReplaceText"
+
+/*
+  event types for History
+  Blob structure for EVENTTYPE_WAT_ANSWER:
+   Uniciode artist#0title#0album#0answer
+*/
+#define EVENTTYPE_WAT_REQUEST 9601
+#define EVENTTYPE_WAT_ANSWER  9602
+#define EVENTTYPE_WAT_ERROR   9603
+#define EVENTTYPE_WAT_MESSAGE 9604
+
+/*
+  wParam:  Template type (TM_* constants).
+  lParam:  Template string for template setup, or not used
+  returns: pointer to statically allocated string (DON'T free!)
+  note:    Template set if wParam with TM_SETTEXT combined. If used for
+           Protocol-dependent templates, used only for default templates.
+*/
+#define MS_WAT_TEMPLATE = "WATrack/Templates"
 
 #endif

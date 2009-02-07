@@ -160,8 +160,8 @@ int CallbackPlayer::ChangedListeningInfo()
 
 CodeInjectionPlayer::CodeInjectionPlayer()
 {
-	window_class = NULL;
-	window_name = NULL;
+	window_classes = NULL;
+	num_window_classes = 0;
 	message_window_class = NULL;
 	next_request_time = 0;
 	found_window = FALSE;
@@ -190,7 +190,13 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	}
 
 	// Window is opened?
-	HWND hwnd = FindWindow(window_class, window_name);
+	HWND hwnd = NULL;
+	for(int i = 0; i < num_window_classes; i++)
+	{
+		hwnd = FindWindow(window_classes[i], NULL);
+		if (hwnd != NULL)
+			break;
+	}
 	if (hwnd == NULL)
 	{
 		if (found_window)
@@ -287,8 +293,8 @@ BOOL CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 
 ExternalPlayer::ExternalPlayer()
 {
-	window_class = NULL;
-	window_name = NULL;
+	window_classes = NULL;
+	num_window_classes = 0;
 	next_request_time = 0;
 	found_window = FALSE;
 }
@@ -315,7 +321,13 @@ int ExternalPlayer::ChangedListeningInfo()
 	}
 
 	// Window is opened?
-	HWND hwnd = FindWindow(window_class, window_name);
+	HWND hwnd = NULL;
+	for(int i = 0; i < num_window_classes; i++)
+	{
+		hwnd = FindWindow(window_classes[i], NULL);
+		if (hwnd != NULL)
+			break;
+	}
 	if (hwnd == NULL)
 	{
 		if (found_window)
