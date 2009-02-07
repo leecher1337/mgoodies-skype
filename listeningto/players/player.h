@@ -74,8 +74,8 @@ class CodeInjectionPlayer : public PollPlayer
 {
 protected:
 	char *dll_name;
-	TCHAR *window_class;
-	TCHAR *window_name;
+	TCHAR **window_classes;
+	int num_window_classes;
 	TCHAR *message_window_class;
 	DWORD next_request_time;
 	BOOL found_window;
@@ -92,8 +92,8 @@ public:
 class ExternalPlayer : public PollPlayer
 {
 protected:
-	TCHAR *window_class;
-	TCHAR *window_name;
+	TCHAR **window_classes;
+	int num_window_classes;
 	DWORD next_request_time;
 	BOOL found_window;
 

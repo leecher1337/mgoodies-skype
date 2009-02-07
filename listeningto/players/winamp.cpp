@@ -21,12 +21,15 @@ Boston, MA 02111-1307, USA.
 #include "..\\commons.h"
 
 
+static TCHAR *wcs[] = {
+		_T("Winamp v1.x")
+};
 
 Winamp::Winamp()
 { 
 	name = _T("Winamp");
-	window_class = _T("Winamp v1.x");
-	window_name = NULL;
+	window_classes = wcs;
+	num_window_classes = MAX_REGS(wcs);
 	message_window_class = MIRANDA_WINDOWCLASS _T(".Winamp");
 	dll_name = "gen_mlt";
 }
