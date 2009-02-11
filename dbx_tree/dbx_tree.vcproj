@@ -331,7 +331,7 @@
 		</Configuration>
 		<Configuration
 			Name="myDebugExecute|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			OutputDirectory="..\..\..\..\Miranda IM Test\Plugins"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"

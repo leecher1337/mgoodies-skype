@@ -139,16 +139,16 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 		} break;
 		case DBT_ST_UTF8:
 		{
-			dbcgs->pValue->type = DBVT_ASCIIZ; //DBVT_UTF8;
-			dbcgs->pValue->pszVal = mir_utf8decode(set.Value.pUTF8, NULL);
-			dbcgs->pValue->cchVal = set.Value.Length - 1;
+			dbcgs->pValue->type = DBVT_WCHAR;
+			dbcgs->pValue->pwszVal = mir_utf8decodeW(set.Value.pUTF8);
+			dbcgs->pValue->cchVal = wcslen(dbcgs->pValue->pwszVal);
+			mir_free(set.Value.pUTF8);
 		} break;
 		case DBT_ST_WCHAR:
 		{
-			dbcgs->pValue->type = DBVT_ASCIIZ;
-			dbcgs->pValue->pszVal = mir_u2a(set.Value.pWide);
-			dbcgs->pValue->cchVal = strlen(dbcgs->pValue->pszVal);
-			mir_free(set.Value.pWide);
+			dbcgs->pValue->type = DBVT_WCHAR;
+			dbcgs->pValue->pwszVal = set.Value.pWide;
+			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_BLOB:
 		{
@@ -515,7 +515,19 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingWrite((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
-	NotifyEventHooks(hSettingChangeEvent, hContact, pSetting);
+	if (dbcws->value.type == DBVT_WCHAR)
+	{
+		dbcws->value.type = DBVT_UTF8;
+		wchar_t * tmp = dbcws->value.pwszVal;
+		dbcws->value.pszVal = mir_utf8encodeW(dbcws->value.pwszVal);
+		NotifyEventHooks(hSettingChangeEvent, hContact, pSetting);
+		mir_free(dbcws->value.pszVal);
+		dbcws->value.type = DBVT_WCHAR;
+		dbcws->value.pwszVal = tmp;		
+	} else {
+		NotifyEventHooks(hSettingChangeEvent, hContact, pSetting);
+	}
+
 	return 0;
 }
 
