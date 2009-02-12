@@ -329,18 +329,6 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 		return -1;
 	}
 
-	if ((set.Type & DBT_STF_VariableLength) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-	{
-		if (!( ((set.Type == DBT_ST_ANSI)   && (dbcgs->pValue->type == DBVT_ASCIIZ)) ||
-			     ((set.Type == DBT_ST_UTF8)   && (dbcgs->pValue->type == DBVT_UTF8  )) ||
-					 ((set.Type == DBT_ST_WCHAR)  && (dbcgs->pValue->type == DBVT_WCHAR )) ||
-					 ((set.Type == DBT_ST_BLOB)   && (dbcgs->pValue->type == DBVT_BLOB  )) ))
-		{
-			mir_free(set.Value.pBlob);
-			return -1;
-		}
-	}
-
 	switch (set.Type)
 	{
 		case DBT_ST_ANSI:
