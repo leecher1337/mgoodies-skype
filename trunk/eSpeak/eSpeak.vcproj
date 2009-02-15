@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="9,00"
 	Name="eSpeak"
 	ProjectGUID="{AC88F3D2-D114-4174-8F0E-209921DAB63A}"
 	RootNamespace="eSpeak"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -74,7 +75,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
+				AdditionalDependencies="winmm.lib PAStaticWMME.lib comsuppw.lib"
 				OutputFile="..\..\bin\debug unicode\Plugins\meSpeakW.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -83,6 +84,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Unicode_Debug/eSpeakW.pdb"
 				BaseAddress="0x3EC20000"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Unicode_Debug/eSpeakW.lib"
 				TargetMachine="1"
 			/>
@@ -105,9 +108,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -176,7 +176,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
+				AdditionalDependencies="winmm.lib PAStaticWMME.lib sapi.lib"
 				OutputFile="..\..\bin\release\Plugins\meSpeakW.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -187,6 +187,8 @@
 				GenerateMapFile="true"
 				MapFileName=".\Unicode_Release/eSpeakW.map"
 				BaseAddress="0x3EC20000"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Unicode_Release/eSpeakW.lib"
 				TargetMachine="1"
 			/>
@@ -209,9 +211,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -280,7 +279,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
+				AdditionalDependencies="winmm.lib PAStaticWMME.lib sapi.lib"
 				OutputFile="..\..\bin\release\Plugins\meSpeak.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -291,6 +290,8 @@
 				GenerateMapFile="true"
 				MapFileName=".\Release/eSpeak.map"
 				BaseAddress="0x3EC20000"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Release/eSpeak.lib"
 				TargetMachine="1"
 			/>
@@ -313,9 +314,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -381,7 +379,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
+				AdditionalDependencies="winmm.lib PAStaticWMME.lib sapi.lib"
 				OutputFile="..\..\bin\debug\Plugins\meSpeak.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -390,6 +388,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/eSpeak.pdb"
 				BaseAddress="0x3EC20000"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug/eSpeak.lib"
 				TargetMachine="1"
 			/>
@@ -412,9 +412,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -600,46 +597,6 @@
 			</File>
 			<File
 				RelativePath="..\utils\mir_icons.cpp"
-				>
-				<FileConfiguration
-					Name="Unicode Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Unicode Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\utils\mir_memory.cpp"
 				>
 				<FileConfiguration
 					Name="Unicode Debug|Win32"
@@ -865,6 +822,14 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\eSpeak\event.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\eSpeak\fifo.cpp"
+				>
 			</File>
 			<File
 				RelativePath="eSpeak\intonation.cpp"
@@ -1251,46 +1216,6 @@
 				>
 			</File>
 			<File
-				RelativePath="eSpeak\tr_english.cpp"
-				>
-				<FileConfiguration
-					Name="Unicode Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Unicode Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="eSpeak\tr_languages.cpp"
 				>
 				<FileConfiguration
@@ -1329,10 +1254,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="eSpeak\tr_languages.h"
-				>
 			</File>
 			<File
 				RelativePath="eSpeak\translate.cpp"
@@ -1421,6 +1342,18 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\eSpeak\wave.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\eSpeak\wave_pulse.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\eSpeak\wave_sada.cpp"
+				>
 			</File>
 			<File
 				RelativePath="eSpeak\wavegen.cpp"

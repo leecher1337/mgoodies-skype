@@ -35,8 +35,8 @@
 #include "translate.h"
 #include "wave.h"
 
-const char *version_string = "1.39.39  11.Dec.08";
-const int version_phdata  = 0x013900;
+const char *version_string = "1.40  22.Dec.08";
+const int version_phdata  = 0x014000;
 
 int option_device_number = -1;
 
@@ -53,7 +53,7 @@ static unsigned char *phoneme_tab_data = NULL;
 
 int n_phoneme_tables;
 PHONEME_TAB_LIST phoneme_tab_list[N_PHONEME_TABS];
-static int phoneme_tab_number = 0;
+int phoneme_tab_number = 0;
 
 int wavefile_ix;              // a wavefile to play along with the synthesis
 int wavefile_amp;
@@ -65,18 +65,12 @@ int vowel_transition[4];
 int vowel_transition0;
 int vowel_transition1;
 
-void FormantTransitions(frameref_t *seq, int &n_frames, PHONEME_TAB *this_ph, PHONEME_TAB *other_ph, int which);
 int FormantTransition2(frameref_t *seq, int &n_frames, unsigned int data1, unsigned int data2, PHONEME_TAB *other_ph, int which);
 
 
-const char *PhonemeTabName(void)
-{//=============================
-	return(phoneme_tab_list[phoneme_tab_number].name);
-}
 
-
-static int ReadPhFile(char **ptr, const char *fname)
-{//=================================================
+static char *ReadPhFile(void *ptr, const char *fname)
+{//==================================================
 	FILE *f_in;
 	char *p;
 	unsigned int  length;
@@ -88,25 +82,25 @@ static int ReadPhFile(char **ptr, const char *fname)
 	if((f_in = fopen(buf,"rb")) == NULL)
 	{
 		fprintf(stderr,"Can't read data file: '%s'\n",buf);
-		return(1);
+		return(NULL);
 	}
 
-	if(*ptr != NULL)
-		Free(*ptr);
+	if(ptr != NULL)
+		Free(ptr);
 		
 	if((p = Alloc(length)) == NULL)
 	{
 		fclose(f_in);
-		return(-1);
+		return(NULL);
 	}
 	if(fread(p,1,length,f_in) != length)
 	{
 		fclose(f_in);
-		return(-1);
+		return(NULL);
 	}
-	*ptr = p;
+
 	fclose(f_in);
-	return(0);
+	return(p);
 }  //  end of ReadPhFile
 
 
@@ -118,11 +112,11 @@ int LoadPhData()
 	int result = 1;
 	unsigned char *p;
 
-	if(ReadPhFile((char **)(&phoneme_tab_data),"phontab") != 0)
+	if((phoneme_tab_data = (unsigned char *)ReadPhFile((void *)(phoneme_tab_data),"phontab")) == NULL)
 		return(-1);
-	if(ReadPhFile((char **)(&phoneme_index),"phonindex") != 0)
+	if((phoneme_index = (unsigned int *)ReadPhFile((void *)(phoneme_index),"phonindex")) == NULL)
 		return(-1);
-	if(ReadPhFile((char **)(&spects_data),"phondata") != 0)
+	if((spects_data = ReadPhFile((void *)(spects_data),"phondata")) == NULL)
 		return(-1);
    wavefile_data = (unsigned char *)spects_data;
 
@@ -173,8 +167,23 @@ void FreePhData(void)
 }
 
 
-int LookupPh(const char *string)
-{//=============================
+int PhonemeCode(unsigned int mnem)
+{//===============================
+	int ix;
+
+	for(ix=0; ix<n_phoneme_tab; ix++)
+	{
+		if(phoneme_tab[ix] == NULL)
+			continue;
+		if(phoneme_tab[ix]->mnemonic == mnem)
+			return(phoneme_tab[ix]->code);
+	}
+	return(0);
+}
+
+
+int LookupPhonemeString(const char *string)
+{//========================================
 	int  ix;
 	unsigned char c;
 	unsigned int  mnem;
@@ -188,16 +197,8 @@ int LookupPh(const char *string)
 		mnem |= (c << (ix*8));
 	}
 
-	for(ix=0; ix<n_phoneme_tab; ix++)
-	{
-		if(phoneme_tab[ix] == NULL)
-			continue;
-		if(phoneme_tab[ix]->mnemonic == mnem)
-			return(ix);
-	}
-	return(0);
+	return(PhonemeCode(mnem));
 }
-
 
 
 
@@ -456,7 +457,6 @@ frameref_t *LookupSpect(PHONEME_TAB *this_ph, PHONEME_TAB *prev_ph, PHONEME_TAB 
 			if(*match_level == 0)
 				seq_len_adjust = FormantTransition2(frames,nf,vowel_transition0,vowel_transition1,prev_ph,which);
 		}
-//		FormantTransitions(frames,nf,this_ph,other_ph,which);
 	}
 
 	nf1 = nf - 1;

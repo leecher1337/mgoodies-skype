@@ -213,6 +213,14 @@ typedef struct {
 	int  control;
 } MBROLA_TAB;
 
+typedef struct {
+	int speed_factor1;
+	int speed_factor2;
+	int speed_factor3;
+	int min_sample_len;
+	int fast_settings[8];
+} SPEED_FACTORS;
+
 
 // phoneme table
 extern PHONEME_TAB *phoneme_tab[N_PHONEME_TAB];
@@ -297,12 +305,14 @@ void SetEmbedded(int control, int value);
 void SelectPhonemeTable(int number);
 int  SelectPhonemeTableName(const char *name);
 
+void Write4Bytes(FILE *f, int value);
+int Read4Bytes(FILE *f);
+int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, char *err_name,int flags);
+
 
 extern unsigned char *envelope_data[18];
 extern int formant_rate[];         // max rate of change of each formant
-extern int speed_factor1;
-extern int speed_factor2;
-extern int speed_min_sample_len;
+extern SPEED_FACTORS speed;
 
 extern long count_samples;
 extern int outbuf_size;
@@ -326,7 +336,7 @@ espeak_ERROR SetVoiceByProperties(espeak_VOICE *voice_selector);
 espeak_ERROR LoadMbrolaTable(const char *mbrola_voice, const char *phtrans, int srate);
 void SetParameter(int parameter, int value, int relative);
 void MbrolaTranslate(PHONEME_LIST *plist, int n_phonemes, FILE *f_mbrola);
-int MbrolaSynth(char *p_mbrola);
+//int MbrolaSynth(char *p_mbrola);
 int DoSample(PHONEME_TAB *ph1, PHONEME_TAB *ph2, int which, int length_mod, int amp);
 int DoSpect(PHONEME_TAB *this_ph, PHONEME_TAB *prev_ph, PHONEME_TAB *next_ph,
 		int which, PHONEME_LIST *plist, int modulation);

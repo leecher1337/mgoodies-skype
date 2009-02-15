@@ -69,44 +69,46 @@ static int len_path_voices;
 espeak_VOICE voice_selected;
 
 
-
-#define V_NAME       1
-#define V_LANGUAGE   2
-#define V_GENDER     3
-#define V_TRANSLATOR  4
-#define V_PHONEMES    5
-#define V_DICTIONARY  6
+enum {
+	V_NAME = 1,
+	V_LANGUAGE,
+	V_GENDER,
+	V_TRANSLATOR,
+	V_PHONEMES,
+	V_DICTIONARY,
 
 // these affect voice quality, are independent of language
-#define V_FORMANT     7
-#define V_PITCH       8
-#define V_ECHO        9
-#define V_FLUTTER    10
-#define V_ROUGHNESS  11
-#define V_CLARITY    12
-#define V_TONE       13
-#define V_VOICING    14
-#define V_BREATH     15
-#define V_BREATHW    16
+	V_FORMANT,
+	V_PITCH,
+	V_ECHO,
+	V_FLUTTER,
+	V_ROUGHNESS,
+	V_CLARITY,
+	V_TONE,
+	V_VOICING,
+	V_BREATH,
+	V_BREATHW,
 
 // these override defaults set by the translator
-#define V_WORDGAP    17
-#define V_INTONATION 18
-#define V_STRESSLENGTH  19
-#define V_STRESSAMP  20
-#define V_STRESSADD  21
-#define V_DICTRULES   22
-#define V_STRESSRULE  23
-#define V_CHARSET     24
-#define V_NUMBERS     25
-#define V_OPTION      26
+	V_WORDGAP,
+	V_INTONATION,
+	V_STRESSLENGTH,
+	V_STRESSAMP,
+	V_STRESSADD,
+	V_DICTRULES,
+	V_STRESSRULE,
+	V_CHARSET,
+	V_NUMBERS,
+	V_OPTION,
 
-#define V_MBROLA      27
-#define V_KLATT       28
+	V_MBROLA,
+	V_KLATT,
+	V_FAST,
 
 // these need a phoneme table to have been specified
-#define V_REPLACE    29
-#define V_CONSONANTS 30
+	V_REPLACE,
+	V_CONSONANTS
+};
 
 
 
@@ -147,6 +149,7 @@ static keywtab_t keyword_tab[] = {
 	{"mbrola",     V_MBROLA},
 	{"consonants", V_CONSONANTS},
 	{"klatt",      V_KLATT},
+	{"fast_test",  V_FAST},
 
 	// these just set a value in langopts.param[]
 	{"l_dieresis", 0x100+LOPT_DIERESES},
@@ -164,11 +167,12 @@ const char variants_male[N_VOICE_VARIANTS] = {1,2,3,4,5,0};
 const char variants_female[N_VOICE_VARIANTS] = {11,12,13,14,0};
 const char *variant_lists[3] = {variants_either, variants_male, variants_female};
 
-voice_t voicedata;
+static voice_t voicedata;
 voice_t *voice = &voicedata;
 
-char *fgets_strip(char *buf, int size, FILE *f_in)
-{//===============================================
+
+static char *fgets_strip(char *buf, int size, FILE *f_in)
+{//======================================================
 // strip trailing spaces, and truncate lines at // comment
 	int len;
 	char *p;
@@ -187,8 +191,8 @@ char *fgets_strip(char *buf, int size, FILE *f_in)
 }
 
 
-void SetToneAdjust(voice_t *voice, int *tone_pts)
-{//==============================================
+static void SetToneAdjust(voice_t *voice, int *tone_pts)
+{//=====================================================
 	int ix;
 	int pt;
 	int y;
@@ -362,7 +366,7 @@ void VoiceReset(int tone_only)
 // Set voice to the default values
 
 	int  pk;
-	static unsigned char default_heights[N_PEAKS] = {255,255,240,232,210,210,255,255,255};
+	static unsigned char default_heights[N_PEAKS] = {255,255,240,240,220,220,255,255,255};
 	static unsigned char default_widths[N_PEAKS] = {128,128,128,160,171,171,128,128,128};
 
 	static int breath_widths[N_PEAKS] = {0,200,200,400,400,400,600,600,600};
@@ -384,6 +388,7 @@ void VoiceReset(int tone_only)
 	voice->consonant_amp = 100;
 	voice->consonant_ampv = 100;
 	memset(voice->klatt,0,sizeof(voice->klatt));
+	memset(speed.fast_settings,0,sizeof(speed.fast_settings));
 
 #ifdef PLATFORM_RISCOS
 	voice->roughness = 1;
@@ -420,7 +425,6 @@ SetToneAdjust(voice,tone_points);
 	if(tone_only == 0)
 	{
 		n_replace_phonemes = 0;
-		option_tone1 = 0;
 		option_quiet = 0;
 		LoadMbrolaTable(NULL,NULL,0);
 	}
@@ -470,11 +474,11 @@ static void PhonemeReplacement(int type, char *p)
 	if((n < 2) || (n_replace_phonemes >= N_REPLACE_PHONEMES))
 		return;
 
-	if((phon = LookupPh(phon_string1)) == 0)
+	if((phon = LookupPhonemeString(phon_string1)) == 0)
 		return;  // not recognised
 
 	replace_phonemes[n_replace_phonemes].old_ph = phon;
-	replace_phonemes[n_replace_phonemes].new_ph = LookupPh(phon_string2);
+	replace_phonemes[n_replace_phonemes].new_ph = LookupPhonemeString(phon_string2);
 	replace_phonemes[n_replace_phonemes++].type = flags;
 }  //  end of PhonemeReplacement
 
@@ -581,7 +585,7 @@ voice_t *LoadVoice(const char *vname, int control)
 
 	if(!tone_only && (translator != NULL))
 	{
-		delete translator;
+		DeleteTranslator(translator);
 		translator = NULL;
 	}
 
@@ -672,7 +676,7 @@ voice_t *LoadVoice(const char *vname, int control)
 					SelectPhonemeTableName(phonemes_name);
 		
 					if(new_translator != NULL)
-							delete new_translator;
+							DeleteTranslator(new_translator);
 		
 					new_translator = SelectTranslator(translator_name);
 					langopts = &new_translator->langopts;
@@ -704,7 +708,7 @@ voice_t *LoadVoice(const char *vname, int control)
 			sscanf(p,"%s",translator_name);
 
 			if(new_translator != NULL)
-					delete new_translator;
+					DeleteTranslator(new_translator);
 
 			new_translator = SelectTranslator(translator_name);
 			langopts = &new_translator->langopts;
@@ -880,6 +884,11 @@ voice_t *LoadVoice(const char *vname, int control)
 			voice->klatt[KLATT_Kopen] -= 40;
 			break;
 
+		case V_FAST:
+			Read8Numbers(p,speed.fast_settings);
+			SetSpeed(2);
+			break;
+
 		default:
 			if((key & 0xff00) == 0x100)
 			{
@@ -919,7 +928,7 @@ voice_t *LoadVoice(const char *vname, int control)
 			fprintf(stderr,"Unknown phoneme table: '%s'\n",phonemes_name);
 		}
 		voice->phoneme_tab_ix = ix;
-		error = new_translator->LoadDictionary(new_dictionary, control & 4);
+		error = LoadDictionary(new_translator, new_dictionary, control & 4);
 		if(dictionary_name[0]==0)
 			return(NULL);   // no dictionary loaded
 
@@ -962,8 +971,8 @@ voice_t *LoadVoice(const char *vname, int control)
 }  //  end of LoadVoice
 
 
-char *ExtractVoiceVariantName(char *vname, int variant_num)
-{//========================================================
+static char *ExtractVoiceVariantName(char *vname, int variant_num)
+{//===============================================================
 // Remove any voice variant suffix (name or number) from a voice name
 // Returns the voice variant name
 
@@ -1453,8 +1462,8 @@ char const *SelectVoice(espeak_VOICE *voice_select, int *found)
 
 
 
-void GetVoices(const char *path)
-{//=============================
+static void GetVoices(const char *path)
+{//====================================
 	FILE *f_voice;
 	espeak_VOICE *voice_data;
 	int ftype;

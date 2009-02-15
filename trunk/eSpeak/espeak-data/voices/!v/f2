@@ -3,6 +3,8 @@ name female2
 gender female
 
 pitch 142 220
+roughness 3
+
 formant 0 105  80 150
 formant 1 110  80 160
 formant 2 110  70 150
@@ -15,4 +17,4 @@ formant 8 110  70 150
 
 stressAdd 0 0 -10 -10 0 0 10 40
 breath 0 2 3 3 3 3 3 2
-echo 140 12
+echo 140 10

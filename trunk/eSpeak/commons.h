@@ -28,6 +28,8 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <time.h>
 #include <commctrl.h>
+#include <sapi.h>
+#include <vector>
 
 
 // Miranda headers
@@ -58,6 +60,7 @@ Boston, MA 02111-1307, USA.
 #include "../utils/mir_icons.h"
 #include "../utils/mir_buffer.h"
 #include "../utils/ContactAsyncQueue.h"
+#include "../utils/utf8_helpers.h"
 
 #include "resource.h"
 #include "m_speak.h"
@@ -76,31 +79,36 @@ extern PLUGINLINK *pluginLink;
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
+#define RELEASE(_A_) if (_A_ != NULL) { _A_->Release(); _A_ = NULL; }
 
 
 #define ICON_SIZE 16
 #define NAME_SIZE 128
 
+#define GENDER_UNKNOWN 0
 #define GENDER_MALE 1
-#define GENDER_FEMALE 1
-
-#define STRNCPY(DEST, SRC) strncpy(DEST, SRC, MAX_REGS(DEST)); DEST[MAX_REGS(DEST)-1] = '\0'
+#define GENDER_FEMALE 2
 
 int SortVoices(const Voice *voice1, const Voice *voice2);
 
+enum Engine
+{
+	ENGINE_ESPEAK,
+	ENGINE_SAPI
+};
 
 class Variant
 {
 public:
-	char name[NAME_SIZE];
+	TCHAR name[NAME_SIZE];
 	int gender;
-	char id[NAME_SIZE];
+	TCHAR id[NAME_SIZE];
 
-	Variant(const char *aName, int aGender, const char *anId)
+	Variant(const TCHAR *aName, int aGender, const TCHAR *anId)
 	{
-		STRNCPY(name, aName);
+		lstrcpyn(name, aName, MAX_REGS(name));
 		gender = aGender;
-		STRNCPY(id, anId);
+		lstrcpyn(id, anId, MAX_REGS(id));
 	}
 };
 
@@ -108,17 +116,21 @@ public:
 class Voice
 {
 public:
-	char name[NAME_SIZE];
+	Engine engine;
+	TCHAR name[NAME_SIZE];
 	int prio;
 	int gender;
-	char id[NAME_SIZE];
+	TCHAR age[NAME_SIZE];
+	TCHAR id[NAME_SIZE];
 
-	Voice(const char *aName, int aPrio, int aGender, const char *anId)
+	Voice(Engine anEngine, const TCHAR *aName, int aPrio, int aGender, const TCHAR *anAge, const TCHAR *anId)
 	{
-		STRNCPY(name, aName);
+		engine = anEngine;
+		lstrcpyn(name, aName, MAX_REGS(name));
 		prio = aPrio;
 		gender = aGender;
-		STRNCPY(id, anId);
+		lstrcpyn(age, anAge, MAX_REGS(age));
+		lstrcpyn(id, anId, MAX_REGS(id));
 	}
 };
 
@@ -147,20 +159,27 @@ public:
 #define SCROLL 0
 #define COMBO 1
 
-static struct {
-	espeak_PARAMETER eparam;
+struct RANGE
+{
 	int min;
 	int max;
 	int def;
+};
+
+static struct {
+	espeak_PARAMETER eparam;
+	RANGE espeak;
+	RANGE sapi;
 	char *setting;
 	int ctrl;
+	int label;
 	int type;
 } PARAMETERS[] = {
-	{ espeakRATE, 80, 389, 165, "Rate", IDC_RATE, SCROLL }, 
-	{ espeakVOLUME, 10, 190, 100, "Volume", IDC_VOLUME, SCROLL }, 
-	{ espeakPITCH, 0, 99, 50, "Pitch", IDC_PITCH, SCROLL }, 
-	{ espeakRANGE, -100, 99, 50, "Range", IDC_RANGE, SCROLL },
-	{ espeakPUNCTUATION, espeakPUNCT_NONE, espeakPUNCT_SOME, espeakPUNCT_SOME, "Punctuation", IDC_PUNCT, COMBO },
+	{ espeakRATE, { 80, 389, 165 }, { -10, 10, 0 }, "Rate", IDC_RATE, IDC_RATE_L, SCROLL }, 
+	{ espeakVOLUME, { 10, 190, 100 }, { 0, 100, 100 }, "Volume", IDC_VOLUME, IDC_VOLUME_L, SCROLL }, 
+	{ espeakPITCH, { 0, 99, 50 }, { 0, -1, 0 }, "Pitch", IDC_PITCH, IDC_PITCH_L, SCROLL }, 
+	{ espeakRANGE, { -100, 99, 50 }, { 0, -1, 0 }, "Range", IDC_RANGE, IDC_RANGE_L, SCROLL },
+	{ espeakPUNCTUATION, { espeakPUNCT_NONE, espeakPUNCT_SOME, espeakPUNCT_SOME }, { 0, -1, 0 }, "Punctuation", IDC_PUNCT, IDC_PUNCT_L, COMBO }
 };
 
 #define NUM_PARAMETERS MAX_REGS(PARAMETERS)
@@ -211,6 +230,8 @@ int GetContactParam(HANDLE hContact, int param);
 void SetContactParam(HANDLE hContact, int param, int value);
 
 void GetLangPackLanguage(TCHAR *name, size_t len);
+
+int SAPI_GetDefaultRateFor(TCHAR *id);
 
 HICON LoadIconEx(Language *lang, BOOL copy = FALSE);
 

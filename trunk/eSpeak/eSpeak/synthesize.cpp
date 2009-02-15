@@ -45,9 +45,7 @@ PHONEME_LIST phoneme_list[N_PHONEME_LIST];
 int mbrola_delay;
 char mbrola_name[20];
 
-int speed_factor1;
-int speed_factor2;
-int speed_min_sample_len;
+SPEED_FACTORS speed;
 
 static int  last_pitch_cmd;
 static int  last_amp_cmd;
@@ -88,6 +86,7 @@ const char *WordToString(unsigned int word)
 	buf[4] = 0;
 	return(buf);
 }
+
 
 
 void SynthesizeInit()
@@ -191,9 +190,9 @@ int PauseLength(int pause, int control)
 	int len;
 
 	if(control == 0)
-		len = (pause * speed_factor1)/256;
+		len = (pause * speed.speed_factor1)/256;
 	else
-		len = (pause * speed_factor2)/256;
+		len = (pause * speed.speed_factor2)/256;
 
 	if(len < 5) len = 5;      // mS, limit the amount to which pauses can be shortened
 	return(len);
@@ -252,8 +251,8 @@ static int DoSample2(int index, int which, int length_mod, int amp)
 		length = length1;
 
 
-	length = (length * speed_factor2)/256;
-	min_length = speed_min_sample_len;
+	length = (length * speed.speed_factor2)/256;
+	min_length = speed.min_sample_len;
 	if(format==0)
 		min_length *= 2;
 
@@ -477,8 +476,8 @@ static void AdjustFormants(frame_t *fr, int target, int min, int max, int f1_adj
 }
 
 
-int VowelCloseness(frame_t *fr)
-{//============================
+static int VowelCloseness(frame_t *fr)
+{//===================================
 // return a value 0-3 depending on the vowel's f1
 	int f1;
 
@@ -981,7 +980,7 @@ if(which==1)
 		length_factor = length_mod;
 		if(frame1->frflags & FRFLAG_LEN_MOD)     // reduce effect of length mod
 		{
-			length_factor = (length_mod*4 + 256*3)/7;
+			length_factor = (length_mod*(256-speed.speed_factor3) + 256*speed.speed_factor3)/256;
 		}
 		len = (frame_length * samplerate)/1000;
 		len = (len * length_factor)/256;
@@ -1107,10 +1106,6 @@ static void DoEmbedded(int &embix, int sourceix)
 	} while ((word & 0x80) == 0);
 }
 
-
-void SwitchDictionary()
-{//====================
-}
 
 
 int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
@@ -1482,7 +1477,7 @@ int SynthOnTimer()
 	}
 
 	do {
-		if (WcmdqUsed() > 0)
+		if(WcmdqUsed() > 0)
 			WavegenOpenSound();
 
 		if(Generate(phoneme_list,&n_phoneme_list,1)==0)
@@ -1517,7 +1512,6 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 
 	int clause_tone;
 	char *voice_change;
-	FILE *f_mbrola;
 	static FILE *f_text=NULL;
 	static const void *p_text=NULL;
 
@@ -1602,12 +1596,12 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 
 	// read the next clause from the input text file, translate it, and generate
 	// entries in the wavegen command queue
-	p_text = translator->TranslateClause(f_text,p_text,&clause_tone,&voice_change);
+	p_text = TranslateClause(translator, f_text, p_text, &clause_tone, &voice_change);
 
-	translator->CalcPitches(clause_tone);
-	translator->CalcLengths();
+	CalcPitches(translator, clause_tone);
+	CalcLengths(translator);
 
-	translator->GetTranslatedPhonemeString(translator->phon_out,sizeof(translator->phon_out));
+	GetTranslatedPhonemeString(translator->phon_out,sizeof(translator->phon_out));
 	if(option_phonemes > 0)
 	{
 		fprintf(f_trans,"%s\n",translator->phon_out);
@@ -1635,9 +1629,12 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 #ifdef USE_MBROLA_LIB
 		MbrolaTranslate(phoneme_list,n_phoneme_list,NULL);
 #else
-		if((f_mbrola = f_trans) == stderr)
-			f_mbrola = stdout;
-		MbrolaTranslate(phoneme_list,n_phoneme_list,f_mbrola);
+		{
+			FILE *f_mbrola;
+			if((f_mbrola = f_trans) == stderr)
+				f_mbrola = stdout;
+			MbrolaTranslate(phoneme_list,n_phoneme_list,f_mbrola);
+		}
 #endif
 	}
 

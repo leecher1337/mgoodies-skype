@@ -4,7 +4,7 @@ meSpeak plugin
 CAUTION: THIS IS A BETA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR OWN RISK.
 
 
-This is a service plugin that read text aloud. It is based on eSpeak engine (http://espeak.sourceforge.net/).
+This is a service plugin that read text aloud. It is based on eSpeak engine (http://espeak.sourceforge.net/) and also support SAPI voices (ver 5.1).
 
 It provides the following functionality:
 - System voice
