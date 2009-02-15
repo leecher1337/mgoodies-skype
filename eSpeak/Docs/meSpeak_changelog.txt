@@ -2,6 +2,10 @@ meSpeak
 
 Changelog:
 
+. 0.2.0.0
+  + Added SAPI voices
+  + Added option to truncate text by size
+
 . 0.0.0.12
   * Another fix for stop speaking bug
 

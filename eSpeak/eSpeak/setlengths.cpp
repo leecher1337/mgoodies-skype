@@ -136,24 +136,37 @@ void SetSpeed(int control)
 	{
 		// these are used in synthesis file
 		s1 = (x * voice->speedf1)/256;
-		speed_factor1 = (256 * s1)/115;      // full speed adjustment, used for pause length
-if(speed_factor1 < 15)
-	speed_factor1 = 15;
+		speed.speed_factor1 = (256 * s1)/115;      // full speed adjustment, used for pause length
+if(speed.speed_factor1 < 15)
+	speed.speed_factor1 = 15;
 		if(wpm >= 170)
 //			speed_factor2 = 100 + (166*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
-			speed_factor2 = 110 + (150*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
+			speed.speed_factor2 = 110 + (150*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
 		else
-			speed_factor2 = 128 + (128*s1)/130;  // = 215 at 170 wpm
+			speed.speed_factor2 = 128 + (128*s1)/130;  // = 215 at 170 wpm
 
 		if(wpm2 > 369)
 		{
 			if(wpm2 > 390)
 				wpm2 = 390;
-			speed_factor2 = faster[wpm2 - 370];
+			speed.speed_factor2 = faster[wpm2 - 370];
 		}
 	}
 
-	speed_min_sample_len = 450;
+	speed.min_sample_len = 450;
+	speed.speed_factor3 = 110;   // controls the effect of FRFLAG_LEN_MOD reduce length change
+
+	if(wpm2 >= 370)
+	{
+		// TESTING
+		// use experimental fast settings if they have been specified in the Voice
+		if(speed.fast_settings[0] > 0)
+			speed.speed_factor1 = speed.fast_settings[0];
+		if(speed.fast_settings[1] > 0)
+			speed.speed_factor2 = speed.fast_settings[1];
+		if(speed.fast_settings[2] > 0)
+			speed.speed_factor3 = speed.fast_settings[2];
+	}
 }  //  end of SetSpeed
 
 
@@ -253,8 +266,8 @@ static void DoEmbedded2(int &embix)
 }
 
 
-void Translator::CalcLengths()
-{//===========================
+void CalcLengths(Translator *tr)
+{//==============================
 	int ix;
 	int ix2;
 	PHONEME_LIST *prev;
@@ -318,14 +331,14 @@ void Translator::CalcLengths()
 			if(prev->type == phSTOP)
 				p->prepause = 60;
 
-			if((langopts.word_gap & 0x10) && (p->newword))
+			if((tr->langopts.word_gap & 0x10) && (p->newword))
 				p->prepause = 60;
 
 			if(p->ph->phflags & phLENGTHENSTOP)
 				p->prepause += 30;
 
 			if(p->synthflags & SFLAG_LENGTHEN)
-				p->prepause += langopts.long_stop;
+				p->prepause += tr->langopts.long_stop;
 			break;
 
 		case phVFRICATIVE:
@@ -353,7 +366,7 @@ void Translator::CalcLengths()
 			else
 				p->length = 256;
 
-			if((langopts.word_gap & 0x10) && (p->newword))
+			if((tr->langopts.word_gap & 0x10) && (p->newword))
 				p->prepause = 30;
 
 			break;
@@ -383,14 +396,14 @@ void Translator::CalcLengths()
 						p->prepause = 0;
 				}
 			}
-			if((langopts.word_gap & 0x10) && (p->newword) && (p->prepause < 20))
+			if((tr->langopts.word_gap & 0x10) && (p->newword) && (p->prepause < 20))
 				p->prepause = 20;
 
 			break;
 
 		case phLIQUID:
 		case phNASAL:
-			p->amp = stress_amps[1];  // unless changed later
+			p->amp = tr->stress_amps[1];  // unless changed later
 			p->length = 256;  //  TEMPORARY
 			min_drop = 0;
 			
@@ -457,9 +470,9 @@ void Translator::CalcLengths()
 			if(stress > 7) stress = 7;
 
 			if(pre_sonorant)
-				p->amp = stress_amps[stress]-1;
+				p->amp = tr->stress_amps[stress]-1;
 			else
-				p->amp = stress_amps[stress];
+				p->amp = tr->stress_amps[stress];
 
 			if(emphasized)
 				p->amp = 25;
@@ -467,8 +480,8 @@ void Translator::CalcLengths()
 			if(ix >= (n_phoneme_list-3))
 			{
 				// last phoneme of a clause, limit its amplitude
-				if(p->amp > langopts.param[LOPT_MAXAMP_EOC])
-					p->amp = langopts.param[LOPT_MAXAMP_EOC];
+				if(p->amp > tr->langopts.param[LOPT_MAXAMP_EOC])
+					p->amp = tr->langopts.param[LOPT_MAXAMP_EOC];
 			}
 
 			// is the last syllable of a word ?
@@ -501,19 +514,19 @@ void Translator::CalcLengths()
 
 			if(more_syllables==0)
 			{
-				len = langopts.length_mods0[next2->ph->length_mod *10+ next->ph->length_mod];
+				len = tr->langopts.length_mods0[next2->ph->length_mod *10+ next->ph->length_mod];
 
-				if((next->newword) && (langopts.word_gap & 0x20))
+				if((next->newword) && (tr->langopts.word_gap & 0x20))
 				{
 					// consider as a pause + first phoneme of the next word
-					length_mod = (len + langopts.length_mods0[next->ph->length_mod *10+ 1])/2;
+					length_mod = (len + tr->langopts.length_mods0[next->ph->length_mod *10+ 1])/2;
 				}
 				else
 					length_mod = len;
 			}
 			else
 			{
-				length_mod = langopts.length_mods[next2->ph->length_mod *10+ next->ph->length_mod];
+				length_mod = tr->langopts.length_mods[next2->ph->length_mod *10+ next->ph->length_mod];
 
 				if((next->type == phNASAL) && (next2->type == phSTOP || next2->type == phVSTOP) && (next3->ph->phflags & phFORTIS))
 					length_mod -= 15;
@@ -528,8 +541,7 @@ void Translator::CalcLengths()
 				length_mod *= speed3;
 
 			length_mod = length_mod / 128;
-//			if(length_mod < 9)
-//				length_mod = 9;     // restrict how much lengths can be reduced
+
 			if(length_mod < 8)
 				length_mod = 8;     // restrict how much lengths can be reduced
 
@@ -546,8 +558,8 @@ void Translator::CalcLengths()
 				length_mod += 20;
 			}
 			
-			if((len = stress_lengths[stress]) == 0)
-				len = stress_lengths[6];
+			if((len = tr->stress_lengths[stress]) == 0)
+				len = tr->stress_lengths[6];
 
 			length_mod = (length_mod * len)/128;
 
@@ -564,7 +576,7 @@ void Translator::CalcLengths()
 			{
 				// this is the last syllable in the clause, lengthen it - more for short vowels
 				len = p->ph->std_length;
-				if(langopts.stress_flags & 0x40000)
+				if(tr->langopts.stress_flags & 0x40000)
 					len=200;  // don't lengthen short vowels more than long vowels at end-of-clause
 				length_mod = length_mod * (256 + (280 - len)/3)/256;
 			}
@@ -595,6 +607,9 @@ if(p->type != phVOWEL)
 			if(pre_sonorant || pre_voiced)
 			{
 				// set pitch for pre-vocalic part
+				if(pitch_start == 1024)
+					last_pitch = pitch_start;    // pitch is not set
+
 				if(pitch_start - last_pitch > 8)   // was 9
 					last_pitch = pitch_start - 8;
 

@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 user32.lib shell32.lib wininet.lib gdi32.lib /nologo /base:"0x67100000" /dll /machine:I386 /filealign:0x200
 # SUBTRACT BASE LINK32 /pdb:none /map
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeak.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeak.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Debug"
@@ -86,7 +86,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..bin\release\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug\Plugins\meSpeak.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug\Plugins\meSpeak.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Unicode Debug"
@@ -115,7 +115,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug unicode\Plugins\meSpeakW.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug unicode\Plugins\meSpeakW.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Unicode Release"
@@ -144,7 +144,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeakW.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeakW.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -220,10 +220,6 @@ SOURCE=..\utils\mir_icons.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\utils\mir_memory.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\utils\mir_options.cpp
 # End Source File
 # Begin Source File
@@ -265,6 +261,14 @@ SOURCE=.\eSpeak\compiledict.cpp
 # Begin Source File
 
 SOURCE=.\eSpeak\dictionary.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\eSpeak\event.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\eSpeak\fifo.cpp
 # End Source File
 # Begin Source File
 
@@ -336,10 +340,6 @@ SOURCE=.\eSpeak\synthesize.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\eSpeak\tr_english.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\eSpeak\tr_languages.cpp
 # End Source File
 # Begin Source File
@@ -361,6 +361,18 @@ SOURCE=.\eSpeak\voice.h
 # Begin Source File
 
 SOURCE=.\eSpeak\voices.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\eSpeak\wave.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\eSpeak\wave_pulse.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\eSpeak\wave_sada.cpp
 # End Source File
 # Begin Source File
 

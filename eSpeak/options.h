@@ -44,6 +44,8 @@ struct Options {
 	BOOL disable_onthephone;
 	BOOL disable_outtolunch;
 	BOOL enable_only_idle;
+	BOOL truncate;
+	WORD truncate_len;
 
 	BOOL use_flags;
 	BOOL respect_sndvol_mute;

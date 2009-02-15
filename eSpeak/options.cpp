@@ -52,6 +52,8 @@ static OptPageControl optionsControls[] = {
 	{ &opts.disable_onthephone,		CONTROL_CHECKBOX,		ID_ONTHEPHONE,		"DisableOnThePhone", FALSE },
 	{ &opts.disable_outtolunch,		CONTROL_CHECKBOX,		ID_OUTTOLUNCH,		"DisableOutToLunch", FALSE },
 	{ &opts.enable_only_idle,		CONTROL_CHECKBOX,		IDC_ONLY_IDLE,		"EnableOnlyIfIdle", FALSE },
+	{ &opts.truncate,				CONTROL_CHECKBOX,		IDC_TRUNCATE_L,		"Truncate", FALSE },
+	{ &opts.truncate_len,			CONTROL_SPIN,			IDC_TRUNCATE,		"TruncateLen", (WORD) 128, IDC_TRUNCATE_SPIN, (WORD) 1, (WORD) 1024 },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,		"UseFlags", TRUE },
 	{ &opts.respect_sndvol_mute,	CONTROL_CHECKBOX,		IDC_SNDVOL,			"RespectSndVolMute", TRUE },
 	{ &opts.select_variant_per_genre,CONTROL_CHECKBOX,		IDC_PER_GENRE,		"SelectVariantPerGenre", TRUE },
@@ -197,21 +199,29 @@ void FillVoicesCombo(HWND hwndDlg, HANDLE hContact)
 	{
 		TCHAR name[NAME_SIZE];
 		Voice *voice = lang->voices[i];
+		
+		TCHAR *gender = NULL;
 		if (voice->gender == GENDER_MALE)
-		{
-			mir_sntprintf(name, MAX_REGS(name), _T(TCHAR_STR_PARAM) _T(" (%s)"),
-				voice->name, TranslateT("Male"));
-		}
+			gender = TranslateT("Male");
 		else if (voice->gender == GENDER_FEMALE)
-		{
-			mir_sntprintf(name, MAX_REGS(name), _T(TCHAR_STR_PARAM) _T(" (%s)"),
-				voice->name, TranslateT("Female"));
-		}
+			gender = TranslateT("Female");
+
+		TCHAR *age = NULL;
+		if (voice->age[0] != 0)
+			age = voice->age;
+
+		if (gender != NULL && age != NULL)
+			mir_sntprintf(name, MAX_REGS(name), _T("%s (%s, %s)"), voice->name, gender, age);
+		
+		else if (gender != NULL)
+			mir_sntprintf(name, MAX_REGS(name), _T("%s (%s)"), voice->name, gender);
+		
+		else if (age != NULL)
+			mir_sntprintf(name, MAX_REGS(name), _T("%s (%s)"), voice->name, age);
+		
 		else
-		{
-			mir_sntprintf(name, MAX_REGS(name), _T(TCHAR_STR_PARAM),
-				voice->name);
-		}
+			mir_sntprintf(name, MAX_REGS(name), _T("%s"), voice->name);
+
 		int pos = SendDlgItemMessage(hwndDlg, IDC_VOICE, CB_ADDSTRING, 0, (LPARAM) name);
 		if (pos >= 0)
 			SendDlgItemMessage(hwndDlg, IDC_VOICE, CB_SETITEMDATA, pos, (LPARAM) voice);
@@ -231,31 +241,40 @@ void FillVoicesCombo(HWND hwndDlg, HANDLE hContact)
 
 void FillVariantsCombo(HWND hwndDlg, HANDLE hContact)
 {
-	Variant *def_var;
-	if (hContact == NULL)
-		def_var = opts.default_variant;
-	else
-		def_var = GetContactVariant(hContact);
+	SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_RESETCONTENT, 0, 0);
 
-	int pos = SendDlgItemMessageA(hwndDlg, IDC_VARIANT, CB_ADDSTRING, 0, (LPARAM) "<None>");
+	int pos = SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_ADDSTRING, 0, (LPARAM) _T("<None>"));
 	if (pos >= 0)
 		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETITEMDATA, pos, (LPARAM) NULL);
 
-	for (int i = 0; i < variants.getCount(); i++)
+	if (GetVoice(hwndDlg)->engine == ENGINE_SAPI)
 	{
-		int pos = SendDlgItemMessageA(hwndDlg, IDC_VARIANT, CB_ADDSTRING, 0, (LPARAM) variants[i]->name);
-		if (pos >= 0)
-			SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETITEMDATA, pos, (LPARAM) variants[i]);
+		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
 	}
+	else
+	{
+		Variant *def_var;
+		if (hContact == NULL)
+			def_var = opts.default_variant;
+		else
+			def_var = GetContactVariant(hContact);
 
-	if (def_var == NULL)
-	{
-		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
-	}
-	else if (SendDlgItemMessageA(hwndDlg, IDC_VARIANT, CB_SELECTSTRING, -1, (LPARAM) def_var->name) < 0)
-	{
-		SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
+		for (int i = 0; i < variants.getCount(); i++)
+		{
+			int pos = SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_ADDSTRING, 0, (LPARAM) variants[i]->name);
+			if (pos >= 0)
+				SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETITEMDATA, pos, (LPARAM) variants[i]);
+		}
+
+		if (def_var == NULL)
+		{
+			SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
+		}
+		else if (SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SELECTSTRING, -1, (LPARAM) def_var->name) < 0)
+		{
+			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
+		}
 	}
 }
 
@@ -312,20 +331,37 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				SendMessage(item, CB_ADDSTRING, 0, (LPARAM) TranslateT("Some"));
 			}
 
+			Voice *voice = GetVoice(hwndDlg);
+
 			for (int i = 0; i < NUM_PARAMETERS; i++)
 			{
 				item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
 				if (item == NULL)
 					continue;
 
-				if (PARAMETERS[i].type == SCROLL)
-				{
-					SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(PARAMETERS[i].min, PARAMETERS[i].max));
-					SendMessage(item, TBM_SETPOS, TRUE, GetContactParam(hContact, i));
-				}
+				RANGE *range;
+				if (voice->engine == ENGINE_ESPEAK)
+					range = &PARAMETERS[i].espeak;
+				else if (voice->engine == ENGINE_SAPI)
+					range = &PARAMETERS[i].sapi;
 				else
+					continue;
+
+				BOOL enabled = (range->min < range->max);
+				EnableWindow(item, enabled);
+				EnableWindow(GetDlgItem(hwndDlg, PARAMETERS[i].label), enabled);
+
+				if (enabled)
 				{
-					SendMessage(item, CB_SETCURSEL, GetContactParam(hContact, i), 0);
+					if (PARAMETERS[i].type == SCROLL)
+					{
+						SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(0, range->max - range->min));
+						SendMessage(item, TBM_SETPOS, TRUE, GetContactParam(hContact, i) - range->min);
+					}
+					else
+					{
+						SendMessage(item, CB_SETCURSEL, GetContactParam(hContact, i), 0);
+					}
 				}
 			}
 
@@ -348,10 +384,59 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				if ((HWND)lParam == GetFocus())
 					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 
-				if (LOWORD(wParam))
+				HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
+
+				if (LOWORD(wParam) == IDC_DEF_LANG)
 				{
-					HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
 					FillVoicesCombo(hwndDlg, hContact);
+					FillVariantsCombo(hwndDlg, hContact);
+				}
+				else if (LOWORD(wParam) == IDC_VOICE)
+				{
+					FillVariantsCombo(hwndDlg, hContact);
+				}
+
+				if (LOWORD(wParam) == IDC_DEF_LANG || LOWORD(wParam) == IDC_VOICE)
+				{
+					Voice *voice = GetVoice(hwndDlg);
+					for (int i = 0; i < NUM_PARAMETERS; i++)
+					{
+						HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
+						if (item == NULL)
+							continue;
+
+						RANGE *range;
+						if (voice->engine == ENGINE_ESPEAK)
+							range = &PARAMETERS[i].espeak;
+						else if (voice->engine == ENGINE_SAPI)
+							range = &PARAMETERS[i].sapi;
+						else
+							continue;
+
+						BOOL enabled = (range->min < range->max);
+						EnableWindow(item, enabled);
+						EnableWindow(GetDlgItem(hwndDlg, PARAMETERS[i].label), enabled);
+
+						if (enabled)
+						{
+							if (PARAMETERS[i].type == SCROLL)
+							{
+								SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(0, range->max - range->min));
+
+								int def;
+								if (voice->engine == ENGINE_SAPI && PARAMETERS[i].eparam == espeakRATE)
+									def = SAPI_GetDefaultRateFor(voice->id);
+								else
+									def = range->def;
+
+								SendMessage(item, TBM_SETPOS, TRUE, def - range->min);
+							}
+							else
+							{
+								SendMessage(item, CB_SETCURSEL, range->def, 0);
+							}
+						}
+					}
 				}
 			}
 			else if (LOWORD(wParam) == IDC_SPEAK)
@@ -382,10 +467,21 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						break;
 					}
 
-					if (PARAMETERS[i].type == SCROLL)
-						data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+					RANGE *range;
+					if (voice->engine == ENGINE_ESPEAK)
+						range = &PARAMETERS[i].espeak;
+					else if (voice->engine == ENGINE_SAPI)
+						range = &PARAMETERS[i].sapi;
 					else
-						data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), CB_GETCURSEL, 0, 0));
+					{
+						data->setParameter(i, GetContactParam(NULL, i));
+						break;
+					}
+
+					if (PARAMETERS[i].type == SCROLL)
+						data->setParameter(i, SendMessage(item, TBM_GETPOS, 0, 0) + range->min);
+					else
+						data->setParameter(i, SendMessage(item, CB_GETCURSEL, 0, 0));
 				}
 				queue->Add(0, (HANDLE) -1, data);
 			}
@@ -431,14 +527,14 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				if (voice == NULL)
 					voice = lang->voices[0];
 
-				DBWriteContactSettingString(hContact, MODULE_NAME, "Voice", voice->name);
+				DBWriteContactSettingTString(hContact, MODULE_NAME, "Voice", voice->name);
 
 				if (hContact == NULL)
 					opts.default_voice = voice;
 
 				// Variant
 				Variant *var = GetVariant(hwndDlg);
-				DBWriteContactSettingString(hContact, MODULE_NAME, "Variant", var->name);
+				DBWriteContactSettingTString(hContact, MODULE_NAME, "Variant", var->name);
 
 				if (hContact == NULL)
 					opts.default_variant = var;
@@ -449,8 +545,16 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					if (item == NULL)
 						continue;
 
+					RANGE *range;
+					if (voice->engine == ENGINE_ESPEAK)
+						range = &PARAMETERS[i].espeak;
+					else if (voice->engine == ENGINE_SAPI)
+						range = &PARAMETERS[i].sapi;
+					else
+						continue;
+
 					if (PARAMETERS[i].type == SCROLL)
-						SetContactParam(hContact, i, SendMessage(item, TBM_GETPOS, 0, 0));
+						SetContactParam(hContact, i, SendMessage(item, TBM_GETPOS, 0, 0) + range->min);
 					else
 						SetContactParam(hContact, i, SendMessage(item, CB_GETCURSEL, 0, 0));
 				}
@@ -680,7 +784,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	static int avaiable = 0;
 	static int total = 0;
 	static int current = 0;
-	static int lineHeigth = 0;
+	static int lineHeight = 0;
 
 	switch (msg)
 	{
@@ -704,7 +808,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			int height = max(font.tmHeight, 16) + 4;
 			int width = rc.right - rc.left - 35;
 
-			lineHeigth = height;
+			lineHeight = height;
 
 			// Create all items
 			int id = IDC_EVENT_TYPES + 1;
@@ -808,6 +912,9 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_VSCROLL: 
 		{ 
+			if (lParam != 0)
+				break;
+
 			int yDelta;     // yDelta = new_pos - current_pos 
 			int yNewPos;    // new position 
  
@@ -820,10 +927,10 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					yNewPos = current + avaiable / 2; 
 					break; 
 				case SB_LINEUP: 
-					yNewPos = current - lineHeigth; 
+					yNewPos = current - lineHeight; 
 					break; 
 				case SB_LINEDOWN: 
-					yNewPos = current + lineHeigth; 
+					yNewPos = current + lineHeight; 
 					break; 
 				case SB_THUMBPOSITION: 
 					yNewPos = HIWORD(wParam); 

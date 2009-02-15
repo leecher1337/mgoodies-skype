@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by resource.rc
 //
 #define IDI_UNKNOWN_FLAG                101
@@ -9,8 +9,12 @@
 #define IDD_ADVANCED                    122
 #define IDC_VOLUME                      1000
 #define IDC_RATE                        1001
+#define IDC_TRUNCATE_L                  1001
 #define IDC_PITCH                       1002
+#define IDC_TRUNCATE                    1002
 #define IDC_RANGE                       1003
+#define IDC_SPIN1                       1003
+#define IDC_TRUNCATE_SPIN               1003
 #define ID_OFFLINE                      1060
 #define IDC_ENABLE                      1060
 #define ID_ONLINE                       1061
@@ -54,7 +58,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

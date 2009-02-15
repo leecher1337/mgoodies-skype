@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA.
 */
 
 #include "commons.h"
+#include "comutil.h"
 
 
 // Prototypes ///////////////////////////////////////////////////////////////////////////
@@ -30,11 +31,11 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,12),
+	PLUGIN_MAKE_VERSION(0,2,0,0),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2007-2008 Ricardo Pescuma Domenecci",
+	"© 2007-2009 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/meSpeak",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -49,9 +50,11 @@ PLUGININFOEX pluginInfo={
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 LIST_INTERFACE li;
+struct MM_INTERFACE mmi;
+struct UTF8_INTERFACE utfi;
 
-static HANDLE hHooks[3] = {0};
-static HANDLE hServices[2] = {0};
+static std::vector<HANDLE> hHooks;
+static std::vector<HANDLE> hServices;
 
 LIST<Language> languages(20);
 LIST<Variant> variants(20);
@@ -78,7 +81,7 @@ TCHAR * VariablesSpeak(ARGUMENTSINFO *ai);
 
 LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-void LoadESpeak();
+void LoadVoices();
 
 Language *GetClosestLanguage(TCHAR *lang_name);
 
@@ -101,6 +104,8 @@ TCHAR *aditionalLanguages[] = {
 	_T("grc"), _T("Ancient Greek"),
 	_T("yue"), _T("Cantonese"),
 	_T("ku"), _T("Kurdish"),
+	_T("hbs"), _T("Serbo-Croatian"),
+	_T("zh_YUE"), _T("Chinese - Cantonese"),
 };
 
 
@@ -151,14 +156,15 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	CHECK_VERSION("meSpeak")
+	CHECK_VERSION( MODULE_NAME )
 
-	init_mir_malloc();
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 	mir_getLI(&li);
 
 	// hooks
-	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hHooks.push_back( HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded) );
+	hHooks.push_back( HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown) );
 
 	hCheckedBmp = LoadBitmap(NULL, MAKEINTRESOURCE(OBM_CHECK));
 	if (GetObject(hCheckedBmp, sizeof(bmpChecked), &bmpChecked) == 0)
@@ -194,10 +200,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), mirandaFolder);
 	}
 
-	LoadESpeak();
+	LoadVoices();
 
-	hServices[0] = CreateServiceFunction(MS_SPEAK_SAY_A, SpeakAService);
-	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService);
+	hServices.push_back( CreateServiceFunction(MS_SPEAK_SAY_A, SpeakAService) );
+	hServices.push_back( CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService) );
 
 	queue = new ContactAsyncQueue(&Speak);
 
@@ -209,9 +215,6 @@ extern "C" int __declspec(dllexport) Unload(void)
 	FreeTypes();
 
 	DeleteObject(hCheckedBmp);
-
-	for(unsigned i = 0; i < MAX_REGS(hServices); ++i)
-		DestroyServiceFunction(hServices[i]);
 
 	return 0;
 }
@@ -496,18 +499,15 @@ void LoadESpeak()
 	int i;
 	for (i = 0; (voice = voices[i]) != NULL; i++)
 	{
+		Utf8ToTchar name = voice->name;
+		Utf8ToTchar id = voice->identifier;
+
 		const char *p = voice->languages;
 		while(*p != '\0')
 		{
 			size_t len = strlen(p+1);
+			Utf8ToTchar language = p + 1;
 
-#ifdef UNICODE
-			TCHAR *language = mir_utf8decodeW(p+1);
-#else
-			char language[NAME_SIZE];
-			lstrcpyn(language, p+1, MAX_REGS(language));
-			mir_utf8decode(language, NULL);
-#endif
 			TCHAR *tmp = language;
 			while((tmp = _tcschr(tmp, _T('-'))) != NULL)
 			{
@@ -515,18 +515,13 @@ void LoadESpeak()
 				CharUpper(tmp);
 			}
 
-
 			Language *lang = GetLanguage(language, TRUE);
-			lang->voices.insert(new Voice(voice->name, *p, voice->gender, voice->identifier));
-
-#ifdef UNICODE
-			mir_free(language);
-#endif
+			lang->voices.insert(new Voice(ENGINE_ESPEAK, name, *p, voice->gender, _T(""), id));
 
 			p += len+2;
 		}
 	}
-
+	
 	if (languages.getCount() <= 0)
 		return;
 
@@ -539,13 +534,114 @@ void LoadESpeak()
 	voices = espeak_ListVoices(&voice_select);
 	for (i = 0; (voice = voices[i]) != NULL; i++)
 	{
-		variants.insert(new Variant(voice->name, voice->gender, &voice->identifier[3]));
+		variants.insert(new Variant(Utf8ToTchar(voice->name), voice->gender, Utf8ToTchar(&voice->identifier[3])));
 	}
+}
+
+void LoadSAPI()
+{
+#define CHECK( _X_ ) hr = _X_; if(!SUCCEEDED(hr)) goto err
+
+	HRESULT hr = 0;
+
+	ISpeechVoice *voice = NULL;
+	ISpeechObjectTokens *voices = NULL;
+	ISpeechObjectToken *v = NULL;
+
+	long count = 0;
+	long i;
+
+    if (FAILED(CoInitialize(NULL)))
+    {
+        MessageBox(NULL, _T("Error to intiliaze COM"), _T(MODULE_NAME), MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    CHECK( CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpeechVoice, (void **)&voice) );
+
+	CHECK( voice->GetVoices(NULL, NULL, &voices) );
+
+	CHECK( voices->get_Count(&count) );
+
+	for(i = 0; i < count; i++)
+	{
+		CHECK( voices->Item(i, &v) );
+		if (v == NULL)
+			continue;
+
+		BstrToTchar name;
+		CHECK( v->GetDescription(0, name) );
+
+		BstrToTchar id;
+		CHECK( v->get_Id(id) );
+
+		BstrToTchar languageId;
+		hr = v->GetAttribute(BstrToTchar(L"Language"), languageId);
+		if (hr != S_OK)
+		{
+			RELEASE(v);
+			continue;
+		}
+
+		TCHAR *stopped = NULL;
+		USHORT langID = (USHORT) _tcstol(languageId, &stopped, 16);
+
+		TCHAR ini[32];
+		TCHAR end[32];
+		GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME, ini, MAX_REGS(ini));
+		GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO3166CTRYNAME, end, MAX_REGS(end));
+		CharUpper(end);
+
+		TCHAR language[64];
+		mir_sntprintf(language, MAX_REGS(language), _T("%s_%s"), ini, end);
+
+		BstrToTchar genderName;
+		hr = v->GetAttribute(BstrToTchar(L"Gender"), genderName);
+		int gender;
+		if (hr != S_OK)
+			gender = GENDER_UNKNOWN;
+		else if (lstrcmpi(_T("Male"), genderName) == 0)
+			gender = GENDER_MALE;
+		else if (lstrcmpi(_T("Female"), genderName) == 0)
+			gender = GENDER_FEMALE;
+		else
+			gender = GENDER_UNKNOWN;
+
+		BstrToTchar age;
+		hr = v->GetAttribute(BstrToTchar(L"Age"), age);
+		if (hr != S_OK)
+			age = L"";
+
+		Language *lang = GetLanguage(language, TRUE);
+		lang->voices.insert(new Voice(ENGINE_SAPI, name, 6, gender, age, id));
+
+		RELEASE( v );
+	}
+
+	goto cleanup;
+
+err:
+	MessageBox(NULL, _T("Error initializing SAPI"), _T(MODULE_NAME), MB_OK | MB_ICONERROR);
+
+cleanup:
+	RELEASE( v );
+	RELEASE( voices );
+	RELEASE( voice );
+	CoUninitialize();
+}
+
+void LoadVoices()
+{
+	LoadESpeak();
+	LoadSAPI();
+
+	if (languages.getCount() <= 0)
+		return;
 
 	EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
 
 	// Try to get name from DB
-	for(i = 0; i < languages.getCount(); i++)
+	for(int i = 0; i < languages.getCount(); i++)
 	{
 		Language *lang = languages[i];
 		if (lang->full_name[0] == _T('\0'))
@@ -631,8 +727,13 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		CallService(MS_MSG_REMOVEICON, 0, (LPARAM) &sid);
 	}
 
-	for(unsigned i=0; i<MAX_REGS(hHooks); ++i)
+	unsigned i;
+	for(i = 0; i < hHooks.size(); ++i)
 		UnhookEvent(hHooks[i]);
+
+	for(i = 0; i < hServices.size(); ++i)
+		DestroyServiceFunction(hServices[i]);
+
 
 	return 0;
 }
@@ -854,32 +955,32 @@ Voice *GetContactVoice(HANDLE hContact, Language *lang)
 {
 	int i;
 	DBVARIANT dbv;
-	if (DBGetContactSettingString(hContact, MODULE_NAME, "Voice", &dbv))
+	if (DBGetContactSettingTString(hContact, MODULE_NAME, "Voice", &dbv))
 		goto DEFAULT;
 
-	char name[NAME_SIZE];
-	strncpy(name, dbv.pszVal, MAX_REGS(name));
+	TCHAR name[NAME_SIZE];
+	lstrcpyn(name, dbv.ptszVal, MAX_REGS(name));
 	DBFreeVariant(&dbv);
 	
-	if (name[0] == '\0')
+	if (name[0] == _T('\0'))
 		goto DEFAULT;
 
 	for (i = 0; i < lang->voices.getCount(); i++)
-		if (stricmp(name, lang->voices[i]->name) == 0)
+		if (lstrcmpi(name, lang->voices[i]->name) == 0)
 			return lang->voices[i];
 	
 DEFAULT:
-	if (lang == opts.default_language)
+	if (lang == opts.default_language && opts.default_voice != NULL)
 		return opts.default_voice;
 	else
 		return lang->voices[0];
 }
 
 
-Variant *GetVariant(char *name)
+Variant *GetVariant(TCHAR *name)
 {
 	for (int i = 0; i < variants.getCount(); i++)
-		if (stricmp(name, variants[i]->name) == 0)
+		if (lstrcmpi(name, variants[i]->name) == 0)
 			return variants[i];
 	return NULL;
 }
@@ -890,14 +991,14 @@ Variant *GetContactVariant(HANDLE hContact)
 	Variant *ret;
 
 	DBVARIANT dbv;
-	if (DBGetContactSettingString(hContact, MODULE_NAME, "Variant", &dbv))
+	if (DBGetContactSettingTString(hContact, MODULE_NAME, "Variant", &dbv))
 		goto DEFAULT;
 
-	char name[NAME_SIZE];
-	strncpy(name, dbv.pszVal, MAX_REGS(name));
+	TCHAR name[NAME_SIZE];
+	lstrcpyn(name, dbv.ptszVal, MAX_REGS(name));
 	DBFreeVariant(&dbv);
 
-	if (name[0] == '\0')
+	if (name[0] == _T('\0'))
 		goto DEFAULT;
 
 	ret = GetVariant(name);
@@ -916,13 +1017,13 @@ DEFAULT:
 
 		if (ci.bVal == 'M')
 		{
-			ret = GetVariant("male1");
+			ret = GetVariant(_T("male1"));
 			if (ret != NULL)
 				return ret;
 		}
 		else if (ci.bVal == 'F')
 		{
-			ret = GetVariant("female1");
+			ret = GetVariant(_T("female1"));
 			if (ret != NULL)
 				return ret;
 		}
@@ -934,9 +1035,20 @@ DEFAULT:
 
 int GetContactParam(HANDLE hContact, int param)
 {
-	int ret = DBGetContactSettingDword(NULL, MODULE_NAME, PARAMETERS[param].setting, PARAMETERS[param].def);
+	Voice *voice = GetContactVoice(hContact, GetContactLanguage(hContact));
+
+	int def;
+	if (voice->engine == ENGINE_SAPI && PARAMETERS[param].eparam == espeakRATE)
+		def = SAPI_GetDefaultRateFor(voice->id);
+	else if (voice->engine == ENGINE_SAPI)
+		def = PARAMETERS[param].sapi.def;
+	else
+		def = PARAMETERS[param].espeak.def;
+
+	int ret = DBGetContactSettingDword(NULL, MODULE_NAME, PARAMETERS[param].setting, def);
 	if (hContact != NULL)
 		ret = DBGetContactSettingDword(hContact, MODULE_NAME, PARAMETERS[param].setting, ret);
+
 	return ret;
 }
 
@@ -1072,24 +1184,129 @@ RETURN:
 }
 
 
+ISpeechObjectToken * SAPI_FindVoice(ISpeechVoice *voice, TCHAR *id)
+{
+	HRESULT hr = 0;
+	ISpeechObjectTokens *voices = NULL;
+	ISpeechObjectToken *v = NULL;
+	long count = 0;
+	long i;
+
+	CHECK( voice->GetVoices(NULL, NULL, &voices) );
+
+	CHECK( voices->get_Count(&count) );
+
+	for(i = 0; i < count; i++)
+	{
+		CHECK( voices->Item(i, &v) );
+		if (v == NULL)
+			continue;
+
+		BstrToTchar id2;
+		CHECK( v->get_Id(id2) );
+
+		if (lstrcmpi(id2, id) == 0)
+			break;
+
+		RELEASE(v);
+	}
+
+	RELEASE( voices );
+	return v;
+
+err: 
+	RELEASE( voices );
+	RELEASE( v );
+	return NULL;
+}
+
+
 void Speak(SpeakData *data)
 {
-	if (data->variant != NULL)
-	{
-		char name[NAME_SIZE];
-		mir_snprintf(name, MAX_REGS(name), "%s+%s", data->voice->id, data->variant->id);
-		espeak_SetVoiceByName(name);
-	}
-	else
-		espeak_SetVoiceByName(data->voice->id);
+	size_t len = lstrlen(data->text);
 
-	for (int i = 0; i < NUM_PARAMETERS; i++)
-		espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
-	
-	//mir_log(
-	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
-				 0, espeakCHARS_TCHAR, NULL, NULL);
+	if (opts.truncate && len > opts.truncate_len)
+		data->text[opts.truncate_len] = 0;
+
+	if (data->voice->engine == ENGINE_ESPEAK)
+	{
+		if (data->variant != NULL)
+		{
+			TCHAR name[NAME_SIZE];
+			mir_sntprintf(name, MAX_REGS(name), _T("%s+%s"), data->voice->id, data->variant->id);
+			espeak_SetVoiceByName(TcharToUtf8(name));
+		}
+		else
+			espeak_SetVoiceByName(TcharToUtf8(data->voice->id));
+
+		for (int i = 0; i < NUM_PARAMETERS; i++)
+			espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
+		
+		espeak_Synth(data->text, (len + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
+					 0, espeakCHARS_TCHAR, NULL, NULL);
+	}
+	else if (data->voice->engine == ENGINE_SAPI)
+	{
+		HRESULT hr = 0;
+		ISpeechVoice *voice = NULL;
+		ISpeechObjectToken *v = NULL;
+
+		if (FAILED(CoInitialize(NULL)))
+			return;
+
+		CHECK( CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpeechVoice, (void **)&voice) );
+
+		v = SAPI_FindVoice(voice, data->voice->id);
+		if (v == NULL) goto err;
+
+		CHECK( voice->putref_Voice(v) );
+		CHECK( voice->put_Rate(data->getParameter(0)) );
+		CHECK( voice->put_Volume(data->getParameter(1)) );
+
+		CHECK( voice->Speak(BstrToTchar(data->text), SVSFDefault, NULL) );
+
+err:
+		RELEASE( v );
+		RELEASE( voice );
+
+		CoUninitialize();
+	}
 }
+
+
+int SAPI_GetDefaultRateFor(TCHAR *id)
+{
+	int ret = 0;
+
+	HRESULT hr = 0;
+	ISpeechVoice *voice = NULL;
+	ISpeechObjectToken *v = NULL;
+
+	if (FAILED(CoInitialize(NULL)))
+		return 0;
+
+	CHECK( CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpeechVoice, (void **)&voice) );
+
+	v = SAPI_FindVoice(voice, id);
+	if (v == NULL) goto err;
+
+	CHECK( voice->putref_Voice(v) );
+
+	{
+		long rate;
+		CHECK( voice->get_Rate(&rate) );
+		ret = (int) rate;
+	}
+
+err:
+	RELEASE( v );
+	RELEASE( voice );
+
+	CoUninitialize();
+
+	return ret;
+}
+
 
 TCHAR * VariablesSpeak(ARGUMENTSINFO *ai)
 {
