@@ -23,6 +23,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ARC4.h"
 #include <string.h>
 
+const wchar_t * ARC4::Name()
+{
+	return cName;
+}
+const wchar_t * ARC4::Description()
+{
+	return cDescription;
+}
+const uint32_t  ARC4::BlockSizeBytes()
+{
+	return cBlockSizeBytes;
+}
+const bool      ARC4::IsStreamCipher()
+{
+	return cIsStreamCipher;
+}
+
 ARC4::ARC4()
 {
 
@@ -32,9 +49,9 @@ ARC4::~ARC4()
 
 }
 
-CCipher* ARC4::Create() 
+CCipher::TCipherInterface* ARC4::Create() 
 {
-	return new ARC4();
+	return (new ARC4())->m_Interface;
 }
 
 void ARC4::SetKey(void* Key, uint32_t KeyLength)
@@ -48,7 +65,7 @@ void ARC4::SetKey(void* Key, uint32_t KeyLength)
 
 	for (i = 0; i < 256; ++i)
 		State[i] = i;
-	
+
 	x = 0;
 	y = 0;
 	index1 = 0;
@@ -77,7 +94,7 @@ inline uint8_t ARC4::Stream()
 	x = (x + 1) & 0xff;
 	y = (State[x] + y) & 0xff;
 
-  swapbyte = State[x];
+	swapbyte = State[x];
 	State[x] = State[y];
 	State[y] = swapbyte;
 
@@ -104,4 +121,9 @@ void ARC4::Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte
 void ARC4::Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte)
 {
 	Encrypt(Data, Size, Nonce, StartByte);
+}
+
+extern "C" __declspec(dllexport) const TCipherInfo* CipherInfo(void * Reserved)
+{
+	return &ARC4::cCipherInfo;
 }

@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2008 Michael "Protogenes" Kunz,
+Copyright 2007-2009 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -42,7 +42,7 @@ int DBEntityGetParent(WPARAM hEntity, LPARAM lParam)
 
 	return gDataBase->getEntities().getParent(hEntity);
 }
-int DBEntitySetParent(WPARAM hEntity, LPARAM hParent)
+int DBEntityMove(WPARAM hEntity, LPARAM hParent)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
@@ -360,7 +360,7 @@ bool RegisterServices()
 	gServices[ 0] = CreateServiceFunction(MS_DBT_ENTITY_GETROOT,          DBEntityGetRoot);
 	gServices[ 1] = CreateServiceFunction(MS_DBT_ENTITY_CHILDCOUNT,       DBEntityChildCount);
 	gServices[ 2] = CreateServiceFunction(MS_DBT_ENTITY_GETPARENT,        DBEntityGetParent);
-	gServices[ 3] = CreateServiceFunction(MS_DBT_ENTITY_SETPARENT,        DBEntitySetParent);
+	gServices[ 3] = CreateServiceFunction(MS_DBT_ENTITY_MOVE,             DBEntityMove);
 	gServices[ 8] = CreateServiceFunction(MS_DBT_ENTITY_GETFLAGS,         DBEntityGetFlags);
 	gServices[ 9] = CreateServiceFunction(MS_DBT_ENTITY_ITER_INIT,        DBEntityIterInit);
 	gServices[10] = CreateServiceFunction(MS_DBT_ENTITY_ITER_NEXT,        DBEntityIterNext);

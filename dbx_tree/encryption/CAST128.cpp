@@ -23,6 +23,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CAST128.h"
 #include "CAST128.inc"
 
+const wchar_t * CAST128::Name()
+{
+	return cName;
+}
+const wchar_t * CAST128::Description()
+{
+	return cDescription;
+}
+const uint32_t  CAST128::BlockSizeBytes()
+{
+	return cBlockSizeBytes;
+}
+const bool      CAST128::IsStreamCipher()
+{
+	return cIsStreamCipher;
+}
 
 CAST128::CAST128()
 {
@@ -32,9 +48,9 @@ CAST128::~CAST128()
 {
 
 }
-CCipher* CAST128::Create()
+CCipher::TCipherInterface* CAST128::Create() 
 {
-	return new CAST128();
+	return (new CAST128())->m_Interface;
 }
 
 void CAST128::SetKey(void* Key, uint32_t KeyLength)
@@ -236,4 +252,9 @@ inline void CAST128::DecryptBlock(uint8_t *Block)
 
 	((uint32_t*)Block)[0] = r;
 	((uint32_t*)Block)[1] = l;
+}
+
+extern "C" __declspec(dllexport) const TCipherInfo* CipherInfo(void * Reserved)
+{
+	return &CAST128::cCipherInfo;
 }

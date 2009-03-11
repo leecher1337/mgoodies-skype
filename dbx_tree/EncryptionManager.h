@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2008 Michael "Protogenes" Kunz,
+Copyright 2007-2009 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,9 +28,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdint.h"
 #endif
 #include "sigslot.h"
-#include "Cipher.h"
+
+#define __INTERFACE_ONLY__
+#include "encryption/Cipher.h"
+#undef __INTERFACE_ONLY__
+
 #include "SHA256.h"
+#include "Interface.h"
 //#include "Thread.h"
+#include <map>
+#include <windows.h>
 
 typedef enum TEncryptionType {
 	ET_NONE = 0,
@@ -68,6 +75,19 @@ public:
 	CEncryptionManager();
 	~CEncryptionManager();
 
+	typedef struct {
+		TCHAR * FilePath;
+		TCHAR * FileName;
+		uint32_t ID;
+		wchar_t * Name;
+		wchar_t * Description;
+	} TCipherItem;
+	typedef std::map<uint32_t, TCipherItem> TCipherList;
+	
+	static TCipherList* CipherList;	// = NULL; see cpp
+	static uint32_t CipherListRefCount;	// = 0; see cpp
+	static void LoadCipherList();
+
 	bool InitEncryption(TFileEncryption & Enc);
 
 	bool AlignData(uint32_t ID, TEncryptionType Type, uint32_t & Start, uint32_t & End);
@@ -82,10 +102,17 @@ private:
 	bool m_Changing;
 	uint32_t m_ChangingProcess;
 
-	TEncryptionType m_OldType;
-	CCipher * m_OldCipher;
-	
-	TEncryptionType m_Type;
-	CCipher * m_Cipher;
+	typedef enum TUsedCiphers {
+		CURRENT = 0, 
+		OLD = 1,
+		COUNT = 2
+	} TUsedCiphers;
+
+	struct 
+	{
+		TEncryptionType Type;
+		CCipher * Cipher;
+		HMODULE CipherDLL;
+	} m_Ciphers[COUNT];
 
 };
