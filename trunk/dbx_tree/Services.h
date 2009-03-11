@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2008 Michael "Protogenes" Kunz,
+Copyright 2007-2009 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ bool RegisterServices();
 int DBEntityGetRoot(WPARAM wParam, LPARAM lParam);
 int DBEntityChildCount(WPARAM hEntity, LPARAM lParam);
 int DBEntityGetParent(WPARAM hEntity, LPARAM lParam);
-int DBEntitySetParent(WPARAM hEntity, LPARAM hParent);
+int DBEntityMove(WPARAM hEntity, LPARAM hParent);
 int DBEntityGetFlags(WPARAM hEntity, LPARAM lParam);
 int DBEntityIterInit(WPARAM pFilter, LPARAM hParent);
 int DBEntityIterNext(WPARAM hIteration, LPARAM lParam);

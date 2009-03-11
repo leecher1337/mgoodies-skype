@@ -334,7 +334,7 @@
 			OutputDirectory="..\..\..\..\Miranda IM Test\Plugins"
 			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -520,11 +520,7 @@
 					Name="Encryption"
 					>
 					<File
-						RelativePath=".\Cipher.h"
-						>
-					</File>
-					<File
-						RelativePath=".\CipherList.inc"
+						RelativePath=".\encryption\Cipher.h"
 						>
 					</File>
 					<File
@@ -535,46 +531,6 @@
 						RelativePath=".\EncryptionManager.h"
 						>
 					</File>
-					<Filter
-						Name="Cast128"
-						>
-						<File
-							RelativePath=".\CAST128.cpp"
-							>
-						</File>
-						<File
-							RelativePath=".\CAST128.h"
-							>
-						</File>
-						<File
-							RelativePath=".\CAST128.inc"
-							>
-						</File>
-					</Filter>
-					<Filter
-						Name="ARC4"
-						>
-						<File
-							RelativePath=".\ARC4.cpp"
-							>
-						</File>
-						<File
-							RelativePath=".\ARC4.h"
-							>
-						</File>
-					</Filter>
-					<Filter
-						Name="HC256"
-						>
-						<File
-							RelativePath=".\HC256.cpp"
-							>
-						</File>
-						<File
-							RelativePath=".\HC256.h"
-							>
-						</File>
-					</Filter>
 					<Filter
 						Name="SHA256"
 						>

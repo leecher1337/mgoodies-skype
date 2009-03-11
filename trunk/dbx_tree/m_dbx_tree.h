@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2008 Michael "Protogenes" Kunz,
+Copyright 2007-2009 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -94,11 +94,24 @@ static const uint32_t DBT_NFM_SpecialEntity = DBT_NF_IsRoot | DBT_NF_IsGroup | D
 /**
 	\brief
   \param wParam = hEntity
-  \param lParam = hParentEntity
+  \param lParam = hNewEntity
 
 	\return 0 on success
 **/
-#define MS_DBT_ENTITY_SETPARENT  "DBT/Entity/SetParent"
+#define MS_DBT_ENTITY_MOVE "DBT/Entity/Move"
+
+/**
+	\brief
+	\param wParam = hEntity
+	\param lParam = hNewParent
+**/
+#define ME_DBT_ENTITY_MOVING "DBT/Entity/Moving"
+/**
+	\brief
+	\param wParam = hEntity
+	\param lParam = hOldParent
+**/
+#define ME_DBT_ENTITY_MOVED "DBT/Entity/Moved"
 
 /**
 	\brief Read the flags of an Entity

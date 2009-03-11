@@ -36,17 +36,30 @@ private:
 	uint8_t BackState[256];
 
 	uint8_t Stream();
+
+  static const wchar_t* cName;
+  static const wchar_t* cDescription;
+	static const uint32_t cBlockSizeBytes = 1;
+	static const bool     cIsStreamCipher = true;
+
 public:
-	static  inline const char * Name()           {return "ARC4";};
-	static  inline const char * Description()    {return "Streamcipher - 8bit step, fast, Ron Rivest 1987";};
-	virtual inline uint32_t     BlockSizeBytes() {return 1;};
-	virtual inline bool         IsStreamCipher() {return true;};
+	const wchar_t * __cdecl Name();
+	const wchar_t * __cdecl Description();
+	const uint32_t  __cdecl BlockSizeBytes();
+	const bool      __cdecl IsStreamCipher();
+
+	static const TCipherInfo cCipherInfo;
 
 	ARC4();
-	virtual ~ARC4();
-	static CCipher* Create();
+	~ARC4();
+	static CCipher::TCipherInterface* __cdecl Create();
 
-	virtual void SetKey(void* Key, uint32_t KeyLength);
-	virtual void Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
-	virtual void Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+	void __cdecl SetKey(void* Key, uint32_t KeyLength);
+	void __cdecl Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+	void __cdecl Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+
 };
+
+const wchar_t* ARC4::cName          = L"ARC4";
+const wchar_t* ARC4::cDescription   = L"Streamcipher - 8bit step, fast, Ron Rivest 1987";
+const TCipherInfo ARC4::cCipherInfo = {sizeof(TCipherInfo), 'ARC4', cName, cDescription, &ARC4::Create};

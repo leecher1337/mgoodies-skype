@@ -36,17 +36,31 @@ private:
 
 	void EncryptBlock(uint32_t *Data);
 	void CreateTables(uint8_t* Key);
+
+	static const wchar_t* cName;
+	static const wchar_t* cDescription;
+	static const uint32_t cBlockSizeBytes = 64;
+	static const bool     cIsStreamCipher = true;
+
 public:
-	static  inline const char * Name()           {return "HC-256";};
-	static  inline const char * Description()    {return "Streamcipher - 512bit step, very fast, Hongjun Wu 2005";};
-	virtual inline uint32_t     BlockSizeBytes() {return 64;};
-	virtual inline bool         IsStreamCipher() {return true;};
+
+	const wchar_t * __cdecl Name();
+	const wchar_t * __cdecl Description();
+	const uint32_t  __cdecl BlockSizeBytes();
+	const bool      __cdecl IsStreamCipher();
+	
+	static const TCipherInfo cCipherInfo;
 
 	HC256();
-	virtual ~HC256();
-	static CCipher* Create();
+	~HC256();
+	static CCipher::TCipherInterface* __cdecl Create();
 
-	virtual void SetKey(void* Key, uint32_t KeyLength);
-	virtual void Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
-	virtual void Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+	void __cdecl SetKey(void* Key, uint32_t KeyLength);
+	void __cdecl Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+	void __cdecl Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+
 };
+
+const wchar_t* HC256::cName          = L"HC-256";
+const wchar_t* HC256::cDescription   = L"Streamcipher - 512bit step, very fast, Hongjun Wu 2005";
+const TCipherInfo HC256::cCipherInfo = {sizeof(TCipherInfo), 'HC25', cName, cDescription, &HC256::Create};

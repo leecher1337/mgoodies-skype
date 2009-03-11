@@ -33,18 +33,29 @@ private:
 	void DecryptBlock(uint8_t *Block);
 	void CreateSubKeys(uint8_t* Key);
 
+	static const wchar_t* cName;
+	static const wchar_t* cDescription;
+	static const uint32_t cBlockSizeBytes = 8;
+	static const bool     cIsStreamCipher = false;
+
 public:
-	static  inline const char * Name()           {return "Cast128";};
-	static  inline const char * Description()    {return "Blockcipher - 64bit block, fast and secure, Carlisle Adams and Stafford Tavares 1996";};
-	virtual inline uint32_t     BlockSizeBytes() {return 8;};
-	virtual inline bool         IsStreamCipher() {return false;};
+	const wchar_t * __cdecl Name();
+	const wchar_t * __cdecl Description();
+	const uint32_t  __cdecl BlockSizeBytes();
+	const bool      __cdecl IsStreamCipher();
+
+	static const TCipherInfo cCipherInfo;
 
 	CAST128();
-	virtual ~CAST128();
-	static CCipher* Create();
+	~CAST128();
+	static CCipher::TCipherInterface* __cdecl Create();
+	
+	void __cdecl SetKey(void* Key, uint32_t KeyLength);
+	void __cdecl Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
+	void __cdecl Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
 
-	virtual void SetKey(void* Key, uint32_t KeyLength);
-	virtual void Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
-	virtual void Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte);
 };
 
+const wchar_t* CAST128::cName          = L"Cast128";
+const wchar_t* CAST128::cDescription   = L"Blockcipher - 64bit block, fast and secure, Carlisle Adams and Stafford Tavares 1996";
+const TCipherInfo CAST128::cCipherInfo = {sizeof(TCipherInfo), 'Cast', cName, cDescription, &CAST128::Create};
