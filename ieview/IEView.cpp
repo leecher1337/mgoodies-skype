@@ -846,7 +846,7 @@ void IEView::scrollToBottom() {/*
 		}
 		IHTMLWindow2* pWindow = NULL;
 		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && (pWindow != NULL)) {
-			pWindow->scrollBy( -0x01FFFFFF, 0x01FFFFFF );
+			pWindow->scrollBy( -0x0000FFFF, 0x0000FFFF );
 			pWindow->Release();
 		}
 		document->Release();
