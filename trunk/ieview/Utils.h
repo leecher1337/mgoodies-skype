@@ -59,6 +59,8 @@ public:
 	static void unhookEvents_Ex();
 	static void destroyServices_Ex();
 	static unsigned long forkThread(void (__cdecl *threadcode)(void*),unsigned long stacksize,void *arg);
+	static wchar_t *urlEncode(const wchar_t *a);
+	static wchar_t *urlEncode(const char *a);
 
 };
 

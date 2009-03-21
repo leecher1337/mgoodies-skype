@@ -19,10 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #define _WIN32_WINNT  0x0501
+#include "Options.h"
 #include <shlobj.h>
 #include <uxtheme.h>
-#include <win2k.h>
-#include "Options.h"
 #include "resource.h"
 //#include "Smiley.h"
 #include "Template.h"
@@ -57,46 +56,6 @@ static TabDef tabPages[] = {
 						 {IEViewGroupChatsOptDlgProc, IDD_SRMM_OPTIONS, _T("Group Chats")},
 						 {IEViewHistoryOptDlgProc, IDD_SRMM_OPTIONS, _T("History")}
 						 };
-
-#ifndef _MSC_VER
-typedef struct tagTVKEYDOWN {
-    NMHDR hdr;
-    WORD wVKey;
-    UINT flags;
-} NMTVKEYDOWN, FAR *LPNMTVKEYDOWN;
-
-BOOL TreeView_SetCheckState(HWND hwndTreeView, HTREEITEM hItem, BOOL fCheck)
-{
-    TVITEM tvItem;
-
-    tvItem.mask = TVIF_HANDLE | TVIF_STATE;
-    tvItem.hItem = hItem;
-    tvItem.stateMask = TVIS_STATEIMAGEMASK;
-
-    // Image 1 in the tree-view check box image list is the
-    // unchecked box. Image 2 is the checked box.
-
-    tvItem.state = INDEXTOSTATEIMAGEMASK((fCheck ? 2 : 1));
-
-    return TreeView_SetItem(hwndTreeView, &tvItem);
-}
-
-BOOL TreeView_GetCheckState(HWND hwndTreeView, HTREEITEM hItem)
-{
-    TVITEM tvItem;
-
-    // Prepare to receive the desired information.
-    tvItem.mask = TVIF_HANDLE | TVIF_STATE;
-    tvItem.hItem = hItem;
-    tvItem.stateMask = TVIS_STATEIMAGEMASK;
-
-    // Request the information.
-    TreeView_GetItem(hwndTreeView, &tvItem);
-
-    // Return zero if it's not checked, or nonzero otherwise.
-    return ((BOOL)(tvItem.state >> 12) -1);
-}
-#endif
 
 static LPARAM GetItemParam(HWND hwndTreeView, HTREEITEM hItem) {
 	TVITEM tvi = {0};

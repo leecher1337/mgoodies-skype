@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Utils.h"
 #include <ctype.h>
+#include <m_netlib.h>
+
 wchar_t Utils::base_dir[MAX_PATH];
 unsigned Utils::hookNum = 0;
 unsigned Utils::serviceNum = 0;
@@ -397,3 +399,16 @@ void Utils::destroyServices_Ex() {
 	hServices = NULL;
 }
 
+wchar_t *Utils::urlEncode(const wchar_t *text) {
+	char *utf8 = UTF8Encode(text);
+	wchar_t *result = urlEncode(utf8);
+	delete utf8;
+	return result;
+}
+
+wchar_t *Utils::urlEncode(const char *text) {
+	char *pszReturnString = (char *)CallService(MS_NETLIB_URLENCODE, (WPARAM)0, (LPARAM)text);
+	wchar_t *result = convertToWCS(pszReturnString);
+	HeapFree(GetProcessHeap(), 0, pszReturnString);
+	return result;
+}
