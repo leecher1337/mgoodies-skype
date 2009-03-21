@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ieview_services.h"
 #include "Options.h"
 #include "Utils.h"
-//#include "SmileyWindow.h"
 
 char *ieviewModuleName;
 HINSTANCE hInstance;
@@ -35,11 +34,11 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,1,0,0),
-	"IE Based Chat Log (1.1.0.0 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,2,0,0),
+	"IE Based Chat Log (1.2.0.0 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
-	"(c) 2005-2008 Piotr Piastucki, Francois Mean",
+	"(c) 2005-2009 Piotr Piastucki, Francois Mean",
 	"http://developer.berlios.de/projects/mgoodies",
 	UNICODE_AWARE,
 	0,
