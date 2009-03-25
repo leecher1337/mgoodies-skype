@@ -37,18 +37,23 @@ void CEncryptionManager::LoadCipherList()
 	CipherListRefCount++;
 
 	WIN32_FIND_DATA search;
-	TCHAR path[MAX_PATH];
-	TCHAR file[MAX_PATH];
-	size_t filenameoffset = -2 + CallService(MS_UTILS_PATHTOABSOLUTET, (WPARAM)_T(".\\plugins\\encryption\\%s"), (LPARAM)path);
-	_stprintf_s(file, path, _T("*.dll"));
-	HANDLE hfinder = FindFirstFile(file, &search);
+	TCHAR  path[MAX_PATH * 32];
+	GetModuleFileName(NULL, path, sizeof(path));
+	TCHAR * file = _tcsrchr(path, '\\');
+	if (!file)
+		file = path;
+
+	_tcscpy(file, _T("\\plugins\\encryption\\*.dll"));
+	file += 20;
+
+	HANDLE hfinder = FindFirstFile(path, &search);
 	if (hfinder)
 	{
 		TCipherItem item;
 		TCipherInfo* (__cdecl *CipherInfoProc)(void *);
 		do {
-			_stprintf_s(file, path, search.cFileName);
-			HMODULE hmod = LoadLibrary(file);
+			_tcscpy(file, search.cFileName);
+			HMODULE hmod = LoadLibrary(path);
 			if (hmod)
 			{				
 				CipherInfoProc = (TCipherInfo*(__cdecl*)(void*)) GetProcAddress(hmod, "CipherInfo");
@@ -60,8 +65,8 @@ void CEncryptionManager::LoadCipherList()
 						item.ID          = info->ID;
 						item.Name        = _wcsdup(info->Name);
 						item.Description = _wcsdup(info->Description);
-						item.FilePath    = _tcsdup(file);
-						item.FileName    = item.FilePath + filenameoffset;
+						item.FilePath    = _tcsdup(path);
+						item.FileName    = item.FilePath + (file - path);
 						
 						CipherList->insert(std::make_pair(item.ID, item));
 					} 
@@ -183,8 +188,14 @@ bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t &
 	{
 		if (m_Ciphers[OLD].Cipher->IsStreamCipher())
 		{
-			Start = 0;
-			End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
+			if (Type == ET_FILE)
+			{
+				Start = Start & cFileBlockMask; // Start - Start % 4096;
+				End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
+			} else {
+				Start = 0;
+				End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
+			}
 		} else {
 			Start = Start - Start % m_Ciphers[OLD].Cipher->BlockSizeBytes();
 			if (End % m_Ciphers[OLD].Cipher->BlockSizeBytes())
