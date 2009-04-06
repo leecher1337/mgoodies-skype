@@ -39,7 +39,7 @@ static PLUGININFOEX gPluginInfoEx = {
 	gAutor,
 	gAutorEmail,
 	gCopyright,
-	"www.protogenes.de/?dbx_tree&lang=en",
+	"http://www-user.tu-chemnitz.de/~kunmi/?dbx_tree&lang=en",
 	UNICODE_AWARE,
 	DEFMOD_DB,
   gGUID

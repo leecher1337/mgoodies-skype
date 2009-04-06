@@ -37,13 +37,13 @@ void CEncryptionManager::LoadCipherList()
 	CipherListRefCount++;
 
 	WIN32_FIND_DATA search;
-	TCHAR  path[MAX_PATH * 32];
+	TCHAR  path[MAX_PATH * 8];
 	GetModuleFileName(NULL, path, sizeof(path));
 	TCHAR * file = _tcsrchr(path, '\\');
 	if (!file)
 		file = path;
 
-	_tcscpy(file, _T("\\plugins\\encryption\\*.dll"));
+	_tcscpy_s(file, sizeof(path) - (file - path), _T("\\plugins\\encryption\\*.dll"));
 	file += 20;
 
 	HANDLE hfinder = FindFirstFile(path, &search);
@@ -52,7 +52,7 @@ void CEncryptionManager::LoadCipherList()
 		TCipherItem item;
 		TCipherInfo* (__cdecl *CipherInfoProc)(void *);
 		do {
-			_tcscpy(file, search.cFileName);
+			_tcscpy_s(file, sizeof(path) - (file - path), search.cFileName);
 			HMODULE hmod = LoadLibrary(path);
 			if (hmod)
 			{				
@@ -162,21 +162,12 @@ bool CEncryptionManager::InitEncryption(TFileEncryption & Enc)
 
 bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t & Start, uint32_t & End)
 {
-	if (Type == ET_FILE)
-		ID = ID & cFileBlockMask;
-
 	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		if (m_Ciphers[CURRENT].Cipher->IsStreamCipher())
 		{
-			if (Type == ET_FILE)
-			{
-				Start = Start & cFileBlockMask; // Start - Start % 4096;
-				End = End - End % m_Ciphers[CURRENT].Cipher->BlockSizeBytes() + m_Ciphers[CURRENT].Cipher->BlockSizeBytes();
-			} else {
-				Start = 0;
-				End = End - End % m_Ciphers[CURRENT].Cipher->BlockSizeBytes() + m_Ciphers[CURRENT].Cipher->BlockSizeBytes();
-			}
+			Start = 0;
+			End = End - End % m_Ciphers[CURRENT].Cipher->BlockSizeBytes() + m_Ciphers[CURRENT].Cipher->BlockSizeBytes();
 		} else {
 			Start = Start - Start % m_Ciphers[CURRENT].Cipher->BlockSizeBytes();
 			if (End % m_Ciphers[CURRENT].Cipher->BlockSizeBytes())
@@ -188,14 +179,8 @@ bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t &
 	{
 		if (m_Ciphers[OLD].Cipher->IsStreamCipher())
 		{
-			if (Type == ET_FILE)
-			{
-				Start = Start & cFileBlockMask; // Start - Start % 4096;
-				End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
-			} else {
-				Start = 0;
-				End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
-			}
+			Start = 0;
+			End = End - End % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
 		} else {
 			Start = Start - Start % m_Ciphers[OLD].Cipher->BlockSizeBytes();
 			if (End % m_Ciphers[OLD].Cipher->BlockSizeBytes())
@@ -209,9 +194,6 @@ bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t &
 }
 uint32_t CEncryptionManager::AlignSize(uint32_t ID, TEncryptionType Type, uint32_t Size)
 {
-	if (Type == ET_FILE)
-		ID = ID & cFileBlockMask;
-
 	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		if (Size % m_Ciphers[CURRENT].Cipher->BlockSizeBytes())
@@ -229,123 +211,28 @@ uint32_t CEncryptionManager::AlignSize(uint32_t ID, TEncryptionType Type, uint32
 
 bool CEncryptionManager::IsEncrypted(uint32_t ID, TEncryptionType Type)
 {
-	if (Type == ET_FILE)
-		ID = ID & cFileBlockMask;
-
 	return (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess))) ||
 	       (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess));
 }
 
 void CEncryptionManager::Encrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte)
 {
-	if (Type == ET_FILE)
-		ID = ID & cFileBlockMask;
-
-	if (Type == ET_FILE)
+	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
 	{
-		if ((m_Ciphers[CURRENT].Type == ET_FILE) || (m_Ciphers[OLD].Type == ET_FILE))
-		{
-			if (StartByte & cFileBlockMask) // handle leading partial block
-			{
-				uint32_t d = (~cFileBlockMask) + 1 - (StartByte & cFileBlockMask);
-
-				if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-				{
-					m_Ciphers[CURRENT].Cipher->Encrypt(Data, d, ID, StartByte);
-				} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-				{
-					m_Ciphers[OLD].Cipher->Encrypt(Data, d, ID, StartByte);
-				}
-
-				DataLength -= d;
-				ID += (~cFileBlockMask) + 1;
-				StartByte += d;
-				Data = (uint8_t *)Data + d;
-			}
-
-			while (DataLength >= (~cFileBlockMask) + 1)
-			{
-				if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-				{
-					m_Ciphers[CURRENT].Cipher->Encrypt(Data, (~cFileBlockMask) + 1, ID, StartByte);
-				} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-				{
-					m_Ciphers[OLD].Cipher->Encrypt(Data, (~cFileBlockMask) + 1, ID, StartByte);
-				}
-
-				DataLength -= (~cFileBlockMask) + 1;
-				ID += (~cFileBlockMask) + 1;
-				StartByte += (~cFileBlockMask) + 1;
-				Data = (uint8_t *)Data + (~cFileBlockMask) + 1;
-			}
-		}
-	}
-
-	if (DataLength > 0) // last partial file block handled here, also all other
+		m_Ciphers[CURRENT].Cipher->Encrypt(Data, DataLength, ID, StartByte);
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
 	{
-		if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-		{
-			m_Ciphers[CURRENT].Cipher->Encrypt(Data, DataLength, ID, StartByte);
-		} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-		{
-			m_Ciphers[OLD].Cipher->Encrypt(Data, DataLength, ID, StartByte);
-		}
+		m_Ciphers[OLD].Cipher->Encrypt(Data, DataLength, ID, StartByte);
 	}
 }
 void CEncryptionManager::Decrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte)
 {
-	if (Type == ET_FILE)
-		ID = ID & cFileBlockMask;
-
-	if (Type == ET_FILE)
+	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
 	{
-		if ((m_Ciphers[CURRENT].Type == ET_FILE) || (m_Ciphers[OLD].Type == ET_FILE))
-		{
-			if (StartByte & cFileBlockMask) // handle leading partial block
-			{
-				uint32_t d = (~cFileBlockMask) + 1 - (StartByte & cFileBlockMask);
-
-				if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-				{
-					m_Ciphers[CURRENT].Cipher->Decrypt(Data, d, ID, StartByte);
-				} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-				{
-					m_Ciphers[OLD].Cipher->Decrypt(Data, d, ID, StartByte);
-				}
-
-				DataLength -= d;
-				ID += (~cFileBlockMask) + 1;
-				StartByte += d;
-				Data = (uint8_t *)Data + d;
-			}
-
-			while (DataLength >= (~cFileBlockMask) + 1)
-			{
-				if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-				{
-					m_Ciphers[CURRENT].Cipher->Decrypt(Data, (~cFileBlockMask) + 1, ID, StartByte);
-				} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-				{
-					m_Ciphers[OLD].Cipher->Decrypt(Data, (~cFileBlockMask) + 1, ID, StartByte);
-				}
-
-				DataLength -= (~cFileBlockMask) + 1;
-				ID += (~cFileBlockMask) + 1;
-				StartByte += (~cFileBlockMask) + 1;
-				Data = (uint8_t *)Data + (~cFileBlockMask) + 1;
-			}
-		}
-	}
-
-	if (DataLength > 0) // last partial file block handled here, also all other
+		m_Ciphers[CURRENT].Cipher->Decrypt(Data, DataLength, ID, StartByte);
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
 	{
-		if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
-		{
-			m_Ciphers[CURRENT].Cipher->Decrypt(Data, DataLength, ID, StartByte);
-		} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
-		{
-			m_Ciphers[OLD].Cipher->Decrypt(Data, DataLength, ID, StartByte);
-		}
+		m_Ciphers[OLD].Cipher->Decrypt(Data, DataLength, ID, StartByte);
 	}
 }
 

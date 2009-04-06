@@ -54,13 +54,13 @@ static int SystemModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	upd.cbSize = sizeof(upd);
 	upd.szComponentName = gInternalName;
-	upd.szBetaVersionURL = "http://www.protogenes.de/?dbx_tree";
+	upd.szBetaVersionURL = "http://www-user.tu-chemnitz.de/~kunmi/?dbx_tree";
 	upd.pbBetaVersionPrefix = (BYTE *)"<!-- Updater Beta: ";
 	upd.cpbBetaVersionPrefix = 19;
-	upd.szBetaUpdateURL = "http://www.protogenes.de/Downloads/dbx_tree.zip";
+	upd.szBetaUpdateURL = "http://www-user.tu-chemnitz.de/~kunmi/Downloads/dbx_tree.zip";
 	upd.pbVersion = (BYTE*)gResVersionString;
 	upd.cpbVersion = sizeof(gResVersionString) - 1;
-	upd.szBetaChangelogURL = "http://www.protogenes.de/?dbx_tree=BetaLog&lang=en";
+	upd.szBetaChangelogURL = "http://www-user.tu-chemnitz.de/~kunmi/?dbx_tree=BetaLog&lang=en";
 
 	CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 

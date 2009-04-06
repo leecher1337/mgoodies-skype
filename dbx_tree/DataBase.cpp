@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 CDataBase *gDataBase = NULL;
 
 CDataBase::CDataBase(const char* FileName)
-: m_Sync()
 {
 	m_FileName[0] = new char[strlen(FileName) + 1];
 	m_FileName[1] = new char[strlen(FileName) + 5];
@@ -142,14 +141,14 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_EncryptionManager[Index] = new CEncryptionManager;
 
 	if (CMappedMemory::InitMMAP())
-		m_FileAccess[Index] = new CMappedMemory(m_FileName[Index], *m_EncryptionManager[Index], sizeof(m_Header[Index]));
+		m_FileAccess[Index] = new CMappedMemory(m_FileName[Index]);
 	else
-		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index], *m_EncryptionManager[Index], sizeof(m_Header[Index]));
+		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);
 
 	m_FileAccess[Index]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
 	m_EncryptionManager[Index]->InitEncryption(m_Header[Index].Gen.FileEncryption);
 
-	m_FileAccess[Index]->SetSize(m_Header[Index].Gen.FileSize);
+	m_FileAccess[Index]->Size(m_Header[Index].Gen.FileSize);
 	m_FileAccess[Index]->sigFileSizeChanged().connect(this, &CDataBase::onFileSizeChanged);
 
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
@@ -191,7 +190,6 @@ int CDataBase::OpenDB()
 	if (res != 0) return res;
 
 	m_Entities = new CEntities(*m_BlockManager[DBFilePrivate],
-		                       m_Sync,
 													 m_Header[DBFilePrivate].Pri.RootEntity,
 													 m_Header[DBFilePrivate].Pri.Entities,
 													 m_Header[DBFilePrivate].Pri.Virtuals);
@@ -209,7 +207,6 @@ int CDataBase::OpenDB()
 		                         *m_BlockManager[DBFilePrivate],
 														 *m_EncryptionManager[DBFileSetting],
 														 *m_EncryptionManager[DBFilePrivate],
-														 m_Sync,
 														 m_Header[DBFileSetting].Set.Settings,
 														 *m_Entities);
 
@@ -217,7 +214,6 @@ int CDataBase::OpenDB()
 
 	m_Events = new CEvents(*m_BlockManager[DBFilePrivate],
 		                     *m_EncryptionManager[DBFilePrivate],
-												 m_Sync,
 												 *m_Entities,
 												 *m_Settings);
 
@@ -246,16 +242,15 @@ bool CDataBase::CreateNewFile(TDBFileType File)
 		h.Gen.Version = cDBVersion;
 
 		CEncryptionManager enc;
-		CDirectAccess fa(m_FileName[File], enc, sizeof(TGenericFileHeader));
-		fa.SetSize(sizeof(h));
+		CDirectAccess fa(m_FileName[File]);
+		fa.Size(sizeof(h));
 		CBlockManager bm(fa, enc);
 		bm.ScanFile(sizeof(h), 0, sizeof(h));
 		uint32_t block = bm.CreateBlock(sizeof(h), cHeaderBlockSignature);
 
-		h.Gen.FileSize = fa.GetSize();
+		h.Gen.FileSize = fa.Size();
 		bm.WriteBlock(block, &h, sizeof(h), cHeaderBlockSignature);
 		fa.Write(&h, 0, sizeof(h));
-
 	}
 	catch (CException e)
 	{

@@ -170,7 +170,6 @@ public:
 	CEvents(
 		CBlockManager & BlockManager,
 		CEncryptionManager & EncryptionManager,
-		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CEntities & Entities,
 		CSettings & Settings
 		);
@@ -215,7 +214,6 @@ private:
   #endif
   typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 
-	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
 	CEncryptionManager & m_EncryptionManager;
 

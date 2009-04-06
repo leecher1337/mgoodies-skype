@@ -29,30 +29,56 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include "stdint.h"
 #endif
-#include "EncryptionManager.h"
 #include "Exception.h"
 #include "sigslot.h"
+#include <map>
+
+
+static const uint8_t cJournalSignature[20] = "Miranda IM Journal!";
 
 class CFileAccess
 {
 public:
-	CFileAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
+	CFileAccess(const char* FileName);
 	virtual ~CFileAccess();
 
-	uint32_t Read(void* Buf, uint32_t Source, uint32_t Size);
-  uint32_t Write(void* Buf, uint32_t Dest, uint32_t Size);
-	virtual uint32_t SetSize(uint32_t Size);
-	virtual uint32_t GetSize();
-	void SetReadOnly(bool ReadOnly);
-	bool GetReadOnly();
+	uint32_t Read(void* Buf, uint32_t Source, uint32_t Size) 
+	{
+		return mRead(Buf, Source, Size);
+	};
+  bool Write(void* Buf, uint32_t Dest, uint32_t Size)
+	{
+		return AppendJournal(Buf, Dest, Size);
+	};
+	void    Invalidate(uint32_t Dest, uint32_t Size);
+	virtual uint32_t Size(uint32_t Size);
+	virtual uint32_t Size()
+	{
+		return m_Size;
+	};
+	void ReadOnly(bool ReadOnly)
+	{
+		m_ReadOnly = ReadOnly;
+	};
+	bool ReadOnly()
+	{
+		return m_ReadOnly;
+	};
+
+	void CompleteTransaction();
+	void FlushJournal();
 
 	typedef sigslot::signal2<CFileAccess *, uint32_t> TOnFileSizeChanged;
 
-	TOnFileSizeChanged & sigFileSizeChanged();
+	TOnFileSizeChanged & sigFileSizeChanged()
+	{
+		return m_sigFileSizeChanged;
+	};
 
 protected:
 	char * m_FileName;
-	CEncryptionManager & m_EncryptionManager;
+	char * m_JournalFileName;
+	HANDLE m_Journal;
 	
 	uint32_t m_Size;
 	uint32_t m_AllocSize;
@@ -60,15 +86,16 @@ protected:
 	uint32_t m_MinAllocGranularity;
 	uint32_t m_MaxAllocGranularity;
 	uint32_t m_LastAllocTime;
-	uint32_t m_EncryptionStart;
 	bool m_ReadOnly;
 
 	TOnFileSizeChanged m_sigFileSizeChanged;
 	virtual uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size) = 0;
   virtual uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size) = 0;
+	virtual void     mInvalidate(uint32_t Dest, uint32_t Size) = 0;
 	virtual uint32_t mSetSize(uint32_t Size) = 0;
+	virtual void     mFlush() = 0;
 
-
-
-
+	bool AppendJournal(void* Buf, uint32_t DestAddr, uint32_t Size);
+	void CheckJournal();
+	void InitJournal();
 };

@@ -35,10 +35,12 @@ private:
 protected:
 	
 	uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size);
-  uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);	
+  uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);
+	void     mInvalidate(uint32_t Dest, uint32_t Size);
 	uint32_t mSetSize(uint32_t Size);
+	void     mFlush();
 public:
-	CMappedMemory(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
+	CMappedMemory(const char* FileName);
 	virtual ~CMappedMemory();
 
 	static bool InitMMAP();

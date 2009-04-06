@@ -111,12 +111,10 @@ CSettings::CSettings(
 		CBlockManager & BlockManagerPri,
 		CEncryptionManager & EncryptionManagerSet,
 		CEncryptionManager & EncryptionManagerPri,
-		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CSettingsTree::TNodeRef SettingsRoot,
 		CEntities & Entities
 )
-:	m_Sync(Synchronize),
-	m_BlockManagerSet(BlockManagerSet),
+:	m_BlockManagerSet(BlockManagerSet),
 	m_BlockManagerPri(BlockManagerPri),
 	m_EncryptionManagerSet(EncryptionManagerSet),
 	m_EncryptionManagerPri(EncryptionManagerPri),
@@ -139,8 +137,6 @@ CSettings::CSettings(
 
 CSettings::~CSettings()
 {
-	SYNC_BEGINWRITE(m_Sync);
-
 	TSettingsTreeMap::iterator it = m_SettingsMap.begin();
 
 	while (it != m_SettingsMap.end())
@@ -158,8 +154,6 @@ CSettings::~CSettings()
 			delete [] it2->second;
 		++it2;
 	}
-
-	SYNC_ENDWRITE(m_Sync);
 }
 
 
@@ -204,7 +198,7 @@ inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, CEncryptio
 		EncryptionManager.Decrypt(buf, len, ET_DATA, Setting, 0);
 		memcpy(NameBuf, buf + sizeof(((TSetting*)NULL)->Value), NameLength + 1);
 
-        free(buf);
+		free(buf);
 
 	} else {
 		BlockManager.ReadPart(Setting, NameBuf, sizeof(TSetting), NameLength + 1, sig);
@@ -332,8 +326,6 @@ typedef struct TSettingMergeHelper
 	TDBTEntityHandle Dest;
 	CSettingsTree * SourceTree;
 
-
-
 } TSettingMergeHelper, *PSettingMergeHelper;
 
 
@@ -440,15 +432,18 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 
 	CSettingsTree * tree;
 	TDBTSettingHandle res = 0;
+	CBlockManager * file = &m_BlockManagerPri;
+	if (Descriptor.Entity == 0)
+		file = &m_BlockManagerSet;
 
-	SYNC_BEGINREAD(m_Sync);
+	file->TransactionBeginRead();
 
 	if ((Descriptor.Entity == 0) || (Descriptor.Options == 0))
 	{
 		tree = getSettingsTree(Descriptor.Entity);
 		if (tree == NULL)
 		{
-			SYNC_ENDREAD(m_Sync);
+			file->TransactionEndRead();
 			return DBT_INVALIDPARAM;
 		}
 
@@ -461,7 +456,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 			Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 		}
 
-		SYNC_ENDREAD(m_Sync);
+		file->TransactionEndRead();
 
 		if (Descriptor.Entity == 0)
 			res = res | cSettingsFileFlag;
@@ -472,7 +467,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	uint32_t cf = m_Entities.getFlags(Descriptor.Entity);
 	if (cf == DBT_INVALIDPARAM)
 	{
-		SYNC_ENDREAD(m_Sync);
+		file->TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -494,7 +489,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	TDBTEntityIterationHandle i = m_Entities.IterationInit(f, Descriptor.Entity);
 	if ((i == DBT_INVALIDPARAM) || (i == 0))
 	{
-		SYNC_ENDREAD(m_Sync);
+		file->TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -521,18 +516,15 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 		Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	file->TransactionEndRead();
 
 	return res;
 }
 unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 {
-	SYNC_BEGINWRITE(m_Sync);
-
 	TDBTSettingHandle hset = FindSetting(Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{
-		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -549,6 +541,8 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 			hset = hset & ~cSettingsFileFlag;
 		}
 
+		file->TransactionBeginWrite();
+
 		if (file->ReadPart(hset, &con, offsetof(TSetting, Entity), sizeof(con), sig) &&
 			(con == Descriptor.FoundInEntity))
 		{
@@ -560,18 +554,15 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 			}
 		}
 
+		file->TransactionEndWrite();
 	} else {
 		res = DeleteSetting(hset);
 	}
-
-	SYNC_ENDWRITE(m_Sync);
 
 	return res;
 }
 unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 {
-	SYNC_BEGINWRITE(m_Sync);
-
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
 
@@ -580,15 +571,18 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 		file = &m_BlockManagerSet;
 		enc = &m_EncryptionManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
+
 	}
 
 	void* buf = NULL;
 	uint32_t size = 0;
 	uint32_t sig = cSettingSignature;
 
+	file->TransactionBeginWrite();
+
 	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
-		SYNC_ENDWRITE(m_Sync);
+		file->TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -597,7 +591,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	CSettingsTree * tree = getSettingsTree(set->Entity);
 	if (tree == NULL)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		file->TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -611,25 +605,33 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
 
 	file->DeleteBlock(hSetting);
-	SYNC_ENDWRITE(m_Sync);
+
+	file->TransactionEndWrite();
 
 	free(buf);
 	return 0;
 }
 TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting)
 {
-	SYNC_BEGINWRITE(m_Sync);
+	CBlockManager * file = &m_BlockManagerPri;
+
+	if (Setting.Descriptor->Entity == 0)
+	{
+		file = &m_BlockManagerSet;
+	}
+	
+	file->TransactionBeginWrite();
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if (hset == DBT_INVALIDPARAM)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		file->TransactionEndWrite();
 		return hset;
 	}
 
 	hset = WriteSetting(Setting, hset);
 
-	SYNC_ENDWRITE(m_Sync);
+	file->TransactionEndWrite();
 
 	return hset;
 }
@@ -637,8 +639,6 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 {
 	if (!hSetting && !(Setting.Descriptor && Setting.Descriptor->Entity))
 		return DBT_INVALIDPARAM;
-
-	SYNC_BEGINWRITE(m_Sync);
 
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
@@ -664,6 +664,8 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 			fileflag = true;
 		}
 
+		file->TransactionBeginWrite();
+
 		if ((Setting.Descriptor) && (Setting.Descriptor->pszSettingName)) // setting needs a name
 		{
 			tree = getSettingsTree(Setting.Descriptor->Entity);
@@ -672,13 +674,16 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 
 	} else {
 		TDBTEntityHandle e;
+
+		file->TransactionBeginWrite();
+
 		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Entity), sizeof(e), sig)) // check if hSetting is valid
 			tree = getSettingsTree(e);
 	}
 
 	if (tree == NULL)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		file->TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -791,6 +796,9 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	}
 
 	file->WriteBlock(hSetting, buf, blocksize, cSettingSignature);
+
+	file->TransactionEndWrite();
+
 	free(buf);
 
 	if (fileflag)
@@ -798,18 +806,23 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 		hSetting = hSetting | cSettingsFileFlag;
 	}
 
-	SYNC_ENDWRITE(m_Sync);
-
 	return hSetting;
 }
 unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 {
-	SYNC_BEGINREAD(m_Sync);
+	CBlockManager * file = &m_BlockManagerPri;
+
+	if (Setting.Descriptor->Entity == 0)
+	{
+		file = &m_BlockManagerSet;
+	}
+
+	file->TransactionBeginRead();
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{
-		SYNC_ENDREAD(m_Sync);
+		file->TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -820,7 +833,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 
 	Setting.Descriptor = back;
 
-	SYNC_ENDREAD(m_Sync);
+	file->TransactionEndRead();
 
 	return hset;
 }
@@ -844,15 +857,13 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 		return DBT_INVALIDPARAM;
 
 
-	SYNC_BEGINREAD(m_Sync);
+	file->TransactionBeginRead();
 
 	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		file->TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
-
-	SYNC_ENDREAD(m_Sync);
 
 	TSetting* set = (TSetting*)buf;
 	uint8_t* str = (uint8_t*)buf + sizeof(TSetting) + set->NameLength + 1;
@@ -861,6 +872,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 	{
 		enc->Decrypt(&(set->Value), enc->AlignSize(hSetting, ET_DATA, size - sizeof(TSetting) + sizeof(set->Value)), ET_DATA, hSetting, 0);
 	}
+
+	file->TransactionEndRead();
 
 	if (Setting.Type == 0)
 	{
@@ -1280,7 +1293,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filter)
 {
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManagerSet.TransactionBeginRead();
+	m_BlockManagerPri.TransactionBeginRead();
 
 	std::queue<TDBTEntityHandle> Entities;
 	Entities.push(Filter.hEntity);
@@ -1289,7 +1303,8 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 	if (tree == NULL)
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManagerPri.TransactionEndRead();
+		m_BlockManagerSet.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1299,7 +1314,8 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 		if (cf == DBT_INVALIDPARAM)
 		{
-			SYNC_ENDREAD(m_Sync);
+			m_BlockManagerPri.TransactionEndRead();
+			m_BlockManagerSet.TransactionEndRead();
 			return DBT_INVALIDPARAM;
 		}
 
@@ -1336,6 +1352,8 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	PSettingIteration iter = new TSettingIteration;
 	iter->Filter = Filter;
 	iter->FilterNameStartLength = 0;
+	iter->LockSetting = (Filter.hEntity == 0);
+	iter->LockPrivate = (Filter.hEntity != 0);
 	if (Filter.NameStart)
 	{
 		uint16_t l = strlen(Filter.NameStart);
@@ -1344,8 +1362,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 		iter->FilterNameStartLength = l;
 	}
 
-	TSettingKey key;
-	key.Hash = 0;
+	TSettingKey key = {0, 0};
 
 	// pop first Entity. we have always one and always its tree
 	Entities.pop();
@@ -1356,19 +1373,25 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 	while (!Entities.empty())
 	{
-		tree = getSettingsTree(Entities.front());
+		TDBTEntityHandle e = Entities.front();
 		Entities.pop();
+
+		tree = getSettingsTree(e);
 		if (tree != NULL)
 		{
 			tmp = new CSettingsTree::iterator(tree->LowerBound(key));
 			tmp->setManaged();
 			iter->Heap->Insert(*tmp);
+
+			iter->LockSetting = iter->LockSetting || (e == 0);
+			iter->LockPrivate = iter->LockPrivate || (e != 0);
 		}
 	}
 
 	iter->Frame = new std::queue<TSettingIterationResult>;
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManagerPri.TransactionEndRead();
+	m_BlockManagerSet.TransactionEndRead();
 
 	return (TDBTSettingIterationHandle)iter;
 }
@@ -1383,9 +1406,12 @@ typedef struct TSettingIterationHelper {
 
 TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 {
-	SYNC_BEGINREAD(m_Sync);
-
 	PSettingIteration iter = (PSettingIteration)Iteration;
+	
+	if (iter->LockSetting)
+		m_BlockManagerSet.TransactionBeginRead();
+	if (iter->LockPrivate)
+		m_BlockManagerPri.TransactionBeginRead();
 
 	while (iter->Frame->empty() && iter->Heap->Top())
 	{
@@ -1434,7 +1460,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 
 				q.push(help);
-				while (q.front().Handle != help.Handle)  // remove all qequed settings with same name
+				while (q.front().Handle != help.Handle)  // remove all queued settings with same name
 				{
 					bool namereadres = false;
 
@@ -1444,7 +1470,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 					if (tmp.Name == NULL)
 					{
-						if (help.Tree->getEntity() == 0)
+						if (tmp.Tree->getEntity() == 0)
 							namereadres = _ReadSettingName(m_BlockManagerSet, m_EncryptionManagerSet, tmp.Handle, tmp.NameLen, tmp.Name);
 						else
 							namereadres = _ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, tmp.Handle, tmp.NameLen, tmp.Name);
@@ -1513,7 +1539,10 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 		free(res.Name);
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	if (iter->LockPrivate)
+		m_BlockManagerPri.TransactionEndRead();
+	if (iter->LockSetting)
+		m_BlockManagerSet.TransactionEndRead();
 
 	return res.Handle;
 }
@@ -1521,9 +1550,15 @@ unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 {
 	PSettingIteration iter = (PSettingIteration) Iteration;
 
-	SYNC_BEGINREAD(m_Sync);
-	delete iter->Heap;  // only this need syncronization
-	SYNC_ENDREAD(m_Sync);
+	if (iter->LockSetting)
+		m_BlockManagerSet.TransactionBeginRead();
+	if (iter->LockPrivate)
+		m_BlockManagerPri.TransactionBeginRead();
+	delete iter->Heap;  // only this needs syncronization
+	if (iter->LockPrivate)
+		m_BlockManagerPri.TransactionEndRead();
+	if (iter->LockSetting)
+		m_BlockManagerSet.TransactionEndRead();
 
 	if (iter->Filter.NameStart)
 		delete [] iter->Filter.NameStart;
@@ -1564,21 +1599,21 @@ unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 
 int CSettings::CompEnumModules(DBMODULEENUMPROC CallBack, LPARAM lParam)
 {
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManagerSet.TransactionBeginRead();
 
 	TModulesMap::iterator i = m_Modules.begin();
 	int res = 0;
 	while ((i != m_Modules.end()) && (res == 0))
 	{
 		char * tmp = i->second;
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManagerSet.TransactionEndRead();
 
 		res = CallBack(tmp, 0, lParam);
 
-		SYNC_BEGINREAD(m_Sync);
+		m_BlockManagerSet.TransactionBeginRead();
 		++i;
 	}
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManagerSet.TransactionEndRead();
 
 	return res;
 }

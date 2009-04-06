@@ -55,8 +55,8 @@ bool CMappedMemory::InitMMAP()
 
 	return myUnmapViewOfFile && myFlushViewOfFile && myCreateFileMappingA && myMapViewOfFile;
 }
-CMappedMemory::CMappedMemory(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart)
-:	CFileAccess(FileName, EncryptionManager, EncryptionStart)
+CMappedMemory::CMappedMemory(const char* FileName)
+:	CFileAccess(FileName)
 {
 	SYSTEM_INFO sysinfo;
 
@@ -74,21 +74,29 @@ CMappedMemory::CMappedMemory(const char* FileName, CEncryptionManager & Encrypti
 	if (m_DirectFile == INVALID_HANDLE_VALUE)
 		throwException("CreateFile failed");
 
-	SetSize(GetFileSize(m_DirectFile, NULL));
+	Size(GetFileSize(m_DirectFile, NULL));
+
+	InitJournal();
 }
 
 CMappedMemory::~CMappedMemory()
 {
 	if (m_Base)
+	{
+		myFlushViewOfFile(m_Base, NULL);
 		myUnmapViewOfFile(m_Base);
+	}
 	if (m_FileMapping)
 		CloseHandle(m_FileMapping);
-
-	if (INVALID_SET_FILE_POINTER != SetFilePointer(m_DirectFile, m_Size, NULL, FILE_BEGIN))
-		SetEndOfFile(m_DirectFile);
-
+	
 	if (m_DirectFile)
+	{
+		if (INVALID_SET_FILE_POINTER != SetFilePointer(m_DirectFile, m_Size, NULL, FILE_BEGIN))
+			SetEndOfFile(m_DirectFile);
+
+		FlushFileBuffers(m_DirectFile);
 		CloseHandle(m_DirectFile);
+	}
 }
 
 
@@ -132,4 +140,15 @@ uint32_t CMappedMemory::mSetSize(uint32_t Size)
 		throwException("MapViewOfFile failed");
 
 	return Size;
+}
+
+void CMappedMemory::mInvalidate(uint32_t Dest, uint32_t Size)
+{
+	memset(m_Base + Dest, 0xda, Size);
+}
+
+void CMappedMemory::mFlush()
+{
+	myFlushViewOfFile(m_Base, NULL);
+	FlushFileBuffers(m_DirectFile);
 }

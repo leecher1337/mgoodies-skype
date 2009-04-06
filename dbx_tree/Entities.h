@@ -139,9 +139,9 @@ class CVirtuals :	public CFileBTree<TVirtualKey, 4>
 private:
 
 protected:
-	 CMultiReadExclusiveWriteSynchronizer & m_Sync;
+
 public:
-	CVirtuals(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TNodeRef Root);
+	CVirtuals(CBlockManager & BlockManager, TNodeRef Root);
 	virtual ~CVirtuals();
 
 	/**
@@ -173,7 +173,7 @@ class CEntities : public CFileBTree<TEntityKey, 6>
 {
 
 public:
-	CEntities(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBTEntityHandle RootEntity, TNodeRef EntityRoot, CVirtuals::TNodeRef VirtualRoot);
+	CEntities(CBlockManager & BlockManager, TDBTEntityHandle RootEntity, TNodeRef EntityRoot, CVirtuals::TNodeRef VirtualRoot);
 	virtual ~CEntities();
 
 	typedef sigslot::signal2<CEntities *, TDBTEntityHandle> TOnEntityDelete;
@@ -252,7 +252,6 @@ protected:
 	} TEntityIteration, *PEntityIteration;
 
 	TDBTEntityHandle m_RootEntity;
-	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CVirtuals m_Virtuals;
 
 	TDBTEntityHandle _CreateRootEntity();
