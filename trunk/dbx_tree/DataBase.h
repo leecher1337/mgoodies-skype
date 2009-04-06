@@ -72,7 +72,7 @@ typedef struct TPrivateHeader {
 	uint32_t Obscure;
 	TFileEncryption FileEncryption; /// Encryption Method
 	uint32_t FileSize;              /// Offset to the last used byte + 1
-	uint32_t RootEntity;           /// Offset to the Root CList Entity
+	uint32_t RootEntity;            /// Offset to the Root CList Entity
 	uint32_t Entities;              /// Offset to the EntityBTree RootNode
 	uint32_t Virtuals;              /// Offset to the VirtualsBTree RootNode
 	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 6*sizeof(uint32_t)]; /// reserved storage
@@ -119,8 +119,6 @@ private:
 	int CheckFile(TDBFileType Index);
 	int LoadFile(TDBFileType Index);
 protected:
-	CMultiReadExclusiveWriteSynchronizer m_Sync;
-
 	CEntities *m_Entities;
 	CSettings *m_Settings;
 	CEvents   *m_Events;

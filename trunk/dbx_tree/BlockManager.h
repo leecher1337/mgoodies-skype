@@ -29,9 +29,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Exception.h"
 #ifdef _MSC_VER
 #include "stdint.h"
+#include <hash_map>
 #else
 #include <stdint.h>
+#include <ext/hash_map>
 #endif
+
 #include "FileAccess.h"
 #include "EncryptionManager.h"
 #include "MREWSync.h"
@@ -41,8 +44,11 @@ class CBlockManager
 {
 protected:
 	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
-	static const uint32_t cVirtualBlockFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
-	static const uint32_t cForcedVirtualBlockFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+	static const uint32_t cBlockIsCachedFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+	static const uint32_t cBlockIsVirtualOnlyFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+	static const uint32_t cCacheChangedFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+	static const uint32_t cCacheUsedFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+
 
 	#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -78,41 +84,73 @@ protected:
 		COptimizeThread(CBlockManager & Owner) : CThread(true), m_Owner(Owner) {};
 		~COptimizeThread() {};
 	};
-
+	
 	typedef struct TBlockTableEntry {
 		uint32_t Addr;
 	} TBlockTableEntry;
 	std::vector<TBlockTableEntry> m_BlockTable;
 
+#pragma pack(push, 1)
+	typedef union TCacheItem 
+	{
+		volatile int64_t Complete;
+		struct {
+			volatile uint32_t BlockID;
+			volatile uint32_t Buffer;
+		};
+	} TCacheItem;
+#pragma pack(pop)
+
+	TCacheItem m_Cache[4096];
+	uint32_t m_CacheLastPurge;
+
+	static const uint32_t cCacheAddend = 3697;
+	static const uint32_t cCacheFactor[16];
+
+	typedef struct TCacheOverflowItem
+	{		
+		TCacheItem Item;
+		volatile TCacheOverflowItem * Next;
+	} TCacheOverflowItem;
+
+	volatile TCacheOverflowItem* m_CacheOverflow;
+	
 	CFileAccess & m_FileAccess;
 	CEncryptionManager & m_EncryptionManager;
-	CSmallMREWSynchronizer m_BlockSync;
+	CMultiReadExclusiveWriteSynchronizer m_BlockSync;
 
 	uint32_t m_FirstBlockStart;
 	TFreeBlockMap m_FreeBlocks;
 	std::vector<uint32_t> m_FreeIDs;
 
 	uint32_t m_Optimize;
+	uint32_t m_OptimizeDest;
 	COptimizeThread * m_OptimizeThread;
 	void ExecuteOptimize();
+	
+	TBlockHeadOcc* CacheInsert(uint32_t ID, TBlockHeadOcc * Buffer, bool Modify);
+	TBlockHeadOcc* CacheFind(uint32_t ID, bool Modify);
+	void CacheUpdate(uint32_t ID, TBlockHeadOcc * Buffer);
+	void CacheErase(uint32_t ID);
+	void CacheFlush();
+	void CachePurge();
 
-	void Read(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
-	void Write(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
-
-	bool InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header);
-	uint32_t CreateVirtualBlock(uint32_t BlockID, uint32_t ContentSize);
-
-	void InsertFreeBlock(uint32_t Addr, uint32_t Size, bool LookLeft = true, bool LookRight = true);
-	uint32_t FindFreePosition(uint32_t & Size);
+	bool InitOperation(uint32_t BlockID, uint32_t & Addr, TBlockHeadOcc* & Cache, bool Modify);
+	uint32_t GetAvailableID();
+	void InsertFreeBlock(uint32_t Addr, uint32_t Size, bool InvalidateData, bool Reuse);
 	void RemoveFreeBlock(uint32_t Addr, uint32_t Size);
-
-	void PartWriteEncrypt(uint32_t BlockID, uint32_t Offset, uint32_t Size, void * Buffer, uint32_t Addr);
+	uint32_t FindFreePosition(uint32_t Size);
 public:
 	CBlockManager(
 		CFileAccess & FileAccess,
 		CEncryptionManager & EncryptionManager
 		);
 	~CBlockManager();
+
+	void TransactionBeginRead();
+	void TransactionBeginWrite();
+	void TransactionEndRead();
+	void TransactionEndWrite();
 
 	uint32_t ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature, uint32_t FileSize);
 
@@ -126,7 +164,7 @@ public:
 
 	uint32_t CreateBlock(uint32_t Size, uint32_t Signature);
 	uint32_t CreateBlockVirtual(uint32_t Size, uint32_t Signature);
-	bool DeleteBlock(uint32_t BlockID);
+	bool     DeleteBlock(uint32_t BlockID);
 	uint32_t ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveData = true);
 
 	bool IsForcedVirtual(uint32_t BlockID);

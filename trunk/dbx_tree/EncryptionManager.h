@@ -41,9 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef enum TEncryptionType {
 	ET_NONE = 0,
-	ET_FILE = 1,
-	ET_BLOCK = 2,
-	ET_DATA = 3,
+	ET_BLOCK = 1,
+	ET_DATA = 2,
 	ET_MASK = 3
 } TEncryptionType;
 

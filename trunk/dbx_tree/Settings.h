@@ -147,7 +147,6 @@ public:
 		CBlockManager & BlockManagerPri,
 		CEncryptionManager & EncryptionManagerSet,
 		CEncryptionManager & EncryptionManagerPri,
-		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CSettingsTree::TNodeRef SettingsRoot,
 		CEntities & Entities
 		);
@@ -186,7 +185,6 @@ private:
 
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
-	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManagerSet;
 	CBlockManager & m_BlockManagerPri;
 	CEncryptionManager & m_EncryptionManagerSet;
@@ -208,6 +206,8 @@ private:
 		uint16_t FilterNameStartLength;
 		TSettingsHeap * Heap;
 		std::queue<TSettingIterationResult> * Frame;
+		bool LockSetting;
+		bool LockPrivate;
 	} TSettingIteration, *PSettingIteration;
 
 	TOnRootChanged m_sigRootChanged;

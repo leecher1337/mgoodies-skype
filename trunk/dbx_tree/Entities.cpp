@@ -22,9 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Entities.h"
 
-CVirtuals::CVirtuals(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TNodeRef RootNode)
-:   CFileBTree<TVirtualKey, 4>::CFileBTree(BlockManager, RootNode, cVirtualNodeSignature),
-	m_Sync(Synchronize)
+CVirtuals::CVirtuals(CBlockManager & BlockManager, TNodeRef RootNode)
+:   CFileBTree<TVirtualKey, 4>::CFileBTree(BlockManager, RootNode, cVirtualNodeSignature)
 {
 
 }
@@ -99,15 +98,15 @@ TDBTEntityHandle CVirtuals::getParent(TDBTEntityHandle hVirtual)
 	uint32_t size = sizeof(Entity);
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 	return Entity.VParent;
 }
 TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
@@ -117,13 +116,12 @@ TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
 	uint32_t size = sizeof(Entity);
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
-
-
+	m_BlockManager.TransactionBeginRead();
+	
 	if (!m_BlockManager.ReadBlock(hRealEntity, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_HasVirtuals) == 0))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -138,7 +136,7 @@ TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
 	else
 		key.Virtual = 0;
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return key.Virtual;
 }
@@ -149,12 +147,12 @@ TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 	uint32_t size = sizeof(Entity);
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -169,7 +167,7 @@ TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 	else
 		key.Virtual = 0;
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return key.Virtual;
 }
@@ -181,10 +179,9 @@ TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-CEntities::CEntities(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBTEntityHandle RootEntity, TNodeRef EntityRoot, CVirtuals::TNodeRef VirtualRoot)
+CEntities::CEntities(CBlockManager & BlockManager, TDBTEntityHandle RootEntity, TNodeRef EntityRoot, CVirtuals::TNodeRef VirtualRoot)
 :   CFileBTree<TEntityKey, 6>::CFileBTree(BlockManager, EntityRoot, cEntityNodeSignature),
-	m_Sync(Synchronize),
-	m_Virtuals(BlockManager, Synchronize, VirtualRoot),
+	m_Virtuals(BlockManager, VirtualRoot),
 
 	m_sigEntityDelete(),
 	m_sigInternalDeleteEvents(),
@@ -372,14 +369,14 @@ TDBTEntityHandle CEntities::getParent(TDBTEntityHandle hEntity)
 	TDBTEntityHandle par;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	if (!m_BlockManager.ReadPart(hEntity, &par, offsetof(TEntity, ParentEntity), sizeof(par), sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 	return par;
 }
 TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle hParent)
@@ -392,13 +389,13 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 	uint32_t fn, fo;
 	uint16_t l;
 
-	SYNC_BEGINWRITE(m_Sync);
+	m_BlockManager.TransactionBeginWrite();
 	if (!m_BlockManager.ReadBlock(hEntity, pEntity, size, sig) ||
 		  !m_BlockManager.ReadPart(hParent, &cn, offsetof(TEntity,ChildCount), sizeof(cn), sig) ||
 			!m_BlockManager.ReadPart(Entity.ParentEntity, &co, offsetof(TEntity, ChildCount), sizeof(co), sig) ||
 			!m_BlockManager.ReadPart(hParent, &l, offsetof(TEntity, Level), sizeof(l), sig))
 	{
-		SYNC_ENDWRITE(m_Sync);
+		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -470,7 +467,7 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 		IterationClose(iter);
 	}
 
-	SYNC_ENDWRITE(m_Sync);
+	m_BlockManager.TransactionEndWrite();
 
 	/// TODO raise event
 
@@ -482,14 +479,14 @@ uint32_t CEntities::getChildCount(TDBTEntityHandle hEntity)
 	uint32_t c;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	if (!m_BlockManager.ReadPart(hEntity, &c, offsetof(TEntity, ChildCount), sizeof(c), sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 	return c;
 }
 
@@ -498,14 +495,14 @@ uint32_t CEntities::getFlags(TDBTEntityHandle hEntity)
 	uint32_t f;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	if (!m_BlockManager.ReadPart(hEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 	return f;
 }
 
@@ -514,11 +511,11 @@ uint32_t CEntities::getAccount(TDBTEntityHandle hEntity)
 	uint32_t f, a;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	if (!m_BlockManager.ReadPart(hEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
 		  !m_BlockManager.ReadPart(hEntity, &a, offsetof(TEntity, Account), sizeof(a), sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -527,7 +524,7 @@ uint32_t CEntities::getAccount(TDBTEntityHandle hEntity)
 	else if (f & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot))
 		a = 0;
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 	return f;
 }
 
@@ -538,10 +535,10 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 	uint32_t size = sizeof(en);
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINWRITE(m_Sync);
+	m_BlockManager.TransactionBeginWrite();
 	if (!m_BlockManager.ReadBlock(Entity.hParentEntity, pparent, size, sig))
 	{
-		SYNC_ENDWRITE(m_Sync);
+		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -552,7 +549,7 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 		if (!m_BlockManager.ReadPart(Entity.hAccountEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
 			  !(f & DBT_NF_IsAccount))
 		{
-			SYNC_ENDWRITE(m_Sync);
+			m_BlockManager.TransactionEndWrite();
 			return DBT_INVALIDPARAM;
 		}
 
@@ -587,7 +584,7 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 	++parent.ChildCount;
 	m_BlockManager.WritePart(Entity.hParentEntity, &parent.ChildCount, offsetof(TEntity, ChildCount), sizeof(uint16_t));
 
-	SYNC_ENDWRITE(m_Sync);
+	m_BlockManager.TransactionEndWrite();
 	return hEntity;
 }
 
@@ -602,12 +599,12 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 
 	TEntityKey key;
 
-	SYNC_BEGINWRITE(m_Sync);
+	m_BlockManager.TransactionBeginWrite();
 	if (!m_BlockManager.ReadBlock(hEntity, pEntity, size, sig) ||
 		  !m_BlockManager.ReadPart(Entity.ParentEntity, &parentcc, offsetof(TEntity, ChildCount), sizeof(parentcc), sig) ||
 			!m_BlockManager.ReadPart(Entity.ParentEntity, &parentf, offsetof(TEntity, Flags), sizeof(parentf), sig))
 	{
-		SYNC_ENDWRITE(m_Sync);
+		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -692,7 +689,7 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 	m_BlockManager.WritePartCheck(Entity.ParentEntity, &parentcc, offsetof(TEntity, ChildCount), sizeof(parentcc), sig);
 	m_BlockManager.WritePart(Entity.ParentEntity, &parentf, offsetof(TEntity, Flags), sizeof(parentf));
 
-	SYNC_ENDWRITE(m_Sync);
+	m_BlockManager.TransactionEndWrite();
 	return 0;
 }
 
@@ -704,12 +701,12 @@ TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & 
 	uint32_t f;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 
 	if (!m_BlockManager.ReadPart(hParent, &l, offsetof(TEntity, Level), sizeof(l), sig) ||
 	    !m_BlockManager.ReadPart(hParent, &f, offsetof(TEntity, Flags), sizeof(f), sig))
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -734,7 +731,7 @@ TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & 
 
 	iter->q->push_back(it);
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return (TDBTEntityIterationHandle)iter;
 }
@@ -742,7 +739,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 {
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 
 	PEntityIteration iter = (PEntityIteration)Iteration;
 	TEntityIterationItem item;
@@ -779,7 +776,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 
 	if (iter->q->empty())
 	{
-		SYNC_ENDREAD(m_Sync);
+		m_BlockManager.TransactionEndRead();
 		return 0;
 	}
 
@@ -928,13 +925,13 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 	if (result == 0)
 		result = IterationNext(Iteration);
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return result;
 }
 unsigned int CEntities::IterationClose(TDBTEntityIterationHandle Iteration)
 {
-//	SYNC_BEGINREAD(m_Sync); // no sync needed
+//	m_BlockManager.TransactionBeginRead(); // no sync needed
 
 	PEntityIteration iter = (PEntityIteration) Iteration;
 
@@ -944,7 +941,7 @@ unsigned int CEntities::IterationClose(TDBTEntityIterationHandle Iteration)
 	delete iter->returned;
 	delete iter;
 
-//	SYNC_ENDREAD(m_Sync);
+//	m_BlockManager.TransactionEndRead();
 	return 0;
 }
 
@@ -955,12 +952,12 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 	uint32_t f;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINWRITE(m_Sync);
+	m_BlockManager.TransactionBeginWrite();
 
 	if (!m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
 		  (f & (DBT_NF_IsGroup | DBT_NF_IsRoot)))
 	{
-		SYNC_ENDWRITE(m_Sync);
+		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -972,7 +969,7 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 	TDBTEntityHandle result = CreateEntity(entity);
 	if (result == DBT_INVALIDPARAM)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
@@ -992,7 +989,7 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 
 	m_Virtuals._InsertVirtual(hRealEntity, result);
 
-	SYNC_ENDWRITE(m_Sync);
+	m_BlockManager.TransactionEndWrite();
 	return result;
 }
 
@@ -1014,7 +1011,7 @@ TDBTEntityHandle CEntities::compFirstContact()
 {
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 	TEntityKey key = {0,0,0};
 	iterator i = LowerBound(key);
 	TDBTEntityHandle res = 0;
@@ -1030,7 +1027,7 @@ TDBTEntityHandle CEntities::compFirstContact()
 		if (res == 0)
 			++i;
 	}
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return res;
 }
@@ -1038,7 +1035,7 @@ TDBTEntityHandle CEntities::compNextContact(TDBTEntityHandle hEntity)
 {
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);
+	m_BlockManager.TransactionBeginRead();
 
 	TEntityKey key;
 	key.Entity = hEntity;
@@ -1063,7 +1060,7 @@ TDBTEntityHandle CEntities::compNextContact(TDBTEntityHandle hEntity)
 		}
 	}
 
-	SYNC_ENDREAD(m_Sync);
+	m_BlockManager.TransactionEndRead();
 
 	return res;
 }

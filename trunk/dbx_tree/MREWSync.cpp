@@ -134,10 +134,10 @@ CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 	m_Sentinel = mrWRITEREQUEST;
 	m_ReadSignal = CreateEvent(NULL, true, true, NULL);
 	m_WriteSignal = CreateEvent(NULL, false, false, NULL);
-	m_WaitRecycle = INFINITE;
 	m_WriteRecursionCount = 0;
 	m_WriterID = 0;
 	m_RevisionLevel = 0;
+	m_Waiting = 0;
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	m_Log = CreateFileA("dbx_treeSync.log", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 #endif
@@ -169,6 +169,7 @@ void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 	{
 		if (!wasrecursive)
 		{
+			_InterlockedIncrement(&m_Waiting);
 			WaitForReadSignal();
 
 			while (_InterlockedDecrement((long*)&m_Sentinel) <= 0)
@@ -182,6 +183,8 @@ void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 
 				WaitForReadSignal();
 			}
+
+			_InterlockedDecrement(&m_Waiting);
 		}
 	}
 }
@@ -230,6 +233,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 		if (hasreadlock)
 			_InterlockedIncrement(&m_Sentinel);
 
+		_InterlockedIncrement(&m_Waiting);
 		while (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) != mrWRITEREQUEST)
 		{
 			test = _InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
@@ -237,6 +241,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 				WaitForWriteSignal();
 		}
 
+		_InterlockedDecrement(&m_Waiting);
 		BlockReaders();
 
 		if (hasreadlock)
@@ -251,9 +256,50 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 
 	return res;
 }
-void CMultiReadExclusiveWriteSynchronizer::EndWrite()
+
+bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
+{
+	bool res = true;
+	CThreadLocalCounter::PThreadInfo thread;
+	bool hasreadlock;
+	DWORD threadid = GetCurrentThreadId();
+
+	if (m_WriterID != threadid)
+	{
+		BlockReaders();
+
+		tls.Open(thread);
+
+		hasreadlock = thread->RecursionCount > 0;
+		if (hasreadlock)
+			_InterlockedIncrement(&m_Sentinel);
+
+		if (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) == mrWRITEREQUEST)
+		{
+			BlockReaders();
+
+			if (hasreadlock)
+				_InterlockedDecrement(&m_Sentinel);
+
+			m_WriterID = threadid;
+
+			_InterlockedIncrement(&m_RevisionLevel);
+
+		} else {
+			_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
+			res = false;
+		}
+
+	}
+
+	m_WriteRecursionCount++;
+
+	return res;
+}
+bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 {
 	CThreadLocalCounter::PThreadInfo thread;
+	bool res = false;
 
 	assert(m_WriterID == GetCurrentThreadId());
 
@@ -266,11 +312,13 @@ void CMultiReadExclusiveWriteSynchronizer::EndWrite()
 		UnblockOneWriter();
 
 		UnblockReaders();
+		res = true;
 	}
 
 	if (thread->RecursionCount == 0)
 		tls.Delete(thread);
 
+	return res;
 }
 
 
@@ -288,11 +336,11 @@ void CMultiReadExclusiveWriteSynchronizer::UnblockOneWriter()
 }
 void CMultiReadExclusiveWriteSynchronizer::WaitForReadSignal()
 {
-	WaitForSingleObject(m_ReadSignal, m_WaitRecycle);
+	WaitForSingleObject(m_ReadSignal, INFINITE);
 }
 void CMultiReadExclusiveWriteSynchronizer::WaitForWriteSignal()
 {
-	WaitForSingleObject(m_WriteSignal, m_WaitRecycle);
+	WaitForSingleObject(m_WriteSignal, INFINITE);
 }
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
@@ -313,10 +361,16 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite(char * File, int Line, cha
 	DoLog("BeginWrite", File, Line, Function);
 	return res;
 }
-void CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
+bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite(char * File, int Line, char * Function)
+{
+	bool res = TryBeginWrite();
+	DoLog("TryBeginWrite", File, Line, Function);
+	return res;
+}
+bool CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
 {
 	DoLog("EndWrite  ", File, Line, Function);
-	EndWrite();
+	return EndWrite();
 }
 
 
@@ -329,103 +383,3 @@ void CMultiReadExclusiveWriteSynchronizer::DoLog(char * Desc, char * File, int L
 	WriteFile(m_Log, buf, l, &read, NULL);
 }
 #endif
-
-
-
-
-CSmallMREWSynchronizer::CSmallMREWSynchronizer()
-{
-	m_Sentinel = mrWRITEREQUEST;
-	m_ReadSignal  = CreateEvent(NULL, true, true, NULL);
-	m_WriteSignal = CreateEvent(NULL, false, false, NULL);
-	m_WaitRecycle = INFINITE;
-	m_RevisionLevel = 0;
-	m_ReadWaiting = 0;
-	m_WriterID = 0;
-}
-CSmallMREWSynchronizer::~CSmallMREWSynchronizer()
-{
-	BeginWrite();
-	CloseHandle(m_WriteSignal);
-	CloseHandle(m_ReadSignal);
-}
-
-void CSmallMREWSynchronizer::BeginRead()
-{
-	if (GetCurrentThreadId() != m_WriterID)
-	{
-		_InterlockedIncrement(&m_ReadWaiting);
-		WaitForReadSignal();
-
-		while (_InterlockedDecrement((long*)&m_Sentinel) <= 0)
-		{
-			if (_InterlockedIncrement((long*)&m_Sentinel) == mrWRITEREQUEST)
-				UnblockOneWriter();
-
-			Sleep(0);
-
-			WaitForReadSignal();
-		}
-		_InterlockedDecrement(&m_ReadWaiting);
-	}
-}
-void CSmallMREWSynchronizer::EndRead()
-{
-	if (GetCurrentThreadId() != m_WriterID)
-	{
-		if ((_InterlockedIncrement((long*)&m_Sentinel) & (mrWRITEREQUEST - 1)) == 0)
-		{
-			UnblockOneWriter();
-		}
-	}
-}
-bool CSmallMREWSynchronizer::BeginWrite()
-{
-	int test;
-	long oldrevisionlevel;
-
-	BlockReaders();
-
-	oldrevisionlevel = m_RevisionLevel;
-
-	while (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) != mrWRITEREQUEST)
-	{
-		test = _InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
-		if (test > 0)
-			WaitForWriteSignal();
-	}
-
-	BlockReaders();
-
-	m_WriterID = GetCurrentThreadId();
-	return oldrevisionlevel == (_InterlockedIncrement(&m_RevisionLevel) - 1);
-}
-void CSmallMREWSynchronizer::EndWrite()
-{
-	m_WriterID = 0;
-	_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
-	UnblockOneWriter();
-	UnblockReaders();
-}
-
-
-void CSmallMREWSynchronizer::BlockReaders()
-{
-	ResetEvent(m_ReadSignal);
-}
-void CSmallMREWSynchronizer::UnblockReaders()
-{
-	SetEvent(m_ReadSignal);
-}
-void CSmallMREWSynchronizer::UnblockOneWriter()
-{
-	SetEvent(m_WriteSignal);
-}
-void CSmallMREWSynchronizer::WaitForReadSignal()
-{
-	WaitForSingleObject(m_ReadSignal, m_WaitRecycle);
-}
-void CSmallMREWSynchronizer::WaitForWriteSignal()
-{
-	WaitForSingleObject(m_WriteSignal, m_WaitRecycle);
-}

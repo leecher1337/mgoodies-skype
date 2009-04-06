@@ -5,7 +5,7 @@
 		<Option title="dbx_tree" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
-		<Option virtualFolders="Database\;Database\FileAccess\;Database\FileAccess\Encryption\;Database\FileAccess\Encryption\ARC4\;Database\FileAccess\Encryption\Cast128\;Database\FileAccess\Encryption\HC256\;Database\FileAccess\Encryption\SHA256\;Database\FileAccess\HeaderFiles\;Database\HeaderFiles\;Interface\;Interface\HeaderFiles\;Resources\;Resource\;Utils\;Utils\HeaderFiles\;" />
+		<Option virtualFolders="Database\;Database\FileAccess\;Database\FileAccess\Encryption\;Database\FileAccess\Encryption\SHA256\;Database\FileAccess\HeaderFiles\;Database\HeaderFiles\;Interface\;Interface\HeaderFiles\;Resources\;Resource\;Utils\;Utils\HeaderFiles\;" />
 		<Build>
 			<Target title="Debug Win32">
 				<Option output="bin\dbx_tree_D_GCC" prefix_auto="1" extension_auto="1" />
@@ -57,6 +57,7 @@
 					<Add option="-g" />
 					<Add option="-O0" />
 					<Add option="-DUNICODE" />
+					<Add option="-D_UNICODE" />
 					<Add directory="..\..\include" />
 				</Compiler>
 				<ResourceCompiler>
@@ -76,6 +77,7 @@
 					<Add option="-O3" />
 					<Add option="-W" />
 					<Add option="-DUNICODE" />
+					<Add option="-D_UNICODE" />
 					<Add directory="..\..\include" />
 				</Compiler>
 				<ResourceCompiler>
@@ -90,12 +92,6 @@
 			<Add option="-fpermissive" />
 			<Add option="-D__cplusplus" />
 		</Compiler>
-		<Unit filename="ARC4.cpp">
-			<Option virtualFolder="Database\FileAccess\Encryption\ARC4\" />
-		</Unit>
-		<Unit filename="ARC4.h">
-			<Option virtualFolder="Database\FileAccess\Encryption\ARC4\" />
-		</Unit>
 		<Unit filename="BTree.h">
 			<Option virtualFolder="Database\HeaderFiles\" />
 		</Unit>
@@ -104,21 +100,6 @@
 		</Unit>
 		<Unit filename="BlockManager.h">
 			<Option virtualFolder="Database\FileAccess\HeaderFiles\" />
-		</Unit>
-		<Unit filename="CAST128.cpp">
-			<Option virtualFolder="Database\FileAccess\Encryption\Cast128\" />
-		</Unit>
-		<Unit filename="CAST128.h">
-			<Option virtualFolder="Database\FileAccess\Encryption\Cast128\" />
-		</Unit>
-		<Unit filename="CAST128.inc">
-			<Option virtualFolder="Database\FileAccess\Encryption\Cast128\" />
-		</Unit>
-		<Unit filename="Cipher.h">
-			<Option virtualFolder="Database\FileAccess\Encryption\" />
-		</Unit>
-		<Unit filename="CipherList.inc">
-			<Option virtualFolder="Database\FileAccess\Encryption\" />
 		</Unit>
 		<Unit filename="Compatibility.cpp">
 			<Option virtualFolder="Interface\" />
@@ -176,12 +157,6 @@
 		</Unit>
 		<Unit filename="FileBTree.h">
 			<Option virtualFolder="Database\HeaderFiles\" />
-		</Unit>
-		<Unit filename="HC256.cpp">
-			<Option virtualFolder="Database\FileAccess\Encryption\HC256\" />
-		</Unit>
-		<Unit filename="HC256.h">
-			<Option virtualFolder="Database\FileAccess\Encryption\HC256\" />
 		</Unit>
 		<Unit filename="Hash.cpp">
 			<Option virtualFolder="Utils\" />
@@ -244,6 +219,9 @@
 		</Unit>
 		<Unit filename="dbVersion_rc.h">
 			<Option virtualFolder="Resource\" />
+		</Unit>
+		<Unit filename="encryption\Cipher.h">
+			<Option virtualFolder="Database\FileAccess\Encryption\" />
 		</Unit>
 		<Unit filename="init.cpp">
 			<Option virtualFolder="Interface\" />

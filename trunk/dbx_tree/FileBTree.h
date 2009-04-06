@@ -84,9 +84,8 @@ void CFileBTree<TKey, SizeParam>::Read(typename CBTree<TKey, SizeParam>::TNodeRe
 		m_BlockManager.ReadPart(Node, (uint8_t*)&Dest + Offset, Offset - 2, Size, sig);
 	}
 	Dest.Info = sig & 0xffff;
-	sig = sig & 0xffff0000;
 
-	if (sig != cSignature)
+	if ((sig & 0xffff0000) != cSignature)
 		throwException("Signature check failed");
 
 }

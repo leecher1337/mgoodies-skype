@@ -27,122 +27,205 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-CFileAccess::CFileAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart)
-: m_EncryptionManager(EncryptionManager)
+CFileAccess::CFileAccess(const char* FileName)
 {
 	m_FileName = new char[strlen(FileName) + 1];
+	m_JournalFileName = new char[strlen(FileName) + 5];
 	strcpy_s(m_FileName, strlen(FileName) + 1, FileName);
+	strcpy_s(m_JournalFileName, strlen(FileName) + 5, FileName);
+	strcat_s(m_JournalFileName, strlen(FileName) + 5, ".jrn");
+
 	m_ReadOnly = false;
-	m_EncryptionStart = EncryptionStart;
 
 	m_LastAllocTime = _time32(NULL);
 }
 
 CFileAccess::~CFileAccess()
 {
+	CloseHandle(m_Journal);
+	DeleteFileA(m_JournalFileName);
+
 	delete [] m_FileName;
+	delete [] m_JournalFileName;
 }
 
-uint32_t CFileAccess::Read(void* Buf, uint32_t Source, uint32_t Size)
+bool CFileAccess::AppendJournal(void* Buf, uint32_t DestAddr, uint32_t Size)
 {
-	uint32_t retsize = Size;
+	DWORD written;
+	uint32_t data[3] = {'writ', DestAddr, Size};
+	WriteFile(m_Journal, &data, sizeof(data), &written, NULL);
+	WriteFile(m_Journal, Buf, Size, &written, NULL);
 
-	if (((Source >= m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Source - m_EncryptionStart, ET_FILE))
-		|| ((Source + Size > m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Source + Size - m_EncryptionStart, ET_FILE)))
+	return true;
+}
+
+void CFileAccess::CompleteTransaction()
+{
+	uint32_t mark = 'fini';
+	DWORD written;
+	WriteFile(m_Journal, &mark, sizeof(mark), &written, NULL);
+	FlushFileBuffers(m_Journal);
+}
+
+void CFileAccess::FlushJournal()
+{
+	FlushFileBuffers(m_Journal);
+
+	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
+	uint32_t type;
+	uint32_t addr;
+	uint32_t size;
+	void* buf = NULL;
+	uint32_t bufsize = 0;
+	DWORD read;
+	bool b = true;
+	
+	while (b)
 	{
-		if (Source < m_EncryptionStart)
+		b = b && ReadFile(m_Journal, &type, sizeof(type), &read, NULL)
+			    && (read == sizeof(type));
+
+		if (b)
 		{
-			mRead(Buf, Source, m_EncryptionStart - Source);
-			Size -= m_EncryptionStart - Source;
-			Buf = (uint8_t *)Buf + (m_EncryptionStart - Source);
-			Source = m_EncryptionStart;
+			switch (type)
+			{
+				case 'fini': break;
+				case 'writ':
+				{
+					b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
+						&& (read == sizeof(addr));
+					b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
+						&& (read == sizeof(size));
+
+					if (b && (bufsize < size))
+					{
+						buf = realloc(buf, size);
+						bufsize = size;
+					}
+
+					b = b && ReadFile(m_Journal, buf, size, &read, NULL)
+								&& (read == size);
+
+					if (b)
+					{
+						if (addr + size <= m_Size)
+							mWrite(buf, addr, size);
+						else if (addr < m_Size)
+							mWrite(buf, addr, m_Size - addr);
+					}
+				} break;
+				case 'inva':
+				{
+					b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
+						&& (read == sizeof(addr));
+					b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
+						&& (read == sizeof(size));
+
+					if (b)
+					{
+						if (addr + size <= m_Size)
+							mInvalidate(addr, size);
+						else if (addr < m_Size)
+							mInvalidate(addr, m_Size - addr);
+					}
+				} break;
+				default: throwException("Jounral corrupt!");
+			}
 		}
-
-		uint32_t estart = Source - m_EncryptionStart;
-		uint32_t eend = Source + Size - m_EncryptionStart;
-		m_EncryptionManager.AlignData(Source, ET_FILE, estart, eend);
-
-		if ((estart != Source - m_EncryptionStart) || (eend != Source + Size - m_EncryptionStart)) // we need an extra buffer
-		{
-			uint8_t * cryptbuf = (uint8_t*) malloc(eend - estart);
-			mRead(cryptbuf, estart + m_EncryptionStart, eend - estart);
-			m_EncryptionManager.Decrypt(cryptbuf, eend - estart, ET_FILE, estart, estart);
-			memcpy(Buf, cryptbuf + (Source - m_EncryptionStart - estart), Size);
-            free(cryptbuf);
-
-		} else {
-			mRead(Buf, Source, Size);
-			m_EncryptionManager.Decrypt(Buf, Size, ET_FILE, estart, estart);
-		}
-
-	} else { // whole unencrypted goes here
-		mRead(Buf, Source, Size);
 	}
 
-	return retsize;
+	mFlush();
+
+	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
+	SetEndOfFile(m_Journal);
+
+	if (buf)
+		free(buf);
 }
-uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
+
+void CFileAccess::CheckJournal()
 {
-	uint32_t retsize = Size;
-	if (((Dest >= m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Dest - m_EncryptionStart, ET_FILE))
-		|| ((Dest + Size > m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Dest + Size - m_EncryptionStart, ET_FILE)))
+	DWORD read = 0;
+	uint8_t header[20];
+	uint32_t fileend = sizeof(header);
+	uint32_t currentpos = sizeof(header);
+	uint32_t type;
+	uint32_t addr;
+	uint32_t size;
+	if (ReadFile(m_Journal, header, sizeof(header), &read, NULL) && (read == sizeof(header)) && (memcmp(header, cJournalSignature, sizeof(header)) == 0))
 	{
-		if (Dest < m_EncryptionStart)
+		bool b = true;
+
+		while (b)
 		{
-			if (Dest < m_EncryptionStart)
+			b = b && ReadFile(m_Journal, &type, sizeof(type), &read, NULL)
+				&& (read == sizeof(type));
+			currentpos += read;
+
+			if (b)
 			{
-				mRead(Buf, Dest, m_EncryptionStart - Dest);
-				Size -= m_EncryptionStart - Dest;
-				Buf = (uint8_t *)Buf + (m_EncryptionStart - Dest);
-				Dest = m_EncryptionStart;
-			}
-
-			uint32_t estart1 = Dest - m_EncryptionStart;
-			uint32_t eend1 = estart1;
-			uint32_t estart2 = Dest + Size - m_EncryptionStart;
-			uint32_t eend2 = estart2;
-
-			m_EncryptionManager.AlignData(estart1, ET_FILE, estart1, eend1);
-			m_EncryptionManager.AlignData(estart2, ET_FILE, estart2, eend2);
-
-			uint8_t * cryptbuf = (uint8_t *) malloc(eend2 - estart1);
-
-			if (estart1 != estart2) // two different blocks
-			{
-				if (estart1 < Dest - m_EncryptionStart) // load leading block
+				switch (type)
 				{
-					mRead(cryptbuf, estart1 + m_EncryptionStart, eend1 - estart1);
-					m_EncryptionManager.Decrypt(cryptbuf, eend1 - estart1, ET_FILE, estart1, estart1);
+				case 'fini':
+					{
+						fileend = currentpos;
+					} break;
+				case 'writ':
+					{
+						b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
+							&& (read == sizeof(addr));
+						currentpos += read;
+						b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
+							&& (read == sizeof(size));
+						currentpos += read;
+
+						SetFilePointer(m_Journal, size, NULL, FILE_CURRENT);
+						currentpos += size;
+
+					} break;
+				case 'inva':
+					{
+						b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
+							&& (read == sizeof(addr));
+						currentpos += read;
+						b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
+							&& (read == sizeof(size));
+						currentpos += read;
+
+					} break;
 				}
-				if (eend2 > Dest - m_EncryptionStart + Size) // load trailing block
-				{
-					Read(cryptbuf + (estart2 - estart1), estart2 + m_EncryptionStart, eend2 - estart2);
-					m_EncryptionManager.Decrypt(cryptbuf + (estart2 - estart1), eend2 - estart2, ET_FILE, estart2, estart2);
-				}
-			} else if ((estart2 != Dest - m_EncryptionStart) || (eend2 != Dest + Size - m_EncryptionStart))
-			{ // only one block
-				Read(cryptbuf, estart2 + m_EncryptionStart, eend2 - estart2);
-				m_EncryptionManager.Decrypt(cryptbuf, eend2 - estart2, ET_FILE, estart2, estart2);
 			}
-
-			memcpy(cryptbuf + ((Dest - m_EncryptionStart) - estart1), Buf, Size);
-
-			m_EncryptionManager.Encrypt(cryptbuf, eend2 - estart1, ET_FILE, estart1, estart1);
-			mWrite(cryptbuf, estart1 + m_EncryptionStart, eend2 - estart1);
-
-			free(cryptbuf);
-
 		}
 
-	} else {
-		mWrite(Buf, Dest, Size);
-	}
+		SetFilePointer(m_Journal, fileend, NULL, FILE_BEGIN);
+		SetEndOfFile(m_Journal);
 
-	return retsize;
+		FlushJournal();
+	}
 }
 
+void CFileAccess::InitJournal()
+{
+	m_Journal = CreateFileA(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+	if (m_Journal == INVALID_HANDLE_VALUE) 
+		throwException("CreateFile failed on Journal");
 
-uint32_t CFileAccess::SetSize(uint32_t Size)
+	CheckJournal();
+
+	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
+	SetEndOfFile(m_Journal);
+	DWORD written;
+	WriteFile(m_Journal, cJournalSignature, sizeof(cJournalSignature), &written, NULL);
+}
+
+void CFileAccess::Invalidate(uint32_t Dest, uint32_t Size)
+{
+	DWORD written;
+	uint32_t data[3] = {'inva', Dest, Size};
+	WriteFile(m_Journal, &data, sizeof(data), &written, NULL);
+}
+
+uint32_t CFileAccess::Size(uint32_t Size)
 {
 	m_sigFileSizeChanged.emit(this, Size);
 
@@ -152,9 +235,6 @@ uint32_t CFileAccess::SetSize(uint32_t Size)
 
 	if (Size == 0)
 		Size = m_AllocGranularity;
-
-	if (Size >= m_EncryptionStart)
-		Size = m_EncryptionManager.AlignSize(Size - m_EncryptionStart, ET_FILE, Size - m_EncryptionStart) + m_EncryptionStart;
 
 	if (Size != m_AllocSize)
 	{
@@ -177,22 +257,4 @@ uint32_t CFileAccess::SetSize(uint32_t Size)
 	}
 
 	return Size;
-}
-uint32_t CFileAccess::GetSize()
-{
-	return m_Size;
-}
-
-void CFileAccess::SetReadOnly(bool ReadOnly)
-{
-	m_ReadOnly = ReadOnly;
-}
-bool CFileAccess::GetReadOnly()
-{
-	return m_ReadOnly;
-}
-
-CFileAccess::TOnFileSizeChanged & CFileAccess::sigFileSizeChanged()
-{
-	return m_sigFileSizeChanged;
 }

@@ -32,9 +32,12 @@ private:
 	HANDLE m_File;
 protected:
 	uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size);
-  uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);	
+  uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);
+	void     mInvalidate(uint32_t Dest, uint32_t Size);
 	uint32_t mSetSize(uint32_t Size);
+	void     mFlush();
 public:
-	CDirectAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
+	CDirectAccess(const char* FileName);
 	virtual ~CDirectAccess();
+
 };
