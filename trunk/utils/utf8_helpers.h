@@ -385,4 +385,106 @@ private:
 };
 
 
+
+
+class BstrToTchar
+{
+public:
+	BstrToTchar() : bstr(NULL)
+#ifndef UNICODE
+		, tchar(NULL)
+#endif
+	{
+	}
+
+	BstrToTchar(const WCHAR *str) : bstr(NULL)
+#ifndef UNICODE
+		, tchar(NULL)
+#endif
+	{
+		if (str == NULL)
+			return;
+
+		bstr = SysAllocString(str);
+	}
+
+	BstrToTchar(const char *str) : bstr(NULL)
+#ifndef UNICODE
+		, tchar(NULL)
+#endif
+	{
+		if (str == NULL)
+			return;
+
+		bstr = SysAllocString(CharToWchar(str));
+	}
+
+
+	~BstrToTchar()
+	{
+		if (bstr != NULL)
+			SysFreeString(bstr);
+
+#ifndef UNICODE
+		freeTchar();
+#endif
+	}
+
+	BSTR detach()
+	{
+		BSTR ret = bstr;
+		bstr = NULL;
+		return ret;
+	}
+
+	operator const TCHAR *()
+	{
+#ifdef UNICODE
+
+		return bstr;
+
+#else
+
+		if (tchar == NULL)
+			tchar = mir_u2a(bstr);
+
+		return tchar;
+
+#endif
+	}
+
+	operator const BSTR()
+	{
+		return bstr;
+	}
+
+	operator BSTR *()
+	{
+#ifndef UNICODE
+		freeTchar();
+#endif
+
+		return &bstr;
+	}
+
+private:
+	BSTR bstr;
+
+#ifndef UNICODE
+
+	TCHAR *tchar;
+
+	void freeTchar()
+	{
+		if (tchar != NULL)
+		{
+			mir_free(tchar);
+			tchar = NULL;
+		}
+	}
+
+#endif
+};
+
+
 #endif // __UTF8_HELPERS_H__
