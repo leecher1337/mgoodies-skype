@@ -58,8 +58,8 @@ PLUGININFOEX pluginInfo={
 	"Remove personal settings to allow to send a profile to other user(s) without sending personal data.",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2007 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/rps",
+	"© 2007-2009 Ricardo Pescuma Domenecci",
+	"http://pescuma.org/miranda/rps",
 	0,		//not transient
 	0,		//doesn't replace anything built-in
 	{ 0x60e94b84, 0xa799, 0x4021, { 0x94, 0x49, 0x5b, 0x83, 0x8f, 0xc0, 0x6a, 0x7c } } // {60E94B84-A799-4021-9449-5B838FC06A7C}
@@ -360,6 +360,7 @@ void RemoveSettings()
 		PROTOCOLDESCRIPTOR **protos;
 		int i,count;
 
+		// TODO MS_PROTO_ENUMACCOUNTS
 		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
 
 		for (i = 0; i < count; i++)
