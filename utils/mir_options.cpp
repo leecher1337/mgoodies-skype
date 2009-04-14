@@ -41,7 +41,7 @@ Boston, MA 02111-1307, USA.
 
 static TCHAR* MyDBGetContactSettingTString(HANDLE hContact, char* module, char* setting, TCHAR* out, size_t len, TCHAR *def)
 {
-	DBVARIANT dbv;
+	DBVARIANT dbv = {0};
 
 	out[0] = _T('\0');
 
