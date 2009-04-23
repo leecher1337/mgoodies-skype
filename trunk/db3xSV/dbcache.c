@@ -191,8 +191,8 @@ void DBMoveChunk(DWORD ofsDest,DWORD ofsSource,int bytes)
 	logg();
 }
 
-static int flushBuffersTimerId;
-static VOID CALLBACK DoBufferFlushTimerProc(HWND hwnd,UINT message,UINT idEvent,DWORD dwTime)
+static UINT_PTR flushBuffersTimerId;
+static VOID CALLBACK DoBufferFlushTimerProc(HWND hwnd,UINT message,UINT_PTR idEvent,DWORD dwTime)
 {
 	KillTimer(NULL,flushBuffersTimerId);
 	log0("tflush1");
@@ -212,7 +212,7 @@ void DBFlush(int setting)
 	flushBuffersTimerId=SetTimer(NULL,flushBuffersTimerId,50,DoBufferFlushTimerProc);
 }
 
-static int CacheSetSafetyMode(WPARAM wParam,LPARAM lParam)
+static INT_PTR CacheSetSafetyMode(WPARAM wParam,LPARAM lParam)
 {
 	EnterCriticalSection(&csDbAccess);
 	safetyMode=wParam;

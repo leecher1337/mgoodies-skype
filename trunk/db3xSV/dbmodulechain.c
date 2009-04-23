@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern struct DBHeader dbHeader;
 
-static int EnumModuleNames(WPARAM wParam,LPARAM lParam);
+static INT_PTR EnumModuleNames(WPARAM wParam,LPARAM lParam);
 
 struct ModuleName {
 	char *name;
@@ -83,7 +83,7 @@ static DWORD FindExistingModuleNameOfs(const char *szName,int nameLen)
 DWORD GetModuleNameOfs(const char *szName)
 {
 	struct DBModuleName dbmn;
-	int nameLen=strlen(szName);
+	int nameLen=(int)strlen(szName);
 	DWORD ofsNew,ofsExisting;
 
 	ofsExisting=FindExistingModuleNameOfs(szName,nameLen);
@@ -120,13 +120,13 @@ char *GetModuleNameByOfs(DWORD ofs)
 	return NULL;
 } 
 
-static int EnumModuleNames(WPARAM wParam,LPARAM lParam)
+static INT_PTR EnumModuleNames(WPARAM wParam,LPARAM lParam)
 {
 	int i;
-	int ret;
+	INT_PTR ret;
 	for(i=0;i<moduleNameCount;i++) {
 		ret=((DBMODULEENUMPROC)lParam)(moduleName[i].name,moduleName[i].ofs,wParam);
-		if(ret) return ret;
+		if (ret) return ret;
 	}
 	return 0;
 }

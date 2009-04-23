@@ -125,10 +125,6 @@ SOURCE=.\dbheaders.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\dbini.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\dblists.c
 # End Source File
 # Begin Source File

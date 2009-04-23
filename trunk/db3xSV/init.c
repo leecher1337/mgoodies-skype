@@ -245,9 +245,9 @@ static PLUGININFOEX pluginInfo = {
 #endif
 	authemail,
 #ifdef SECUREDB
-	"Copyright 2000-2007 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
+	"Copyright 2000-2009 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
 #else
-	"Copyright 2000-2007 Miranda-IM project; YB; Pescuma",
+	"Copyright 2000-2009 Miranda-IM project; YB; Pescuma",
 #endif
 	"http://saaplugin.no-ip.info/db3xV/",
 	UNICODE_AWARE,

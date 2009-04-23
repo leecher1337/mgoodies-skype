@@ -3,15 +3,15 @@
 
 #include <m_clist.h>
 
-int EncReadFile(HANDLE hFile,void* data,unsigned long toread,unsigned long* read,void* ov);
-int EncWriteFile(HANDLE hFile,void* data,unsigned long towrite,unsigned long* written,void* ov);
-int EncGetPassword(void* dbh,const char* dbase);
-int EncInitMenus(WPARAM wParam, LPARAM lParam);
-int EncOnLoad();
+INT_PTR EncReadFile(HANDLE hFile,void* data,unsigned long toread,unsigned long* read,void* ov);
+INT_PTR EncWriteFile(HANDLE hFile,void* data,unsigned long towrite,unsigned long* written,void* ov);
+INT_PTR EncGetPassword(void* dbh,const char* dbase);
+INT_PTR EncInitMenus(WPARAM wParam, LPARAM lParam);
+INT_PTR EncOnLoad();
 
- int DB3XSSetPassword(WPARAM wParam, LPARAM lParam);
- int DB3XSRemovePassword(WPARAM wParam, LPARAM lParam);
- int DB3XSMakeBackup(WPARAM wParam, LPARAM lParam);
+ INT_PTR DB3XSSetPassword(WPARAM wParam, LPARAM lParam);
+ INT_PTR DB3XSRemovePassword(WPARAM wParam, LPARAM lParam);
+ INT_PTR DB3XSMakeBackup(WPARAM wParam, LPARAM lParam);
 
 extern long g_secured;
 extern HANDLE hSetPwdMenu;
