@@ -55,7 +55,7 @@ BOOL CALLBACK DlgStdInProc(HWND hDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 	switch(uMsg)
 	{
 	case WM_INITDIALOG:
-		{
+		{	
 			SendDlgItemMessage(hDlg,IDC_EDIT1,EM_LIMITTEXT,sizeof(g_password)-1,0);
 
 			if(lParam)
@@ -64,7 +64,7 @@ BOOL CALLBACK DlgStdInProc(HWND hDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			}else{
 				SendDlgItemMessage(hDlg,IDC_EDIT2,EM_LIMITTEXT,sizeof(g_password)-1,0);
 			}
-			SetWindowLong(hDlg,GWL_USERDATA,(lParam==0));
+			SetWindowLongPtr(hDlg,GWLP_USERDATA,(lParam==0));
 
 			return (TRUE);
 		}
@@ -72,7 +72,7 @@ BOOL CALLBACK DlgStdInProc(HWND hDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 		{
 			UINT uid = LOWORD(wParam);
 			if(uid == IDOK){
-				if(!GetWindowLong(hDlg,GWL_USERDATA))
+				if(!GetWindowLongPtr(hDlg,GWLP_USERDATA))
 				{
 					g_passlen = GetDlgItemText(hDlg,IDC_EDIT1,g_password,sizeof(g_password)-1);
 					if(g_passlen<4){
@@ -136,7 +136,7 @@ void updateCachedHdr(struct DBHeader* dbh)
 	}
 }
 
-int EncGetPassword(void* pdbh,const char* dbase)
+INT_PTR EncGetPassword(void* pdbh,const char* dbase)
 {
 	extern HINSTANCE g_hInst;
 	int res;
@@ -277,7 +277,7 @@ End:
 }
 
 
- int DB3XSSetPassword(WPARAM wParam, LPARAM lParam)
+ INT_PTR DB3XSSetPassword(WPARAM wParam, LPARAM lParam)
 {
 	extern HINSTANCE g_hInst;
 	sha256_context ctx;
@@ -304,7 +304,7 @@ End:
 	return 0;
 }
 
- int DB3XSRemovePassword(WPARAM wParam, LPARAM lParam)
+ INT_PTR DB3XSRemovePassword(WPARAM wParam, LPARAM lParam)
 {
 	if(g_secured && MessageBox(NULL,Translate("Are you sure you want to remove the password?"),"SecureDB",MB_ICONQUESTION | MB_YESNO)==IDYES)
 	{
@@ -317,7 +317,7 @@ End:
 	return 0;
 }
 
- int DB3XSMakeBackup(WPARAM wParam, LPARAM lParam)
+ INT_PTR DB3XSMakeBackup(WPARAM wParam, LPARAM lParam)
 {
 	extern CRITICAL_SECTION csDbAccess;
 	extern HANDLE hDbFile;
@@ -368,7 +368,7 @@ End:
 	return result;
 }
 
-int EncReadFile(HANDLE hFile,void* data,unsigned long toread,unsigned long* read,void* dummy)
+INT_PTR EncReadFile(HANDLE hFile,void* data,unsigned long toread,unsigned long* read,void* dummy)
 {
 	unsigned char* bd = (unsigned char*)data;
 	unsigned long i;
@@ -404,7 +404,7 @@ int EncReadFile(HANDLE hFile,void* data,unsigned long toread,unsigned long* read
 	}
 }
 
-int EncWriteFile(HANDLE hFile,void* data,unsigned long towrite,unsigned long* written,void* dummy)
+INT_PTR EncWriteFile(HANDLE hFile,void* data,unsigned long towrite,unsigned long* written,void* dummy)
 {
 	static unsigned char statbuff[16*1024];
 

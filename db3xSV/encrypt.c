@@ -47,13 +47,13 @@ void Encrypt(char*msg,BOOL up)
 
 }
 
-static int EncodeString(WPARAM wParam,LPARAM lParam)
+static INT_PTR EncodeString(WPARAM wParam,LPARAM lParam)
 {
 	Encrypt((char*)lParam,TRUE);
 	return 0;
 }
 
-static int DecodeString(WPARAM wParam,LPARAM lParam)
+static INT_PTR DecodeString(WPARAM wParam,LPARAM lParam)
 {
 	Encrypt((char*)lParam,FALSE);
 	return 0;

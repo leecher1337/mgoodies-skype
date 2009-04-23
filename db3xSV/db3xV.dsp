@@ -121,10 +121,6 @@ SOURCE=.\dbheaders.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\dbini.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\dblists.c
 # End Source File
 # Begin Source File
@@ -191,6 +187,10 @@ SOURCE=.\virtdb.h
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\Db.ico
+# End Source File
 # Begin Source File
 
 SOURCE=.\resource.rc
