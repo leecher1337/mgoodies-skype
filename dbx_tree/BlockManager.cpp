@@ -115,7 +115,12 @@ void CBlockManager::ExecuteOptimize()
 			m_FileAccess.Read(buf, m_Optimize, h.Size);
 			m_FileAccess.Write(buf, m_OptimizeDest, h.Size);
 
-			m_BlockTable[h.ID >> 2].Addr = m_OptimizeDest | (m_BlockTable[h.ID >> 2].Addr & (cBlockIsCachedFlag | cBlockIsVirtualOnlyFlag));
+			switch (m_BlockTable[h.ID >> 2].Addr & (cBlockIsCachedFlag | cBlockIsVirtualOnlyFlag))
+			{
+				case 0:                  m_BlockTable[h.ID >> 2].Addr = m_OptimizeDest; break;
+				case cBlockIsCachedFlag: m_BlockTable[h.ID >> 2].Addr = m_OptimizeDest | cBlockIsCachedFlag; break;
+			}
+
 			m_OptimizeDest += h.Size;
 			m_Optimize += h.Size;
 		} else {
@@ -131,7 +136,8 @@ void CBlockManager::ExecuteOptimize()
 			if (m_OptimizeDest != m_Optimize)
 				InsertFreeBlock(m_OptimizeDest, m_Optimize - m_OptimizeDest, true, false);				
 
-			m_FileAccess.CompleteTransaction();
+			//m_FileAccess.CompleteTransaction();
+			m_FileAccess.CloseTransaction();
 			m_FileAccess.FlushJournal();
 			lastflush = m_OptimizeDest;
 			
@@ -151,35 +157,13 @@ void CBlockManager::ExecuteOptimize()
 	
 	m_OptimizeThread = NULL;
 	m_Optimize = 0;
+	m_FileAccess.CompleteTransaction();
+	m_FileAccess.CloseTransaction();
 	m_FileAccess.FlushJournal();
 	SYNC_ENDWRITE(m_BlockSync);
 
 	if (buf)
 		free(buf);
-}
-
-void CBlockManager::TransactionBeginRead()
-{
-	SYNC_BEGINREAD(m_BlockSync);
-}
-void CBlockManager::TransactionBeginWrite()
-{
-	SYNC_BEGINWRITE(m_BlockSync);
-}
-void CBlockManager::TransactionEndRead()
-{
-	SYNC_ENDREAD(m_BlockSync);
-	CachePurge();
-}
-void CBlockManager::TransactionEndWrite()
-{
-	if (m_BlockSync.WriteRecursionCount() == 1)
-	{
-		CacheFlush();
-		m_FileAccess.CompleteTransaction();
-		CachePurge();
-	}
-	SYNC_ENDWRITE(m_BlockSync);
 }
 
 CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHeadOcc * Buffer, bool Modify)
@@ -197,7 +181,7 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHead
 		if (Modify)
 			newitem.Buffer = newitem.Buffer | cCacheChangedFlag;
 
-		while (count < 8)
+		while (count < cCacheDepth)
 		{
 			olditem = m_Cache[index];
 			if (olditem.BlockID == ID)
@@ -261,7 +245,7 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheFind(uint32_t ID, bool Modify)
 	uint32_t count = 0;
 	TCacheItem olditem, newitem;
 
-	while (count < 8)
+	while (count < cCacheDepth)
 	{
 		olditem = m_Cache[index];
 		if (olditem.BlockID == ID)
@@ -288,7 +272,7 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheFind(uint32_t ID, bool Modify)
 						}
 						return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
 					}
-				}				
+				}
 			} else {
 				return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
 			}
@@ -319,7 +303,7 @@ void CBlockManager::CacheUpdate(uint32_t ID, TBlockHeadOcc * Buffer)
 	uint32_t index = ID & 0xfff;
 	uint32_t count = 0;
 
-	while (count < 8)
+	while (count < cCacheDepth)
 	{
 		if (m_Cache[index].BlockID == ID)
 		{
@@ -346,7 +330,7 @@ void CBlockManager::CacheErase(uint32_t ID)
 	uint32_t index = ID & 0xfff;
 	uint32_t count = 0;
 
-	while (count < 8)
+	while (count < cCacheDepth)
 	{
 		if (m_Cache[index].BlockID == ID)
 		{			
@@ -436,6 +420,7 @@ inline void CBlockManager::CachePurge()
 {
 	if (((time(NULL) - m_CacheLastPurge > 60) || (m_CacheOverflow != NULL)) && SYNC_TRYBEGINWRITE(m_BlockSync))
 	{
+		
 		m_FileAccess.FlushJournal();
 
 		m_CacheLastPurge = time(NULL);
@@ -517,7 +502,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 				if (m_Optimize == 0)
 					m_Optimize = p;
 
-				InsertFreeBlock(p - lasth.Size, lasth.Size, merge, true);
+				InsertFreeBlock(p - lasth.Size, lasth.Size, merge, (p - lasth.Size) != m_OptimizeDest);
 			}
 			lasth = h;
 			merge = false;
@@ -541,6 +526,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 	}
 
 	m_FileAccess.CompleteTransaction();
+	m_FileAccess.CloseTransaction();
 	m_FileAccess.FlushJournal();
 
 	if (m_Optimize && !m_FileAccess.ReadOnly())
@@ -576,7 +562,8 @@ inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size, bool In
 {
 	if (Addr + Size == m_FileAccess.Size())
 	{
-		m_FileAccess.Size(Addr);
+		if (Reuse)
+			m_FileAccess.Size(Addr);
 	} else {
 		TBlockHeadFree h = {cFreeBlockID, Size};
 		TBlockTailFree t = {Size, cFreeBlockID};
@@ -623,7 +610,8 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t Size)
 		m_FileAccess.Size(addr + Size);
 		
 	} else { 			
-		addr = f->second;		
+		addr = f->second;
+
 		if (f->first != Size)
 		{
 			InsertFreeBlock(addr + Size, f->first - Size, false, true);
@@ -652,7 +640,7 @@ inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, TBlo
 
 
 	// 0 -> only in file
-	// cBlockIsCachedFlag -> cached and in file
+	// cBlockIsCachedFlag -> in cache and file
 	// cBlockIsCachedFlag | cBlockIsVirtualOnly -> cached only, but not forced
 	// cBlockIsVirtualOnlyFlag -> cached only, forced
 	switch (Addr & (cBlockIsVirtualOnlyFlag | cBlockIsCachedFlag))

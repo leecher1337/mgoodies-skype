@@ -43,19 +43,19 @@ void CEncryptionManager::LoadCipherList()
 	if (!file)
 		file = path;
 
-	_tcscpy_s(file, sizeof(path) - (file - path), _T("\\plugins\\encryption\\*.dll"));
+	_tcscpy_s(file, sizeof(path) / sizeof(path[0]) - (file - path), _T("\\plugins\\encryption\\*.dll"));
 	file += 20;
 
 	HANDLE hfinder = FindFirstFile(path, &search);
-	if (hfinder)
+	if (hfinder != INVALID_HANDLE_VALUE)
 	{
 		TCipherItem item;
 		TCipherInfo* (__cdecl *CipherInfoProc)(void *);
 		do {
-			_tcscpy_s(file, sizeof(path) - (file - path), search.cFileName);
+			_tcscpy_s(file, sizeof(path) / sizeof(path[0]) - (file - path), search.cFileName);
 			HMODULE hmod = LoadLibrary(path);
 			if (hmod)
-			{				
+			{
 				CipherInfoProc = (TCipherInfo*(__cdecl*)(void*)) GetProcAddress(hmod, "CipherInfo");
 				if (CipherInfoProc)
 				{

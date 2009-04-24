@@ -89,7 +89,7 @@ void CDirectAccess::mInvalidate(uint32_t Dest, uint32_t Size)
 {
 	DWORD written;
 	uint8_t buf[4096];
-	memset(buf, 0xda, sizeof(buf));
+	memset(buf, 0, sizeof(buf));
 
 	if (INVALID_SET_FILE_POINTER == SetFilePointer(m_File, Dest, NULL, FILE_BEGIN))
 		throwException("Cannot set file position");

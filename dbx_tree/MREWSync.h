@@ -23,10 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma once
 
 #include <windows.h>
+#include "ThreadLocalStorage.h"
 
 //#define MREW_DO_DEBUG_LOGGING 1
-
-#define cTLCHASHTABLESIZE 16
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	#define SYNC_BEGINREAD(sync)     sync.BeginRead (__FILE__, __LINE__, __FUNCTION__)
@@ -38,36 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	#define SYNC_BEGINREAD(sync)     sync.BeginRead ()
 	#define SYNC_ENDREAD(sync)       sync.EndRead   ()
 	#define SYNC_BEGINWRITE(sync)    sync.BeginWrite()
-	#define SYNC_TRYBEGINWRITE(sync) sync.BeginWrite()
+	#define SYNC_TRYBEGINWRITE(sync) sync.TryBeginWrite()
 	#define SYNC_ENDWRITE(sync)      sync.EndWrite  ()
 #endif
 
-
-
-class CThreadLocalCounter
-{
-public:
-	typedef struct TThreadInfo {
-			TThreadInfo* Next;
-			unsigned int ThreadID;
-			int          Active;
-			unsigned int RecursionCount;
-		}	TThreadInfo, *PThreadInfo;
-private:
-	PThreadInfo m_HashTable[cTLCHASHTABLESIZE];
-
-	unsigned char HashIndex();
-	PThreadInfo Recycle();
-
-public:
-	CThreadLocalCounter();
-	virtual ~CThreadLocalCounter();
-
-	void Open(PThreadInfo & Thread);
-	void Delete(PThreadInfo & Thread);
-
-
-};
 
 class CMultiReadExclusiveWriteSynchronizer
 {
@@ -75,12 +48,13 @@ private:
 	volatile long m_Sentinel;
 	HANDLE m_ReadSignal;
 	HANDLE m_WriteSignal;
-	unsigned int m_WriteRecursionCount;
+	unsigned int m_WriteRecursion;
 
-	CThreadLocalCounter tls;
+	CThreadLocalStorage<unsigned int> tls;
+	typedef CThreadLocalStorage<unsigned int>::iterator TThreadStorage;
 
-	unsigned int m_WriterID;
-	volatile long m_RevisionLevel;
+	unsigned long m_WriterID;
+	volatile long m_Revision;
 	volatile long m_Waiting;
 
 	void BlockReaders();
@@ -114,6 +88,6 @@ public:
 	bool EndWrite();
 
 	long Waiting() {return m_Waiting;};
-	unsigned int WriteRecursionCount() {return m_WriteRecursionCount;};
+	unsigned int WriteRecursionCount() {return m_WriteRecursion;};
 
 };
