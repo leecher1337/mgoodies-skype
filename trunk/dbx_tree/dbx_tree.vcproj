@@ -280,6 +280,7 @@
 				PreprocessorDefinitions="UNICODE;_UNICODE"
 				RuntimeLibrary="0"
 				EnableEnhancedInstructionSet="0"
+				AssemblerOutput="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
@@ -300,6 +301,7 @@
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="1"
@@ -358,7 +360,7 @@
 				PreprocessorDefinitions="UNICODE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				BrowseInformation="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -378,6 +380,7 @@
 				OutputFile="D:\Programme\Miranda IM Test\Plugins\dbx_tree.dll"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"
+				LinkTimeCodeGeneration="0"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="1"
@@ -629,6 +632,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\lockfree_list.h"
+					>
+				</File>
+				<File
 					RelativePath=".\MREWSync.h"
 					>
 				</File>
@@ -646,6 +653,10 @@
 				</File>
 				<File
 					RelativePath=".\Thread.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ThreadLocalStorage.h"
 					>
 				</File>
 			</Filter>

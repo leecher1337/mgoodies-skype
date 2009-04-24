@@ -74,7 +74,13 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	if (m_DirectFile == INVALID_HANDLE_VALUE)
 		throwException("CreateFile failed");
 
-	Size(GetFileSize(m_DirectFile, NULL));
+	uint32_t size = GetFileSize(m_DirectFile, NULL);
+	size = (size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
+
+	if (size == 0)
+		size = m_AllocGranularity;
+
+	mSetSize(size);
 
 	InitJournal();
 }
@@ -144,7 +150,7 @@ uint32_t CMappedMemory::mSetSize(uint32_t Size)
 
 void CMappedMemory::mInvalidate(uint32_t Dest, uint32_t Size)
 {
-	memset(m_Base + Dest, 0xda, Size);
+	memset(m_Base + Dest, 0, Size);
 }
 
 void CMappedMemory::mFlush()

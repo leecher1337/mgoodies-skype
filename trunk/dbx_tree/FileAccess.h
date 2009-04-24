@@ -31,8 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "Exception.h"
 #include "sigslot.h"
-#include <map>
-
 
 static const uint8_t cJournalSignature[20] = "Miranda IM Journal!";
 
@@ -66,6 +64,7 @@ public:
 	};
 
 	void CompleteTransaction();
+	void CloseTransaction();
 	void FlushJournal();
 
 	typedef sigslot::signal2<CFileAccess *, uint32_t> TOnFileSizeChanged;
@@ -87,6 +86,7 @@ protected:
 	uint32_t m_MaxAllocGranularity;
 	uint32_t m_LastAllocTime;
 	bool m_ReadOnly;
+	uint32_t m_LastSize;
 
 	TOnFileSizeChanged m_sigFileSizeChanged;
 	virtual uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size) = 0;
@@ -95,7 +95,15 @@ protected:
 	virtual uint32_t mSetSize(uint32_t Size) = 0;
 	virtual void     mFlush() = 0;
 
+#pragma pack (push, 1)
+	typedef struct TJournalEntry
+	{
+		uint32_t Signature;
+		uint32_t Address;
+		uint32_t Size;
+	} TJournalEntry;
+#pragma pack (pop)
+
 	bool AppendJournal(void* Buf, uint32_t DestAddr, uint32_t Size);
-	void CheckJournal();
 	void InitJournal();
 };

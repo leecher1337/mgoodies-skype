@@ -106,6 +106,7 @@ protected:
 
 	static const uint32_t cCacheAddend = 3697;
 	static const uint32_t cCacheFactor[16];
+	static const uint32_t cCacheDepth = 16;
 
 	typedef struct TCacheOverflowItem
 	{		
@@ -147,10 +148,30 @@ public:
 		);
 	~CBlockManager();
 
-	void TransactionBeginRead();
-	void TransactionBeginWrite();
-	void TransactionEndRead();
-	void TransactionEndWrite();
+	void TransactionBeginRead()
+	{
+		SYNC_BEGINREAD(m_BlockSync);
+	};
+	void TransactionBeginWrite()
+	{
+		SYNC_BEGINWRITE(m_BlockSync);
+	};
+	void TransactionEndRead()
+	{
+		SYNC_ENDREAD(m_BlockSync);
+		CachePurge();
+	};
+	void TransactionEndWrite()
+	{
+		if (m_BlockSync.WriteRecursionCount() == 1)
+		{
+			m_FileAccess.CompleteTransaction();
+			CacheFlush();
+			m_FileAccess.CloseTransaction();
+			CachePurge();
+		}
+		SYNC_ENDWRITE(m_BlockSync);
+	};
 
 	uint32_t ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature, uint32_t FileSize);
 

@@ -34,109 +34,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma intrinsic (_InterlockedDecrement)
 #pragma intrinsic (_InterlockedExchange)
 #pragma intrinsic (_InterlockedExchangeAdd)
+#pragma intrinsic (_InterlockedCompareExchange)
 #else
 #include "intrin_gcc.h"
 #endif
 
-#define mrWRITEREQUEST 0x10000
-#define ALIVE          1
-
-
-CThreadLocalCounter::CThreadLocalCounter()
-{
-	int i;
-	for (i = 0; i < cTLCHASHTABLESIZE; i++)
-		m_HashTable[i] = NULL;
-
-}
-CThreadLocalCounter::~CThreadLocalCounter()
-{
-	PThreadInfo p, q;
-	int i;
-
-	for (i = 0; i < cTLCHASHTABLESIZE; i++)
-	{
-		p = m_HashTable[i];
-		m_HashTable[i] = NULL;
-
-		while (p)
-		{
-			q = p;
-			p = p->Next;
-			delete q;
-		}
-	}
-}
-
-unsigned char CThreadLocalCounter::HashIndex()
-{
-	unsigned long h = GetCurrentThreadId();
-	return (cTLCHASHTABLESIZE - 1) & (h ^ (h >> 8));
-}
-CThreadLocalCounter::PThreadInfo CThreadLocalCounter::Recycle()
-{
-	int gen;
-	PThreadInfo res = m_HashTable[HashIndex()];
-	while (res)
-	{
-		gen = _InterlockedExchange((long*)&res->Active, (long)ALIVE);
-
-		if (gen != ALIVE)
-		{
-			res->ThreadID = GetCurrentThreadId();
-			return res;
-		} else {
-			res = res->Next;
-		}
-	}
-
-	return res;
-}
-
-void CThreadLocalCounter::Open(PThreadInfo & Thread)
-{
-	unsigned char h = HashIndex();
-	PThreadInfo p = m_HashTable[h];
-	unsigned long curthread = GetCurrentThreadId();
-
-	while ((p) && (p->ThreadID != curthread))
-		p = p->Next;
-
-	if (!p)
-	{
-		p = Recycle();
-		if (!p)
-		{
-			p = new TThreadInfo;
-
-			p->ThreadID = curthread;
-			p->Active = ALIVE;
-			p->RecursionCount = 0;
-			p->Next = p;
-			p->Next = (PThreadInfo)_InterlockedExchange((long*)&m_HashTable[h], (long)p);
-		}
-	}
-
-	Thread = p;
-}
-
-void CThreadLocalCounter::Delete(PThreadInfo & Thread)
-{
-	Thread->ThreadID = 0;
-	Thread->Active = 0;
-}
-
-
+#define WRITEREQUEST 0x10000
+#define SOMEONEHASLOCK(Sentinel) ((Sentinel & (WRITEREQUEST - 1)) != 0)
 
 CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 : tls()
 {
-	m_Sentinel = mrWRITEREQUEST;
+	m_Sentinel = WRITEREQUEST;
 	m_ReadSignal = CreateEvent(NULL, true, true, NULL);
-	m_WriteSignal = CreateEvent(NULL, false, false, NULL);
-	m_WriteRecursionCount = 0;
+	m_WriteSignal = CreateEvent(NULL, false, true, NULL);
+	m_WriteRecursion = 0;
 	m_WriterID = 0;
-	m_RevisionLevel = 0;
+	m_Revision = 0;
 	m_Waiting = 0;
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	m_Log = CreateFileA("dbx_treeSync.log", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
@@ -157,168 +71,133 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 {
-	CThreadLocalCounter::PThreadInfo thread;
-	bool wasrecursive;
-	int sentvalue;
+	unsigned long id = GetCurrentThreadId();
+	TThreadStorage & data = tls.Open(0, id);
 
-	tls.Open(thread);
-	thread->RecursionCount++;
-	wasrecursive = thread->RecursionCount > 1;
-
-	if (m_WriterID != GetCurrentThreadId())
+	(*data)++;
+	if ((m_WriterID != id) && ((*data) == 1))
 	{
-		if (!wasrecursive)
+		_InterlockedIncrement(&m_Waiting);
+		while (_InterlockedDecrement(&m_Sentinel) <= 0)
 		{
-			_InterlockedIncrement(&m_Waiting);
+			if (!SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
+				UnblockOneWriter();
 			WaitForReadSignal();
-
-			while (_InterlockedDecrement((long*)&m_Sentinel) <= 0)
-			{
-				sentvalue = _InterlockedIncrement((long*)&m_Sentinel);
-
-				if (sentvalue == mrWRITEREQUEST)
-					UnblockOneWriter();
-
-				Sleep(0);
-
-				WaitForReadSignal();
-			}
-
-			_InterlockedDecrement(&m_Waiting);
 		}
+
+		_InterlockedDecrement(&m_Waiting);
 	}
 }
 void CMultiReadExclusiveWriteSynchronizer::EndRead()
 {
-	CThreadLocalCounter::PThreadInfo thread;
-	int test;
+	unsigned long id = GetCurrentThreadId();
+	TThreadStorage & data = tls.Open(0, id);
 
-	tls.Open(thread);
-	thread->RecursionCount--;
-
-	if (thread->RecursionCount == 0)
+	(*data)--;
+	if (((*data) == 0) && (m_WriterID != id))
 	{
-		tls.Delete(thread);
-
-		if (m_WriterID != GetCurrentThreadId())
-		{
-			test = _InterlockedIncrement((long*)&m_Sentinel);
-
-			if ((test & (mrWRITEREQUEST - 1)) == 0)
-			{
-				UnblockOneWriter();
-			}
-		}
+		if (!SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
+			UnblockOneWriter();
+		tls.Delete(data);
 	}
-
 }
 bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 {
+	unsigned long id = GetCurrentThreadId();
 	bool res = true;
-	CThreadLocalCounter::PThreadInfo thread;
-	bool hasreadlock;
-	DWORD threadid = GetCurrentThreadId();
-	int test;
-	long oldrevisionlevel;
-
-	if (m_WriterID != threadid)
+	
+	if (m_WriterID != id)
 	{
-		BlockReaders();
+		TThreadStorage & data = tls.Open(0, id);
 
-		oldrevisionlevel = m_RevisionLevel;
-
-		tls.Open(thread);
-
-		hasreadlock = thread->RecursionCount > 0;
-		if (hasreadlock)
-			_InterlockedIncrement(&m_Sentinel);
-
-		_InterlockedIncrement(&m_Waiting);
-		while (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) != mrWRITEREQUEST)
+		long oldrevision = m_Revision;
+		bool hasreadlock = (*data) > 0;
+		
+		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
+			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
 		{
-			test = _InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
-			if (test > 0)
+
+			_InterlockedIncrement(&m_Waiting);
+			if (!hasreadlock || (hasreadlock && SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel))))
 				WaitForWriteSignal();
+			
+			if (SOMEONEHASLOCK(_InterlockedExchangeAdd(&m_Sentinel, -WRITEREQUEST - 1)))
+			{
+				do
+				{
+					BlockReaders();
+					if (SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
+						WaitForWriteSignal();
+
+				} while (SOMEONEHASLOCK(_InterlockedDecrement(&m_Sentinel) + 1));
+			}
+
+			_InterlockedDecrement(&m_Waiting);
 		}
 
-		_InterlockedDecrement(&m_Waiting);
 		BlockReaders();
+		m_WriterID = id;
 
-		if (hasreadlock)
-			_InterlockedDecrement(&m_Sentinel);
-
-		m_WriterID = threadid;
-
-		res = (oldrevisionlevel == (_InterlockedIncrement(&m_RevisionLevel) - 1));
+		res = (oldrevision == (_InterlockedIncrement(&m_Revision) - 1));
 	}
-
-	m_WriteRecursionCount++;
-
+	m_WriteRecursion++;
 	return res;
 }
 
 bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
 {
-	bool res = true;
-	CThreadLocalCounter::PThreadInfo thread;
-	bool hasreadlock;
-	DWORD threadid = GetCurrentThreadId();
+	unsigned long id = GetCurrentThreadId();
 
-	if (m_WriterID != threadid)
+	if (m_WriterID != id)
 	{
-		BlockReaders();
+		TThreadStorage & data = tls.Open(0, id);
 
-		tls.Open(thread);
+		long oldrevision = m_Revision;
+		bool hasreadlock = (*data) > 0;
 
-		hasreadlock = thread->RecursionCount > 0;
-		if (hasreadlock)
-			_InterlockedIncrement(&m_Sentinel);
-
-		if (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) == mrWRITEREQUEST)
+		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
+			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
 		{
-			BlockReaders();
-
-			if (hasreadlock)
-				_InterlockedDecrement(&m_Sentinel);
-
-			m_WriterID = threadid;
-
-			_InterlockedIncrement(&m_RevisionLevel);
-
-		} else {
-			_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
-			res = false;
+			return false;
 		}
 
+		BlockReaders();
+		m_WriterID = id;
+
+		_InterlockedIncrement(&m_Revision);
 	}
-
-	m_WriteRecursionCount++;
-
-	return res;
+	m_WriteRecursion++;
+	
+	return true;
 }
 bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 {
-	CThreadLocalCounter::PThreadInfo thread;
-	bool res = false;
+	unsigned long id = GetCurrentThreadId();
+	assert(m_WriterID == id);
 
-	assert(m_WriterID == GetCurrentThreadId());
-
-	tls.Open(thread);
-	m_WriteRecursionCount--;
-	if (m_WriteRecursionCount == 0)
+	m_WriteRecursion--;
+	if (m_WriteRecursion == 0)
 	{
-		m_WriterID = 0;
-		_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
-		UnblockOneWriter();
+		TThreadStorage & data = tls.Open(0, id);
 
-		UnblockReaders();
-		res = true;
+		m_WriterID = 0;
+		if ((*data) == 0)
+		{
+			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST + 1);
+			UnblockReaders();
+			UnblockOneWriter();
+
+			tls.Delete(data);
+		} else {
+			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST);
+			UnblockReaders();
+
+		}
+
+		return true;
 	}
 
-	if (thread->RecursionCount == 0)
-		tls.Delete(thread);
-
-	return res;
+	return false;
 }
 
 

@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "FileAccess.h"
+#include <vector>
 #ifndef _MSC_VER
 #include "savestrings_gcc.h"
 #define _time32 time
@@ -36,6 +37,8 @@ CFileAccess::CFileAccess(const char* FileName)
 	strcat_s(m_JournalFileName, strlen(FileName) + 5, ".jrn");
 
 	m_ReadOnly = false;
+	m_LastSize = 0;
+	m_Size = 0;
 
 	m_LastAllocTime = _time32(NULL);
 }
@@ -61,76 +64,125 @@ bool CFileAccess::AppendJournal(void* Buf, uint32_t DestAddr, uint32_t Size)
 
 void CFileAccess::CompleteTransaction()
 {
-	uint32_t mark = 'fini';
+	if (m_Size != m_LastSize)
+	{
+		m_sigFileSizeChanged.emit(this, m_Size);
+		m_LastSize = m_Size;
+	}
+}
+void CFileAccess::CloseTransaction()
+{
+	TJournalEntry e = {'fini', 0, m_Size};
 	DWORD written;
-	WriteFile(m_Journal, &mark, sizeof(mark), &written, NULL);
-	FlushFileBuffers(m_Journal);
+	WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
+//	FlushFileBuffers(m_Journal);
 }
 
 void CFileAccess::FlushJournal()
 {
 	FlushFileBuffers(m_Journal);
 
+	uint32_t filesize = GetFileSize(m_Journal, NULL) - sizeof(cJournalSignature);
 	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
-	uint32_t type;
-	uint32_t addr;
-	uint32_t size;
-	void* buf = NULL;
-	uint32_t bufsize = 0;
-	DWORD read;
-	bool b = true;
-	
-	while (b)
+
+	uint8_t* buf = (uint8_t*)malloc(filesize);
+	TJournalEntry* e = (TJournalEntry*)buf;
+	DWORD read = 0;
+	if (!ReadFile(m_Journal, buf, filesize, &read, NULL) || (read != filesize))
 	{
-		b = b && ReadFile(m_Journal, &type, sizeof(type), &read, NULL)
-			    && (read == sizeof(type));
+		free(buf);
+		throwException("Couldn't flush the journal because ReadFile failed!");
+	}
 
-		if (b)
+	std::vector<TJournalEntry*> currentops;
+
+	while (filesize >= sizeof(TJournalEntry))
+	{
+		switch (e->Signature)
 		{
-			switch (type)
+			case 'fini': 
 			{
-				case 'fini': break;
-				case 'writ':
+				e->Size = (e->Size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
+
+				if (e->Size == 0)
+					e->Size = m_AllocGranularity;
+
+				if (e->Size != m_AllocSize)
 				{
-					b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
-						&& (read == sizeof(addr));
-					b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
-						&& (read == sizeof(size));
+					m_AllocSize = mSetSize(e->Size);
 
-					if (b && (bufsize < size))
+					// adapt Alloc Granularity
+					uint32_t t = _time32(NULL);
+					uint32_t d = t - m_LastAllocTime;
+					m_LastAllocTime = t;
+
+					if (d < 30) // increase alloc stepping
 					{
-						buf = realloc(buf, size);
-						bufsize = size;
-					}
-
-					b = b && ReadFile(m_Journal, buf, size, &read, NULL)
-								&& (read == size);
-
-					if (b)
+						if (m_AllocGranularity < m_MaxAllocGranularity)
+							m_AllocGranularity = m_AllocGranularity << 1;
+					} else if (d > 120) // decrease alloc stepping
 					{
-						if (addr + size <= m_Size)
-							mWrite(buf, addr, size);
-						else if (addr < m_Size)
-							mWrite(buf, addr, m_Size - addr);
+						if (m_AllocGranularity > m_MinAllocGranularity)
+							m_AllocGranularity = m_AllocGranularity >> 1;
 					}
-				} break;
-				case 'inva':
+				}
+
+				std::vector<TJournalEntry*>::iterator i = currentops.begin();
+				while (i != currentops.end())
 				{
-					b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
-						&& (read == sizeof(addr));
-					b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
-						&& (read == sizeof(size));
-
-					if (b)
+					switch ((*i)->Signature)
 					{
-						if (addr + size <= m_Size)
-							mInvalidate(addr, size);
-						else if (addr < m_Size)
-							mInvalidate(addr, m_Size - addr);
+						case 'writ':
+						{
+							if ((*i)->Address + (*i)->Size <= m_Size)
+							{
+								mWrite(*i + 1, (*i)->Address, (*i)->Size);
+							} else if ((*i)->Address < m_Size) 
+							{
+								mWrite(*i + 1, (*i)->Address, m_Size - (*i)->Address);
+							}
+						} break;
+						case 'inva':
+						{
+							if ((*i)->Address + (*i)->Size <= m_Size)
+							{
+								mInvalidate((*i)->Address, (*i)->Size);
+							} else if ((*i)->Address < m_Size) 
+							{
+								mInvalidate((*i)->Address, m_Size - (*i)->Address);
+							}
+						} break;
 					}
-				} break;
-				default: throwException("Jounral corrupt!");
-			}
+					++i;
+				}
+				currentops.clear();
+
+				e++;
+				filesize = filesize - sizeof(TJournalEntry);
+			} break;
+			case 'writ':
+			{
+				if (filesize < sizeof(e) + e->Size)
+				{
+					filesize = 0;
+				} else {
+					currentops.push_back(e);
+					filesize = filesize - sizeof(TJournalEntry) - e->Size;
+					e = (TJournalEntry*)((uint8_t*)e + sizeof(TJournalEntry) + e->Size);					
+				}
+			} break;
+			case 'inva':
+			{
+				if (filesize < sizeof(e))
+				{
+					filesize = 0;
+				} else {
+					currentops.push_back(e);
+					e++;
+					filesize = filesize - sizeof(TJournalEntry);
+				}
+			} break;
+			default: throwException("Jounral corrupt!");
 		}
 	}
 
@@ -139,78 +191,19 @@ void CFileAccess::FlushJournal()
 	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
 	SetEndOfFile(m_Journal);
 
-	if (buf)
-		free(buf);
-}
-
-void CFileAccess::CheckJournal()
-{
-	DWORD read = 0;
-	uint8_t header[20];
-	uint32_t fileend = sizeof(header);
-	uint32_t currentpos = sizeof(header);
-	uint32_t type;
-	uint32_t addr;
-	uint32_t size;
-	if (ReadFile(m_Journal, header, sizeof(header), &read, NULL) && (read == sizeof(header)) && (memcmp(header, cJournalSignature, sizeof(header)) == 0))
-	{
-		bool b = true;
-
-		while (b)
-		{
-			b = b && ReadFile(m_Journal, &type, sizeof(type), &read, NULL)
-				&& (read == sizeof(type));
-			currentpos += read;
-
-			if (b)
-			{
-				switch (type)
-				{
-				case 'fini':
-					{
-						fileend = currentpos;
-					} break;
-				case 'writ':
-					{
-						b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
-							&& (read == sizeof(addr));
-						currentpos += read;
-						b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
-							&& (read == sizeof(size));
-						currentpos += read;
-
-						SetFilePointer(m_Journal, size, NULL, FILE_CURRENT);
-						currentpos += size;
-
-					} break;
-				case 'inva':
-					{
-						b = b && ReadFile(m_Journal, &addr, sizeof(addr), &read, NULL)
-							&& (read == sizeof(addr));
-						currentpos += read;
-						b = b && ReadFile(m_Journal, &size, sizeof(size), &read, NULL)
-							&& (read == sizeof(size));
-						currentpos += read;
-
-					} break;
-				}
-			}
-		}
-
-		SetFilePointer(m_Journal, fileend, NULL, FILE_BEGIN);
-		SetEndOfFile(m_Journal);
-
-		FlushJournal();
-	}
+	free(buf);
 }
 
 void CFileAccess::InitJournal()
 {
 	m_Journal = CreateFileA(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
 	if (m_Journal == INVALID_HANDLE_VALUE) 
-		throwException("CreateFile failed on Journal");
+		throwException("CreateFile failed on Journal %s", m_JournalFileName);
 
-	CheckJournal();
+	uint8_t h[sizeof(cJournalSignature)];
+	DWORD read;
+	if (ReadFile(m_Journal, &h, sizeof(h), &read, NULL) && (read == sizeof(h)) && (0 == memcmp(h, cJournalSignature, sizeof(h))))
+		FlushJournal();
 
 	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
 	SetEndOfFile(m_Journal);
@@ -221,40 +214,13 @@ void CFileAccess::InitJournal()
 void CFileAccess::Invalidate(uint32_t Dest, uint32_t Size)
 {
 	DWORD written;
-	uint32_t data[3] = {'inva', Dest, Size};
-	WriteFile(m_Journal, &data, sizeof(data), &written, NULL);
+	TJournalEntry e = {'inva', Dest, Size};
+	WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
 }
 
 uint32_t CFileAccess::Size(uint32_t Size)
 {
-	m_sigFileSizeChanged.emit(this, Size);
-
 	m_Size = Size;
-
-	Size = (Size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
-
-	if (Size == 0)
-		Size = m_AllocGranularity;
-
-	if (Size != m_AllocSize)
-	{
-		m_AllocSize = mSetSize(Size);
-
-		// adapt Alloc Granularity
-		uint32_t t = _time32(NULL);
-		uint32_t d = t - m_LastAllocTime;
-		m_LastAllocTime = t;
-
-		if (d < 30) // increase alloc stepping
-		{
-			if (m_AllocGranularity < m_MaxAllocGranularity)
-				m_AllocGranularity = m_AllocGranularity << 1;
-		} else if (d > 120) // decrease alloc stepping
-		{
-			if (m_AllocGranularity > m_MinAllocGranularity)
-				m_AllocGranularity = m_AllocGranularity >> 1;
-		}
-	}
 
 	return Size;
 }
