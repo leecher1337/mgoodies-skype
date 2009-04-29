@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -36,15 +36,28 @@ struct PopupData
 {
 	HANDLE hContact;
 	int type;
+	HICON hIcon;
 
-	PopupData(HANDLE aHContact, int aType) {
+	PopupData(HANDLE aHContact, int aType) 
+	{
 		hContact = aHContact;
 		type = aType;
+		hIcon = NULL;
+	}
+
+	PopupData() 
+	{
+		hContact = 0;
+		type = 0;
+		hIcon = NULL;
 	}
 };
 
 static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK DumbPopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+static void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description, 
+						PopupData *plugin_data, int type, const Options *op, int typeNum);
 
 
 
@@ -71,13 +84,13 @@ void DeInitPopups()
 void ShowErrPopup(int typeNum, const TCHAR *description, const TCHAR *title)
 {
 	ShowPopupEx(NULL, title == NULL ? _T(MODULE_NAME) _T(" Error") : title, description,
-			  NULL, POPUP_TYPE_ERROR, NULL, typeNum);
+				new PopupData(), POPUP_TYPE_ERROR, NULL, typeNum);
 }
 
 
 void ShowTestPopup(int typeNum, const TCHAR *title, const TCHAR *description, const Options *op)
 {
-	ShowPopupEx(NULL, title, description, NULL, POPUP_TYPE_TEST, op, typeNum);
+	ShowPopupEx(NULL, title, description, new PopupData(), POPUP_TYPE_TEST, op, typeNum);
 }
 
 
@@ -97,8 +110,8 @@ void ShowPopup(HANDLE hContact, int type, int templateNum, TCHAR **vars, int num
 
 
 // Show an popup
-void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description, 
-			   void *plugin_data, int type, const Options *op, int typeNum)
+static void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description, 
+						PopupData *plugin_data, int type, const Options *op, int typeNum)
 {
 #ifdef UNICODE
 	if(ServiceExists(MS_POPUP_ADDPOPUPW)) 
@@ -108,7 +121,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-		ppd.lchIcon = HistoryEvents_GetIcon(types[typeNum].eventType);
+		plugin_data->hIcon = ppd.lchIcon = HistoryEvents_GetIcon(types[typeNum].eventType);
 
 		if (title != NULL)
 			lstrcpyn(ppd.lpwzContactName, title, MAX_REGS(ppd.lpwzContactName));
@@ -151,6 +164,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		else // if (type == POPUP_TYPE_TEST || type == POPUP_TYPE_ERROR)
 		{
 			ppd.PluginWindowProc = DumbPopupDlgProc;
+			ppd.PluginData = plugin_data;
 		}
 		
 		if (type == POPUP_TYPE_NORMAL || type == POPUP_TYPE_TEST)
@@ -178,8 +192,6 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		// Now that every field has been filled, we want to see the popup.
 		CallService(MS_POPUP_ADDPOPUPW, (WPARAM)&ppd,0);
-
-		HistoryEvents_ReleaseIcon(ppd.lchIcon);
 	}
 	else
 #endif
@@ -190,7 +202,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-		ppd.lchIcon = HistoryEvents_GetIcon(types[typeNum].eventType);
+		plugin_data->hIcon = ppd.lchIcon = HistoryEvents_GetIcon(types[typeNum].eventType);
 
 		if (title != NULL)
 		{
@@ -241,6 +253,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		else // if (type == POPUP_TYPE_TEST || type == POPUP_TYPE_ERROR)
 		{
 			ppd.PluginWindowProc = DumbPopupDlgProc;
+			ppd.PluginData = plugin_data;
 		}
 		
 		if (type == POPUP_TYPE_NORMAL || type == POPUP_TYPE_TEST)
@@ -268,8 +281,6 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		// Now that every field has been filled, we want to see the popup.
 		CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd,0);
-
-		HistoryEvents_ReleaseIcon(ppd.lchIcon);
 	}
 }
 
@@ -324,7 +335,9 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		case UM_FREEPLUGINDATA: 
 		{
-			delete (PopupData *) PUGetPluginData(hWnd);
+			PopupData *pd = (PopupData *) PUGetPluginData(hWnd);
+			HistoryEvents_ReleaseIcon(pd->hIcon);
+			delete pd;
 			return TRUE;
 		}
 	}
@@ -351,6 +364,9 @@ static LRESULT CALLBACK DumbPopupDlgProc(HWND hWnd, UINT message, WPARAM wParam,
 
 		case UM_FREEPLUGINDATA: 
 		{
+			PopupData *pd = (PopupData *) PUGetPluginData(hWnd);
+			HistoryEvents_ReleaseIcon(pd->hIcon);
+			delete pd;
 			return TRUE;
 		}
 	}

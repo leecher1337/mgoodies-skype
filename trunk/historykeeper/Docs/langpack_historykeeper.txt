@@ -8,6 +8,7 @@
 [Status Message]
 [X-Status]
 [X-Status Message]
+[Idle]
 
 ; Popups
 [Popups]

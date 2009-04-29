@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -120,7 +120,7 @@ struct HISTORY_TYPE {
 };
 
 extern HISTORY_TYPE types[];
-#define NUM_TYPES 7
+#define NUM_TYPES 8
 
 struct QueueData
 {

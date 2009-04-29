@@ -2,6 +2,11 @@ History Keeper
 
 Changelog:
 
+. 0.2.0.0
+  + Added tracking of idle
+  + Support for accouts
+  * Fix for icon in popups
+
 . 0.0.1.5
   + Support for new speak API
 

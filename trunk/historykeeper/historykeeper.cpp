@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -31,12 +31,12 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,5),
+	PLUGIN_MAKE_VERSION(0,2,0,0),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2007 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/historykeeper",
+	"© 2007-2009 Ricardo Pescuma Domenecci",
+	"http://www.pescuma.org/miranda/historykeeper",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -49,6 +49,8 @@ PLUGININFOEX pluginInfo={
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+MM_INTERFACE mmi;
+UTF8_INTERFACE utfi;
 LIST_INTERFACE li;
 
 HANDLE hHooks[6] = {0};
@@ -131,7 +133,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	init_mir_malloc();
+	CHECK_VERSION("History Keeper")
+
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 	mir_getLI(&li);
 
 	// Hidden settings
@@ -397,14 +402,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/historykeeper_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/historykeeper#Changelog";
+		upd.szBetaVersionURL = "http://www.pescuma.org/miranda/historykeeper_version.txt";
+		upd.szBetaChangelogURL = "http://www.pescuma.org/miranda/historykeeper#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"History Keeper ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/historykeeperW.zip";
+		upd.szBetaUpdateURL = "http://www.pescuma.org/miranda/historykeeperW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/historykeeper.zip";
+		upd.szBetaUpdateURL = "http://www.pescuma.org/miranda/historykeeper.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -1157,6 +1162,11 @@ void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 		oldVal = type.defs.value;
 	DWORD newVal = GetDWORD(new_);
 
+	if (type.canBeRemoved && oldVal == type.defs.value)
+		found_old = FALSE;
+	if (type.canBeRemoved && newVal == type.defs.value)
+		found_new = FALSE;
+
 	// 0 if not changed, 1 if changed, 2 if removed
 	int ret = 0;
 	if (!found_new || new_.type == DBVT_BLOB)
@@ -1173,9 +1183,10 @@ void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 		track_removes = type.canBeRemoved && 
 						(opts[typeNum].popup_track_removes 
 						|| opts[typeNum].file_track_removes 
+						|| opts[typeNum].speak_track_removes 
 						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1));
 
-	if (ret == 1 || (ret == 2 && !track_removes))
+	if (ret == 1 || (ret == 2 && track_removes))
 	{
 		TCHAR tmp_old[256];
 		type.fFormat(tmp_old, MAX_REGS(tmp_old), (void *) oldVal);
@@ -1191,7 +1202,17 @@ void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 		// Copy new to current after notification, so old value can still be accessed
 		if (ret == 2)
 		{
-			DBDeleteContactSetting(hContact, MODULE_NAME, current_setting);
+			if (type.temporary)
+			{
+				switch(old.type)
+				{
+					case DBVT_BYTE: DBWriteContactSettingByte(hContact, MODULE_NAME, current_setting, (BYTE) type.defs.value); break;
+					case DBVT_WORD: DBWriteContactSettingWord(hContact, MODULE_NAME, current_setting, (WORD) type.defs.value); break;
+					case DBVT_DWORD: DBWriteContactSettingDword(hContact, MODULE_NAME, current_setting, type.defs.value); break;
+				}
+			}
+			else
+				DBDeleteContactSetting(hContact, MODULE_NAME, current_setting);
 		}
 		else
 		{
@@ -1204,10 +1225,8 @@ void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 		}
 	}
 
-	if (found_old)
-		DBFreeVariant(&old);
-	if (found_new)
-		DBFreeVariant(&new_);
+	DBFreeVariant(&old);
+	DBFreeVariant(&new_);
 }
 
 
