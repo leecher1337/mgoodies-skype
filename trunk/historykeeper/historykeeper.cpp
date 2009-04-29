@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,2,0,0),
+	PLUGIN_MAKE_VERSION(0,2,1,0),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -1162,6 +1162,12 @@ void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 		oldVal = type.defs.value;
 	DWORD newVal = GetDWORD(new_);
 
+	if (type.track.db.type == DBVT_BYTE)
+	{
+		oldVal = (oldVal == 0 ? 0 : 1);
+		newVal = (newVal == 0 ? 0 : 1);
+	}
+
 	if (type.canBeRemoved && oldVal == type.defs.value)
 		found_old = FALSE;
 	if (type.canBeRemoved && newVal == type.defs.value)
@@ -1234,14 +1240,14 @@ void Process(HANDLE hContact, void *param)
 {
 	QueueData *qd = (QueueData *) param;
 
-	if (types[qd->type].track.db.isString)
+	if (types[qd->type].track.db.type == DBVT_UTF8)
 		TrackChangeString(qd->type, hContact, TRUE);
 	else
 		TrackChangeNumber(qd->type, hContact, TRUE);
 
 	if (qd->notifyAlso >= 0)
 	{
-		if (types[qd->notifyAlso].track.db.isString)
+		if (types[qd->notifyAlso].track.db.type == DBVT_UTF8)
 			TrackChangeString(qd->notifyAlso, hContact, FALSE);
 		else
 			TrackChangeNumber(qd->notifyAlso, hContact, FALSE);
