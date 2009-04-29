@@ -212,6 +212,10 @@ SOURCE=.\res\history.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\idle_change.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\listening_change.ico
 # End Source File
 # Begin Source File
@@ -273,10 +277,6 @@ SOURCE=..\utils\ContactAsyncQueue.cpp
 # Begin Source File
 
 SOURCE=.\historykeeper.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_memory.cpp
 # End Source File
 # Begin Source File
 

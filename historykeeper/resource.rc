@@ -42,6 +42,7 @@ IDI_SOUND               ICON    DISCARDABLE     "res\\sound.ico"
 IDI_SMALLDOT            ICON    DISCARDABLE     "res\\smalldot.ico"
 IDI_LISTENING           ICON    DISCARDABLE     "res\\listening_change.ico"
 IDI_XSM                 ICON    DISCARDABLE     "res\\xsm_change.ico"
+IDI_IDLE                ICON    DISCARDABLE     "res\\idle_change.ico"
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 

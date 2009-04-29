@@ -1,5 +1,5 @@
 /*	
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -64,12 +64,13 @@ HACK(3);
 HACK(4);
 HACK(5);
 HACK(6);
+HACK(7);
 
-DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4, NotificationsDlgProc5, NotificationsDlgProc6 };
-DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4, OptionsDlgProc5, OptionsDlgProc6 };
-DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4, PopupsDlgProc5, PopupsDlgProc6 };
-DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4, SpeakDlgProc5, SpeakDlgProc6 };
-FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4, AllowProtocol5, AllowProtocol6 };
+DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4, NotificationsDlgProc5, NotificationsDlgProc6, NotificationsDlgProc7 };
+DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4, OptionsDlgProc5, OptionsDlgProc6, OptionsDlgProc7 };
+DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4, PopupsDlgProc5, PopupsDlgProc6, PopupsDlgProc7 };
+DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4, SpeakDlgProc5, SpeakDlgProc6, SpeakDlgProc7 };
+FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4, AllowProtocol5, AllowProtocol6, AllowProtocol7 };
 
 
 

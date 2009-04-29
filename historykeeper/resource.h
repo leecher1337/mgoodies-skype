@@ -23,6 +23,7 @@
 #define IDI_SMALLDOT                    134
 #define IDI_LISTENING                   135
 #define IDI_XSM                         136
+#define IDI_IDLE                        138
 #define IDD_NOTIFICATIONS               215
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
@@ -82,7 +83,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1082
 #define _APS_NEXT_SYMED_VALUE           101

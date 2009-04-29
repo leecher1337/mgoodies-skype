@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -34,6 +34,7 @@ Boston, MA 02111-1307, USA.
 #define EVENTTYPE_XSTATUS_CHANGE 9006
 #define EVENTTYPE_LISTENINGTO_CHANGE 9007
 #define EVENTTYPE_XSTATUS_MESSAGE_CHANGE 9008
+#define EVENTTYPE_IDLE_CHANGE 9009
 
 
 /*
