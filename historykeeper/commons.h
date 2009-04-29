@@ -101,7 +101,7 @@ struct HISTORY_TYPE {
 		struct {
 			char *module; // -1 -> protocol
 			char *setting;
-			BOOL isString;
+			BOOL type;
 		} db;
 	} track;
 
