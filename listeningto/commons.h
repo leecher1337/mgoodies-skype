@@ -26,6 +26,10 @@ Boston, MA 02111-1307, USA.
 #include <tchar.h>
 #include <stdio.h>
 #include <time.h>
+#include <vector>
+#include <algorithm>
+#include <functional>
+
 
 
 // Miranda headers
@@ -53,8 +57,10 @@ Boston, MA 02111-1307, USA.
 #include <m_icq.h>
 #include <m_variables.h>
 #include <m_clui.h>
-#include "m_cluiframes.h"
+#include <m_cluiframes.h>
+#include <m_genmenu.h>
 #include <m_hotkeys.h>
+#include <m_extraicons.h>
 
 
 #include "../utils/mir_memory.h"
@@ -85,18 +91,22 @@ extern PLUGINLINK *pluginLink;
 #define MIN_TIME_BEETWEEN_SETS 10000 // ms
 
 
+void RebuildMenu();
 void StartTimer();
 int ProtoServiceExists(const char *szModule, const char *szService);
 
 
 struct ProtocolInfo
 {
-	char *proto;
+	char proto[128];
+	TCHAR account[128];
 	HANDLE hMenu;
 	int old_xstatus;
 	TCHAR old_xstatus_name[1024];
 	TCHAR old_xstatus_message[1024];
 };
+
+ProtocolInfo *GetProtoInfo(char *proto);
 
 
 #endif // __COMMONS_H__

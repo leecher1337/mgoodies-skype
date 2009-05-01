@@ -28,8 +28,8 @@ HANDLE hOptHook = NULL;
 
 Options opts;
 
-extern ProtocolInfo *proto_itens;
-extern int proto_itens_num;
+extern std::vector<ProtocolInfo> proto_itens;
+extern HANDLE hExtraIcon;
 
 BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
 
@@ -211,22 +211,30 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	{
 		case WM_INITDIALOG:
 		{
-			// Init combo
-			int total = 0, first = 0;
-			if (ServiceExists(MS_CLUI_GETCAPS))
+			if (hExtraIcon != NULL)
 			{
-				total = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_EXTRACOLUMNCOUNT);
-				first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
+				ShowWindow(GetDlgItem(hwndDlg, IDC_SHOW_ADV_ICON), SW_HIDE);
+				ShowWindow(GetDlgItem(hwndDlg, IDC_ADV_ICON), SW_HIDE);
 			}
-
-			SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("1"));
-			SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("2"));
-
-			if (total > 0)
+			else
 			{
-				TCHAR tmp[10];
-				for (int i = first; i <= total; i++)
-					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _itot(i - first + 3, tmp, 10));
+				// Init combo
+				int total = 0, first = 0;
+				if (ServiceExists(MS_CLUI_GETCAPS))
+				{
+					total = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_EXTRACOLUMNCOUNT);
+					first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
+				}
+
+				SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("1"));
+				SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("2"));
+
+				if (total > 0)
+				{
+					TCHAR tmp[10];
+					for (int i = first; i <= total; i++)
+						SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _itot(i - first + 3, tmp, 10));
+				}
 			}
 
 			ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
@@ -254,16 +262,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
-				for (int i = 0; i < proto_itens_num; i++)
-				{
-					CLISTMENUITEM clmi = {0};
-					clmi.cbSize = sizeof(clmi);
-					clmi.flags = CMIM_FLAGS 
-								| (ListeningToEnabled(proto_itens[i].proto, TRUE) ? CMIF_CHECKED : 0) 
-								| (opts.enable_sending ? 0 : CMIF_GRAYED);
-					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[i].hMenu, (LPARAM) &clmi);
-				}
-
+				RebuildMenu();
 				StartTimer();
 			}
 
