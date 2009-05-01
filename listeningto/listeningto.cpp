@@ -180,6 +180,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	mir_getMMI(&mmi);
 	mir_getUTFI(&utfi);
 
+	CHECK_VERSION("Listening To")
+
 	CoInitialize(NULL);
 
 	// Services
