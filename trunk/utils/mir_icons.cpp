@@ -24,14 +24,20 @@ Boston, MA 02111-1307, USA.
 #include <m_system.h>
 #include <m_icolib.h>
 
+extern HINSTANCE hInst;
 
-HICON LoadIconEx(const char *iconName, BOOL copy)
+
+
+HICON IcoLib_LoadIcon(const char *iconName, BOOL copy)
 {
 	if (!ServiceExists(MS_SKIN2_GETICON))
 		return NULL;
+
+	if (iconName == NULL || iconName[0] == 0)
+		return NULL;
 	
 	HICON hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
-	if (copy)
+	if (copy && hIcon != NULL)
 	{
 		hIcon = CopyIcon(hIcon);
 		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM) iconName);
@@ -40,10 +46,35 @@ HICON LoadIconEx(const char *iconName, BOOL copy)
 }
 
 
-void ReleaseIconEx(HICON hIcon)
+void IcoLib_ReleaseIcon(HICON hIcon)
 {
 	if (ServiceExists(MS_SKIN2_RELEASEICON))
 		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hIcon, 0);
-	else
-		DestroyIcon(hIcon);
 }
+
+
+void IcoLib_Register(char *name, TCHAR *section, TCHAR *description, int id)
+{
+	HICON hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) name);
+	if (hIcon != NULL)
+	{
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hIcon, 0);
+		return;
+	}
+
+	SKINICONDESC sid = {0};
+	sid.cbSize = sizeof(SKINICONDESC);
+	sid.flags = SIDF_TCHAR;
+	sid.pszName = name;
+	sid.ptszSection = section;
+	sid.ptszDescription = description;
+
+	int cx = GetSystemMetrics(SM_CXSMICON);
+	sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(id), IMAGE_ICON, cx, cx, LR_DEFAULTCOLOR | LR_SHARED);
+
+	CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+	if (sid.hDefaultIcon)
+		DestroyIcon(sid.hDefaultIcon);
+}
+
