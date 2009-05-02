@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -257,9 +257,6 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
 						LVCOLUMN lvc;
 						LVITEM lvi;
-						PROTOCOLDESCRIPTOR **protos;
-						int i,count;
-						char szName[128];
 						
 						ListView_SetExtendedListViewStyle(hwndProtocols, LVS_EX_CHECKBOXES);
 						
@@ -273,36 +270,50 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						lvi.iSubItem = 0;
 						lvi.iItem = 1000;
 						
-						CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+						PROTOACCOUNT **protos;
+						int count;
+
+						BOOL hasAccounts = ServiceExists(MS_PROTO_ENUMACCOUNTS);
+
+						if (hasAccounts)
+							CallService(MS_PROTO_ENUMACCOUNTS, (WPARAM)&count, (LPARAM)&protos);
+						else
+							CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
 						
-						for (i = 0; i < count; i++)
+						for (int i = 0; i < count; i++)
 						{
 							if (protos[i]->type != PROTOTYPE_PROTOCOL)
 								continue;
 
-							if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
+							if (protos[i]->szModuleName == NULL || protos[i]->szModuleName[0] == '\0')
 								continue;
 							
-							if (ctrl->allowProtocol != NULL && !ctrl->allowProtocol(protos[i]->szName))
+							if (ctrl->allowProtocol != NULL && !ctrl->allowProtocol(protos[i]->szModuleName))
 								continue;
 
-							CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
+							TCHAR *name;
+							if (hasAccounts)
+							{
+								name = mir_tstrdup(protos[i]->tszAccountName);
+							}
+							else
+							{
+								char szName[128];
+								CallProtoService(protos[i]->szModuleName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
+								name = mir_a2t(szName);
+							}
 							
 							char *setting = (char *) mir_alloc(128 * sizeof(char));
-							mir_snprintf(setting, 128, ctrl->setting, protos[i]->szName);
+							mir_snprintf(setting, 128, ctrl->setting, protos[i]->szModuleName);
 
 							BOOL show = (BOOL)DBGetContactSettingByte(NULL, module, setting, ctrl->dwDefValue);
 							
 							lvi.lParam = (LPARAM)setting;
-#ifdef UNICODE
-							WCHAR szwName[128];
-							MultiByteToWideChar(CP_ACP, 0, szName, -1, szwName, 128);
-							lvi.pszText = TranslateTS(szwName);
-#else
-							lvi.pszText = TranslateTS(szName);
-#endif
+							lvi.pszText = TranslateTS(name);
 							lvi.iItem = ListView_InsertItem(hwndProtocols, &lvi);
 							ListView_SetItemState(hwndProtocols, lvi.iItem, INDEXTOSTATEIMAGEMASK(show?2:1), LVIS_STATEIMAGEMASK);
+
+							mir_free(name);
 						}
 						
 						ListView_SetColumnWidth(hwndProtocols, 0, LVSCW_AUTOSIZE);
