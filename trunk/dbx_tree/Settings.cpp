@@ -367,8 +367,8 @@ void CSettings::onMergeSettingCallback(void * Tree, const TSettingKey & Key,uint
 
 void CSettings::onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest)
 {
-	if ((Source == 0) || (Dest == 0))
-		throwException("Cannot Merge with global settings!\nSource %d Dest %d", Source, Dest);
+	assertThrow((Source != 0) && (Dest != 0),
+		          _T("Cannot Merge with global settings!\nSource %d Dest %d"), Source, Dest);
 
 	CSettingsTree * stree = getSettingsTree(Source);
 	CSettingsTree * dtree = getSettingsTree(Dest);

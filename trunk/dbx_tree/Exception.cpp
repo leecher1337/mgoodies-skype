@@ -35,20 +35,20 @@ CException::CException(const CException & Other)
 	m_Line(Other.m_Line),
 	m_Function(Other.m_Function)
 {
-	int len = strlen(Other.m_Message) + 1;
-	m_Message = new char[len];
-	strcpy_s(m_Message, len, Other.m_Message);
+	size_t len = _tcslen(Other.m_Message) + 1;
+	m_Message = new TCHAR[len];
+	_tcscpy_s(m_Message, len, Other.m_Message);
 
 	m_SysError = Other.m_SysError;
 
 	if (m_SysError)
 	{
-		len = strlen(Other.m_SysMessage) + 1;
-		m_SysMessage = new char[len];
-		strcpy_s(m_SysMessage, len, Other.m_SysMessage);
+		len = _tcslen(Other.m_SysMessage) + 1;
+		m_SysMessage = new TCHAR[len];
+		_tcscpy_s(m_SysMessage, len, Other.m_SysMessage);
 	}
 }
-CException::CException(const char * File, const int Line, const char * Function, const char * Format, ...)
+CException::CException(const TCHAR * File, const int Line, const TCHAR * Function, const TCHAR * Format, ...)
 :	m_File(File),
 	m_Line(Line),
 	m_Function(Function)
@@ -59,21 +59,20 @@ CException::CException(const char * File, const int Line, const char * Function,
 	va_list va;
 	va_start(va, Format);
 
-	char buf[2048];
-	int len = vsprintf_s(buf, 1024, Format, va);
-	m_Message = new char[len + 1];
-	strcpy_s(m_Message, len + 1, buf);
+	TCHAR buf[2048];
+	size_t len = _vstprintf_s(buf, Format, va);
+	m_Message = new TCHAR[len + 1];
+	_tcscpy_s(m_Message, len + 1, buf);
 	va_end(va);
 
 	if (m_SysError)
 	{
-		len = 1 + FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, m_SysError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, 2048, NULL);
-		m_SysMessage = new char[len];
-		strcpy_s(m_SysMessage, len, buf);
+		len = 1 + FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, m_SysError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, 2048, NULL);
+		m_SysMessage = new TCHAR[len];
+		_tcscpy_s(m_SysMessage, len, buf);
 	}
 
-	sprintf_s(buf, "%s %d (%s)\n%s", File, Line, Function, m_Message);
-	MessageBoxA(0, buf, "exception", MB_OK);
+	ShowMessage();
 }
 CException::~CException()
 {
@@ -84,12 +83,12 @@ CException::~CException()
 
 void CException::ShowMessage()
 {
-	char buf[8192];
+	TCHAR buf[8192];
 	if (m_SysError)
 	{
-		sprintf_s(buf, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s\n\nSystem Error state: %i\n%s", m_File, m_Line, m_Function, m_Message, m_SysError, m_SysMessage);
+		_stprintf_s(buf, _T("Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s\n\nSystem Error state: %i\n%s"), m_File, m_Line, m_Function, m_Message, m_SysError, m_SysMessage);
 	} else {
-		sprintf_s(buf, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s", m_File, m_Line, m_Function, m_Message);
+		_stprintf_s(buf, _T("Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s"), m_File, m_Line, m_Function, m_Message);
 	}
-	MessageBoxA(0, buf, NULL, MB_OK | MB_ICONERROR);
+	MessageBox(0, buf, NULL, MB_OK | MB_ICONERROR);
 }

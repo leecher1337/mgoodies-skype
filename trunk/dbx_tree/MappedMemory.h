@@ -40,7 +40,7 @@ protected:
 	uint32_t mSetSize(uint32_t Size);
 	void     mFlush();
 public:
-	CMappedMemory(const char* FileName);
+	CMappedMemory(const TCHAR* FileName);
 	virtual ~CMappedMemory();
 
 	static bool InitMMAP();

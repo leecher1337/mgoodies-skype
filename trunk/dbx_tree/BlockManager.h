@@ -46,9 +46,8 @@ protected:
 	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
 	static const uint32_t cBlockIsCachedFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
 	static const uint32_t cBlockIsVirtualOnlyFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
-	static const uint32_t cCacheChangedFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
-	static const uint32_t cCacheUsedFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
-
+	static const uint32_t cCacheChangedFlag = 0x00000001; // coded into addressfield of cache !!! malloc needs to align memory !!!
+	static const uint32_t cCacheUsedFlag = 0x00000002; // coded into addressfield of cache !!! malloc needs to align memory !!!
 
 	#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 

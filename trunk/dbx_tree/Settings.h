@@ -28,13 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sigslot.h"
 #include "IterationHeap.h"
 #include "EncryptionManager.h"
-
-#ifdef _MSC_VER
-#include <hash_map>
-#else
-#include <ext/hash_map>
-#endif
 #include <queue>
+#include <map>
 
 class CSettings;
 class CSettingsTree;
@@ -177,12 +172,9 @@ public:
 
 
 private:
-	#ifdef _MSC_VER
-	typedef stdext::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
-	#else
-	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
-	#endif
 
+	typedef std::map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
+	
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CBlockManager & m_BlockManagerSet;

@@ -37,7 +37,7 @@ static const uint8_t cJournalSignature[20] = "Miranda IM Journal!";
 class CFileAccess
 {
 public:
-	CFileAccess(const char* FileName);
+	CFileAccess(const TCHAR* FileName);
 	virtual ~CFileAccess();
 
 	uint32_t Read(void* Buf, uint32_t Source, uint32_t Size) 
@@ -75,8 +75,8 @@ public:
 	};
 
 protected:
-	char * m_FileName;
-	char * m_JournalFileName;
+	TCHAR* m_FileName;
+	TCHAR* m_JournalFileName;
 	HANDLE m_Journal;
 	
 	uint32_t m_Size;

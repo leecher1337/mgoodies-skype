@@ -30,17 +30,29 @@ CDataBase *gDataBase = NULL;
 
 CDataBase::CDataBase(const char* FileName)
 {
-	m_FileName[0] = new char[strlen(FileName) + 1];
-	m_FileName[1] = new char[strlen(FileName) + 5];
-	strcpy_s(m_FileName[0], strlen(FileName) + 1, FileName);
-	strcpy_s(m_FileName[1], strlen(FileName) + 5, FileName);
+	int len;
+#ifdef UNICODE
+	len = MultiByteToWideChar(CP_ACP, 0, FileName, -1, NULL, 0);
+	m_FileName[0] = new TCHAR[len + 1];
+	MultiByteToWideChar(CP_ACP, 0, FileName, -1, m_FileName[0], len + 1);
+	m_FileName[0][len] = 0;
+#else
+	len = strlen(FileName);
+	m_FileName[0] = new TCHAR[len + 1];
+	strcpy_s(m_FileName[0], len + 1, FileName);
+#endif
 
-	char * tmp = strrchr(m_FileName[1], '.');
+	TCHAR * tmp = _tcsrchr(m_FileName[0], '.');
 	if (tmp)
-		(*tmp) = '\0';
-
-	strcat_s(m_FileName[1], strlen(FileName) + 5, ".pri");
-
+	{
+		m_FileName[1] = new TCHAR[len + 1];
+		_tcsncpy_s(m_FileName[1], len + 1, m_FileName[0], tmp - m_FileName[0]);
+		_tcscat_s(m_FileName[1], len + 1, _T(".pri"));
+	} else {
+		m_FileName[1] = new TCHAR[len + 5];
+		_tcscpy_s(m_FileName[1], len + 5, m_FileName[0]);
+		_tcscat_s(m_FileName[1], len + 5, _T(".pri"));
+	}
 
 	m_Opened = false;
 
@@ -76,7 +88,7 @@ CDataBase::~CDataBase()
 		m_FileAccess[i]        = NULL;
 		m_EncryptionManager[i] = NULL;
 
-		delete[] m_FileName[i];
+		delete [] (m_FileName[i]);
 	}
 
 }
@@ -96,7 +108,7 @@ int CDataBase::CheckFile(TDBFileType Index)
 	TGenericFileHeader h;
 	memset(&h, 0, sizeof(h));
 	DWORD r = 0;
-	HANDLE htmp = CreateFileA(m_FileName[Index], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
+	HANDLE htmp = CreateFile(m_FileName[Index], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
 	if (htmp != INVALID_HANDLE_VALUE)
 	{
         SetFilePointer(htmp, 0, NULL, FILE_BEGIN);
@@ -154,22 +166,22 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
 
-	if (m_HeaderBlock[Index] == 0)
-		throwException("Header Block not found! File damaged: \"%s\"", m_FileName[Index]);
+	assertThrow(m_HeaderBlock[Index] != 0, 
+		          _T("Header Block not found! File damaged: \"%s\""), m_FileName[Index]);
 
 	TGenericFileHeader buf;
 	void* pbuf = &buf;
 	uint32_t size = sizeof(buf);
 	uint32_t sig = cHeaderBlockSignature;
-	if (!m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig))
-		throwException("Header Block cannot be read! File damaged: \"%s\"", m_FileName[Index]);
+	assertThrow(m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig), 
+		          _T("Header Block cannot be read! File damaged: \"%s\""), m_FileName[Index]);
 
 	m_EncryptionManager[Index]->Decrypt(pbuf, size, ET_DATA, cHeaderBlockSignature, 0);
 
 	buf.Gen.Obscure = 0;
 
-	if (memcmp(&m_Header[Index], pbuf, size) != 0)
-		throwException("Header Block in \"%s\" damaged!", m_FileName[Index]);;
+	assertThrow(memcmp(&m_Header[Index], pbuf, size) == 0,
+		          _T("Header Block in \"%s\" damaged!"), m_FileName[Index]);
 
 	return 0;
 }
@@ -222,7 +234,7 @@ int CDataBase::OpenDB()
 
 bool CDataBase::PrivateFileExists()
 {
-	HANDLE htmp = CreateFileA(m_FileName[DBFilePrivate], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
+	HANDLE htmp = CreateFile(m_FileName[DBFilePrivate], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
 	if (htmp != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(htmp);
@@ -300,36 +312,40 @@ void CDataBase::onFileSizeChanged(CFileAccess * File, uint32_t Size)
 
 int CDataBase::getProfileName(int BufferSize, char * Buffer)
 {
-	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
+	TCHAR * slash = _tcsrchr(m_FileName[DBFileSetting], '\\');
 	if (slash)
 		slash++;
 	else
 		slash = m_FileName[DBFileSetting];
 
-	int l = strlen(slash);
+	int l = _tcslen(slash);
 	if (BufferSize < l + 1)
 		return -1;
-
-	memcpy(Buffer, slash, l);
-	Buffer[l] = 0;
+	
+	char * tmp = mir_t2a(slash);
+	strcpy_s(Buffer, BufferSize, tmp);
+	mir_free(tmp);
 
 	return 0;
 }
 int CDataBase::getProfilePath(int BufferSize, char * Buffer)
 {
-	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
+	TCHAR * slash = _tcsrchr(m_FileName[DBFileSetting], '\\');
 	if (!slash)
 		return -1;
 
-	int l = (int)((slash - m_FileName[DBFileSetting]) / sizeof(char));
+	int l = slash - m_FileName[DBFileSetting];
 
 	if (BufferSize < l + 1)
 	{
 		return -1;
 	}
 
-	memcpy(Buffer, m_FileName[DBFileSetting], l);
-	Buffer[l] = 0;
+	*slash = 0;
+	char * tmp = mir_t2a(m_FileName[DBFileSetting]);
+	strcpy_s(Buffer, BufferSize, tmp);
+	mir_free(tmp);
+	*slash = '\\';
 
 	return 0;
 }
