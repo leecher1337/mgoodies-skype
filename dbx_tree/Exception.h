@@ -22,27 +22,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 
+#define WIDEN2(x) L ## x
+#define WIDEN(x) WIDEN2(x)
+#define __WFILE__ WIDEN(__FILE__)
+#define __WFUNCTION__ WIDEN(__FUNCTION__)
+
 #ifdef _MSC_VER
-#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, __VA_ARGS__)
+	#ifdef UNICODE
+		#define throwException(Format, ...) throw CException(__WFILE__, __LINE__, __WFUNCTION__, Format, __VA_ARGS__)
+	#else
+		#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, __VA_ARGS__)
+	#endif
+	#define assertThrow(Assertion, Format, ...) if (!(Assertion)) throwException(Format, __VA_ARGS__)
 #else
-#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, ##__VA_ARGS__)
+
+	#ifdef UNICODE
+		#define throwException(Format, ...) throw CException(__WFILE__, __LINE__, __WFUNCTION__, Format, ##__VA_ARGS__)
+	#else
+		#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, ##__VA_ARGS__)
+	#endif
+	#define assertThrow(Assertion, Format, ...) if (!(Assertion)) throwException(Format, ##__VA_ARGS__)
 #endif
 
+#include <tchar.h>
 
 class CException
 {
 private:
-	char * m_Message;
-	const char * m_File;
-	const int    m_Line;
-	const char * m_Function;
+	TCHAR * m_Message;
+	const TCHAR * m_File;
+	const int     m_Line;
+	const TCHAR * m_Function;
 
-	int    m_SysError;
-	char * m_SysMessage;
+	int     m_SysError;
+	TCHAR * m_SysMessage;
 
 public:
 	CException(const CException & Other);
-	CException(const char * File, const int Line, const char * Function, const char * Format, ...);
+	CException(const TCHAR * File, const int Line, const TCHAR * Function, const TCHAR * Format, ...);
 	~CException();
 
 	void ShowMessage();

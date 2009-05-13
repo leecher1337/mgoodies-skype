@@ -127,7 +127,7 @@ class lockfree_list
 		void erase(iterator & Item)
 		{
 			memset(&(Item.m_Item->Content), 0, sizeof(T));
-			InterlockedExchange(&(Item.m_Item->Used), 0);
+			_InterlockedExchange(&(Item.m_Item->Used), 0);
 		};
 
 		iterator begin()

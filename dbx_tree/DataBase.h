@@ -98,7 +98,7 @@ typedef union TGenericFileHeader {
 class CDataBase : public sigslot::has_slots<>
 {
 private:
-	char* m_FileName[DBFileMax];
+	TCHAR* m_FileName[DBFileMax];
 	bool m_Opened;
 
 	CBlockManager *m_BlockManager[DBFileMax];

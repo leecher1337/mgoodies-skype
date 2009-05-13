@@ -33,7 +33,7 @@ class CThreadLocalStorage
 		{
 			long ThreadID;
 			T Content;
-		} TListItem, PListItem;
+		} TListItem, *PListItem;
 
 		typedef lockfree_list<TListItem> THashList;
 

@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma intrinsic (_InterlockedIncrement)
 #pragma intrinsic (_InterlockedDecrement)
-#pragma intrinsic (_InterlockedExchange)
 #pragma intrinsic (_InterlockedExchangeAdd)
 #pragma intrinsic (_InterlockedCompareExchange)
 #else
@@ -53,7 +52,9 @@ CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 	m_Revision = 0;
 	m_Waiting = 0;
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	m_Log = CreateFileA("dbx_treeSync.log", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
+	char fn[MAX_PATH];
+	sprintf_s(fn, "dbx_treeSync%08x.log", this);
+	m_Log = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 #endif
 
 }
@@ -246,17 +247,17 @@ bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite(char * File, int Line, 
 	DoLog("TryBeginWrite", File, Line, Function);
 	return res;
 }
-bool CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
+void CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
 {
 	DoLog("EndWrite  ", File, Line, Function);
-	return EndWrite();
+	EndWrite();
 }
 
 
 void CMultiReadExclusiveWriteSynchronizer::DoLog(char * Desc, char * File, int Line, char * Function)
 {
 	char buf [1024];
-	int l = sprintf_s(buf, "%08x - %s from \"%s\" %d (%s)\n", GetCurrentThreadId(), Desc, File, Line, Function);
+	int l = sprintf_s(buf, "%08x %08x - %s from \"%s\" %d (%s)\n", this, GetCurrentThreadId(), Desc, File, Line, Function);
 	DWORD read = 0;
 
 	WriteFile(m_Log, buf, l, &read, NULL);

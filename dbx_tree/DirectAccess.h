@@ -37,7 +37,7 @@ protected:
 	uint32_t mSetSize(uint32_t Size);
 	void     mFlush();
 public:
-	CDirectAccess(const char* FileName);
+	CDirectAccess(const TCHAR* FileName);
 	virtual ~CDirectAccess();
 
 };

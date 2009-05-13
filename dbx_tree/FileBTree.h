@@ -85,8 +85,7 @@ void CFileBTree<TKey, SizeParam>::Read(typename CBTree<TKey, SizeParam>::TNodeRe
 	}
 	Dest.Info = sig & 0xffff;
 
-	if ((sig & 0xffff0000) != cSignature)
-		throwException("Signature check failed");
+	assertThrow((sig & 0xffff0000) == cSignature, _T("Signature check failed"));
 
 }
 

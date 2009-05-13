@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <intrin.h>
 #pragma intrinsic (_InterlockedExchange)
 #pragma intrinsic (_InterlockedCompareExchange64)
+#pragma intrinsic (_interlockedbittestandset)
 #else
 #include "intrin_gcc.h"
 #endif
@@ -165,7 +166,6 @@ void CBlockManager::ExecuteOptimize()
 	if (buf)
 		free(buf);
 }
-
 CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHeadOcc * Buffer, bool Modify)
 {
 	{
@@ -173,40 +173,62 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHead
 		uint32_t cachefactor = cCacheFactor[ID & 0xf];
 		uint32_t index = ID & 0xfff;
 		uint32_t count = 0;
-		TCacheItem freeitem, newitem, olditem;
+		TCacheItem newitem, olditem, tmpitem;
 
-		freeitem.Complete = 0;
 		newitem.BlockID = ID;
 		newitem.Buffer = (uint32_t)Buffer | cCacheUsedFlag;
-		if (Modify)
-			newitem.Buffer = newitem.Buffer | cCacheChangedFlag;
 
 		while (count < cCacheDepth)
 		{
-			olditem = m_Cache[index];
+			olditem.Complete = _InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, 0);
+			
+			if (olditem.Complete == 0)
+			{
+				if (Modify)
+					_interlockedbittestandset((volatile long *)&m_Cache[index].Buffer, 0); // set cChacheChangedFlag	
+				return Buffer;
+			}
+
 			if (olditem.BlockID == ID)
-			{
-				free(Buffer);
-				return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheChangedFlag | cCacheUsedFlag));
-			} else if ((olditem.Buffer & (cCacheUsedFlag | cCacheChangedFlag)) == 0)
-			{
-				if (olditem.Complete == _InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, olditem.Complete))
+			{			
+				if (!(olditem.Buffer & cCacheUsedFlag))
 				{
-					if (olditem.Buffer)
-					{
-						m_BlockTable[olditem.BlockID].Addr = m_BlockTable[olditem.BlockID].Addr & ~cBlockIsCachedFlag;
-						free((TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag)));
-					}
+					newitem.Buffer = olditem.Buffer | cCacheUsedFlag;
+					tmpitem.Complete = _InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, olditem.Complete);
+				} else {
+					tmpitem = olditem;
+				}
+				
+				if (tmpitem.BlockID == ID)
+				{
+					if (Modify)
+						_interlockedbittestandset((volatile long *)&m_Cache[index].Buffer, 0); // set cChacheChangedFlag	
+
+					free(Buffer);
+					return (TBlockHeadOcc*)(olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
+				}
+			
+			} else if ((olditem.Buffer & cCacheUsedFlag) == 0)
+			{
+				tmpitem.Complete = _InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, olditem.Complete);
+				if (tmpitem.Complete == olditem.Complete)
+				{				
+					free((void*)(tmpitem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag)));
+					if (Modify)
+						_interlockedbittestandset((volatile long *)&m_Cache[index].Buffer, 0); // set cChacheChangedFlag	
+
 					return Buffer;
 				}
 			}
-			
+
 			count++;
-			index = (index * cachefactor + 3697) & 0xfff;		
+			index = (index * cachefactor + 3697) & 0xfff;
 		}
 	}
-	
+
+
 	{
+		// insert into overflow stack
 		TCacheOverflowItem * newstack = (TCacheOverflowItem*) malloc(sizeof(TCacheOverflowItem));
 		volatile TCacheOverflowItem * oldstack;
 		volatile TCacheOverflowItem * lastcheck = NULL;
@@ -214,12 +236,12 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHead
 		newstack->Item.Buffer = (uint32_t)Buffer | cCacheUsedFlag;
 		if (Modify)
 			newstack->Item.Buffer = newstack->Item.Buffer | cCacheChangedFlag;
-		
+
 		do
 		{
 			oldstack = m_CacheOverflow;
 			TCacheOverflowItem * i = (TCacheOverflowItem*) oldstack;
-			while (i != lastcheck)
+			while (i != lastcheck)	// check if item was added to the stack during this function
 			{
 				if (i->Item.BlockID == ID)
 				{
@@ -232,51 +254,35 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheInsert(uint32_t ID, TBlockHead
 			lastcheck = oldstack;
 
 			newstack->Next = oldstack;
-			
+
 		} while ((long)oldstack != _InterlockedCompareExchange((volatile long *)&m_CacheOverflow, (long)newstack, (long)oldstack));
 	}
 
 	return Buffer;
 }
+
 CBlockManager::TBlockHeadOcc* CBlockManager::CacheFind(uint32_t ID, bool Modify)
 {
 	uint32_t cachefactor = cCacheFactor[ID & 0xf];
 	uint32_t index = ID & 0xfff;
 	uint32_t count = 0;
-	TCacheItem olditem, newitem;
-
+	
 	while (count < cCacheDepth)
 	{
-		olditem = m_Cache[index];
-		if (olditem.BlockID == ID)
+		if (m_Cache[index].BlockID == ID)
 		{
-			newitem.BlockID = ID;
-			newitem.Buffer = olditem.Buffer | cCacheUsedFlag;
-			if (Modify)
-				newitem.Buffer = newitem.Buffer | cCacheChangedFlag;
-
-			if (olditem.Buffer != newitem.Buffer)
+			_interlockedbittestandset((volatile long*)&m_Cache[index].Buffer, 1); // set used flag
+			if (m_Cache[index].BlockID == ID)
 			{
-				if (olditem.Complete == _InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, olditem.Complete))
-				{
-					return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
-				} else {
-					olditem = m_Cache[index];
-					if (olditem.BlockID != ID)
-					{
-						return NULL;
-					} else { // someone else used the item, check for cCacheChangedFlag
-						if (((olditem.Buffer & cCacheChangedFlag) == 0) && Modify)
-						{
-							_InterlockedCompareExchange64(&m_Cache[index].Complete, newitem.Complete, olditem.Complete); // if that isn't successful, someone else set the modified flag.
-						}
-						return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
-					}
-				}
+				if (Modify)
+					_interlockedbittestandset((volatile long*)&m_Cache[index].Buffer, 0); // set changed flag
+
+				return (TBlockHeadOcc*)(m_Cache[index].Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
 			} else {
-				return (TBlockHeadOcc*) (olditem.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
+				return NULL;
 			}
 		}
+
 		count++;
 		index = (index * cachefactor + 3697) & 0xfff;		
 	}
@@ -287,15 +293,14 @@ CBlockManager::TBlockHeadOcc* CBlockManager::CacheFind(uint32_t ID, bool Modify)
 
 	if (overflow)
 	{
-		if (Modify && ((overflow->Item.Buffer | cCacheChangedFlag) == 0))
-			_InterlockedExchange((volatile long *)&overflow->Item.Buffer, overflow->Item.Buffer | cCacheChangedFlag);
+		if (Modify)
+			_interlockedbittestandset((volatile long*)&overflow->Item.Buffer, 0);
 
 		return (TBlockHeadOcc*) (overflow->Item.Buffer & ~(cCacheUsedFlag | cCacheChangedFlag));
 	}
 
 	return NULL;
 }
-
 
 void CBlockManager::CacheUpdate(uint32_t ID, TBlockHeadOcc * Buffer)
 {
@@ -477,10 +482,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 	while (p < FileSize)
 	{
 		m_FileAccess.Read(&h, p, sizeof(h));
-		if (h.Size == 0)
-		{
-			throwException("File Corrupt!");
-		}
+		assertThrow(h.Size, _T("File Corrupt!"));
 
  		if (h.ID == cFreeBlockID)
 		{
@@ -573,8 +575,8 @@ inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size, bool In
 			m_FileAccess.Invalidate(Addr + sizeof(h), Size - sizeof(h) - sizeof(t));
 		m_FileAccess.Write(&t, Addr + Size - sizeof(t), sizeof(t));
 
-		if (Reuse)
-			m_FreeBlocks.insert(std::make_pair(Size, Addr));
+//		if (Reuse)
+//			m_FreeBlocks.insert(std::make_pair(Size, Addr));
 	}
 }
 
@@ -609,7 +611,7 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t Size)
 		addr = m_FileAccess.Size();
 		m_FileAccess.Size(addr + Size);
 		
-	} else { 			
+	} else {
 		addr = f->second;
 
 		if (f->first != Size)
@@ -636,7 +638,9 @@ inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, TBlo
 	Addr = m_BlockTable[BlockID].Addr;
 
 	if (Addr == 0)
+	{
 		return false;
+	}
 
 
 	// 0 -> only in file
@@ -672,10 +676,10 @@ inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, TBlo
 			if (m_FileAccess.ReadOnly())
 			{
 				Addr = 0;
-				m_BlockTable[BlockID].Addr = (uint32_t)Cache | cBlockIsVirtualOnlyFlag | cBlockIsCachedFlag;
+				_InterlockedExchange((volatile long *)&m_BlockTable[BlockID].Addr, (long)Cache | cBlockIsVirtualOnlyFlag | cBlockIsCachedFlag);
 			} else {
 				Cache = CacheInsert(BlockID, Cache, Modify);
-				m_BlockTable[BlockID].Addr = Addr | cBlockIsCachedFlag;
+				_interlockedbittestandset((volatile long *)&m_BlockTable[BlockID].Addr, 0 /*cBlockIsCachedFlag*/);
 			}
 		} break;
 	}
@@ -770,7 +774,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 
 	if (m_FileAccess.ReadOnly())
 	{
-		m_BlockTable[BlockID >> 2].Addr = (uint32_t)cache  | (m_BlockTable[BlockID >> 2].Addr & (cBlockIsCachedFlag | cBlockIsVirtualOnlyFlag));
+		m_BlockTable[BlockID >> 2].Addr = (uint32_t)cache | (m_BlockTable[BlockID >> 2].Addr & (cBlockIsCachedFlag | cBlockIsVirtualOnlyFlag));
 	} else {
 		InsertFreeBlock(addr, os, true, true);
 		addr = FindFreePosition(ns);

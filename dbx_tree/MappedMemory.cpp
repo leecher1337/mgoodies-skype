@@ -55,7 +55,7 @@ bool CMappedMemory::InitMMAP()
 
 	return myUnmapViewOfFile && myFlushViewOfFile && myCreateFileMappingA && myMapViewOfFile;
 }
-CMappedMemory::CMappedMemory(const char* FileName)
+CMappedMemory::CMappedMemory(const TCHAR* FileName)
 :	CFileAccess(FileName)
 {
 	SYSTEM_INFO sysinfo;
@@ -70,9 +70,8 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	m_MinAllocGranularity = m_AllocGranularity;           // must be at least one segment
 	m_MaxAllocGranularity = m_AllocGranularity << 4;      // usually 1mb for fast increasing
 
-	m_DirectFile = CreateFileA(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
-	if (m_DirectFile == INVALID_HANDLE_VALUE)
-		throwException("CreateFile failed");
+	m_DirectFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
+	assertThrow(m_DirectFile != INVALID_HANDLE_VALUE, _T("CreateFile failed"));
 
 	uint32_t size = GetFileSize(m_DirectFile, NULL);
 	size = (size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
@@ -130,20 +129,17 @@ uint32_t CMappedMemory::mSetSize(uint32_t Size)
 	m_Base = NULL;
 	m_FileMapping = NULL;
 
-	if (INVALID_SET_FILE_POINTER == SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN))
-		throwException("Cannot set file position");
+	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN),
+		          _T("Cannot set file position"));
 
-	if (!SetEndOfFile(m_DirectFile))
-		throwException("Cannot set end of file");
+	assertThrow(SetEndOfFile(m_DirectFile), _T("Cannot set end of file"));
 
 	m_FileMapping = myCreateFileMappingA(m_DirectFile, NULL, PAGE_READWRITE, 0, Size, NULL);
 
-	if (m_FileMapping == 0)
-		throwException("CreateFileMapping failed");
+	assertThrow(m_FileMapping, _T("CreateFileMapping failed"));
 
 	m_Base = (uint8_t*) myMapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	if (m_Base == NULL)
-		throwException("MapViewOfFile failed");
+	assertThrow(m_Base, _T("MapViewOfFile failed"));
 
 	return Size;
 }

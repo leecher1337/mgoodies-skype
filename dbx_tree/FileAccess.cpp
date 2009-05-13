@@ -28,13 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-CFileAccess::CFileAccess(const char* FileName)
+CFileAccess::CFileAccess(const TCHAR* FileName)
 {
-	m_FileName = new char[strlen(FileName) + 1];
-	m_JournalFileName = new char[strlen(FileName) + 5];
-	strcpy_s(m_FileName, strlen(FileName) + 1, FileName);
-	strcpy_s(m_JournalFileName, strlen(FileName) + 5, FileName);
-	strcat_s(m_JournalFileName, strlen(FileName) + 5, ".jrn");
+	m_FileName = new TCHAR[_tcslen(FileName) + 1];
+	m_JournalFileName = new TCHAR[_tcslen(FileName) + 5];
+	_tcscpy_s(m_FileName, _tcslen(FileName) + 1, FileName);
+	_tcscpy_s(m_JournalFileName, _tcslen(FileName) + 5, FileName);
+	_tcscat_s(m_JournalFileName, _tcslen(FileName) + 5, _T(".jrn"));
 
 	m_ReadOnly = false;
 	m_LastSize = 0;
@@ -46,7 +46,7 @@ CFileAccess::CFileAccess(const char* FileName)
 CFileAccess::~CFileAccess()
 {
 	CloseHandle(m_Journal);
-	DeleteFileA(m_JournalFileName);
+	DeleteFile(m_JournalFileName);
 
 	delete [] m_FileName;
 	delete [] m_JournalFileName;
@@ -91,7 +91,7 @@ void CFileAccess::FlushJournal()
 	if (!ReadFile(m_Journal, buf, filesize, &read, NULL) || (read != filesize))
 	{
 		free(buf);
-		throwException("Couldn't flush the journal because ReadFile failed!");
+		throwException(_T("Couldn't flush the journal because ReadFile failed!"));
 	}
 
 	std::vector<TJournalEntry*> currentops;
@@ -182,7 +182,7 @@ void CFileAccess::FlushJournal()
 					filesize = filesize - sizeof(TJournalEntry);
 				}
 			} break;
-			default: throwException("Jounral corrupt!");
+			default: throwException(_T("Jounral corrupt!"));
 		}
 	}
 
@@ -196,9 +196,9 @@ void CFileAccess::FlushJournal()
 
 void CFileAccess::InitJournal()
 {
-	m_Journal = CreateFileA(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
-	if (m_Journal == INVALID_HANDLE_VALUE) 
-		throwException("CreateFile failed on Journal %s", m_JournalFileName);
+	m_Journal = CreateFile(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+	assertThrow(m_Journal != INVALID_HANDLE_VALUE,
+		          _T("CreateFile failed on Journal %s"), m_JournalFileName);
 
 	uint8_t h[sizeof(cJournalSignature)];
 	DWORD read;

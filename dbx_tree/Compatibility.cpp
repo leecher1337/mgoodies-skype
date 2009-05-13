@@ -478,6 +478,7 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 		{
 			set.Type = DBT_ST_BLOB;
 			set.Value.pBlob = dbcws->value.pbVal;
+			set.Value.Length = dbcws->value.cpbVal;
 		} break;
 		case DBVT_BYTE:
 		{
