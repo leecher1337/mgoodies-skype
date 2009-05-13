@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.
 
 
 Player *players[NUM_PLAYERS];
+static LISTENINGTOINFO current = {0};
 
 
 void InitMusic() 
@@ -54,6 +55,8 @@ void EnableDisablePlayers()
 
 void FreeListeningInfo(LISTENINGTOINFO *lti)
 {
+	lti->cbSize = 0;
+	lti->dwFlags = 0;
 	MIR_FREE(lti->ptszArtist);
 	MIR_FREE(lti->ptszAlbum);
 	MIR_FREE(lti->ptszTitle);
@@ -65,51 +68,104 @@ void FreeListeningInfo(LISTENINGTOINFO *lti)
 	MIR_FREE(lti->ptszType);
 }
 
-
-int ChangedListeningInfo()
+void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src)
 {
-	if (players[WATRACK]->enabled)
-	{
-		return players[WATRACK]->ChangedListeningInfo();
-	}
-	else
-	{
-		// Find a player playing
-		BOOL removed = FALSE;
+	FreeListeningInfo(dest);
 
-		for (int i = GENERIC; i < NUM_PLAYERS; i++) 
-		{
-			int changed = players[i]->ChangedListeningInfo();
+	dest->cbSize = src->cbSize;
+	dest->dwFlags = src->dwFlags;
+	dest->ptszArtist = mir_tstrdup(src->ptszArtist);
+	dest->ptszAlbum = mir_tstrdup(src->ptszAlbum);
+	dest->ptszTitle = mir_tstrdup(src->ptszTitle);
+	dest->ptszTrack = mir_tstrdup(src->ptszTrack);
+	dest->ptszYear = mir_tstrdup(src->ptszYear);
+	dest->ptszGenre = mir_tstrdup(src->ptszGenre);
+	dest->ptszLength = mir_tstrdup(src->ptszLength);
+	dest->ptszPlayer = mir_tstrdup(src->ptszPlayer);
+	dest->ptszType = mir_tstrdup(src->ptszType);
+}
 
-			if (changed < 0)
-				removed = TRUE;
+BOOL Equals(const LISTENINGTOINFO *lti1, const LISTENINGTOINFO *lti2)
+{
+	if (lti1->cbSize != lti2->cbSize)
+		return FALSE;
 
-			else if (changed > 0)
-				return 1;
-		}
-
-		return removed ? -1 : 0;
-	}
+	return lstrcmpi(lti1->ptszArtist, lti2->ptszArtist) == 0 
+		&& lstrcmpi(lti1->ptszAlbum, lti2->ptszAlbum) == 0 
+		&& lstrcmpi(lti1->ptszTitle, lti2->ptszTitle) == 0 
+		&& lstrcmpi(lti1->ptszTrack, lti2->ptszTrack) == 0 
+		&& lstrcmpi(lti1->ptszYear, lti2->ptszYear) == 0 
+		&& lstrcmpi(lti1->ptszGenre, lti2->ptszGenre) == 0 
+		&& lstrcmpi(lti1->ptszLength, lti2->ptszLength) == 0 
+		&& lstrcmpi(lti1->ptszPlayer, lti2->ptszPlayer) == 0 
+		&& lstrcmpi(lti1->ptszType, lti2->ptszType) == 0;
 }
 
 
-BOOL GetListeningInfo(LISTENINGTOINFO *lti)
+int ChangedListeningInfo()
 {
-	// Free old data
-	FreeListeningInfo(lti);
+//	m_log(_T("ChangedListeningInfo"), _T("Start"));
 
-	if (players[WATRACK]->enabled)
+	BOOL changed = FALSE;
+	BOOL playing = FALSE;
+
+	int first = (players[WATRACK]->enabled ? WATRACK : GENERIC);
+	int last = (players[WATRACK]->enabled ? WATRACK + 1 : NUM_PLAYERS);
+	for (int i = first; i < last; i++) 
 	{
-		return players[WATRACK]->GetListeningInfo(lti);
-	}
-	else
-	{
-		// Find a player playing
-		for (int i = GENERIC; i < NUM_PLAYERS; i++) {
-			if (players[i]->GetListeningInfo(lti))
-				return TRUE;
+		if (!players[i]->enabled)
+			continue;
+
+		LISTENINGTOINFO lti = {0};
+		if (!players[i]->GetListeningInfo(&lti))
+			continue;
+
+		if (!IsTypeEnabled(&lti))
+		{
+			FreeListeningInfo(&lti);
+			continue;
 		}
 
-		return FALSE;
+		playing = TRUE;
+
+//		m_log(_T("ChangedListeningInfo"), _T("Has : %s : %d"), players[i]->name, lti.cbSize);
+
+		if (Equals(&current, &lti))
+		{
+//			m_log(_T("ChangedListeningInfo"), _T("Is equals"));
+			FreeListeningInfo(&lti);
+		}
+		else
+		{
+//			m_log(_T("ChangedListeningInfo"), _T("Is different"));
+
+			FreeListeningInfo(&current);
+
+			memmove(&current, &lti, sizeof(current));
+
+			changed = 1;
+		}
+
+		break;
 	}
+
+	if (!playing && current.cbSize != 0)
+	{
+		FreeListeningInfo(&current);
+		changed = 1;
+	}
+
+	if (!changed)
+		return 0;
+	else
+		return current.cbSize == 0 ? -1 : 1;
+}
+
+
+LISTENINGTOINFO * GetListeningInfo()
+{
+	if (current.cbSize == 0)
+		return NULL;
+
+	return &current;
 }

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -31,6 +31,7 @@ extern "C"
 ITunes::ITunes()
 {
 	name = _T("iTunes");
+	needPoll = TRUE;
 
 	filename[0] = L'\0';
 
@@ -64,13 +65,6 @@ void ITunes::FreeTempData()
 }
 
 
-void ITunes::FreeData()
-{
-	PollPlayer::FreeData();
-	FreeTempData();
-}
-
-
 #define CALL(_F_) hr = _F_; if (FAILED(hr)) return FALSE
 
 // Init data and put filename playing in ret and ->fi.filename
@@ -98,7 +92,7 @@ BOOL ITunes::InitAndGetFilename()
 
 	CALL( file->get_Location(&ret) );
 
-	return TRUE;
+	return !IsEmpty(ret);
 }
 
 
@@ -108,16 +102,13 @@ BOOL ITunes::FillCache()
 	long lret;
 
 	CALL( track->get_Album(&ret) );
-	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszAlbum = mir_u2t(ret);
+	listening_info.ptszAlbum = U2T(ret);
 
 	CALL( track->get_Artist(&ret) );
-	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszArtist = mir_u2t(ret);
+	listening_info.ptszArtist = U2T(ret);
 
 	CALL( track->get_Name(&ret) );
-	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszTitle = mir_u2t(ret);
+	listening_info.ptszTitle = U2T(ret);
 
 	CALL( track->get_Year(&lret) );
 	if (lret > 0)
@@ -134,8 +125,7 @@ BOOL ITunes::FillCache()
 	}
 
 	CALL( track->get_Genre(&ret) );
-	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszGenre = mir_u2t(ret);
+	listening_info.ptszGenre = U2T(ret);
 
 	CALL( track->get_Duration(&lret) );
 	if (lret > 0)
@@ -179,48 +169,20 @@ BOOL ITunes::FillCache()
 }
 
 
-// < 0 removed
-// 0 not changed
-// > 0 changed
-int ITunes::ChangedListeningInfo()
+BOOL ITunes::GetListeningInfo(LISTENINGTOINFO *lti)
 {
-	if (!enabled || !InitAndGetFilename() || ret == NULL || ret[0] == L'\0')
+	FreeData();
+
+	if (InitAndGetFilename() && strcmpnullW(filename, ret) != 0)
 	{
-		FreeData();
-		if (filename[0] != L'\0')
-		{
-			filename[0] = L'\0';
-			return -1;
-		}
-		else
-			return 0;
-	}
-	
-	if (strcmpnullW(filename, ret) == 0)
-	{
-		FreeTempData();
-		return 0;
+		// Fill the data cache
+		wcscpy(filename, ret);
+
+		if (!FillCache())
+			FreeData();
 	}
 
-	// Fill the data cache
-	FreeListeningInfo(&listening_info);
+	FreeTempData();
 
-	wcscpy(filename, ret);
-
-	if (!FillCache())
-	{
-		FreeData();
-		if (filename[0] != L'\0')
-		{
-			filename[0] = L'\0';
-			return -1;
-		}
-		else
-			return 0;
-	}
-	else
-	{
-		FreeTempData();
-		return 1;
-	}
+	return Player::GetListeningInfo(lti);
 }

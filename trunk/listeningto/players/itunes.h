@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -23,7 +23,7 @@ extern "C"
 }
 
 
-class ITunes : public PollPlayer
+class ITunes : public Player
 {
 protected:
 	WCHAR filename[1024];
@@ -44,7 +44,5 @@ protected:
 public:
 	ITunes();
 
-	virtual int ChangedListeningInfo();
-
-	virtual void FreeData();
+	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -85,15 +85,12 @@ void WindowsMediaPlayer::ProcessReceived()
 	if (received[0] == L'\0' || p1 == NULL)
 	{
 		LeaveCriticalSection(&cs);
-		if (changed)
-			NotifyInfoChanged();
+		NotifyInfoChanged();
 		return;
 	}
 
-	changed = TRUE;
-
 	// Process string
-	WCHAR *parts[8];
+	WCHAR *parts[8] = {0};
 	int pCount = 0;
 	WCHAR *p = received;
 	do {
@@ -108,16 +105,17 @@ void WindowsMediaPlayer::ProcessReceived()
 	parts[pCount] = p;
 
 	// Fill cache
-	if (pCount > 4 && parts[1][0] != L'\0' && (parts[4][0] != L'\0' || parts[5][0] != L'\0'))
+	if (pCount > 4 && !IsEmpty(parts[1]) && (!IsEmpty(parts[4]) || !IsEmpty(parts[5])))
 	{
-		listening_info.ptszType = mir_u2t(parts[1]);
-		if (parts[4][0] != '\0') listening_info.ptszTitle = mir_u2t(parts[4]);
-		if (pCount > 5 && parts[5][0] != '\0') listening_info.ptszArtist = mir_u2t(parts[5]);
-		if (pCount > 6 && parts[6][0] != '\0') listening_info.ptszAlbum = mir_u2t(parts[6]);
-
-		listening_info.ptszPlayer = mir_tstrdup(name);
 		listening_info.cbSize = sizeof(listening_info);
 		listening_info.dwFlags = LTI_TCHAR;
+
+		listening_info.ptszType = U2T(parts[1]);
+		listening_info.ptszTitle = U2T(parts[4]);
+		listening_info.ptszArtist = U2T(parts[5]);
+		listening_info.ptszAlbum = U2T(parts[6]);
+
+		listening_info.ptszPlayer = mir_tstrdup(name);
 	}
 
 	// Put back the '\\'s
@@ -138,8 +136,40 @@ static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD
 	KillTimer(NULL, hTimer);
 	hTimer = NULL;
 
+	if (!loaded)
+		return;
+
 	if (singleton != NULL)
 		singleton->ProcessReceived();
+}
+
+
+void WindowsMediaPlayer::NewData(const WCHAR *data, size_t len)
+{
+	EnterCriticalSection(&cs);
+
+	len = min(len, 1023);
+	if (wcsncmp(received, data, len) != 0)
+	{
+		wcsncpy(received, data, len);
+		received[len] = L'\0';
+
+/*#ifdef UNICODE
+		m_log(_T("ReceiverWndProc"), _T("WMP : New data: [%d] %s"), len, received);
+#else
+		m_log(_T("ReceiverWndProc"), _T("WMP : New data: [%d] %S"), len, received);
+#endif
+*/
+		if (hTimer)
+			KillTimer(NULL, hTimer);
+		hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
+	}
+/*	else
+	{
+		m_log(_T("NewData"), _T("END: Text is the same as last time"));
+	}
+*/
+	LeaveCriticalSection(&cs);
 }
 
 
@@ -150,24 +180,18 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 	{
 		case WM_COPYDATA :
 		{
+			if (!loaded)
+				return FALSE;
+
+			if (singleton == NULL || !singleton->enabled)
+				return FALSE;
+
 			COPYDATASTRUCT* pData = (PCOPYDATASTRUCT) lParam;
 			if (pData->dwData != 0x547 || pData->cbData == 0 || pData->lpData == NULL)
-				return false;
+				return FALSE;
 
-			EnterCriticalSection(&singleton->cs);
-
-			size_t len = min(pData->cbData / 2, 1023);
-			if (wcsncmp(singleton->received, (WCHAR*) pData->lpData, len) != 0)
-			{
-				wcsncpy(singleton->received, (WCHAR*) pData->lpData, len);
-				singleton->received[len] = L'\0';
-
-				if (hTimer)
-					KillTimer(NULL, hTimer);
-				hTimer = SetTimer(NULL, NULL, 5, SendTimerProc); // Do the processing after we return true
-			}
-
-			LeaveCriticalSection(&singleton->cs);
+			if (singleton != NULL)
+				singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
 
 			return TRUE;
 		}

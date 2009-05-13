@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,15 +18,16 @@ Boston, MA 02111-1307, USA.
 */
 
 
-class WindowsMediaPlayer : public CallbackPlayer
+class WindowsMediaPlayer : public Player
 {
 protected:
 	HWND hWnd;
+	WCHAR received[1024];
 
 public:
 	WindowsMediaPlayer();
 	virtual ~WindowsMediaPlayer();
 
-	WCHAR received[1024];
 	void ProcessReceived();
+	void NewData(const WCHAR *data, size_t len);
 };

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -25,6 +25,8 @@ static WATrack *instance = NULL;
 
 int NewStatusCallback(WPARAM wParam, LPARAM lParam) 
 {
+	if (!loaded)
+		return 0;
 	if (instance != NULL)
 		instance->NewStatus(wParam, lParam);
 	return 0;
@@ -33,6 +35,7 @@ int NewStatusCallback(WPARAM wParam, LPARAM lParam)
 
 WATrack::WATrack()
 {
+	name = _T("WATrack");
 	instance = this;
 	hNewStatusHook = NULL;
 }
@@ -50,27 +53,6 @@ WATrack::~WATrack()
 }
 
 
-void WATrack::NewStatus(int event, int value)
-{
-	if (enabled)
-	{
-		EnterCriticalSection(&cs);
-
-		if (event == WAT_EVENT_PLUGINSTATUS && value != 0)
-		{
-			FreeData();
-			LeaveCriticalSection(&cs);
-			NotifyInfoChanged();
-			return;
-		}
-
-		GetData();
-
-		LeaveCriticalSection(&cs);
-	}
-}
-
-
 void WATrack::EnableDisable()
 {
 	if (!ServiceExists(MS_WAT_GETMUSICINFO))
@@ -81,15 +63,25 @@ void WATrack::EnableDisable()
 
 	if (hNewStatusHook == NULL)
 		hNewStatusHook = HookEvent(ME_WAT_NEWSTATUS, NewStatusCallback);
+}
 
+
+void WATrack::NewStatus(int event, int value)
+{
 	EnterCriticalSection(&cs);
 
-	if (enabled)
-		GetData();
-	else
+	if (event == WAT_EVENT_PLUGINSTATUS && value != 0)
+	{
 		FreeData();
+	}
+	else
+	{
+		GetData();
+	}
 
 	LeaveCriticalSection(&cs);
+
+	NotifyInfoChanged();
 }
 
 
@@ -109,37 +101,23 @@ void WATrack::GetData()
 
 #endif
 
+	FreeData();
+
 	// See if something is playing
 	if (playing !=  WAT_PLS_NORMAL
 		|| si == NULL
 		|| si->status != 1
-		|| ( (si->artist == NULL || si->artist[0] == _T('0')) 
-			 && (si->title == NULL || si->title[0] == _T('0')) ) )
+		|| ( IsEmpty(si->artist) && IsEmpty(si->title) ) )
 	{
-		if (listening_info.cbSize != 0)
-		{
-			FreeData();
-			NotifyInfoChanged();
-		}
 		return;
 	}
 
 	// Copy new data
 
-	changed = TRUE;
-	FreeData();
-
-	if (si->album != NULL && si->album[0] != L'\0')
-		listening_info.ptszAlbum = mir_tstrdup(si->album);
-
-	if (si->artist != NULL && si->artist[0] != L'\0')
-		listening_info.ptszArtist = mir_tstrdup(si->artist);
-
-	if (si->title != NULL && si->title[0] != L'\0')
-		listening_info.ptszTitle = mir_tstrdup(si->title);
-
-	if (si->year != NULL && si->year[0] != L'\0')
-		listening_info.ptszYear = mir_tstrdup(si->year);
+	listening_info.ptszAlbum = DUP(si->album);
+	listening_info.ptszArtist = DUP(si->artist);
+	listening_info.ptszTitle = DUP(si->title);
+	listening_info.ptszYear = DUP(si->year);
 
 	if (si->track > 0)
 	{
@@ -147,8 +125,7 @@ void WATrack::GetData()
 		_itot(si->track, listening_info.ptszTrack, 10);
 	}
 
-	if (si->genre != NULL && si->genre[0] != L'\0')
-		listening_info.ptszGenre = mir_tstrdup(si->genre);
+	listening_info.ptszGenre = DUP(si->genre);
 
 	if (si->total > 0)
 	{
@@ -169,10 +146,8 @@ void WATrack::GetData()
 	else
 		listening_info.ptszType = mir_tstrdup(_T("Music"));
 
-	listening_info.ptszPlayer = mir_tstrdup(si->player);
+	listening_info.ptszPlayer = DUPD(si->player, name);
 
 	listening_info.cbSize = sizeof(listening_info);
 	listening_info.dwFlags = LTI_TCHAR;
-
-	NotifyInfoChanged();
 }

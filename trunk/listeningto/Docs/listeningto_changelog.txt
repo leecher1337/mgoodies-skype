@@ -2,6 +2,13 @@ ListeningTo
 
 Changelog:
 
+. 0.3.0.0
+  + A lot of changes for the internal logic for handling players
+
+. 0.2.1.0
+  * Fix for disable by menu item
+  * Fix for no output (closes #33)
+
 . 0.2.0.0
   + Added support for accounts
   + Added support for extra icons service

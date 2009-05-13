@@ -55,11 +55,12 @@ void EnableDisablePlayers();
 
 
 int ChangedListeningInfo();
-BOOL GetListeningInfo(LISTENINGTOINFO *lti);
+LISTENINGTOINFO * GetListeningInfo();
 
 
 // Helper functions to players
 void FreeListeningInfo(LISTENINGTOINFO *lti);
+void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src);
 
 
 
