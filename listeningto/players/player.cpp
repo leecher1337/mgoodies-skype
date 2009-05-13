@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -24,132 +24,39 @@ Boston, MA 02111-1307, USA.
 extern void HasNewListeningInfo();
 
 
-void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src)
+
+Player::Player() : name(_T("Player")), enabled(FALSE), needPoll(FALSE)
 {
-	FreeListeningInfo(dest);
-
-	dest->cbSize = src->cbSize;
-	dest->dwFlags = src->dwFlags;
-	dest->ptszArtist = mir_tstrdup(src->ptszArtist);
-	dest->ptszAlbum = mir_tstrdup(src->ptszAlbum);
-	dest->ptszTitle = mir_tstrdup(src->ptszTitle);
-	dest->ptszTrack = mir_tstrdup(src->ptszTrack);
-	dest->ptszYear = mir_tstrdup(src->ptszYear);
-	dest->ptszGenre = mir_tstrdup(src->ptszGenre);
-	dest->ptszLength = mir_tstrdup(src->ptszLength);
-	dest->ptszPlayer = mir_tstrdup(src->ptszPlayer);
-	dest->ptszType = mir_tstrdup(src->ptszType);
-}
-
-
-
-Player::Player() 
-{
-	enabled = FALSE;
-	needPoll = FALSE;
 	ZeroMemory(&listening_info, sizeof(listening_info));
+	InitializeCriticalSection(&cs);
 }
 
 Player::~Player()
 {
 	FreeData();
+	DeleteCriticalSection(&cs);
 }
-
 
 void Player::NotifyInfoChanged()
 {
-	HasNewListeningInfo();
+	if (enabled)
+		HasNewListeningInfo();
 }
-
 
 BOOL Player::GetListeningInfo(LISTENINGTOINFO *lti)
 {
-	if (!enabled)
-	{
-		FreeData();
-		return FALSE;
-	}
-
-	if (listening_info.cbSize == 0)
-		return FALSE;
-
-	if (!IsTypeEnabled(&listening_info))
-		return FALSE;
-
-	CopyListeningInfo(lti, &listening_info);
-	return TRUE;
-}
-
-void Player::FreeData()
-{
-	FreeListeningInfo(&listening_info);
-	listening_info.cbSize = 0;
-}
-
-
-
-PollPlayer::PollPlayer()
-{
-	needPoll = TRUE;
-}
-
-
-
-CallbackPlayer::CallbackPlayer() : changed(FALSE), csFreed(FALSE)
-{
-	InitializeCriticalSection(&cs);
-}
-
-CallbackPlayer::~CallbackPlayer()
-{
-	DeleteCriticalSection(&cs);
-	csFreed = TRUE;
-}
-
-void CallbackPlayer::FreeData()
-{
-	if (!csFreed)
-		EnterCriticalSection(&cs);
-
-	if (listening_info.cbSize != 0)
-	{
-		Player::FreeData();
-		changed = TRUE;
-	}
-
-	if (!csFreed)
-		LeaveCriticalSection(&cs);
-}
-
-int CallbackPlayer::ChangedListeningInfo()
-{
-	int ret;
-
 	EnterCriticalSection(&cs);
 
-	if (!enabled)
+	BOOL ret;
+	if (listening_info.cbSize == 0)
 	{
-		if (listening_info.cbSize == 0)
-		{
-			ret = 0;
-		}
-		else
-		{
-			FreeData();
-			ret = -1;
-		}
+		ret = FALSE;
 	}
-	else if (changed)
+	else 
 	{
-		changed = FALSE;
-		if (listening_info.cbSize == 0)
-			ret = -1;
-		else
-			ret = 1;
-	}
-	else
-	{
-		ret = 0;
+		if (lti != NULL)
+			CopyListeningInfo(lti, &listening_info);
+		ret = TRUE;
 	}
 
 	LeaveCriticalSection(&cs);
@@ -157,81 +64,107 @@ int CallbackPlayer::ChangedListeningInfo()
 	return ret;
 }
 
+void Player::FreeData()
+{
+	EnterCriticalSection(&cs);
+
+	if (listening_info.cbSize != 0)
+		FreeListeningInfo(&listening_info);
+
+	LeaveCriticalSection(&cs);
+}
+
+LISTENINGTOINFO * Player::LockListeningInfo()
+{
+	EnterCriticalSection(&cs);
+
+	return &listening_info;
+}
+
+void Player::ReleaseListeningInfo()
+{
+	LeaveCriticalSection(&cs);
+}
+
+
+
+ExternalPlayer::ExternalPlayer()
+{
+	name = _T("ExternalPlayer");
+	needPoll = TRUE;
+
+	window_classes = NULL;
+	num_window_classes = 0;
+	found_window = FALSE;
+}
+
+ExternalPlayer::~ExternalPlayer()
+{
+}
+
+HWND ExternalPlayer::FindWindow()
+{
+	HWND hwnd = NULL;
+	for(int i = 0; i < num_window_classes; i++)
+	{
+		hwnd = ::FindWindow(window_classes[i], NULL);
+		if (hwnd != NULL)
+			break;
+	}
+	return hwnd;
+}
+
+BOOL ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
+{
+	if (FindWindow() == NULL)
+		return FALSE;
+
+	return Player::GetListeningInfo(lti);
+}
+
+
 
 CodeInjectionPlayer::CodeInjectionPlayer()
 {
-	window_classes = NULL;
-	num_window_classes = 0;
+	name = _T("CodeInjectionPlayer");
+	dll_name = NULL;
 	message_window_class = NULL;
 	next_request_time = 0;
-	found_window = FALSE;
-	dll_name = NULL;
 }
 
 CodeInjectionPlayer::~CodeInjectionPlayer()
 {
 }
 
-int CodeInjectionPlayer::ChangedListeningInfo()
+void CodeInjectionPlayer::InjectCode()
 {
-	if (!enabled)
-	{
-		if (found_window)
-		{
-			found_window = FALSE;
-
-			FreeData();
-			return -1;
-		}
-		else
-		{
-			return 0;
-		}
-	}
+	if (!opts.enable_code_injection)
+		return;
+	else if (next_request_time > GetTickCount())
+		return;
 
 	// Window is opened?
-	HWND hwnd = NULL;
-	for(int i = 0; i < num_window_classes; i++)
-	{
-		hwnd = FindWindow(window_classes[i], NULL);
-		if (hwnd != NULL)
-			break;
-	}
+	HWND hwnd = FindWindow();
 	if (hwnd == NULL)
-	{
-		if (found_window)
-		{
-			found_window = FALSE;
-
-			FreeData();
-			return -1;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-
-	found_window = TRUE;
-
-	if (!opts.enable_code_injection)
-		return 0;
-	else if (next_request_time > GetTickCount())
-		return 0;
+		return;
 
 	// Msg Window is registered? (aka plugin is running?)
-	HWND msgHwnd = FindWindow(message_window_class, NULL);
+	HWND msgHwnd = ::FindWindow(message_window_class, NULL);
 	if (msgHwnd != NULL)
-		return 0;
+		return;
+
+
+	next_request_time = GetTickCount() + 30000;
+
 
 	// Get the dll path
 	char dll_path[1024] = {0};
 	if (!GetModuleFileNameA(hInst, dll_path, MAX_REGS(dll_path)))
-		return 0;
+		return;
 
 	char *p = strrchr(dll_path, '\\');
 	if (p == NULL)
-		return 0;
+		return;
 
 	p++;
 	*p = '\0';
@@ -245,7 +178,7 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	// File exists?
 	DWORD attribs = GetFileAttributesA(dll_path);
 	if (attribs == 0xFFFFFFFF || !(attribs & FILE_ATTRIBUTE_ARCHIVE))
-		return 0;
+		return;
 
 	// Do the code injection
 	unsigned long pid;
@@ -253,13 +186,13 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION 
 									| PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
 	if (hProcess == NULL)
-		return 0;
+		return;
 
 	char *_dll = (char *) VirtualAllocEx(hProcess, NULL, len+1, MEM_COMMIT, PAGE_READWRITE );
 	if (_dll == NULL)
 	{
 		CloseHandle(hProcess);
-		return 0;
+		return;
 	}
 	WriteProcessMemory(hProcess, _dll, dll_path, len+1, NULL);
 
@@ -272,83 +205,19 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	{
 		VirtualFreeEx(hProcess, _dll, len+1, MEM_RELEASE);
 		CloseHandle(hProcess);
-		return 0;
+		return;
 	}
 	WaitForSingleObject(hThread, INFINITE);
 	CloseHandle(hThread);
 	VirtualFreeEx(hProcess, _dll, len+1, MEM_RELEASE);
 	CloseHandle(hProcess);
-
-	next_request_time = GetTickCount() + 11000;
-
-	return 0;
 }
 
 BOOL CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 {
-	return FALSE;
+	if (enabled)
+		InjectCode();
+
+	return ExternalPlayer::GetListeningInfo(lti);
 }
 
-
-
-ExternalPlayer::ExternalPlayer()
-{
-	window_classes = NULL;
-	num_window_classes = 0;
-	next_request_time = 0;
-	found_window = FALSE;
-}
-
-ExternalPlayer::~ExternalPlayer()
-{
-}
-
-int ExternalPlayer::ChangedListeningInfo()
-{
-	if (!enabled)
-	{
-		if (found_window)
-		{
-			found_window = FALSE;
-
-			FreeData();
-			return -1;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-
-	// Window is opened?
-	HWND hwnd = NULL;
-	for(int i = 0; i < num_window_classes; i++)
-	{
-		hwnd = FindWindow(window_classes[i], NULL);
-		if (hwnd != NULL)
-			break;
-	}
-	if (hwnd == NULL)
-	{
-		if (found_window)
-		{
-			found_window = FALSE;
-
-			FreeData();
-			return -1;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-
-	found_window = TRUE;
-
-	return 0;
-}
-
-BOOL ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
-{
-	return FALSE;
-}

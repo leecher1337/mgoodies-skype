@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -22,6 +22,7 @@ class Player
 {
 protected:
 	LISTENINGTOINFO listening_info;
+	CRITICAL_SECTION cs;
 
 	void NotifyInfoChanged();
 
@@ -33,75 +34,48 @@ public:
 	Player();
 	virtual ~Player();
 
-	// Return:
-	// < 0 removed
-	// 0 not changed
-	// > 0 changed
-	virtual int ChangedListeningInfo() = 0;
-
 	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 
 	virtual void FreeData();
+
+	// Helpers to write to this object's listening info
+	virtual LISTENINGTOINFO * LockListeningInfo();
+	virtual void ReleaseListeningInfo();
 
 	// Called everytime options change
 	virtual void EnableDisable() {}
 };
 
-class PollPlayer : public Player
-{
-public:
-	PollPlayer();
-};
 
-class CallbackPlayer : public Player
-{
-protected:
-	BOOL changed;
-	BOOL csFreed;
-
-public:
-	CRITICAL_SECTION cs;
-
-	CallbackPlayer();
-	virtual ~CallbackPlayer();
-
-	virtual int ChangedListeningInfo();
-
-	virtual void FreeData();
-};
-
-class CodeInjectionPlayer : public PollPlayer
-{
-protected:
-	char *dll_name;
-	TCHAR **window_classes;
-	int num_window_classes;
-	TCHAR *message_window_class;
-	DWORD next_request_time;
-	BOOL found_window;
-
-public:
-	CodeInjectionPlayer();
-	virtual ~CodeInjectionPlayer();
-
-	virtual int ChangedListeningInfo();
-	
-	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
-};
-
-class ExternalPlayer : public PollPlayer
+class ExternalPlayer : public Player
 {
 protected:
 	TCHAR **window_classes;
 	int num_window_classes;
-	DWORD next_request_time;
 	BOOL found_window;
+
+	virtual HWND FindWindow();
 
 public:
 	ExternalPlayer();
 	virtual ~ExternalPlayer();
 
-	virtual int ChangedListeningInfo();
-	
+	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
+};
+
+
+class CodeInjectionPlayer : public ExternalPlayer
+{
+protected:
+	char *dll_name;
+	TCHAR *message_window_class;
+	DWORD next_request_time;
+
+	virtual void InjectCode();
+
+public:
+	CodeInjectionPlayer();
+	virtual ~CodeInjectionPlayer();
+
 	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };

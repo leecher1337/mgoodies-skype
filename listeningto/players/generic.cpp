@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -26,8 +26,8 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 static UINT hTimer = NULL;
 
-
 GenericPlayer *singleton = NULL;
+
 
 
 int m_log(const TCHAR *function, const TCHAR *fmt, ...)
@@ -72,6 +72,8 @@ int m_log(const TCHAR *function, const TCHAR *fmt, ...)
 
 GenericPlayer::GenericPlayer()
 {
+	name = _T("GenericPlayer");
+
 	enabled = TRUE;
 	received[0] = L'\0';
 	singleton = this;
@@ -115,12 +117,12 @@ void GenericPlayer::ProcessReceived()
 
 	WCHAR *p1 = wcsstr(received, L"\\0");
 
-	if (received[0] == L'\0' || p1 == NULL)
+	if (IsEmpty(received) || p1 == NULL)
 	{
-		if (received[0] == L'\0')
-			m_log(_T("ProcessReceived"), _T("ERROR: Empty text"));
-		else
-			m_log(_T("ProcessReceived"), _T("ERROR: No \\0 found"));
+//		if (received[0] == L'\0')
+//			m_log(_T("ProcessReceived"), _T("ERROR: Empty text"));
+//		else
+//			m_log(_T("ProcessReceived"), _T("ERROR: No \\0 found"));
 
 		// Ignore
 		LeaveCriticalSection(&cs);
@@ -144,7 +146,7 @@ void GenericPlayer::ProcessReceived()
 
 	if (pCount < 5)
 	{
-		m_log(_T("ProcessReceived"), _T("ERROR: Too little pieces"));
+//		m_log(_T("ProcessReceived"), _T("ERROR: Too little pieces"));
 
 		// Ignore
 		LeaveCriticalSection(&cs);
@@ -152,8 +154,8 @@ void GenericPlayer::ProcessReceived()
 	}
 
 	// See if player is enabled
-	int i;
-	for (i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
+	Player *player = this;
+	for (int i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
 	{
 #ifdef UNICODE
 		WCHAR *player_name = players[i]->name;
@@ -162,68 +164,63 @@ void GenericPlayer::ProcessReceived()
 		MultiByteToWideChar(CP_ACP, 0, players[i]->name, -1, player_name, MAX_REGS(player_name));
 #endif
 		if (_wcsicmp(parts[1], player_name) == 0)
-			break;
-	}
-
-	if ((i == NUM_PLAYERS && !opts.enable_other_players) 
-		|| (i != NUM_PLAYERS && !players[i]->enabled))
-	{
-		m_log(_T("ProcessReceived"), _T("END: Player disabled"));
-
-		// Ignore
-		LeaveCriticalSection(&cs);
-		return;
-	}
-
-	FreeData();
-
-	changed = TRUE;
-
-	if (wcscmp(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
-	{
-		if (wcscmp(L"1", parts[0]) != 0)
-			m_log(_T("ProcessReceived"), _T("END: Stoped playing"));
-		else
-			m_log(_T("ProcessReceived"), _T("ERROR: not enought info"));
-
-		// Stoped playing or not enought info
-		LeaveCriticalSection(&cs);
-		NotifyInfoChanged();
-		return;
-	}
-
-	listening_info.cbSize = sizeof(listening_info);
-	listening_info.dwFlags = LTI_TCHAR;
-
-	listening_info.ptszType = mir_u2t(parts[2][0] == L'\0' ? L"Music" : parts[2]);
-	listening_info.ptszArtist = mir_u2t(parts[4]);
-	listening_info.ptszAlbum = mir_u2t(parts[5]);
-	listening_info.ptszTitle = mir_u2t(parts[3]);
-	listening_info.ptszTrack = mir_u2t(parts[6]);
-	listening_info.ptszYear = mir_u2t(parts[7]);
-	listening_info.ptszGenre = mir_u2t(parts[8]);
-
-	if (i == NUM_PLAYERS)
-		listening_info.ptszPlayer = mir_u2t(parts[1]);
-	else
-		listening_info.ptszPlayer = mir_tstrdup(players[i]->name);
-
-	if (parts[9] != NULL)
-	{
-		long length = _wtoi(parts[9]);
-		if (length > 0)
 		{
-			listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
-
-			int s = length % 60;
-			int m = (length / 60) % 60;
-			int h = (length / 60) / 60;
-
-			if (h > 0)
-				mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
-			else
-				mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
+			player = players[i];
+			break;
 		}
+	}
+
+
+	player->FreeData();
+
+
+	if (wcscmp(L"1", parts[0]) != 0 || IsEmpty(parts[1]) || (IsEmpty(parts[3]) && IsEmpty(parts[4])))
+	{
+		// Stoped playing or not enought info
+
+//		if (wcscmp(L"1", parts[0]) != 0)
+//			m_log(_T("ProcessReceived"), _T("END: Stoped playing"));
+//		else
+//			m_log(_T("ProcessReceived"), _T("ERROR: not enought info"));
+	}
+	else
+	{
+		LISTENINGTOINFO *li = player->LockListeningInfo();
+
+		li->cbSize = sizeof(listening_info);
+		li->dwFlags = LTI_TCHAR;
+		li->ptszType = U2TD(parts[2], L"Music");
+		li->ptszTitle = U2T(parts[3]);
+		li->ptszArtist = U2T(parts[4]);
+		li->ptszAlbum = U2T(parts[5]);
+		li->ptszTrack = U2T(parts[6]);
+		li->ptszYear = U2T(parts[7]);
+		li->ptszGenre = U2T(parts[8]);
+
+		if (player == this)
+			li->ptszPlayer = mir_u2t(parts[1]);
+		else
+			li->ptszPlayer = mir_tstrdup(player->name);
+
+		if (parts[9] != NULL)
+		{
+			long length = _wtoi(parts[9]);
+			if (length > 0)
+			{
+				li->ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+
+				int s = length % 60;
+				int m = (length / 60) % 60;
+				int h = (length / 60) / 60;
+
+				if (h > 0)
+					mir_sntprintf(li->ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
+				else
+					mir_sntprintf(li->ptszLength, 9, _T("%d:%02d"), m, s);
+			}
+		}
+
+		player->ReleaseListeningInfo();
 	}
 
 	// Put back the '\\'s
@@ -238,7 +235,7 @@ void GenericPlayer::ProcessReceived()
 
 	NotifyInfoChanged();
 
-	m_log(_T("ProcessReceived"), _T("END: Success"));
+//	m_log(_T("ProcessReceived"), _T("END: Success"));
 }
 
 
@@ -247,7 +244,10 @@ static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD
 	KillTimer(NULL, hTimer);
 	hTimer = NULL;
 
-	m_log(_T("SendTimerProc"), _T("It's time to process"));
+	if (!loaded)
+		return;
+
+//	m_log(_T("SendTimerProc"), _T("It's time to process"));
 
 	if (singleton != NULL)
 		singleton->ProcessReceived();
@@ -256,11 +256,11 @@ static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD
 
 void GenericPlayer::NewData(const WCHAR *data, size_t len)
 {
-	m_log(_T("NewData"), _T("Processing"));
+//	m_log(_T("NewData"), _T("Processing"));
 
 	if (data[0] == L'\0')
 	{
-		m_log(_T("NewData"), _T("ERROR: Text is empty"));
+//		m_log(_T("NewData"), _T("ERROR: Text is empty"));
 		return;
 	}
 
@@ -269,25 +269,25 @@ void GenericPlayer::NewData(const WCHAR *data, size_t len)
 	len = min(len, 1023);
 	if (wcsncmp(received, data, len) != 0)
 	{
-		m_log(_T("NewData"), _T("Got new text, scheduling update"));
+//		m_log(_T("NewData"), _T("Got new text, scheduling update"));
 
 		wcsncpy(received, data, len);
 		received[len] = L'\0';
 
-#ifdef UNICODE
-		m_log(_T("NewData"), _T("Text: %s"), received);
-#else
-		m_log(_T("NewData"), _T("Text: %S"), received);
-#endif
+//#ifdef UNICODE
+//		m_log(_T("NewData"), _T("Text: %s"), received);
+//#else
+//		m_log(_T("NewData"), _T("Text: %S"), received);
+//#endif
 
 		if (hTimer)
 			KillTimer(NULL, hTimer);
 		hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
 	}
-	else
-	{
-		m_log(_T("NewData"), _T("END: Text is the same as last time"));
-	}
+//	else
+//	{
+//		m_log(_T("NewData"), _T("END: Text is the same as last time"));
+//	}
 
 	LeaveCriticalSection(&cs);
 }
@@ -299,13 +299,16 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 	{
 		case WM_COPYDATA:
 		{
-			m_log(_T("ReceiverWndProc"), _T("START: Received message"));
+			if (!loaded)
+				return FALSE;
+
+//			m_log(_T("ReceiverWndProc"), _T("START: Received message"));
 
 			COPYDATASTRUCT* pData = (PCOPYDATASTRUCT) lParam;
 			if (pData == NULL || pData->dwData != MIRANDA_DW_PROTECTION 
 					|| pData->cbData == 0 || pData->lpData == NULL)
 			{
-				if (pData == NULL)
+/*				if (pData == NULL)
 					m_log(_T("ReceiverWndProc"), _T("ERROR: COPYDATASTRUCT* is NULL"));
 				else if (pData->dwData != MIRANDA_DW_PROTECTION)
 					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->dwData is incorrect"));
@@ -313,11 +316,11 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->cbData is 0"));
 				else if (pData->lpData == NULL)
 					m_log(_T("ReceiverWndProc"), _T("ERROR: pData->lpData is NULL"));
-
+*/
 				return FALSE;
 			}
 
-			m_log(_T("ReceiverWndProc"), _T("Going to process"));
+//			m_log(_T("ReceiverWndProc"), _T("Going to process"));
 			if (singleton != NULL)
 				singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
 

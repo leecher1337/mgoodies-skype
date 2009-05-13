@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,7 +18,7 @@ Boston, MA 02111-1307, USA.
 */
 
 
-class GenericPlayer : public CallbackPlayer
+class GenericPlayer : public Player
 {
 protected:
 	HWND hWnd;

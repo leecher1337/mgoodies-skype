@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -44,7 +44,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,2,0,0),
+	PLUGIN_MAKE_VERSION(0,3,0,0),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -73,7 +73,7 @@ static HANDLE hMainMenuGroup = NULL;
 
 static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
-static BOOL loaded = FALSE;
+BOOL loaded = FALSE;
 static UINT hTimer = 0;
 static HANDLE hExtraImage = NULL;
 static DWORD lastInfoSetTime = 0;
@@ -584,10 +584,10 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
 	}
 
-	loaded = TRUE;
-
 	SetListeningInfos(NULL);
 	StartTimer();
+
+	loaded = TRUE;
 
 	return 0;
 }
@@ -595,6 +595,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
+	loaded = FALSE;
+
 	if (hTimer != NULL)
 	{
 		KillTimer(NULL, hTimer);
@@ -613,8 +615,6 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		DestroyServiceFunction(hServices[i]);
 
 	FreeMusic();
-
-	loaded = FALSE;
 
 	return 0;
 }
@@ -717,6 +717,19 @@ ProtocolInfo *GetProtoInfo(char *proto)
 
 void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 {
+//	m_log(_T("SetListeningInfo"), _T("proto=%S  lti=%d  title=%s"), 
+//		proto, (int) lti, lti == NULL ? _T("") : lti->ptszTitle);
+		
+	if (proto == NULL)
+		return;
+
+	if (!ListeningToEnabled(proto))
+	{
+		lti = NULL;
+//		m_log(_T("SetListeningInfo"), _T("DISABLED -> lti = NULL"));
+	}
+
+
 	if (ProtoServiceExists(proto, PS_SET_LISTENINGTO))
 	{
 		CallProtoService(proto, PS_SET_LISTENINGTO, 0, (LPARAM) lti);
@@ -905,12 +918,10 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 					| (opts.enable_sending ? 0 : CMIF_GRAYED);
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) info->hMenu, (LPARAM) &clmi);
 
-			LISTENINGTOINFO lti = {0};
-			if (!opts.enable_sending || !lParam || !GetListeningInfo(&lti))
+			if (!opts.enable_sending || !lParam)
 				SetListeningInfo(proto, NULL);
 			else
-				SetListeningInfo(proto, &lti);
-			FreeListeningInfo(&lti);
+				SetListeningInfo(proto, GetListeningInfo());
 		}
 
 		// Set all protos info
@@ -1015,31 +1026,27 @@ static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTi
 		hTimer = SetTimer(NULL, NULL, lastInfoSetTime + MIN_TIME_BEETWEEN_SETS - now, GetInfoTimer);
 		return;
 	}
-	lastInfoSetTime = GetTickCount();
+	lastInfoSetTime = GetTickCount(); // TODO Move this to inside the if that really sets
 
 	if (!opts.enable_sending)
 	{
+//		m_log(_T("GetInfoTimer"), _T("!opts.enable_sending"));
 		SetListeningInfos(NULL);
 		return;
 	}
 
-	LISTENINGTOINFO lti = {0};
-
-	int changed = ChangedListeningInfo();
-	if (changed > 0)
-	{
-		// Get new info
-		if (!GetListeningInfo(&lti))
-			changed = -1;
-	}
-
 	// Set it
+	int changed = ChangedListeningInfo();
 	if (changed < 0)
+	{
+//		m_log(_T("GetInfoTimer"), _T("changed < 0"));
 		SetListeningInfos(NULL);
+	}
 	else if (changed > 0)
-		SetListeningInfos(&lti);
-
-	FreeListeningInfo(&lti);
+	{
+//		m_log(_T("GetInfoTimer"), _T("changed > 0"));
+		SetListeningInfos(GetListeningInfo());
+	}
 
 	StartTimer();
 }
@@ -1093,6 +1100,7 @@ void StartTimer()
 			hTimer = NULL;
 
 			// To be sure that no one was left behind
+//			m_log(_T("StartTimer"), _T("To be sure that no one was left behind"));
 			SetListeningInfos(NULL);
 		}
 	}
@@ -1198,28 +1206,27 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	if (ai->cbSize < sizeof(ARGUMENTSINFO))
 		return NULL;
 
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
+	LISTENINGTOINFO *lti = GetListeningInfo();
+	if (lti == NULL)
 	{
 		ai->flags = AIF_FALSE;
 		return mir_tstrdup(_T(""));
 	}
 
 	TCHAR *fr[] = { 
-		_T("artist"), UNKNOWN(lti.ptszArtist),
-		_T("album"), UNKNOWN(lti.ptszAlbum),
-		_T("title"), UNKNOWN(lti.ptszTitle),
-		_T("track"), UNKNOWN(lti.ptszTrack),
-		_T("year"), UNKNOWN(lti.ptszYear),
-		_T("genre"), UNKNOWN(lti.ptszGenre),
-		_T("length"), UNKNOWN(lti.ptszLength),
-		_T("player"), UNKNOWN(lti.ptszPlayer),
-		_T("type"), UNKNOWN(lti.ptszType)
+		_T("artist"), UNKNOWN(lti->ptszArtist),
+		_T("album"), UNKNOWN(lti->ptszAlbum),
+		_T("title"), UNKNOWN(lti->ptszTitle),
+		_T("track"), UNKNOWN(lti->ptszTrack),
+		_T("year"), UNKNOWN(lti->ptszYear),
+		_T("genre"), UNKNOWN(lti->ptszGenre),
+		_T("length"), UNKNOWN(lti->ptszLength),
+		_T("player"), UNKNOWN(lti->ptszPlayer),
+		_T("type"), UNKNOWN(lti->ptszType)
 	};
 
 	Buffer<TCHAR> ret;
 	ReplaceTemplate(&ret, NULL, opts.templ, fr, MAX_REGS(fr));
-	FreeListeningInfo(&lti);
 	return ret.detach();
 }
 
@@ -1227,27 +1234,23 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	if (ai->cbSize < sizeof(ARGUMENTSINFO)) \
 		return NULL; \
 	\
-	LISTENINGTOINFO lti = {0}; \
-	if (!GetListeningInfo(&lti)) \
+	LISTENINGTOINFO *lti = GetListeningInfo(); \
+	if (lti == NULL) \
 	{ \
 		ai->flags = AIF_FALSE; \
-		FreeListeningInfo(&lti); \
 		return mir_tstrdup(_T("")); \
 	} \
-	else if (lti.__field__ == NULL  || lti.__field__[0] == _T('\0'))  \
+	else if (IsEmpty(lti->__field__))  \
 	{ \
 		ai->flags = AIF_FALSE; \
-		FreeListeningInfo(&lti); \
 		return mir_tstrdup(opts.unknown); \
 	} \
 	else \
 	{ \
 		ai->flags = AIF_DONTPARSE; \
-		TCHAR *ret = mir_tstrdup(lti.__field__); \
-		FreeListeningInfo(&lti); \
+		TCHAR *ret = mir_tstrdup(lti->__field__); \
 		return ret; \
-	} \
-	FreeListeningInfo(&lti)
+	}
 
 
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai)

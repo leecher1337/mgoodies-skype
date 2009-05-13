@@ -224,7 +224,7 @@ void SendDataToMiranda(char *filename, char *title)
 	Concat(data, size, "Winamp");
 
 	int version = SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVERSION);
-	BOOL is_radio = (strstr(filename, "://") != 0);
+	BOOL is_radio = (strstr(filename, "://") != 0) && (strncmp(filename, "cda://", 6) != 0);
 
 	if (is_radio)
 		Concat(data, size, "Radio");
