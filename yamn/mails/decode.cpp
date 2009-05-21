@@ -450,6 +450,8 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 	while(WS(start)) start++;
 	WCHAR *tempstore=0;
 	if(!ConvertStringToUnicode(stream,cp,&tempstore))return;
+
+	int tempstoreLength = wcslen(tempstore);
 	
 	int outind = 0;
 	while(*start!=0){
@@ -546,6 +548,7 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 NotEncoded:
 			tempstore[outind] = tempstore[start-stream];
 			outind++;
+			if (outind > tempstoreLength) break;
 			start++;
 		}
 	}
