@@ -55,6 +55,15 @@
 	#undef UNICODE
 #endif
 
+
+#ifndef SIZEOF
+	#ifdef UNICODE
+		#define SIZEOF(x)		(sizeof(x)/sizeof(WCHAR))
+	#else
+		#define SIZEOF(x)		sizeof(x)
+	#endif
+#endif
+
 #define	TIMER_FLASHING 0x09061979
 #define MAILBROWSER_MINXSIZE	200		//min size of mail browser window
 #define MAILBROWSER_MINYSIZE	130
