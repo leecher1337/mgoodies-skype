@@ -29,6 +29,12 @@ Last change by : $Author$
 
 #include "jabber.h"
 #include "jabber_ssl.h"
+#ifdef YASSL
+extern "C" {
+void InitCyaSSL(void);   /* need to call once to load library (session cache) */
+void FreeCyaSSL(void);   /* call when done to free session cache */
+}
+#endif
 
 PFN_SSL_int_void			pfn_SSL_library_init;		// int SSL_library_init()
 PFN_SSL_pvoid_void			pfn_SSLv23_client_method;	// SSL_METHOD *SSLv23_client_method()
@@ -109,7 +115,11 @@ BOOL JabberSslInit()
 	InitializeCriticalSection( &sslHandleMutex );
 
 		pfn_SSL_library_init=SSL_library_init;
+#ifdef YASSL
+		pfn_SSLv23_client_method=( PFN_SSL_pvoid_void )SSLv3_client_method;
+#else
 		pfn_SSLv23_client_method=( PFN_SSL_pvoid_void )SSLv23_client_method;
+#endif
 		pfn_SSL_CTX_new=( PFN_SSL_pvoid_pvoid )SSL_CTX_new;
 		pfn_SSL_CTX_free=( PFN_SSL_void_pvoid )SSL_CTX_free;
 		pfn_SSL_new=( PFN_SSL_pvoid_pvoid )SSL_new;
@@ -121,6 +131,10 @@ BOOL JabberSslInit()
 
 		pfn_SSL_library_init();
 		jabberSslCtx = pfn_SSL_CTX_new( pfn_SSLv23_client_method());
+#ifdef YASSL
+		InitCyaSSL();
+		SSL_CTX_set_verify((SSL_CTX *)jabberSslCtx,SSL_VERIFY_NONE,0);
+#endif
 
 		return TRUE;
 }
@@ -132,6 +146,9 @@ void JabberSslUninit()
 	if ( hLibSSL ) {
 #endif // ndef STATICSSL
 		pfn_SSL_CTX_free( jabberSslCtx );
+#ifdef YASSL
+		FreeCyaSSL();
+#endif
 #ifndef STATICSSL
 		JabberLog( "Free SSL library" );
 		FreeLibrary( hLibSSL );

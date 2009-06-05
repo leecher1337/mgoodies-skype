@@ -168,7 +168,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Yu"jabber.h" /FD /c
-# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /D "YASSL" /FAcs /FR /Yu"jabber.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -179,7 +179,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /pdb:none /incremental:yes
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib cyassl.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
