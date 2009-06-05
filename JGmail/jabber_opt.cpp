@@ -29,8 +29,16 @@ Last change by : $Author$
 #include "jabber_list.h"
 #include <commctrl.h>
 #include "resource.h"
-#include <uxtheme.h>
-
+//#include <uxtheme.h>
+#ifndef ETDT_ENABLE
+#define ETDT_ENABLE			0x00000002
+#endif
+#ifndef ETDT_USETABTEXTURE
+#define ETDT_USETABTEXTURE	0x00000004
+#endif
+#ifndef ETDT_ENABLETAB
+#define ETDT_ENABLETAB		(ETDT_ENABLE|ETDT_USETABTEXTURE)
+#endif
 extern BOOL jabberSendKeepAlive;
 extern UINT jabberCodePage;
 

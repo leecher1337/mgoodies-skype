@@ -97,7 +97,9 @@ Last change by : $Author$
 #if !defined(OPENFILENAME_SIZE_VERSION_400)
 	#define OPENFILENAME_SIZE_VERSION_400 sizeof(OPENFILENAME)
 #endif
-
+#ifndef   offsetof
+#define offsetof(s,m)   (size_t)&(((s *)0)->m)
+#endif
 /*******************************************************************
  * Global constants
  *******************************************************************/
