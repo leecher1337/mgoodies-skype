@@ -4,7 +4,10 @@
 #include "shake.h"
 #include "options.h"
 
+CNudgeElement* ActualNudge = NULL;
+
 extern      BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD);
+
 
 int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 {
@@ -324,22 +327,31 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					break;
 				case IDC_POPUPTEXTCOLOR:
 				case IDC_POPUPBACKCOLOR:
-					ActualNudge->popupBackColor = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_GETCOLOUR,0,0);
-					ActualNudge->popupTextColor = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_GETCOLOUR,0,0);
+					if (ActualNudge)// fix NULL pointer then no nudge support protocols
+					{
+						ActualNudge->popupBackColor = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_GETCOLOUR,0,0);
+						ActualNudge->popupTextColor = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_GETCOLOUR,0,0);
+					}
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_USEWINCOLORS:
-					ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+					if (ActualNudge)// fix NULL pointer then no nudge support protocols
+					{
+						ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
+						EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+						EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+					}
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKPOP:
-					ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),ActualNudge->showPopup);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),ActualNudge->showPopup);
+					if (ActualNudge)// fix NULL pointer then no nudge support protocols
+					{
+						ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
+						EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),ActualNudge->showPopup);
+						EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+						EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+						EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),ActualNudge->showPopup);
+					}
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_USEBYPROTOCOL:
@@ -353,12 +365,15 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKCHAT:
 				case IDC_CHECKSTATUS:
 				case IDC_AUTORESEND:
-					ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
-					ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
-					ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
-					ActualNudge->showStatus = (IsDlgButtonChecked(hwnd,IDC_CHECKSTATUS)==BST_CHECKED);
-					ActualNudge->autoResend = (IsDlgButtonChecked(hwnd,IDC_AUTORESEND)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);						
+					if (ActualNudge)// fix NULL pointer then no nudge support protocols
+					{
+						ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
+						ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
+						ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
+						ActualNudge->showStatus = (IsDlgButtonChecked(hwnd,IDC_CHECKSTATUS)==BST_CHECKED);
+						ActualNudge->autoResend = (IsDlgButtonChecked(hwnd,IDC_AUTORESEND)==BST_CHECKED);
+						EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);						
+					}
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKST0:
@@ -397,24 +412,27 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 							GlobalNudge.resendDelaySec  = GetDlgItemInt(hwnd,IDC_RESENDDELAY,&Translated,FALSE);
 							if(GlobalNudge.resendDelaySec > 10 ) GlobalNudge.resendDelaySec = 10; 
 							if(GlobalNudge.resendDelaySec < 1 ) GlobalNudge.resendDelaySec = 1;
-							ActualNudge->popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
-							ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
-							ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
-							ActualNudge->statusFlags =
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST0)==BST_CHECKED) ? NUDGE_ACC_ST0 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST1)==BST_CHECKED) ? NUDGE_ACC_ST1 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST2)==BST_CHECKED) ? NUDGE_ACC_ST2 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST3)==BST_CHECKED) ? NUDGE_ACC_ST3 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST4)==BST_CHECKED) ? NUDGE_ACC_ST4 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST5)==BST_CHECKED) ? NUDGE_ACC_ST5 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST6)==BST_CHECKED) ? NUDGE_ACC_ST6 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST7)==BST_CHECKED) ? NUDGE_ACC_ST7 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST8)==BST_CHECKED) ? NUDGE_ACC_ST8 : 0) |
-									((IsDlgButtonChecked(hwnd,IDC_CHECKST9)==BST_CHECKED) ? NUDGE_ACC_ST9 : 0) ;
+							if (ActualNudge)// fix NULL pointer then no nudge support protocols
+							{
+								ActualNudge->popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
+								ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
+								ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
+								ActualNudge->statusFlags =
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST0)==BST_CHECKED) ? NUDGE_ACC_ST0 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST1)==BST_CHECKED) ? NUDGE_ACC_ST1 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST2)==BST_CHECKED) ? NUDGE_ACC_ST2 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST3)==BST_CHECKED) ? NUDGE_ACC_ST3 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST4)==BST_CHECKED) ? NUDGE_ACC_ST4 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST5)==BST_CHECKED) ? NUDGE_ACC_ST5 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST6)==BST_CHECKED) ? NUDGE_ACC_ST6 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST7)==BST_CHECKED) ? NUDGE_ACC_ST7 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST8)==BST_CHECKED) ? NUDGE_ACC_ST8 : 0) |
+										((IsDlgButtonChecked(hwnd,IDC_CHECKST9)==BST_CHECKED) ? NUDGE_ACC_ST9 : 0) ;
 
-							GetDlgItemText(hwnd,IDC_SENDTEXT,ActualNudge->senText,TEXT_LEN);
-							GetDlgItemText(hwnd,IDC_RECVTEXT,ActualNudge->recText,TEXT_LEN);
-							ActualNudge->Save();
+								GetDlgItemText(hwnd,IDC_SENDTEXT,ActualNudge->senText,TEXT_LEN);
+								GetDlgItemText(hwnd,IDC_RECVTEXT,ActualNudge->recText,TEXT_LEN);
+								ActualNudge->Save();
+							}
 							GlobalNudge.Save();
 						}
 					}
@@ -471,6 +489,7 @@ void CheckChange(HWND hwnd, HTREEITEM hItem)
 	if (GlobalNudge.useByProtocol)
 	{
 		proto = GetSelProto(hwnd, hItem);
+		ActualNudge = NULL;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			if(n->item.iProtoNumber == proto)
@@ -480,7 +499,9 @@ void CheckChange(HWND hwnd, HTREEITEM hItem)
 	else
 		ActualNudge = &DefaultNudge;
 
-	ActualNudge->enabled = isChecked;
+	if (ActualNudge)// fix NULL pointer then no nudge support protocols
+		ActualNudge->enabled = isChecked;
+
 	UpdateControls(hwnd);
 }
 
@@ -491,6 +512,7 @@ void UpdateControls(HWND hwnd)
 	if (GlobalNudge.useByProtocol)
 	{
 		proto = GetSelProto(hwnd,NULL);
+		ActualNudge = NULL;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			if(n->item.iProtoNumber == proto)
@@ -500,39 +522,43 @@ void UpdateControls(HWND hwnd)
 	else
 		ActualNudge = &DefaultNudge;
 
-	CheckDlgButton(hwnd, IDC_CHECKPOP, (WPARAM) ActualNudge->showPopup);
-	CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) ActualNudge->popupWindowColor);
-	CheckDlgButton(hwnd, IDC_CHECKCLIST, (WPARAM) ActualNudge->shakeClist);
-	CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
-	CheckDlgButton(hwnd, IDC_CHECKEVENT, (WPARAM) ActualNudge->showEvent);
-	CheckDlgButton(hwnd, IDC_CHECKSTATUS, (WPARAM) ActualNudge->showStatus);
-	CheckDlgButton(hwnd, IDC_AUTORESEND, (WPARAM) ActualNudge->autoResend);
-	SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_SENDTIME, GlobalNudge.sendTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_RECVTIME, GlobalNudge.recvTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_RESENDDELAY, GlobalNudge.resendDelaySec,FALSE);
 	CheckDlgButton(hwnd, IDC_USEBYPROTOCOL, (WPARAM) GlobalNudge.useByProtocol);
-	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
 	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
-	SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupTextColor);
 	SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_WINDOWTEXT));
-	EnableWindow(GetDlgItem(hwnd, IDC_USEWINCOLORS), ActualNudge->showPopup);
-	EnableWindow(GetDlgItem(hwnd, IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
-	EnableWindow(GetDlgItem(hwnd, IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
-	EnableWindow(GetDlgItem(hwnd, IDC_POPUPTIME), ActualNudge->showPopup);
-	EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);	
-	CheckDlgButton(hwnd,IDC_CHECKST0,ActualNudge->statusFlags & NUDGE_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST1,ActualNudge->statusFlags & NUDGE_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST2,ActualNudge->statusFlags & NUDGE_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST3,ActualNudge->statusFlags & NUDGE_ACC_ST3 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST4,ActualNudge->statusFlags & NUDGE_ACC_ST4 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST5,ActualNudge->statusFlags & NUDGE_ACC_ST5 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST6,ActualNudge->statusFlags & NUDGE_ACC_ST6 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST7,ActualNudge->statusFlags & NUDGE_ACC_ST7 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST8,ActualNudge->statusFlags & NUDGE_ACC_ST8 ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hwnd,IDC_CHECKST9,ActualNudge->statusFlags & NUDGE_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
-	SetWindowText(GetDlgItem(hwnd, IDC_SENDTEXT), ActualNudge->senText);
-	SetWindowText(GetDlgItem(hwnd, IDC_RECVTEXT), ActualNudge->recText);
+
+	if (ActualNudge)// fix NULL pointer then no nudge support protocols
+	{
+		CheckDlgButton(hwnd, IDC_CHECKPOP, (WPARAM) ActualNudge->showPopup);
+		CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) ActualNudge->popupWindowColor);
+		CheckDlgButton(hwnd, IDC_CHECKCLIST, (WPARAM) ActualNudge->shakeClist);
+		CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
+		CheckDlgButton(hwnd, IDC_CHECKEVENT, (WPARAM) ActualNudge->showEvent);
+		CheckDlgButton(hwnd, IDC_CHECKSTATUS, (WPARAM) ActualNudge->showStatus);
+		CheckDlgButton(hwnd, IDC_AUTORESEND, (WPARAM) ActualNudge->autoResend);
+		SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
+		SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
+		SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupTextColor);
+		EnableWindow(GetDlgItem(hwnd, IDC_USEWINCOLORS), ActualNudge->showPopup);
+		EnableWindow(GetDlgItem(hwnd, IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+		EnableWindow(GetDlgItem(hwnd, IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+		EnableWindow(GetDlgItem(hwnd, IDC_POPUPTIME), ActualNudge->showPopup);
+		EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);	
+		CheckDlgButton(hwnd,IDC_CHECKST0,ActualNudge->statusFlags & NUDGE_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST1,ActualNudge->statusFlags & NUDGE_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST2,ActualNudge->statusFlags & NUDGE_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST3,ActualNudge->statusFlags & NUDGE_ACC_ST3 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST4,ActualNudge->statusFlags & NUDGE_ACC_ST4 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST5,ActualNudge->statusFlags & NUDGE_ACC_ST5 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST6,ActualNudge->statusFlags & NUDGE_ACC_ST6 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST7,ActualNudge->statusFlags & NUDGE_ACC_ST7 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST8,ActualNudge->statusFlags & NUDGE_ACC_ST8 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd,IDC_CHECKST9,ActualNudge->statusFlags & NUDGE_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
+		SetWindowText(GetDlgItem(hwnd, IDC_SENDTEXT), ActualNudge->senText);
+		SetWindowText(GetDlgItem(hwnd, IDC_RECVTEXT), ActualNudge->recText);
+	}
 }
 
 int GetSelProto(HWND hwnd, HTREEITEM hItem)

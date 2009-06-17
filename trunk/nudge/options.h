@@ -5,7 +5,6 @@ extern bool useByProtocol;
 extern CNudgeElement DefaultNudge;
 extern CShake shake;
 extern CNudge GlobalNudge;
-CNudgeElement* ActualNudge;
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
