@@ -125,7 +125,7 @@ int NudgeShowMenu(WPARAM wParam,LPARAM lParam)
 	{
 		if(!strcmp((char *) wParam,n->item.ProtocolName))
 		{
-			return n->item.ShowContactMenu((bool) lParam);
+			return n->item.ShowContactMenu(lParam != 0);
 		}		
 	}
 	return 0;
@@ -340,15 +340,15 @@ static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	case WM_INITDIALOG: {
 		// lParam = (LPARAM)(DWORD)actionID or 0 if this is a new trigger entry
 		DWORD actionID;
-		bool bshakeClist,bshakeChat;
+		BOOL bshakeClist,bshakeChat;
 		
 		actionID = (DWORD)lParam;
         TranslateDialogDefault(hwnd);
 		// Initialize the dialog according to the action ID
 		bshakeClist = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeClist",FALSE);
 		bshakeChat = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeChat",FALSE);
-		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECLIST, (WPARAM) bshakeClist);
-		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECHAT, (WPARAM) bshakeChat);
+		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECLIST, bshakeClist ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECHAT, bshakeChat ? BST_CHECKED : BST_UNCHECKED);
         break;
 						}
 
@@ -374,7 +374,7 @@ int TriggerActionRecv( DWORD actionID, REPORTINFO *ri)
 {
 	// check how to process this call
 	if (ri->flags&ACT_PERFORM) {
-		bool bshakeClist,bshakeChat;
+		BOOL bshakeClist,bshakeChat;
 		HANDLE hContact = ((ri->td!=NULL)&&(ri->td->dFlags&DF_CONTACT))?ri->td->hContact:NULL;
 		bshakeClist = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeClist",FALSE);
 		bshakeChat = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeChat",FALSE);
@@ -747,7 +747,7 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, TCHAR * Message)
 	hContact = Nudge_GethContact(hCont);
 	TCHAR * lpzContactName = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,GCDNF_TCHAR);
 	
-	if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
+	if(ServiceExists(MS_POPUP_ADDPOPUPT)) 
 	{
 		POPUPDATAT NudgePopUp;
 		
