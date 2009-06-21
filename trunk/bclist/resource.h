@@ -3,18 +3,14 @@
 // Used by resource.rc
 //
 #define IDD_OPT_CLIST                   126
-#define IDI_RENAME                      173
-#define IDI_DELETE                      175
 #define IDR_CONTEXT                     180
 #define IDC_DROP                        183
 #define IDD_OPT_HOTKEY                  184
 #define IDR_CLISTMENU                   199
-#define IDI_BLANK                       200
 #define IDC_HYPERLINKHAND               214
 #define IDC_DROPUSER                    215
 #define IDD_OPT_CLUI                    218
 #define IDD_OPT_CLC                     228
-#define IDD_OPT_CLCTEXT                 229
 #define IDD_OPT_CLCBKG                  230
 #define IDD_OPT_SBAR                    234
 #define IDD_OPT_CLCTEXTSIMPLE           239
@@ -61,29 +57,16 @@
 #define IDC_HIDETIME                    1236
 #define IDC_MAXSIZEHEIGHT               1254
 #define IDC_MAXSIZESPIN                 1255
-#define IDC_FONTID                      1256
-#define IDC_SAMETYPE                    1257
-#define IDC_SAMESTYLE                   1258
-#define IDC_SAMECOLOUR                  1259
-#define IDC_SAMEAS                      1260
-#define IDC_TYPEFACE                    1261
-#define IDC_BOLD                        1262
-#define IDC_ITALIC                      1263
-#define IDC_COLOUR                      1264
-#define IDC_UNDERLINE                   1265
-#define IDC_HOTCOLOUR                   1267
-#define IDC_SAMESIZE                    1268
 #define IDC_BKGCOLOUR                   1269
 #define IDC_FILENAME                    1271
 #define IDC_SCROLL                      1277
 #define IDC_PROPORTIONAL                1278
 #define IDC_SELCOLOUR                   1281
-#define IDC_QUICKCOLOUR                 1282
 #define IDC_SMOOTHTIME                  1283
 #define IDC_SMOOTHTIMESPIN              1284
 #define IDC_GREYOUT                     1285
-#define IDC_ROWHEIGHT                   1285
-#define IDC_ROWHEIGHTSPIN               1286
+#define IDC_ROWHEIGHT                   1286
+#define IDC_ROWHEIGHTSPIN               1287
 #define IDC_GREYOUTOPTS                 1288
 #define IDC_GROUPINDENT                 1289
 #define IDC_GROUPINDENTSPIN             1290
@@ -122,7 +105,6 @@
 #define IDC_TRACKSELECT                 1354
 #define IDC_SHOWGROUPCOUNTS             1355
 #define IDC_HIDECOUNTSWHENEMPTY         1356
-#define IDC_DIVIDERONOFF                1357
 #define IDC_NOTNOTRANSLUCENTSEL         1358
 #define IDC_LINEWITHGROUPS              1359
 #define IDC_QUICKSEARCHVISONLY          1360
@@ -131,11 +113,6 @@
 #define IDC_BITMAP                      1363
 #define IDC_STWINDOWGROUP               1364
 #define IDC_STATIC01                    1365
-#define IDC_STSAMETEXT                  1382
-#define IDC_STASTEXT                    1383
-#define IDC_STSIZETEXT                  1384
-#define IDC_STCOLOURTEXT                1385
-#define IDC_STHORZBAR                   1386
 #define IDC_HIDE                        1534
 #define IDC_TOPLINE                     1535
 #define IDC_HOTKEYURLSTR                1567
@@ -148,6 +125,8 @@
 #define IDC_DROPSHADOW                  1612
 #define IDC_SHOWGRIP                    1612
 #define IDC_NOSCROLLBAR                 1613
+#define IDC_TXT_TITLE1                  1617
+#define IDC_TXT_TITLE2                  1618
 #define IDC_ONDESKTOP                   1657
 #define IDC_WINCOLOUR                   1659
 #define IDC_ICONBLINK                   1660
@@ -169,12 +148,13 @@
 #define POPUP_NEWGROUP                  40050
 #define POPUP_RENAMEGROUP               40052
 #define POPUP_DELETEGROUP               40053
+#define IDC_STATIC						-1
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        270
+#define _APS_NEXT_RESOURCE_VALUE        292
 #define _APS_NEXT_COMMAND_VALUE         40018
 #define _APS_NEXT_CONTROL_VALUE         1662
 #define _APS_NEXT_SYMED_VALUE           101
