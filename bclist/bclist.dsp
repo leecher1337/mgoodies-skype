@@ -324,10 +324,6 @@ SOURCE=.\clc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\clist.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\commonheaders.h
 # End Source File
 # Begin Source File

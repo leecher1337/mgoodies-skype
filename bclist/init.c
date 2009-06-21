@@ -22,14 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "commonheaders.h"
-
+#include <m_icolib.h>
 
 HINSTANCE g_hInst = 0;
 PLUGINLINK *pluginLink;
 CLIST_INTERFACE* pcli = NULL;
 HIMAGELIST himlCListClc = NULL;
-
-extern int currentDesiredStatusMode;
 
 struct MM_INTERFACE mmi;
 BOOL(WINAPI * MySetLayeredWindowAttributes) (HWND, COLORREF, BYTE, DWORD) = NULL;
@@ -86,13 +84,12 @@ PLUGININFOEX pluginInfo = {
 	#else
 		"BClist",
 	#endif
-	PLUGIN_MAKE_VERSION(0, 7, 1, 0),
-
+	PLUGIN_MAKE_VERSION(0, 8, 0, 1),
 	"A contact list for blind folks",
 	"Ricardo Pescuma Domenecci, based on previous work from Miranda IM project",
 	"",
-	"Copyright 2000-2006 Miranda IM project",
-	"http://pescuma.mirandaim.ru/miranda/bclist",
+	"Copyright 2000-2009 Miranda IM project, Ricardo Pescuma Domenecci",
+	"http://pescuma.org/miranda/bclist",
 	UNICODE_AWARE,
 	DEFMOD_CLISTALL,
 	#if defined( _UNICODE )
@@ -104,7 +101,7 @@ PLUGININFOEX pluginInfo = {
 
 __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 4, 3, 0))
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 8, 0, 9))
 		return NULL;
 	pluginInfo.cbSize = sizeof(PLUGININFO);
 	return (PLUGININFO *) &pluginInfo;
@@ -112,17 +109,28 @@ __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 
 __declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 4, 3, 0))
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 8, 0, 9))
 		return NULL;
 	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// returns plugin's interfaces information
 
 static const MUUID interfaces[] = {MIID_CLIST, MIID_LAST};
 __declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
 {
 	return interfaces;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// called when number of accounts has been changed
+
+static int OnAccountsChanged( WPARAM wParam, LPARAM lParam )
+{
+	himlCListClc = (HIMAGELIST) CallService(MS_CLIST_GETICONSIMAGELIST, 0, 0);
+	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -143,14 +151,14 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/bclist_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/?p=bclist#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/bclist_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/?p=bclist#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"BClist ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/bclistW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/bclistW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/bclist.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/bclist.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *) &pluginInfo, szCurrentVersion);
@@ -176,7 +184,7 @@ static int OnOptsInit(WPARAM wParam, LPARAM lParam)
 /////////////////////////////////////////////////////////////////////////////////////////
 // menu status services
 
-static int GetStatusMode(WPARAM wParam, LPARAM lParam)
+static INT_PTR GetStatusMode(WPARAM wParam, LPARAM lParam)
 {
 	return pcli->currentDesiredStatusMode;
 }
@@ -186,7 +194,6 @@ static int GetStatusMode(WPARAM wParam, LPARAM lParam)
 
 int __declspec(dllexport) CListInitialise(PLUGINLINK * link)
 {
-	int rc = 0;
 	pluginLink = link;
 	#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -196,12 +203,12 @@ int __declspec(dllexport) CListInitialise(PLUGINLINK * link)
 	mir_getMMI( &mmi );
 
 	pcli = ( CLIST_INTERFACE* )CallService(MS_CLIST_RETRIEVE_INTERFACE, 0, (LPARAM)g_hInst);
-	if ( (int)pcli == CALLSERVICE_NOTFOUND ) {
+	if ( (INT_PTR)pcli == CALLSERVICE_NOTFOUND ) {
 LBL_Error:
-		MessageBoxA( NULL, "This version of plugin requires Miranda IM 0.7.0.8 or later", "Fatal error", MB_OK );
+		MessageBoxA( NULL, "This version of plugin requires Miranda IM 0.8.0.9 or later", "Fatal error", MB_OK );
 		return 1;
 	}
-	if ( pcli->version < 4 )
+	if ( pcli->version < 6 )
 		goto LBL_Error;
 
 
@@ -225,6 +232,7 @@ LBL_Error:
 	CreateServiceFunction(MS_CLIST_GETSTATUSMODE, GetStatusMode);
 
 	HookEvent(ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
+	HookEvent(ME_PROTO_ACCLISTCHANGED, OnAccountsChanged);
 	HookEvent(ME_OPT_INITIALISE, OnOptsInit);
 
 	InitCustomMenus();
@@ -597,20 +605,32 @@ TCHAR *GetStatusMessage(struct ClcContact *item)
 TCHAR proto_name[128];
 TCHAR *GetProtoName(struct ClcContact *item) 
 {
+	PROTOACCOUNT *acc;
 #ifdef UNICODE
 	char description[128];
 #endif
 
     proto_name[0] = '\0';
 	if (item->hContact == NULL || item->proto == NULL)
+	{
+		lstrcpyn(proto_name, TranslateT("Unknown Protocol"), MAX_REGS(proto_name));
 		return proto_name;
+	}
 
+	acc = ProtoGetAccount(item->proto);
+
+	if (acc == NULL)
+	{
 #ifdef UNICODE
-	CallProtoService(item->proto, PS_GETNAME, sizeof(description),(LPARAM) description);
-	mir_sntprintf(proto_name, MAX_REGS(proto_name), L"%S", description);
+		CallProtoService(item->proto, PS_GETNAME, sizeof(description),(LPARAM) description);
+		mir_sntprintf(proto_name, MAX_REGS(proto_name), L"%S", description);
 #else
-	CallProtoService(item->proto, PS_GETNAME, sizeof(proto_name),(LPARAM) proto_name);
+		CallProtoService(item->proto, PS_GETNAME, sizeof(proto_name),(LPARAM) proto_name);
 #endif
+		return proto_name;
+	}
+
+	lstrcpyn(proto_name, acc->tszAccountName, MAX_REGS(proto_name));
 
 	return proto_name;
 }

@@ -2,8 +2,8 @@
 
 Miranda IM: the free IM client for Microsoft* Windows*
 
-Copyright 2000-2005 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2005 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -21,22 +21,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#define MIRANDA_VER 0x0700
+#define MIRANDA_VER 0x0800
 
-#if defined(UNICODE)
-#define _UNICODE 1
-#endif
+#define _WIN32_WINNT 0x0600
+#define _WIN32_IE 0x0501
 
-#include <tchar.h>
-#include <malloc.h>
+#include "m_stdhdr.h"
 
-#ifdef _DEBUG
-#	define _CRTDBG_MAP_ALLOC
-#	include <stdlib.h>
-#	include <crtdbg.h>
-#endif
-
-#define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -60,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_langpack.h>
 #include <m_button.h>
 #include <m_options.h>
+#include <m_protocols.h>
 #include <m_protosvc.h>
 #include <m_utils.h>
 #include <m_skin.h>
@@ -69,7 +61,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_utils.h>
 #include "m_updater.h"
 #include "clc.h"
-#include "clist.h"
 
 // shared vars
 extern HINSTANCE g_hInst;

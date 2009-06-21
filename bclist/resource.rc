@@ -79,7 +79,7 @@ END
 IDD_OPT_CLIST DIALOGEX 0, 0, 314, 204
 STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Hide offline users",IDC_HIDEOFFLINE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,17,124,10
@@ -131,8 +131,6 @@ BEGIN
     CONTROL         "Spin5",IDC_BLINKSPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
                     UDS_HOTTRACK,173,97,11,21
-    CONTROL         "Disable icon blinking",IDC_ICONBLINK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,84,97,10
 END
 
 IDD_OPT_CLUI DIALOGEX 0, 0, 313, 245
@@ -202,23 +200,9 @@ END
 IDD_OPT_CLC DIALOGEX 0, 0, 314, 242
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Items",IDC_STATIC,2,2,310,88
-    CONTROL         "Show divider between online and offline contacts",
-                    IDC_DIVIDERONOFF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    11,13,179,10
-    CONTROL         "Disable drag and drop of items",IDC_DISABLEDRAGDROP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,26,179,10
-    CONTROL         "Disable rename of items by clicking twice",
-                    IDC_NOTEDITLABELS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    11,41,179,10
-    CONTROL         "Show selection even when list is not focused",
-                    IDC_SHOWSELALWAYS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    11,56,179,10
-    CONTROL         "Make selection highlight translucent",
-                    IDC_NOTNOTRANSLUCENTSEL,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,11,71,179,10
     LTEXT           "'Hide Offline' means to hide:",IDC_STATIC,191,10,112,8
     CONTROL         "Tree1",IDC_HIDEOFFLINEOPTS,"SysTreeView32",
                     TVS_DISABLEDRAGDROP | TVS_NOTOOLTIPS | TVS_NONEVENHEIGHT | 

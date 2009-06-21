@@ -2,6 +2,11 @@ BClist
 
 Changelog:
 
+. 0.8.0.1
+  * Sync with latest clist version from SVN
+  + Use account names
+  - Needs Miranda 0.8.0.9
+
 . 0.7.1.0
   * Sync with latest clist version from SVN
   * Fix for CTRL-1
