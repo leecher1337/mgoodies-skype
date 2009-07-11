@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma once
 
 #include <windows.h>
-#include "ThreadLocalStorage.h"
+#include "lockfree_hashmap.h"
 
 //#define MREW_DO_DEBUG_LOGGING 1
 
@@ -50,8 +50,8 @@ private:
 	HANDLE m_WriteSignal;
 	unsigned int m_WriteRecursion;
 
-	CThreadLocalStorage<unsigned int> tls;
-	typedef CThreadLocalStorage<unsigned int>::iterator TThreadStorage;
+	lockfree::hash_map<DWORD, unsigned int> tls;
+	typedef lockfree::hash_map<DWORD, unsigned int>::iterator TThreadStorage;
 
 	unsigned long m_WriterID;
 	volatile long m_Revision;

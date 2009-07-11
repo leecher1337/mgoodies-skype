@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma once
 
 #include <stack>
-#include <map>
+#include "lockfree_hashmultimap.h"
 #include "sigslot.h"
 #ifdef _MSC_VER
 #include "stdint.h"
@@ -139,7 +139,7 @@ protected:
 	static const uint16_t cFullNode = SizeParam * 2 - 1;
 	static const uint16_t cEmptyNode = SizeParam - 1;
 
-	typedef std::multimap<TNodeRef, iterator*> TManagedMap;
+	typedef lockfree::hash_multimap<TNodeRef, iterator*> TManagedMap;
 
 	TNodeRef m_Root;
 	TOnRootChanged m_sigRootChanged;
@@ -193,7 +193,6 @@ CBTree<TKey, SizeParam>::~CBTree()
 		i->second->m_Tree = NULL;
 		i++;
 	}
-	m_ManagedIterators.clear();
 
 	if (m_DestroyTree)
 		DestroyTree();

@@ -73,10 +73,10 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage & data = tls.Open(0, id);
+	TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
 
-	(*data)++;
-	if ((m_WriterID != id) && ((*data) == 1))
+	data->second++;
+	if ((m_WriterID != id) && (data->second == 1))
 	{
 		_InterlockedIncrement(&m_Waiting);
 		while (_InterlockedDecrement(&m_Sentinel) <= 0)
@@ -92,14 +92,14 @@ void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 void CMultiReadExclusiveWriteSynchronizer::EndRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage & data = tls.Open(0, id);
+	TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
 
-	(*data)--;
-	if (((*data) == 0) && (m_WriterID != id))
+	data->second--;
+	if ((data->second == 0) && (m_WriterID != id))
 	{
 		if (!SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
 			UnblockOneWriter();
-		tls.Delete(data);
+		tls.erase(data);
 	}
 }
 bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
@@ -109,10 +109,10 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 	
 	if (m_WriterID != id)
 	{
-		TThreadStorage & data = tls.Open(0, id);
+		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
 
 		long oldrevision = m_Revision;
-		bool hasreadlock = (*data) > 0;
+		bool hasreadlock = data->second > 0;
 		
 		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
 			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
@@ -151,10 +151,10 @@ bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
 
 	if (m_WriterID != id)
 	{
-		TThreadStorage & data = tls.Open(0, id);
+		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
 
 		long oldrevision = m_Revision;
-		bool hasreadlock = (*data) > 0;
+		bool hasreadlock = data->second > 0;
 
 		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
 			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
@@ -179,16 +179,16 @@ bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 	m_WriteRecursion--;
 	if (m_WriteRecursion == 0)
 	{
-		TThreadStorage & data = tls.Open(0, id);
+		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
 
 		m_WriterID = 0;
-		if ((*data) == 0)
+		if (data->second == 0)
 		{
 			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST + 1);
 			UnblockReaders();
 			UnblockOneWriter();
 
-			tls.Delete(data);
+			tls.erase(data);
 		} else {
 			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST);
 			UnblockReaders();

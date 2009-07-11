@@ -32,7 +32,13 @@ CDirectAccess::CDirectAccess(const TCHAR* FileName)
 	m_AllocGranularity    = 0x00008000;  // 32kb
 	m_MaxAllocGranularity = 0x00100000;  // 1mb   for fast increasing
 
-	Size(GetFileSize(m_File, NULL));
+	uint32_t size = GetFileSize(m_File, NULL);
+	size = (size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
+
+	if (size == 0)
+		size = m_AllocGranularity;
+
+	m_AllocSize = size;
 
 	InitJournal();
 }

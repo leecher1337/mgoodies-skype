@@ -92,6 +92,7 @@ uint32_t CEventsTypeManager::MakeGlobalID(char* Module, uint32_t EventType)
 	memcpy(((char*)buf) + l, &EventType, sizeof(uint32_t));
 
 	uint32_t h = Hash(buf, l + sizeof(uint32_t));
+	free(buf);
 
 	char * m;
 	uint32_t t;

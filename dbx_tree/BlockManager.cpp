@@ -147,8 +147,8 @@ void CBlockManager::ExecuteOptimize()
 				SYNC_ENDWRITE(m_BlockSync);
 				Sleep(m_BlockSync.Waiting() * 50 + 1);
 				SYNC_BEGINWRITE(m_BlockSync);
-				CacheFlush();
-				m_FileAccess.FlushJournal();				
+				//CacheFlush();
+				m_FileAccess.FlushJournal();
 			}
 		}
 	}
@@ -528,6 +528,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 	}
 
 	m_FileAccess.CompleteTransaction();
+	CacheFlush();
 	m_FileAccess.CloseTransaction();
 	m_FileAccess.FlushJournal();
 

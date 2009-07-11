@@ -632,6 +632,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\lockfree_hashmap.h"
+					>
+				</File>
+				<File
 					RelativePath=".\lockfree_list.h"
 					>
 				</File>
