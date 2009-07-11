@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 
 
-uint32_t Hash(void * Data, uint32_t Length)
+uint32_t Hash(const void * Data, uint32_t Length)
 {
 	register uint32_t a,b,c; // internal state
   union { const void *ptr; uint32_t i; } u; // needed for Mac Powerbook G4

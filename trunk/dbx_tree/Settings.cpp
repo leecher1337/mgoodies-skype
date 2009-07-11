@@ -145,8 +145,6 @@ CSettings::~CSettings()
 		++it;
 	}
 
-	m_SettingsMap.clear();
-
 	TModulesMap::iterator it2 = m_Modules.begin();
 	while (it2 != m_Modules.end())
 	{

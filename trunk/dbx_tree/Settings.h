@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IterationHeap.h"
 #include "EncryptionManager.h"
 #include <queue>
-#include <map>
+#include "lockfree_hashmap.h"
 
 class CSettings;
 class CSettingsTree;
@@ -173,7 +173,7 @@ public:
 
 private:
 
-	typedef std::map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
+	typedef lockfree::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
 	
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
@@ -211,12 +211,8 @@ private:
 	void onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest);
 
 	CSettingsTree * getSettingsTree(TDBTEntityHandle hEntity);
-    #ifdef _MSC_VER
-    typedef stdext::hash_multimap<uint16_t, char *> TModulesMap;
-    #else
-	typedef __gnu_cxx::hash_multimap<uint16_t, char *> TModulesMap;
-    #endif
-
+	typedef lockfree::hash_multimap<uint16_t, char *> TModulesMap;
+  
 	TModulesMap m_Modules;
 
 	void _LoadModules();

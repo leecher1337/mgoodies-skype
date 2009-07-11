@@ -134,22 +134,22 @@ void CFileAccess::FlushJournal()
 					{
 						case 'writ':
 						{
-							if ((*i)->Address + (*i)->Size <= m_Size)
+							if ((*i)->Address + (*i)->Size <= m_AllocSize)
 							{
 								mWrite(*i + 1, (*i)->Address, (*i)->Size);
-							} else if ((*i)->Address < m_Size) 
+							} else if ((*i)->Address < m_AllocSize) 
 							{
-								mWrite(*i + 1, (*i)->Address, m_Size - (*i)->Address);
+								mWrite(*i + 1, (*i)->Address, m_AllocSize - (*i)->Address);
 							}
 						} break;
 						case 'inva':
 						{
-							if ((*i)->Address + (*i)->Size <= m_Size)
+							if ((*i)->Address + (*i)->Size <= m_AllocSize)
 							{
 								mInvalidate((*i)->Address, (*i)->Size);
-							} else if ((*i)->Address < m_Size) 
+							} else if ((*i)->Address < m_AllocSize) 
 							{
-								mInvalidate((*i)->Address, m_Size - (*i)->Address);
+								mInvalidate((*i)->Address, m_AllocSize - (*i)->Address);
 							}
 						} break;
 					}
