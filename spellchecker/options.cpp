@@ -205,14 +205,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			// Draw icon
 			if (opts.use_flags)
 			{
-				HICON hFlag = LoadIconEx(dict);
+				HICON hFlag = IcoLib_LoadIcon(dict);
 
 				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
 				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
 
 				rc.left += ICON_SIZE + 4;
 				
-				ReleaseIconEx(hFlag);
+				IcoLib_ReleaseIcon(hFlag);
 			}
 
 			// Draw text

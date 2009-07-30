@@ -33,4 +33,6 @@ Currently there are 2 sets of flags, one from Angeli-Ka and one from the famfamf
 
 Many thanks to the Hunspell team and to Vladimir Vainer that made an initial version of the plugin. And thanks to the famfamfam.com site for the icons I'm using for the flags.
 
+Needs Miranda 0.8
+
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=11555

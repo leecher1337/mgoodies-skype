@@ -42,7 +42,7 @@ using namespace std;
 
 
 // Miranda headers
-#define MIRANDA_VER 0x0700
+#define MIRANDA_VER 0x0800
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_system_cpp.h>
@@ -128,7 +128,7 @@ struct Dialog {
 	vector<WrongWordPopupMenuData> *wrong_words;
 };
 
-HICON LoadIconEx(Dictionary *dict, BOOL copy = FALSE);
+HICON IcoLib_LoadIcon(Dictionary *dict, BOOL copy = FALSE);
 
 
 #endif // __COMMONS_H__
