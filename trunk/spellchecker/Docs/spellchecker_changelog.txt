@@ -2,8 +2,11 @@ Spell Checker
 
 Changelog:
 
+. 0.1.0.5
+  * Fix for ICQ contacts with languages
+
 . 0.1.0.4
-  * Fix for codepage)
+  * Fix for codepage
 
 . 0.1.0.3
   + Updated to Hunspell 1.2.8

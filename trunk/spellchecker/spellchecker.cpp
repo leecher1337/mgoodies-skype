@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,4),
+	PLUGIN_MAKE_VERSION(0,1,0,5),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -119,6 +119,7 @@ TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
 
 int GetClosestLanguage(TCHAR *lang_name);
 
+
 typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
 
@@ -203,14 +204,14 @@ int mlog(const char *function, const char *fmt, ...)
 }
 
 
-HICON LoadIconEx(Dictionary *dict, BOOL copy)
+HICON IcoLib_LoadIcon(Dictionary *dict, BOOL copy)
 {
 #ifdef UNICODE
 	char lang[32];
 	WideCharToMultiByte(CP_ACP, 0, dict->language, -1, lang, sizeof(lang), NULL, NULL);
-	return LoadIconEx(lang, copy);
+	return IcoLib_LoadIcon(lang, copy);
 #else
-	return LoadIconEx(dict->language, copy);
+	return IcoLib_LoadIcon(dict->language, copy);
 #endif
 }
 
@@ -272,7 +273,7 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
+	if (ServiceExists(MS_MC_GETPROTOCOLNAME) && ServiceExists(MS_MC_GETMETACONTACT))
 		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
 	// add our modules to the KnownModules list
@@ -393,11 +394,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			sid.pszName = languages[i]->language;
 #endif
 
-			HICON hFlag = LoadIconEx(sid.pszName);
+			HICON hFlag = IcoLib_LoadIcon(sid.pszName);
 			if (hFlag != NULL)
 			{
 				// Already registered
-				ReleaseIconEx(hFlag);
+				IcoLib_ReleaseIcon(hFlag);
 				continue;
 			}
 			
@@ -454,7 +455,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", TRUE);
+		sid.hIconDisabled = IcoLib_LoadIcon("spellchecker_disabled", TRUE);
 		sid.flags = MBF_HIDDEN;
 
 		for (int i = 0; i < languages.getCount(); i++)
@@ -467,9 +468,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			sid.szTooltip = tmp;
 
 			if (opts.use_flags)
-				sid.hIcon = LoadIconEx(languages[i], TRUE);
+				sid.hIcon = IcoLib_LoadIcon(languages[i], TRUE);
 			else
-				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
+				sid.hIcon = IcoLib_LoadIcon("spellchecker_enabled", TRUE);
 
 			CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
 		}
@@ -488,7 +489,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", TRUE);
+		sid.hIconDisabled = IcoLib_LoadIcon("spellchecker_disabled", TRUE);
 		sid.flags = MBF_HIDDEN;
 		
 
@@ -502,9 +503,9 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 			sid.szTooltip = tmp;
 
 			if (opts.use_flags)
-				sid.hIcon = LoadIconEx(languages[i], TRUE);
+				sid.hIcon = IcoLib_LoadIcon(languages[i], TRUE);
 			else
-				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
+				sid.hIcon = IcoLib_LoadIcon("spellchecker_enabled", TRUE);
 
 			CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
 		}
@@ -1043,30 +1044,48 @@ int GetClosestLanguage(TCHAR *lang_name)
 void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char *setting)
 {
 	DBVARIANT dbv = {0};
+	dbv.type = DBVT_TCHAR;
 
-	if (!DBGetContactSettingTString(hContact, proto, setting, &dbv))
+	DBCONTACTGETSETTING cgs = {0};
+	cgs.szModule = proto;
+	cgs.szSetting = setting;
+	cgs.pValue = &dbv;
+
+	INT_PTR rc;
+
+	int caps = CallProtoService(proto, PS_GETCAPS, PFLAGNUM_4, 0);
+	if (caps & PF4_INFOSETTINGSVC)
 	{
+		rc = CallProtoService(proto, PS_GETINFOSETTING, (WPARAM) hContact, (LPARAM) &cgs);
+	}
+	else
+	{
+		rc = CallService(MS_DB_CONTACT_GETSETTING_STR, (WPARAM) hContact, (LPARAM) &cgs);
+	}
+
+	if (!rc && dbv.type == DBVT_TCHAR && dbv.ptszVal != NULL)
+	{
+		TCHAR *lang = dbv.ptszVal;
+
 		for (int i = 0; i < languages.getCount(); i++)
 		{
-			if (lstrcmpi(languages[i]->localized_name, dbv.ptszVal) == 0)
+			Dictionary *dict = languages[i];
+			if (lstrcmpi(dict->localized_name, lang) == 0
+				|| lstrcmpi(dict->english_name, lang) == 0
+				|| lstrcmpi(dict->language, lang) == 0)
 			{
-				lstrcpyn(dlg->lang_name, languages[i]->language, MAX_REGS(dlg->lang_name));
-				break;
-			}
-			if (lstrcmpi(languages[i]->english_name, dbv.ptszVal) == 0)
-			{
-				lstrcpyn(dlg->lang_name, languages[i]->language, MAX_REGS(dlg->lang_name));
+				lstrcpyn(dlg->lang_name, dict->language, MAX_REGS(dlg->lang_name));
 				break;
 			}
 		}
-		DBFreeVariant(&dbv);
 	}
+
+	if (!rc)
+		DBFreeVariant(&dbv);
 }
 
 void GetUserLanguageSetting(Dialog *dlg, char *setting)
 {
-	DBVARIANT dbv = {0};
-
 	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dlg->hContact, 0);
 	if (proto == NULL)
 		return;
@@ -1078,7 +1097,7 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 		return;
 	
 	// Is a subcontact?
-	if (!ServiceExists(MS_MC_GETMETACONTACT)) 
+	if (metacontacts_proto == NULL) 
 		return;
 
 	HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
@@ -1928,12 +1947,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			rc.left += bmpChecked.bmWidth + 2;
 
 			// Draw icon
-			HICON hFlag = LoadIconEx(dict);
+			HICON hFlag = IcoLib_LoadIcon(dict);
 
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
 			DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
 
-			ReleaseIconEx(hFlag);
+			IcoLib_ReleaseIcon(hFlag);
 
 			rc.left += ICON_SIZE + 4;
 
@@ -2045,9 +2064,9 @@ static BOOL CALLBACK DlgProcAddReplacement(HWND hwndDlg, UINT msg, WPARAM wParam
 		{
 			TranslateDialogDefault(hwndDlg);
 
-			HICON hIcon = LoadIconEx("spellchecker_enabled");
+			HICON hIcon = IcoLib_LoadIcon("spellchecker_enabled");
 			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) hIcon);
-			ReleaseIconEx(hIcon);
+			IcoLib_ReleaseIcon(hIcon);
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_NEW), EM_LIMITTEXT, 256, 0);
 
@@ -2125,4 +2144,3 @@ void AddReplaceDialog(Dictionary *dict, TCHAR *word, HWND hwndParent)
 	SetFocus(hwnd);
 	ShowWindow(hwnd, SW_SHOW);
 }
-
