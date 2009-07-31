@@ -2,7 +2,7 @@
 
 MTL - Miranda Template Library for Miranda IM
 
-Copyright 2007 Paul Shmakov
+Copyright 2009 Paul Shmakov
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -110,7 +110,7 @@ struct thiscallthunk
     MIRANDASERVICE      GetCodeAddress() const;
 
 private:
-    void                FlushInstructionCache();
+    void                PrepareForExecution();
 
 private:
     struct TwoParams
@@ -209,7 +209,7 @@ inline void thiscallthunk::InitWL(Ret (T::*proc)(W, L), T* pObject)
     m_code.two.relProc = DWORD(cast.ptr - ((INT_PTR)this + sizeof(m_code.two) - sizeof(m_code.two.retn)));
     m_code.two.retn  = 0xC3;                     // retn
 
-    FlushInstructionCache();
+    PrepareForExecution();
 }
 //--------------------------------------------------------------------------------------------------
 
@@ -241,7 +241,7 @@ inline void thiscallthunk::InitW(Ret (T::*proc)(W), T* pObject)
     m_code.oneW.relProc = DWORD(cast.ptr - ((INT_PTR)this + sizeof(m_code.oneW) - sizeof(m_code.oneW.retn)));
     m_code.oneW.retn  = 0xC3;                     // retn
 
-    FlushInstructionCache();
+    PrepareForExecution();
 }
 //--------------------------------------------------------------------------------------------------
 
@@ -273,7 +273,7 @@ inline void thiscallthunk::InitL(Ret (T::*proc)(L), T* pObject)
     m_code.oneL.relProc = DWORD(cast.ptr - ((INT_PTR)this + sizeof(m_code.oneL) - sizeof(m_code.oneL.retn)));
     m_code.oneL.retn  = 0xC3;                     // retn
 
-    FlushInstructionCache();
+    PrepareForExecution();
 }
 //--------------------------------------------------------------------------------------------------
 
@@ -302,7 +302,7 @@ inline void thiscallthunk::InitNo(Ret (T::*proc)(void), T* pObject)
     m_code.no.jmp   = 0xE9;                     // jmp         proc
     m_code.no.relProc = DWORD(cast.ptr - ((INT_PTR)this + sizeof(m_code.no)));
 
-    FlushInstructionCache();
+    PrepareForExecution();
 }
 //--------------------------------------------------------------------------------------------------
 
@@ -313,8 +313,10 @@ inline MIRANDASERVICE thiscallthunk::GetCodeAddress() const
 }
 //--------------------------------------------------------------------------------------------------
 
-inline void thiscallthunk::FlushInstructionCache(void)
+inline void thiscallthunk::PrepareForExecution(void)
 {
+    DWORD unused = 0;
+    ::VirtualProtect(this, sizeof(*this), PAGE_EXECUTE_READWRITE, &unused);
     ::FlushInstructionCache(GetCurrentProcess(), this, sizeof(*this));
 }
 //--------------------------------------------------------------------------------------------------
