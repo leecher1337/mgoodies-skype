@@ -235,7 +235,7 @@ static PLUGININFOEX pluginInfo = {
 #else
 	"Miranda Virtualizable database driver",
 #endif
-	PLUGIN_MAKE_VERSION(0,8,0,11),
+	PLUGIN_MAKE_VERSION(0,8,1,11),
 #ifdef SECUREDB
 	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
