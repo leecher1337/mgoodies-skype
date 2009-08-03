@@ -401,7 +401,7 @@ static __inline int GetContactSettingWorker(HANDLE hContact,DBCONTACTGETSETTING 
 						NeedBytes(3+*(PWORD)(pBlob+1));
 						if(isStatic) {
 							if(*(PWORD)(pBlob+1)<dbcgs->pValue->cpbVal) dbcgs->pValue->cpbVal=*(PWORD)(pBlob+1);
-							CopyMemory(dbcgs->pValue->pbVal,pBlob+3,dbcgs->pValue->cchVal);
+							CopyMemory(dbcgs->pValue->pbVal,pBlob+3,dbcgs->pValue->cpbVal);
 						}
 						else {
 							dbcgs->pValue->pbVal=(char*)mir_alloc(*(PWORD)(pBlob+1));
