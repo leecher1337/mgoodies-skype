@@ -25,12 +25,8 @@ Boston, MA 02111-1307, USA.
 
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
-#ifdef UNICODE
-	"Spell Checker (Unicode)",
-#else
 	"Spell Checker",
-#endif
-	PLUGIN_MAKE_VERSION(0,1,1,0),
+	PLUGIN_MAKE_VERSION(0,1,2,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -119,6 +115,7 @@ TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
 
 int GetClosestLanguage(TCHAR *lang_name);
 
+BOOL CreatePath(const TCHAR *path);
 
 typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
@@ -538,7 +535,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 }
 
 
-void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE, BOOL disable = FALSE)
+void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE)
 {
 	if (!all)
 	{
@@ -550,20 +547,39 @@ void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE, 
 	CHARFORMAT2 cf;
 	cf.cbSize = sizeof(CHARFORMAT2);
 	cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
-	cf.dwEffects = disable ? 0 : CFE_UNDERLINE;
-	cf.bUnderlineType = disable ? 0 : ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
+	cf.dwEffects = CFE_UNDERLINE;
+	cf.bUnderlineType = ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
 	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&cf);
 }
 
 
 void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
 {
-	SetUnderline(hRichEdit, pos_start, pos_end, FALSE, TRUE);
+	for(int i = pos_start; i <= pos_end; i++)
+	{
+		CHARRANGE sel = { i, min(i+1, pos_end)  };
+		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &sel);
+
+		CHARFORMAT2 cf;
+		cf.cbSize = sizeof(CHARFORMAT2);
+		SendMessage(hRichEdit, EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+
+		if ((cf.dwEffects & CFE_UNDERLINE) != 0
+			&& cf.bUnderlineType == ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50))
+		{
+			cf.cbSize = sizeof(CHARFORMAT2);
+			cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
+			cf.dwEffects = 0;
+			cf.bUnderlineType = CFU_UNDERLINE;
+			SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+		}
+	}
 }
 
 void SetNoUnderline(HWND hRichEdit)
 {
-	SetUnderline(hRichEdit, 0, 0, TRUE, TRUE);
+	int len = GetWindowTextLength(hRichEdit);
+	SetNoUnderline(hRichEdit, 0, len);
 }
 
 
@@ -884,8 +900,8 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 
 		// Schedule to re-parse
-		KillTimer(hwnd, TIMER_ID);
-		SetTimer(hwnd, TIMER_ID, 10, NULL);
+		KillTimer(dlg->hwnd, TIMER_ID);
+		SetTimer(dlg->hwnd, TIMER_ID, 10, NULL);
 
 		dlg->changed = TRUE;
 		dlg->markedSomeWord = FALSE;
@@ -2211,4 +2227,27 @@ void AddReplaceDialog(Dictionary *dict, TCHAR *word, HWND hwndParent)
 	SetForegroundWindow(hwnd);
 	SetFocus(hwnd);
 	ShowWindow(hwnd, SW_SHOW);
+}
+
+
+BOOL CreatePath(const TCHAR *path) 
+{
+	TCHAR folder[1024];
+	lstrcpyn(folder, path, MAX_REGS(folder));
+
+	TCHAR *p = folder;
+	if (p[0] && p[1] && p[1] == _T(':') && p[2] == _T('\\')) p += 3; // skip drive letter
+
+	SetLastError(ERROR_SUCCESS);
+	while(p = _tcschr(p, '\\')) 
+	{
+		*p = _T('\0');
+		CreateDirectory(folder, 0);
+		*p = _T('\\');
+		p++;
+	}
+	CreateDirectory(folder, 0);
+
+	DWORD lerr = GetLastError();
+	return (lerr == ERROR_SUCCESS || lerr == ERROR_ALREADY_EXISTS);
 }

@@ -134,5 +134,7 @@ struct Dialog
 
 HICON IcoLib_LoadIcon(Dictionary *dict, BOOL copy = FALSE);
 
+BOOL CreatePath(const TCHAR *path);
+
 
 #endif // __COMMONS_H__

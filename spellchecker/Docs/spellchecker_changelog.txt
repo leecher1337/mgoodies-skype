@@ -2,6 +2,11 @@ Spell Checker
 
 Changelog:
 
+. 0.1.2.0
+  + Play nicer with underlines in IRC (it's not perfect)
+  * Creates custom dicts folder if don't exist
+  * Fix for tabSRMM timeout ballon
+
 . 0.1.1.0
   + Remove underline on send to avoid sending it to the contact (Fixes issue 101)
   + Use language set with UInfoEx
