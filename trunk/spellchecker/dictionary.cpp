@@ -511,6 +511,9 @@ public:
 	// Return TRUE if the char is a word char
 	virtual BOOL isWordChar(TCHAR c)
 	{
+		if (c == 0)
+			return FALSE;
+
 		load();
 		if (loaded != LANGUAGE_LOADED)
 			return TRUE;

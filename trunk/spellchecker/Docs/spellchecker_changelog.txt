@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+. 0.1.3.0
+  + Better handling of URLs
+  * Fix for a lot of replacements at same line
+
 . 0.1.2.0
   + Play nicer with underlines in IRC (it's not perfect)
   * Creates custom dicts folder if don't exist
