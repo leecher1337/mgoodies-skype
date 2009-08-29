@@ -100,6 +100,8 @@ protected:
 
 	void appendToCustomDict(const TCHAR *word)
 	{
+		CreatePath(userPath);
+
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.cdic"), userPath, language);
 
@@ -163,6 +165,8 @@ protected:
 
 	void appendToAutoReplaceMap(const TCHAR * aFrom, const TCHAR * aTo)
 	{
+		CreatePath(userPath);
+
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.ar"), userPath, language);
 
@@ -255,11 +259,11 @@ protected:
 	}
 
 public:
-	HunspellDictionary(TCHAR *aLanguage, TCHAR *aFileWithoutExtension, TCHAR *aUserPath, TCHAR *aSource)
+	HunspellDictionary(TCHAR *aLanguage, TCHAR *aFileWithoutExtension, TCHAR *anUserPath, TCHAR *aSource)
 	{
 		lstrcpyn(language, aLanguage, MAX_REGS(language));
 		lstrcpyn(fileWithoutExtension, aFileWithoutExtension, MAX_REGS(fileWithoutExtension));
-		lstrcpyn(userPath, aUserPath, MAX_REGS(userPath));
+		lstrcpyn(userPath, anUserPath, MAX_REGS(userPath));
 		if (aSource == NULL)
 			source[0] = _T('\0');
 		else
