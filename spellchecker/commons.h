@@ -93,7 +93,8 @@ extern PLUGINLINK *pluginLink;
 
 extern LIST<Dictionary> languages;
 
-struct WrongWordPopupMenuData {
+struct WrongWordPopupMenuData 
+{
 	Suggestions suggestions;
 	TCHAR *word;
 	CHARRANGE pos;
@@ -102,7 +103,8 @@ struct WrongWordPopupMenuData {
 	HMENU hReplaceSubMenu;
 };
 
-struct Dialog {
+struct Dialog 
+{
 	HWND hwnd;
 	HWND hwnd_owner;
 	HANDLE hContact;
@@ -110,6 +112,7 @@ struct Dialog {
 	Dictionary *lang;
 	TCHAR lang_name[32];
 	WNDPROC old_edit_proc;
+	WNDPROC owner_old_edit_proc;
 	BOOL enabled;
 	BOOL srmm;
 
@@ -120,6 +123,7 @@ struct Dialog {
 	WNDPROC old_menu_proc;
 
 	BOOL changed;
+	BOOL markedSomeWord;
 	int old_text_len;
 
 	// Popup data

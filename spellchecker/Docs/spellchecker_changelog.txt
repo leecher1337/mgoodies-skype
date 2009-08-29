@@ -2,6 +2,11 @@ Spell Checker
 
 Changelog:
 
+. 0.1.1.0
+  + Remove underline on send to avoid sending it to the contact (Fixes issue 101)
+  + Use language set with UInfoEx
+  * Force one last check before send to replace errors (Fixes issue 67)
+
 . 0.1.0.5
   * Fix for ICQ contacts with languages
 
