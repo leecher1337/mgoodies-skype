@@ -1,14 +1,17 @@
 Spell Checker plugin
 --------------------
 
-CAUTION: THIS IS A BETA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR OWN RISK.
+This is a spell checker for message windows. It also allow to configure replacements to auto-correct words.
 
-This is a spell checker plugin that uses Hunspell to do the dirty work. Hunspell is the spell checker used by OpenOffice, so it should have a good range of dictionaries.
+It uses Hunspell to do the dirty work. Hunspell is the spell checker used by OpenOffice, so it should have a good range of dictionaries. The dictionaries: each is a couple of files with the name beeing the language and the extensions .dic and .aff. Both need to be inside the dir <Miranda Path>\Dictionaries (of a custom folder if folders plugin is installed). You can download them at: http://wiki.services.openoffice.org/wiki/Dictionaries .
+PS: This path is read only at startup, so changing it needs a restart of miranda.
 
-For message window plugins (let's call them all *srmm) it works transparently if those plugins implement the new notification API and have a richedit in the input area. Latest version (from Miranda build #0.7) of tabSRMM and scriver already do so. SRMM plugin don't have a rich edit, so you need this moded version:
+Note that this plugin does NOT work with SRMM, because it doesn't have a rich edit in the input field. I've done a moded version, but it is old and I'm not sure if it still works:
 Ansi: http://pescuma.org/miranda/srmm.zip
 Unicode: http://pescuma.org/miranda/srmmW.zip
 Patch: http://pescuma.org/miranda/srmm.spellchecker.patch
+
+It has an options page to set the default dictionary and some other options. It is at Message Sessions/Spell Checker .
 
 For other plugins, it works throught providing 3 serices for them to interact:
 - one to add handling of a rich edit control
@@ -16,12 +19,7 @@ For other plugins, it works throught providing 3 serices for them to interact:
 - one to append options needed to a popup menu and show it
 These plugins have to call this services in other for the magic to happen. So, things like when the popup menu is show are handled by the calling plugin.
 
-The dictionaries: it uses hunspell dictionaries. Each is a couple of files with the name beeing the language and the extensions .dic and .aff. Both need to be inside the dir <Miranda Path>\Dictionaries (of a custom folder if folders plugin is installed). You can download then at: http://wiki.services.openoffice.org/wiki/Dictionaries.
-PS: This path is read only at startup, so changing it needs a restart of miranda.
-
-It has an options page to set the default dictionary and some other options. It is at Message Sessions/Spell Checker
-
-The flags: new versions support showing flags to represent the dicts. This is done to have an visual way to represent the dict. To load the flags, the following steps are done:
+The flags: it supports showing flags to represent the dicts. This is done to have an visual way to represent the dict. To load the flags, the following steps are done:
 1. Try to load from file Icons\flags.dll - in this case an icon resource must exist with same name as language (for ex: pt_BR). If this is found, the icon is also added to IconLib to allow further customizing.
 2. Load unknown flag. It can be customized thorught IconLib
 Currently there are 2 sets of flags, one from Angeli-Ka and one from the famfamfam.com site:

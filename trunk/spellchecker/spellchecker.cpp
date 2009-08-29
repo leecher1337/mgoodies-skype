@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -30,11 +30,11 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,5),
-	"Spell Checker",
+	PLUGIN_MAKE_VERSION(0,1,1,0),
+	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci",
+	"© 2006-2009 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/spellchecker",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -641,6 +641,8 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 		if (mark)
 		{
 			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
+
+			dlg->markedSomeWord = TRUE;
 				
 			if (callback != NULL)
 				callback(&text[last_pos], sel, param);
@@ -821,21 +823,75 @@ void ToLocaleID(TCHAR *szKLName, size_t size)
 
 void LoadDictFromKbdl(Dialog *dlg)
 {
-	if (opts.auto_locale) {
-		TCHAR szKLName[KL_NAMELENGTH + 1];
-		GetKeyboardLayoutName(szKLName);
-		ToLocaleID(szKLName, MAX_REGS(szKLName));
+	TCHAR szKLName[KL_NAMELENGTH + 1];
+	GetKeyboardLayoutName(szKLName);
+	ToLocaleID(szKLName, MAX_REGS(szKLName));
 
-		int d = GetClosestLanguage(szKLName);
-		if (d >= 0)
-		{
-			dlg->lang = languages[d];
-			dlg->lang->load();
+	int d = GetClosestLanguage(szKLName);
+	if (d >= 0)
+	{
+		dlg->lang = languages[d];
+		dlg->lang->load();
 
-			if (dlg->srmm)
-				ModifyIcon(dlg);
-		}
+		if (dlg->srmm)
+			ModifyIcon(dlg);
 	}
+}
+
+void TimerCheck(Dialog *dlg)
+{
+	KillTimer(dlg->hwnd, TIMER_ID);
+
+	if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
+		return;
+
+	// Don't check if field is read-only
+	if (GetWindowLong(dlg->hwnd, GWL_STYLE) & ES_READONLY)
+		return;
+
+	int len = GetWindowTextLength(dlg->hwnd);
+	if (len == dlg->old_text_len && !dlg->changed)
+		return;
+
+	dlg->old_text_len = len;
+	dlg->changed = FALSE;
+
+	CheckText(dlg, TRUE);
+}
+
+
+LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	DialogMapType::iterator dlgit = dialogs.find(hwnd);
+	if (dlgit == dialogs.end())
+		return -1;
+
+	Dialog *dlg = dlgit->second;
+
+	if (msg == WM_COMMAND && (LOWORD(wParam) == IDOK || LOWORD(wParam) == 1624))
+	{
+		// Fix all
+		TimerCheck(dlg);
+
+		if (dlg->markedSomeWord)
+		{
+			// Remove underline
+			STOP_RICHEDIT(dlg);
+
+			SetNoUnderline(dlg->hwnd);
+
+			START_RICHEDIT(dlg);
+		}
+
+		// Schedule to re-parse
+		KillTimer(hwnd, TIMER_ID);
+		SetTimer(hwnd, TIMER_ID, 10, NULL);
+
+		dlg->changed = TRUE;
+		dlg->markedSomeWord = FALSE;
+	}
+
+	return CallWindowProc(dlg->owner_old_edit_proc, hwnd, msg, wParam, lParam);
 }
 
 
@@ -887,7 +943,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			TCHAR c = (TCHAR) wParam;
 			if (!dlg->lang->isWordChar(c))
 			{
-				CheckText(dlg, FALSE, FALSE);
+				CheckText(dlg, FALSE);
 			}
 			else
 			{
@@ -919,24 +975,16 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
+		case EM_REPLACESEL:
+		case WM_SETTEXT:
+		case EM_SETTEXTEX:
 		case EM_PASTESPECIAL:
 		case WM_PASTE:
 		{
-			// Need to do that to avoid changing the word while typing
 			KillTimer(hwnd, TIMER_ID);
-			SetTimer(hwnd, TIMER_ID, 1000, NULL);
+			SetTimer(hwnd, TIMER_ID, 10, NULL);
 
 			dlg->changed = TRUE;
-
-			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
-				break;
-
-			// Don't check if field is read-only
-			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
-				break;
-
-			// Parse all text
-			CheckText(dlg, TRUE, FALSE);
 			break;
 		}
 
@@ -945,21 +993,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (wParam != TIMER_ID)
 				break;
 
-			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
-				break;
-
-			// Don't check if field is read-only
-			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
-				break;
-
-			int len = GetWindowTextLength(hwnd);
-			if (len == dlg->old_text_len && !dlg->changed)
-				break;
-
-			dlg->old_text_len = len;
-			dlg->changed = FALSE;
-
-			CheckText(dlg, TRUE);
+			TimerCheck(dlg);
 			break;
 		}
 
@@ -974,7 +1008,15 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WMU_KBDL_CHANGED:
 		{
-			LoadDictFromKbdl(dlg);
+			if (opts.auto_locale) 
+			{
+				KillTimer(hwnd, TIMER_ID);
+				SetTimer(hwnd, TIMER_ID, 10, NULL);
+
+				dlg->changed = TRUE;
+				
+				LoadDictFromKbdl(dlg);
+			}
 
 			break;
 		}
@@ -1041,22 +1083,22 @@ int GetClosestLanguage(TCHAR *lang_name)
 	return -1;
 }
 
-void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char *setting)
+void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *group, char *setting, BOOL isProtocol = TRUE)
 {
 	DBVARIANT dbv = {0};
 	dbv.type = DBVT_TCHAR;
 
 	DBCONTACTGETSETTING cgs = {0};
-	cgs.szModule = proto;
+	cgs.szModule = group;
 	cgs.szSetting = setting;
 	cgs.pValue = &dbv;
 
 	INT_PTR rc;
 
-	int caps = CallProtoService(proto, PS_GETCAPS, PFLAGNUM_4, 0);
+	int caps = (isProtocol ? CallProtoService(group, PS_GETCAPS, PFLAGNUM_4, 0) : 0);
 	if (caps & PF4_INFOSETTINGSVC)
 	{
-		rc = CallProtoService(proto, PS_GETINFOSETTING, (WPARAM) hContact, (LPARAM) &cgs);
+		rc = CallProtoService(group, PS_GETINFOSETTING, (WPARAM) hContact, (LPARAM) &cgs);
 	}
 	else
 	{
@@ -1091,12 +1133,15 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 		return;
 
 	GetUserProtoLanguageSetting(dlg, dlg->hContact, proto, setting);
+	if (dlg->lang_name[0] != _T('\0'))
+		return;
 
-	// If not found and is inside meta, try to get from the meta
+	// Try from UInfoEx
+	GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
 	if (dlg->lang_name[0] != _T('\0'))
 		return;
 	
-	// Is a subcontact?
+	// If not found and is inside meta, try to get from the meta
 	if (metacontacts_proto == NULL) 
 		return;
 
@@ -1105,6 +1150,11 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 		return;
 
 	GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
+	if (dlg->lang_name[0] != _T('\0'))
+		return;
+
+	// Try from UInfoEx
+	GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
 }
 
 void GetContactLanguage(Dialog *dlg)
@@ -1236,7 +1286,6 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		strncpy(dlg->name, name, sizeof(dlg->name));
 		dlg->enabled = DBGetContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, 1);
 		dlg->srmm = srmm;
-		dlg->hwnd_owner = hwndOwner;
 
 		SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&dlg->ole);
 		if (dlg->ole == NULL)
@@ -1249,16 +1298,23 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 			dlg->textDocument = NULL;
 
 		GetContactLanguage(dlg);
-		LoadDictFromKbdl(dlg);
 
-		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
+		if (opts.auto_locale) 
+			LoadDictFromKbdl(dlg);
 
+		dlg->old_edit_proc = (WNDPROC) SetWindowLong(dlg->hwnd, GWL_WNDPROC, (LONG) EditProc);
 		dialogs[hwnd] = dlg;
 
-		SetTimer(hwnd, TIMER_ID, 500, NULL);
+		if (dlg->srmm && hwndOwner != NULL)
+		{
+			dlg->hwnd_owner = hwndOwner;
+			dlg->owner_old_edit_proc = (WNDPROC) SetWindowLong(dlg->hwnd_owner, GWL_WNDPROC, (LONG) OwnerProc);
+			dialogs[dlg->hwnd_owner] = dlg;
 
-		if (dlg->srmm)
 			ModifyIcon(dlg);
+		}
+
+		SetTimer(hwnd, TIMER_ID, 1000, NULL);
 	}
 
 	return 0;
@@ -1317,9 +1373,16 @@ int RemoveContactTextBox(HWND hwnd)
 		
 		KillTimer(hwnd, TIMER_ID);
 
-		SetWindowLong(hwnd, GWL_WNDPROC, (LONG) dlg->old_edit_proc);
-
+		if (dlg->old_edit_proc != NULL)
+			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) dlg->old_edit_proc);
 		dialogs.erase(hwnd);
+
+		if (dlg->hwnd_owner != NULL)
+		{
+			if (dlg->owner_old_edit_proc != NULL)
+				SetWindowLong(dlg->hwnd_owner, GWL_WNDPROC, (LONG) dlg->owner_old_edit_proc);
+			dialogs.erase(dlg->hwnd_owner);
+		}
 
 		if (dlg->textDocument != NULL)
 			dlg->textDocument->Release();
@@ -1685,7 +1748,12 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 	}
 
 	if (ret)
+	{
+		KillTimer(dlg->hwnd, TIMER_ID);
+		SetTimer(dlg->hwnd, TIMER_ID, 10, NULL);
+
 		dlg->changed = TRUE;
+	}
 
 	FreePopupData(dlg);
 
