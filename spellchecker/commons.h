@@ -122,6 +122,7 @@ struct Dialog
 	HWND hwnd_menu_owner;
 	WNDPROC old_menu_proc;
 
+	BOOL processing;
 	BOOL changed;
 	BOOL markedSomeWord;
 	int old_text_len;

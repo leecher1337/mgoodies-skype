@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,1,2,0),
+	PLUGIN_MAKE_VERSION(0,1,3,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -136,6 +136,7 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 		dlg->textDocument->Undo(tomResume, NULL)
 
 #define	STOP_RICHEDIT(dlg)														\
+	dlg->processing = TRUE;														\
 	SUSPEND_UNDO(dlg);															\
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);								\
 	POINT __old_scroll_pos;														\
@@ -160,7 +161,8 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &__old_scroll_pos);		\
 	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);								\
 	InvalidateRect(dlg->hwnd, NULL, FALSE);										\
-	RESUME_UNDO(dlg)
+	RESUME_UNDO(dlg);															\
+	dlg->processing = FALSE
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -553,6 +555,15 @@ void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE)
 }
 
 
+BOOL IsMyUnderline(const CHARFORMAT2 &cf)
+{
+	return (cf.dwEffects & CFE_UNDERLINE) 
+			&& (cf.bUnderlineType & 0x0F) >= CFU_UNDERLINEDOUBLE
+			&& (cf.bUnderlineType & 0x0F) <= CFU_UNDERLINETHICK
+			&& (cf.bUnderlineType & ~0x0F) == 0x50;
+}
+
+
 void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
 {
 	for(int i = pos_start; i <= pos_end; i++)
@@ -564,8 +575,7 @@ void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
 		cf.cbSize = sizeof(CHARFORMAT2);
 		SendMessage(hRichEdit, EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
 
-		if ((cf.dwEffects & CFE_UNDERLINE) != 0
-			&& cf.bUnderlineType == ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50))
+		if (IsMyUnderline(cf))
 		{
 			cf.cbSize = sizeof(CHARFORMAT2);
 			cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
@@ -594,9 +604,9 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 }
 
 // Helper to avoid copy and pastle
-inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
-					 CHARRANGE &old_sel, int &diff,
-					 FoundWrongWordCallback callback, void *param)
+void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
+			 CHARRANGE &old_sel, int &diff,
+			 FoundWrongWordCallback callback, void *param)
 {
 	text[pos] = _T('\0');
 
@@ -612,58 +622,106 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 	}
 
 	// Is wrong?
-	if (!dlg->lang->spell(&text[last_pos]))
+	if (dlg->lang->spell(&text[last_pos]))
+		return;
+
+
+	CHARRANGE sel = { first_char + last_pos + diff, first_char + pos + diff };
+
+	// Has to correct?
+	if (opts.auto_replace_dict || opts.auto_replace_user)
 	{
-		CHARRANGE sel = { first_char + last_pos + diff, first_char + pos + diff };
-		BOOL mark = TRUE;
+		TCHAR *word = NULL;
 
-		// Has to correct?
-		if (opts.auto_replace_dict || opts.auto_replace_user)
+		if (opts.auto_replace_user)
+			word = dlg->lang->autoReplace(&text[last_pos]);
+
+		if (opts.auto_replace_dict && word == NULL)
+			word = dlg->lang->autoSuggestOne(&text[last_pos]);
+
+		if (word != NULL)
 		{
-			TCHAR *word = NULL;
+			// Replace in rich edit
+			SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
 
-			if (opts.auto_replace_user)
-				word = dlg->lang->autoReplace(&text[last_pos]);
+			RESUME_UNDO(dlg);
 
-			if (opts.auto_replace_dict && word == NULL)
-				word = dlg->lang->autoSuggestOne(&text[last_pos]);
+			SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) word);
 
-			if (word != NULL)
-			{
-				mark = FALSE;
+			SUSPEND_UNDO(dlg);
 
-				// Replace in rich edit
-				SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+			// Fix old sel
+			int dif = lstrlen(word) - sel.cpMax + sel.cpMin;
+			if (old_sel.cpMin >= sel.cpMax)
+				old_sel.cpMin += dif;
+			if (old_sel.cpMax >= sel.cpMax)
+				old_sel.cpMax += dif;
+			diff += dif;
 
-				RESUME_UNDO(dlg);
+			free(word);
 
-				SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) word);
-
-				SUSPEND_UNDO(dlg);
-
-				// Fix old sel
-				int dif = lstrlen(word) - sel.cpMax + sel.cpMin;
-				if (old_sel.cpMin >= sel.cpMax)
-					old_sel.cpMin += dif;
-				if (old_sel.cpMax >= sel.cpMax)
-					old_sel.cpMax += dif;
-				diff += dif;
-
-				free(word);
-			}
-		}
-		
-		// Mark
-		if (mark)
-		{
-			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
-
-			dlg->markedSomeWord = TRUE;
-				
-			if (callback != NULL)
-				callback(&text[last_pos], sel, param);
+			return;
 		}
 	}
+	
+	// Mark
+	SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
+
+	dlg->markedSomeWord = TRUE;
+		
+	if (callback != NULL)
+		callback(&text[last_pos], sel, param);
+}
+
+BOOL IsNumber(TCHAR c)
+{
+	return c >= '0' && c <= '9';
+}
+
+BOOL IsURL(TCHAR c)
+{
+	return (c >= _T('a') && c <= _T('z'))
+		|| (c >= _T('A') && c <= _T('Z'))
+		|| IsNumber(c)
+		|| c == _T('.') || c == _T('/')
+		|| c == _T('\\') || c == _T('?')
+		|| c == _T('=') || c == _T('&')
+		|| c == _T('%') || c == _T('-')
+		|| c == _T('_') || c == _T(':')
+		|| c == _T('@') || c == _T('#');
+}
+
+int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
+{
+	int num_slashes = 0;
+	int num_ats = 0;
+	int num_dots = 0;
+
+	int i = start_pos;
+
+	for(; i >= 0 && (IsURL(text[i]) || dlg->lang->isWordChar(text[i])); i--) ;
+
+	i++;
+
+	for(; IsURL(text[i]) || dlg->lang->isWordChar(text[i]); i++) 
+	{
+		char c = text[i];
+
+		if (c == _T('\\') || c == _T('/'))
+			num_slashes++;
+		if (c == _T('.'))
+			num_dots++;
+		if (c == _T('@'))
+			num_ats++;
+	}
+	
+	if (num_slashes < 0 && num_dots < 0 && num_ats < 0)
+		return -1;
+
+	if (num_slashes == 0 && num_ats == 0 && num_dots < 2)
+		return -1;
+
+	return i;
 }
 
 
@@ -690,7 +748,6 @@ void CheckText(Dialog *dlg, BOOL check_all,
 		for(; line < lines; line++) 
 		{
 			int first_char;
-			int diff = 0;
 
 			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
 			int len = lstrlen(text);
@@ -703,114 +760,65 @@ void CheckText(Dialog *dlg, BOOL check_all,
 			int pos;
 			for (pos = 0; pos < len; pos++)
 			{
-				if (!dlg->lang->isWordChar(text[pos]) && !(text[pos] >= _T('0') && text[pos] <= _T('9')))
-				{
-					if (last_pos != -1)
-					{
-						// We found a word
+				TCHAR c = text[pos];
 
-						// Is this an URL?
-						if (found_real_char 
-							&& text[pos] == _T(':') && text[pos+1] == _T('/') && text[pos+2] == _T('/')
-							&& pos - last_pos >= 3 && pos - last_pos <=4) 
-						{
-							// May be, lets check
-							int p = last_pos;
-							for(;  (text[p] >= _T('a') && text[p] <= _T('z'))
-								|| (text[p] >= _T('A') && text[p] <= _T('Z'))
-								|| (text[p] >= _T('0') && text[p] <= _T('9'))
-								|| text[p] == _T('.') || text[p] == _T('/')
-								|| text[p] == _T('\\') || text[p] == _T('?')
-								|| text[p] == _T('=') || text[p] == _T('&')
-								|| text[p] == _T('%') || text[p] == _T('-')
-								|| text[p] == _T('_')|| text[p] == _T(':'); p++) 
-							{}
-
-							if (p > pos)
-							{
-								// Found ya
-								pos = p;
-								found_real_char = FALSE;
-							}
-						}
-
-						// Or at least a site?
-						if (found_real_char && text[pos] == _T('.')) {
-							// Let's see if fits in the description
-							int p = last_pos;
-							int num_ids = 0;
-							for(;  (text[p] >= _T('a') && text[p] <= _T('z'))
-								|| (text[p] >= _T('A') && text[p] <= _T('Z'))
-								|| (text[p] >= _T('0') && text[p] <= _T('9'))
-								|| text[p] == _T('.') || text[p] == _T('/')
-								|| text[p] == _T('\\') || text[p] == _T('?')
-								|| text[p] == _T('=') || text[p] == _T('&')
-								|| text[p] == _T('%') || text[p] == _T('-')
-								|| text[p] == _T('_'); p++) 
-							{
-								if (text[p] == _T('.') || text[p] == _T('/'))
-									num_ids++;
-							}
-							
-							if (p > pos && num_ids >= 2)
-							{
-								// Found ya
-								pos = p;
-								found_real_char = FALSE;
-							}
-						}
-
-						// Is this an email?
-						if (found_real_char && text[pos] == _T('@')) {
-							// Well, it is
-							// It is! So lets found where it ends
-							pos ++;
-							for(;  (text[pos] >= _T('a') && text[pos] <= _T('z'))
-								|| (text[pos] >= _T('A') && text[pos] <= _T('Z'))
-								|| (text[pos] >= _T('0') && text[pos] <= _T('9'))
-								|| text[pos] == _T('.') || text[pos] == _T('-')
-								|| text[pos] == _T('_'); pos++) 
-							{}
-
-							found_real_char = FALSE;
-						}
-
-						// It has real chars?
-						if (found_real_char)
-						{
-							// Is under cursor?
-							if (check_all || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
-							{
-								DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
-							}
-						}
-
-						last_pos = -1;
-						found_real_char = FALSE;
-					}
-				}
-				else 
+				// Is inside a word?
+				if (dlg->lang->isWordChar(c) || IsNumber(c))
 				{
 					if (last_pos == -1)
 						last_pos = pos;
 
-					if (text[pos] != _T('-') && !(text[pos] >= _T('0') && text[pos] <= _T('9')))
+					if (c != _T('-') && !IsNumber(c))
 						found_real_char = TRUE;
-				}
-			}
 
-			// Last word
-			if (last_pos != -1)
-			{
-				// It has real chars?
-				if (found_real_char)
-				{
-					// Is under cursor?
-					if (check_all || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
-					{
-						DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
-					}
+					if (pos >= len-1)
+						// Move to the end
+						pos = len;
+					else
+						continue;
 				}
+
+				if (!found_real_char)
+				{
+					last_pos = -1;
+					continue;
+				}
+
+				// We found a word
+
+				// Is this an URL?
+				int p = FindURLEnd(dlg, text, last_pos);
+				if (p >= pos)
+				{
+					pos = p;
+					found_real_char = FALSE;
+					last_pos = -1;
+					continue;
+				}
+
+				// Is under cursor?
+				if (!check_all && first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin)
+				{
+					found_real_char = FALSE;
+					last_pos = -1;
+					continue;
+				}
+
+				int diff = 0;
+				DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
+
+				if (diff != 0)
+				{
+					pos += diff;
+
+					// Read line again
+					GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+					len = lstrlen(text);
+					SetNoUnderline(dlg->hwnd, first_char + pos + 1, first_char + len);
+				}
+
+				last_pos = -1;
+				found_real_char = FALSE;
 			}
 		}
 	}
@@ -893,9 +901,7 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			// Remove underline
 			STOP_RICHEDIT(dlg);
-
 			SetNoUnderline(dlg->hwnd);
-
 			START_RICHEDIT(dlg);
 		}
 
@@ -934,6 +940,9 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_CHAR:
 		{
+			if (dlg->processing)
+				break;
+
 			if (lParam & (1 << 28))	// ALT key
 				break;
 
@@ -964,29 +973,20 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			else
 			{
 				// Assert no selection
-				CHARFORMAT2 cf;
-				cf.cbSize = sizeof(CHARFORMAT2);
-				SendMessage(dlg->hwnd, EM_GETCHARFORMAT, TRUE, (LPARAM)&cf);
+				STOP_RICHEDIT(dlg);
 
-				if ((cf.dwMask & CFM_UNDERLINETYPE) 
-					&& (cf.dwEffects & 0x0F) >= CFU_UNDERLINEDOUBLE
-					&& (cf.dwEffects & 0x0F) <= CFU_UNDERLINETHICK)
-				{
-					STOP_RICHEDIT(dlg);
+				// Remove underline of current word
+				TCHAR text[1024];
+				int first_char;
+				CHARRANGE sel;
 
-					// Remove underline of current word
-					TCHAR text[1024];
-					int first_char;
-					CHARRANGE sel;
+				SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
 
-					SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
+				GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
 
-					GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
+				SetNoUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
 
-					SetNoUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
-
-					START_RICHEDIT(dlg);
-				}
+				START_RICHEDIT(dlg);
 			}
 
 			break;
@@ -997,8 +997,11 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case EM_PASTESPECIAL:
 		case WM_PASTE:
 		{
+			if (dlg->processing)
+				break;
+
 			KillTimer(hwnd, TIMER_ID);
-			SetTimer(hwnd, TIMER_ID, 10, NULL);
+			SetTimer(hwnd, TIMER_ID, 100, NULL);
 
 			dlg->changed = TRUE;
 			break;
@@ -1016,7 +1019,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WMU_DICT_CHANGED:
 		{
 			KillTimer(hwnd, TIMER_ID);
-			SetTimer(hwnd, TIMER_ID, 10, NULL);
+			SetTimer(hwnd, TIMER_ID, 100, NULL);
 
 			dlg->changed = TRUE;
 			break;
@@ -1027,7 +1030,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (opts.auto_locale) 
 			{
 				KillTimer(hwnd, TIMER_ID);
-				SetTimer(hwnd, TIMER_ID, 10, NULL);
+				SetTimer(hwnd, TIMER_ID, 100, NULL);
 
 				dlg->changed = TRUE;
 				
@@ -1685,9 +1688,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 		if (!dlg->enabled)
 		{
 			STOP_RICHEDIT(dlg);
-
 			SetNoUnderline(dlg->hwnd);
-			
 			START_RICHEDIT(dlg);
 		}
 
@@ -1766,7 +1767,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 	if (ret)
 	{
 		KillTimer(dlg->hwnd, TIMER_ID);
-		SetTimer(dlg->hwnd, TIMER_ID, 10, NULL);
+		SetTimer(dlg->hwnd, TIMER_ID, 100, NULL);
 
 		dlg->changed = TRUE;
 	}

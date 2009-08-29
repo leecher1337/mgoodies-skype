@@ -93,7 +93,9 @@ cd ..
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.FL.zip Plugins Docs Dictionaries Icons
 
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
+
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
