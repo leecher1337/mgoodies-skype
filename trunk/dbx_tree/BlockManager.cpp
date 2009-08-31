@@ -96,7 +96,7 @@ void CBlockManager::ExecuteOptimize()
 	}
 
 	SYNC_BEGINWRITE(m_BlockSync);
-	CacheFlush();
+	//CacheFlush();
 	m_FileAccess.FlushJournal();
 
 	while (!m_OptimizeThread->Terminated() && (m_Optimize < m_FileAccess.Size()))
@@ -159,6 +159,7 @@ void CBlockManager::ExecuteOptimize()
 	m_OptimizeThread = NULL;
 	m_Optimize = 0;
 	m_FileAccess.CompleteTransaction();
+	CacheFlush();
 	m_FileAccess.CloseTransaction();
 	m_FileAccess.FlushJournal();
 	SYNC_ENDWRITE(m_BlockSync);

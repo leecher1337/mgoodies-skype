@@ -264,6 +264,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;CAST128_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="false"
+				EnableEnhancedInstructionSet="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
