@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef INTERFACE_VERSION_ONLY
 
-#define MIRANDA_VER 0x0700
+#define MIRANDA_VER 0x0800
 #include <windows.h>
 #include "newpluginapi.h"
 #include "m_plugins.h"
@@ -44,9 +44,9 @@ extern DATABASELINK gDBLink;
 #endif 
 
 
-#define gVersion 0x00000008
-#define gResVersion 0,0,0,8
-#define gResVersionString "0.0.0.8"
+#define gVersion 0x00000009
+#define gResVersion 0,0,0,9
+#define gResVersionString "0.0.0.9"
 #define gInternalName "dbx_tree"
 #define gInternalNameLong "Miranda dbx_tree database driver"
 #define gDescription "Provides extended Miranda database support"

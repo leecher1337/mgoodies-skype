@@ -279,7 +279,7 @@
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="UNICODE;_UNICODE"
 				RuntimeLibrary="0"
-				EnableEnhancedInstructionSet="0"
+				EnableEnhancedInstructionSet="2"
 				AssemblerOutput="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -500,26 +500,6 @@
 					>
 				</File>
 				<Filter
-					Name="HeaderFiles"
-					>
-					<File
-						RelativePath=".\BlockManager.h"
-						>
-					</File>
-					<File
-						RelativePath=".\DirectAccess.h"
-						>
-					</File>
-					<File
-						RelativePath=".\FileAccess.h"
-						>
-					</File>
-					<File
-						RelativePath=".\MappedMemory.h"
-						>
-					</File>
-				</Filter>
-				<Filter
 					Name="Encryption"
 					>
 					<File
@@ -546,6 +526,26 @@
 							>
 						</File>
 					</Filter>
+				</Filter>
+				<Filter
+					Name="HeaderFiles"
+					>
+					<File
+						RelativePath=".\BlockManager.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DirectAccess.h"
+						>
+					</File>
+					<File
+						RelativePath=".\FileAccess.h"
+						>
+					</File>
+					<File
+						RelativePath=".\MappedMemory.h"
+						>
+					</File>
 				</Filter>
 			</Filter>
 		</Filter>
@@ -636,7 +636,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\lockfree_list.h"
+					RelativePath=".\lockfree_hashmultimap.h"
 					>
 				</File>
 				<File
@@ -657,10 +657,6 @@
 				</File>
 				<File
 					RelativePath=".\Thread.h"
-					>
-				</File>
-				<File
-					RelativePath=".\ThreadLocalStorage.h"
 					>
 				</File>
 			</Filter>
