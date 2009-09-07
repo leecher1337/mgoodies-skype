@@ -232,6 +232,14 @@ SOURCE=.\hunspell\w_char.hxx
 # End Group
 # Begin Source File
 
+SOURCE=.\ardialog.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\autoreplace.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\commons.h
 # End Source File
 # Begin Source File
@@ -338,6 +346,14 @@ SOURCE=.\hunspell\suggestmgr.cxx
 SOURCE=.\hunspell\utf_info.cxx
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\ardialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\autoreplace.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=.\dictionary.cpp

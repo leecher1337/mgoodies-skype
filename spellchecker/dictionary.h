@@ -21,9 +21,6 @@ Boston, MA 02111-1307, USA.
 #ifndef __DICTIONARY_H__
 # define __DICTIONARY_H__
 
-#include <windows.h>
-#include <m_system_cpp.h>
-
 
 struct Suggestions {
 	TCHAR ** words;
@@ -40,6 +37,7 @@ public:
 	TCHAR english_name[128];
 	TCHAR full_name[256];
 	TCHAR source[128];
+	AutoReplaceMap *autoReplace;
 
 	virtual ~Dictionary() {}
 
@@ -56,10 +54,6 @@ public:
 	// You have to free the item
 	virtual TCHAR * autoSuggestOne(const TCHAR * word) =0;
 
-	// Return a a auto replace to a word
-	// You have to free the item
-	virtual TCHAR * autoReplace(const TCHAR * word) =0;
-
 	// Return TRUE if the char is a word char
 	virtual BOOL isWordChar(TCHAR c) =0;
 
@@ -68,9 +62,6 @@ public:
 
 	// Add a word to the list of ignored words
 	virtual void ignoreWord(const TCHAR * word) =0;
-
-	// Add a word to the list of auto-replaced words
-	virtual void addToAutoReplace(const TCHAR * from, const TCHAR * to) =0;
 
 	// Assert that all needed data is loaded
 	virtual void load() =0;

@@ -29,7 +29,7 @@ PLUGININFOEX pluginInfo={
 	PLUGIN_MAKE_VERSION(0,1,3,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
-	"",
+	"pescuma@miranda-im.org",
 	"© 2006-2009 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/spellchecker",
 	UNICODE_AWARE,
@@ -81,6 +81,8 @@ HBITMAP hCheckedBmp;
 BITMAP bmpChecked;
 
 char *metacontacts_proto = NULL;
+BOOL uinfoex_enabled = FALSE;
+BOOL variables_enabled = FALSE;
 BOOL loaded = FALSE;
 
 LIST<Dictionary> languages(1);
@@ -101,8 +103,6 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 int RemoveContactTextBox(HWND hwnd);
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner);
 
-void AddReplaceDialog(Dictionary *dict, TCHAR *word, HWND hwndParent = NULL) ;
-
 int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
@@ -114,8 +114,6 @@ BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len,
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
 
 int GetClosestLanguage(TCHAR *lang_name);
-
-BOOL CreatePath(const TCHAR *path);
 
 typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
@@ -275,6 +273,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	if (ServiceExists(MS_MC_GETPROTOCOLNAME) && ServiceExists(MS_MC_GETMETACONTACT))
 		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
+	uinfoex_enabled = ServiceExists("UserInfo/vCard/Import");
+	variables_enabled = ServiceExists(MS_VARS_FORMATSTRING);
+
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
@@ -428,16 +429,16 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		FreeLibrary(hFlagsDll);
 	}
 
-	if (opts.default_language[0] != _T('\0'))
+	for (int j = 0; j < languages.getCount(); j++)
 	{
-		for (int i = 0; i < languages.getCount(); i++)
-		{
-			if (lstrcmp(languages[i]->language, opts.default_language) == 0)
-			{
-				languages[i]->load();
-				break;
-			}
-		}
+		Dictionary *dict = languages[j];
+
+		TCHAR filename[1024];
+		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.ar"), customDictionariesFolder, dict->language);
+		dict->autoReplace = new AutoReplaceMap(filename);
+
+		if (lstrcmp(dict->language, opts.default_language) == 0)
+			dict->load();
 	}
 
 	hHooks[2] = HookEvent(ME_SKIN2_ICONSCHANGED, &IconsChanged);
@@ -610,33 +611,29 @@ void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos
 {
 	text[pos] = _T('\0');
 
-	// Is upper?
+	// Is it upper?
+	BOOL upper = FALSE;
 	if (opts.ignore_uppercase)
 	{
-		BOOL upper = TRUE;
+		upper = TRUE;
 		for(int i = last_pos; i < pos && upper; i++)
 			upper = IsCharUpper(text[i]);
-
-		if (upper)
-			return;
 	}
 
-	// Is wrong?
-	if (dlg->lang->spell(&text[last_pos]))
-		return;
-
+	// Is it correct?
+	BOOL correct = upper || dlg->lang->spell(&text[last_pos]);
 
 	CHARRANGE sel = { first_char + last_pos + diff, first_char + pos + diff };
 
-	// Has to correct?
+	// Has to auto-correct?
 	if (opts.auto_replace_dict || opts.auto_replace_user)
 	{
 		TCHAR *word = NULL;
 
 		if (opts.auto_replace_user)
-			word = dlg->lang->autoReplace(&text[last_pos]);
+			word = dlg->lang->autoReplace->autoReplace(&text[last_pos]);
 
-		if (opts.auto_replace_dict && word == NULL)
+		if (opts.auto_replace_dict && word == NULL && !correct)
 			word = dlg->lang->autoSuggestOne(&text[last_pos]);
 
 		if (word != NULL)
@@ -663,7 +660,11 @@ void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos
 			return;
 		}
 	}
-	
+
+
+	if (correct)
+		return;
+
 	// Mark
 	SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
 
@@ -772,7 +773,7 @@ void CheckText(Dialog *dlg, BOOL check_all,
 						found_real_char = TRUE;
 
 					if (pos >= len-1)
-						// Move to the end
+						// Move to the end to process one last time
 						pos = len;
 					else
 						continue;
@@ -1151,15 +1152,17 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 	if (proto == NULL)
 		return;
 
+	if (uinfoex_enabled)
+	{
+		GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
+		if (dlg->lang_name[0] != _T('\0'))
+			return;
+	}
+	
 	GetUserProtoLanguageSetting(dlg, dlg->hContact, proto, setting);
 	if (dlg->lang_name[0] != _T('\0'))
 		return;
 
-	// Try from UInfoEx
-	GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
-	if (dlg->lang_name[0] != _T('\0'))
-		return;
-	
 	// If not found and is inside meta, try to get from the meta
 	if (metacontacts_proto == NULL) 
 		return;
@@ -1168,12 +1171,14 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 	if (hMetaContact == NULL)
 		return;
 
-	GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
-	if (dlg->lang_name[0] != _T('\0'))
-		return;
+	if (uinfoex_enabled)
+	{
+		GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
+		if (dlg->lang_name[0] != _T('\0'))
+			return;
+	}
 
-	// Try from UInfoEx
-	GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
+	GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
 }
 
 void GetContactLanguage(Dialog *dlg)
@@ -1676,6 +1681,22 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 }
 
 
+static void AddWordToDictCallback(BOOL canceled, Dictionary *dict, 
+								  const TCHAR *find, const TCHAR *replace, BOOL useVariables, 
+								  const TCHAR *original_find, void *param)
+{
+	if (canceled)
+		return;
+
+	dict->autoReplace->add(find, replace, useVariables);
+
+	HWND hwndParent = (HWND) param;
+	if (hwndParent != NULL)
+		SendMessage(hwndParent, WMU_DICT_CHANGED, 0, 0);
+}
+
+
+
 BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 {
 	BOOL ret = FALSE;
@@ -1752,13 +1773,14 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 
 			if (selection == data.suggestions.count)
 			{
-				AddReplaceDialog(dlg->lang, data.word, dlg->hwnd);
+				ShowAutoReplaceDialog(dlg->hwnd, FALSE, dlg->lang, data.word, NULL, FALSE,
+									  TRUE, &AddWordToDictCallback, dlg->hwnd);
 			}
 			else
 			{
 				// TODO Assert that text hasn't changed
 				ReplaceWord(dlg, data.pos, data.suggestions.words[selection]);
-				dlg->lang->addToAutoReplace(data.word, data.suggestions.words[selection]);
+				dlg->lang->autoReplace->add(data.word, data.suggestions.words[selection]);
 				ret = TRUE;
 			}
 		}
@@ -2113,7 +2135,7 @@ TCHAR *lstrtrim(TCHAR *str)
 	return str;
 }
 
-BOOL lstreq(TCHAR *a, TCHAR *b, size_t len = -1)
+BOOL lstreq(TCHAR *a, TCHAR *b, size_t len)
 {
 #ifdef UNICODE
 	a = CharLower(_tcsdup(a));
@@ -2132,102 +2154,6 @@ BOOL lstreq(TCHAR *a, TCHAR *b, size_t len = -1)
 	else
 		return !_tcsicmp(a, b);
 #endif
-}
-
-struct AddReplacementData
-{
-	Dictionary *dict;
-	TCHAR *word;
-	HWND hwndParent;
-};
-
-static BOOL CALLBACK DlgProcAddReplacement(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch ( msg )
-	{
-		case WM_INITDIALOG:
-		{
-			TranslateDialogDefault(hwndDlg);
-
-			HICON hIcon = IcoLib_LoadIcon("spellchecker_enabled");
-			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) hIcon);
-			IcoLib_ReleaseIcon(hIcon);
-
-			SendMessage(GetDlgItem(hwndDlg, IDC_NEW), EM_LIMITTEXT, 256, 0);
-
-			AddReplacementData *data = (AddReplacementData *) lParam;
-			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) data);
-
-			SetDlgItemText(hwndDlg, IDC_OLD, data->word);
-
-			return TRUE;
-		}
-
-		case WM_COMMAND:
-			switch(wParam)
-			{
-				case IDOK:
-				{
-					AddReplacementData *data = (AddReplacementData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-					TCHAR tmp[256];
-					GetDlgItemText(hwndDlg, IDC_NEW, tmp, sizeof(tmp));
-					lstrtrim(tmp);
-
-					if (tmp[0] == '\0')
-					{
-						MessageBox(hwndDlg, _T("The correction can't be an empty word!"), _T("Wrong Correction"), 
-							MB_OK | MB_ICONERROR);
-					}
-					else if (lstreq(data->word, tmp))
-					{
-						MessageBox(hwndDlg, _T("The correction can't be the equal to the wrong word!"), _T("Wrong Correction"), 
-							MB_OK | MB_ICONERROR);
-					}
-					else
-					{
-						data->dict->addToAutoReplace(data->word, tmp);
-						if (data->hwndParent != NULL)
-							SendMessage(data->hwndParent, WMU_DICT_CHANGED, 0, 0);
-
-						DestroyWindow(hwndDlg);
-					}
-
-					break;
-				}
-				case IDCANCEL:
-				{
- 					DestroyWindow(hwndDlg);
-					break;
-				}
-			}
-			break;
-
-		case WM_CLOSE:
-			DestroyWindow(hwndDlg);
-			break;
-
-		case WM_DESTROY:
-			AddReplacementData *data = (AddReplacementData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-			mir_free(data->word);
-			free(data);
-			break;
-	}
-	
-	return FALSE;
-}
-
-
-void AddReplaceDialog(Dictionary *dict, TCHAR *word, HWND hwndParent) 
-{
-	AddReplacementData *data = (AddReplacementData *) malloc(sizeof(AddReplacementData));
-	data->dict = dict;
-	data->word = mir_tstrdup(word);
-	data->hwndParent = hwndParent;
-
-	HWND hwnd = CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_ADD_REPLACEMENT), hwndParent, DlgProcAddReplacement, (LPARAM) data);
-	SetForegroundWindow(hwnd);
-	SetFocus(hwnd);
-	ShowWindow(hwnd, SW_SHOW);
 }
 
 
