@@ -32,8 +32,9 @@ AutoReplacement::AutoReplacement(const TCHAR *replace, BOOL useVariables)
 }
 
 
-AutoReplaceMap::AutoReplaceMap(TCHAR *aFilename)
+AutoReplaceMap::AutoReplaceMap(TCHAR *aFilename, Dictionary *dict)
 {
+	this->dict = dict;
 	lstrcpyn(filename, aFilename, MAX_REGS(filename));
 	loadAutoReplaceMap();
 }
@@ -128,6 +129,18 @@ void AutoReplaceMap::writeAutoReplaceMap()
 }
 
 
+BOOL AutoReplaceMap::isWordChar(TCHAR c)
+{
+	if (IsNumber(c))
+		return TRUE;
+
+	if (_tcschr(_T("-_.!@#$%&*()[]{}<>:?/\\=+"), c) != NULL)
+		return TRUE;
+
+	return dict->isWordChar(c);
+}
+
+
 TCHAR * AutoReplaceMap::autoReplace(const TCHAR * word)
 {
 	scoped_free<TCHAR> from = _tcslwr(_tcsdup(word));
@@ -172,11 +185,24 @@ TCHAR * AutoReplaceMap::autoReplace(const TCHAR * word)
 	}
 }
 
+TCHAR * AutoReplaceMap::filterText(const TCHAR *find)
+{
+	TCHAR *ret = _tcsdup(find);
+	int len = lstrlen(ret);
+	int pos = 0;
+	for(int i = 0; i < len; i++)
+		if (isWordChar(find[i]))
+			ret[pos++] = ret[i];
+	ret[pos] = 0;
+	return CharLower(ret);
+}
+
 void AutoReplaceMap::add(const TCHAR * aFrom, const TCHAR * to, BOOL useVariables)
 {
-	scoped_free<TCHAR> from = CharLower(_tcsdup(aFrom));
+	scoped_free<TCHAR> from = filterText(aFrom);
 
 	replacements[from.get()] = AutoReplacement(to, useVariables);
+
 	writeAutoReplaceMap();
 }
 
@@ -192,7 +218,7 @@ void AutoReplaceMap::setMap(const map<tstring, AutoReplacement> &replacements)
 	map<tstring, AutoReplacement>::const_iterator it = replacements.begin();
 	for(; it != replacements.end(); it++)
 	{
-		scoped_free<TCHAR> from = CharLower(_tcsdup(it->first.c_str()));
+		scoped_free<TCHAR> from = filterText(it->first.c_str());
 		this->replacements[from.get()] = it->second;
 	}
 
