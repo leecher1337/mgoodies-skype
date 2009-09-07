@@ -20,8 +20,6 @@ Boston, MA 02111-1307, USA.
 
 #include "commons.h"
 
-#include "options.h"
-
 
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +30,7 @@ Options opts;
 
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 static OptPageControl optionsControls[] = { 
@@ -73,6 +71,17 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.nIDBottomSimpleControl = IDC_SPELL_CHECKER;
 	odp.expertOnlyControls = optionsExpertControls;
 	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
+	ZeroMemory(&odp,sizeof(odp));
+    odp.cbSize=sizeof(odp);
+    odp.position=0;
+	odp.hInstance=hInst;
+	odp.ptszGroup = TranslateT("Message Sessions");
+	odp.ptszTitle = TranslateT("Auto-replacements");
+	odp.pfnDlgProc = AutoreplaceDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_REPLACEMENTS);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	return 0;
@@ -117,6 +126,57 @@ void LoadOptions()
 
 	if (i >= languages.getCount())
 		lstrcpy(opts.default_language, languages[0]->language);
+}
+
+
+static void DrawItem(HWND hwndDlg, LPDRAWITEMSTRUCT lpdis, Dictionary *dict) 
+{
+	TEXTMETRIC tm;
+	RECT rc;
+
+	GetTextMetrics(lpdis->hDC, &tm);
+
+	COLORREF clrfore = SetTextColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHTTEXT:COLOR_WINDOWTEXT));
+	COLORREF clrback = SetBkColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHT:COLOR_WINDOW));
+
+	FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+
+	rc.left = lpdis->rcItem.left + 2;
+
+	// Draw icon
+	if (opts.use_flags)
+	{
+		HICON hFlag = IcoLib_LoadIcon(dict);
+
+		rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
+		DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
+
+		rc.left += ICON_SIZE + 4;
+		
+		IcoLib_ReleaseIcon(hFlag);
+	}
+
+	// Draw text
+	rc.right = lpdis->rcItem.right - 2;
+	rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2;
+	rc.bottom = rc.top + tm.tmHeight;
+	DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
+
+	// Restore old colors
+	SetTextColor(lpdis->hDC, clrfore);
+	SetBkColor(lpdis->hDC, clrback);
+}
+
+
+static void MeasureItem(HWND hwndDlg, LPMEASUREITEMSTRUCT lpmis)
+{
+	TEXTMETRIC tm;
+	GetTextMetrics(GetDC(hwndDlg), &tm);
+
+	if (opts.use_flags)
+		lpmis->itemHeight = max(ICON_SIZE, tm.tmHeight);
+	else
+		lpmis->itemHeight = tm.tmHeight;
 }
 
 
@@ -189,41 +249,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				break;
 
 			Dictionary *dict = (Dictionary *) lpdis->itemData;
-
-			TEXTMETRIC tm;
-			RECT rc;
-
-			GetTextMetrics(lpdis->hDC, &tm);
-
-			COLORREF clrfore = SetTextColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHTTEXT:COLOR_WINDOWTEXT));
-			COLORREF clrback = SetBkColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHT:COLOR_WINDOW));
-
-			FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
-
-			rc.left = lpdis->rcItem.left + 2;
-
-			// Draw icon
-			if (opts.use_flags)
-			{
-				HICON hFlag = IcoLib_LoadIcon(dict);
-
-				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
-				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
-
-				rc.left += ICON_SIZE + 4;
-				
-				IcoLib_ReleaseIcon(hFlag);
-			}
-
-			// Draw text
-			rc.right = lpdis->rcItem.right - 2;
-			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2;
-			rc.bottom = rc.top + tm.tmHeight;
-			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
-
-			// Restore old colors
-			SetTextColor(lpdis->hDC, clrfore);
-			SetBkColor(lpdis->hDC, clrback);
+			
+			DrawItem(hwndDlg, lpdis, dict);
 
 			return TRUE;
 		}
@@ -234,19 +261,304 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if(lpmis->CtlID != IDC_DEF_LANG) 
 				break;
 
-			TEXTMETRIC tm;
-			GetTextMetrics(GetDC(hwndDlg), &tm);
+			MeasureItem(hwndDlg, lpmis);
 
-			if (opts.use_flags)
-				lpmis->itemHeight = max(ICON_SIZE, tm.tmHeight);
-			else
-				lpmis->itemHeight = tm.tmHeight;
 				
 			return TRUE;
 		}
 	}
 
 	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+
+struct AutoreplaceData
+{
+	Dictionary *dict;
+	map<tstring, AutoReplacement> autoReplaceMap;
+	BOOL initialized;
+	BOOL changed;
+
+	AutoreplaceData(Dictionary *dict) : dict(dict), initialized(FALSE), changed(FALSE) {}
+
+	void RemoveWord(const TCHAR *aWord)
+	{
+		 map<tstring,AutoReplacement>::iterator it = autoReplaceMap.find(aWord);
+		 if (it != autoReplaceMap.end())
+			 autoReplaceMap.erase(it);
+		 changed = TRUE;
+	}
+
+	void AddWord(const TCHAR *find, const TCHAR *replace, BOOL useVars)
+	{
+		autoReplaceMap[find] = AutoReplacement(replace, useVars);
+		changed = TRUE;
+	}
+};
+
+
+static void EnableDisableCtrls(HWND hwndDlg)
+{
+	HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT), ListView_GetSelectedCount(hList) == 1);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVE), ListView_GetSelectedCount(hList) > 0);
+}
+
+
+static void LoadReplacements(HWND hwndDlg)
+{
+	HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+
+	ListView_DeleteAllItems(hList);
+	ListView_SetItemCount(hList, 0);
+
+	int sel = SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETCURSEL, 0, 0);
+	if (sel < 0)
+		return;
+
+	AutoreplaceData *data = (AutoreplaceData *) SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETITEMDATA, sel, 0);
+	if (!data->initialized)
+	{
+		data->dict->autoReplace->copyMap(&data->autoReplaceMap);
+		data->initialized = TRUE;
+	}
+
+	map<tstring,AutoReplacement>::iterator it = data->autoReplaceMap.begin();
+	for(int i = 0; it != data->autoReplaceMap.end(); it++, i++)
+	{
+		LVITEM item = {0};
+		item.mask = LVIF_TEXT | LVIF_PARAM;
+		item.iItem = i;
+		item.iSubItem = 0;
+		item.pszText = (TCHAR *) it->first.c_str();
+		item.cchTextMax = it->first.length();
+		item.lParam = i;
+		
+		ListView_InsertItem(hList, &item);
+
+		ListView_SetItemText(hList, i, 1, (TCHAR *) it->second.replace.c_str());
+	}
+
+	EnableDisableCtrls(hwndDlg);
+}
+
+
+static void SaveNewReplacements(BOOL canceled, Dictionary *dict, 
+								const TCHAR *find, const TCHAR *replace, BOOL useVariables, 
+								const TCHAR *original_find, void *param)
+{
+	if (canceled)
+		return;
+
+	AutoreplaceData *data = (AutoreplaceData *) param;
+
+	if (lstrlen(original_find) > 0)
+		data->RemoveWord(original_find);
+
+	data->AddWord(find, replace, useVariables);
+}
+
+
+static void ShowAddReplacement(HWND hwndDlg, int item = -1)
+{
+	int sel = SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETCURSEL, 0, 0);
+	if (sel < 0)
+		return;
+
+	AutoreplaceData *data = (AutoreplaceData *) SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETITEMDATA, sel, 0);
+
+	TCHAR find[256];
+	const TCHAR *replace = NULL;
+	BOOL useVariables = FALSE;
+
+	if (item < 0)
+	{
+		find[0] = 0;
+	}
+	else
+	{
+		ListView_GetItemText(GetDlgItem(hwndDlg, IDC_REPLACEMENTS), item, 0, find, MAX_REGS(find));
+	}
+
+	if (lstrlen(find) > 0)
+	{
+		AutoReplacement &ar = data->autoReplaceMap[find];
+		replace = ar.replace.c_str();
+		useVariables = ar.useVariables;
+	}
+
+	if (ShowAutoReplaceDialog(hwndDlg, TRUE, data->dict, find, replace, useVariables,
+							  FALSE, &SaveNewReplacements, data))
+	{
+		LoadReplacements(hwndDlg);
+		SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+	}
+	
+	EnableDisableCtrls(hwndDlg);
+}
+
+
+static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			int sel = -1;
+			for(int i = 0; i < languages.getCount(); i++)
+			{
+				SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_ADDSTRING, 0, (LONG) languages[i]->full_name);
+				SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_SETITEMDATA, i, (DWORD) new AutoreplaceData(languages[i]));
+
+				if (lstrcmp(opts.default_language, languages[i]->language) == 0)
+					sel = i;
+			}
+			SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_SETCURSEL, sel, 0);
+
+			HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+
+			ListView_SetExtendedListViewStyle(hList, ListView_GetExtendedListViewStyle(hList) | LVS_EX_FULLROWSELECT);
+
+			LVCOLUMN col = {0};
+			col.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT ; 
+			col.fmt = LVCFMT_LEFT;
+			col.cx = 175;
+			col.pszText = TranslateT("Wrong word");
+			col.cchTextMax = lstrlen(col.pszText);
+			ListView_InsertColumn(hList, 0, &col);
+
+			col.pszText = TranslateT("Correction");
+			col.cchTextMax = lstrlen(col.pszText);
+			ListView_InsertColumn(hList, 1, &col);
+
+			LoadReplacements(hwndDlg);
+
+			break;
+		}
+
+		case WM_COMMAND:
+		{
+			if (LOWORD(wParam) == IDC_LANGUAGE && HIWORD(wParam) == CBN_SELCHANGE)
+			{
+				LoadReplacements(hwndDlg);
+			}
+			else if (LOWORD(wParam) == IDC_ADD)
+			{
+				ShowAddReplacement(hwndDlg);
+			}
+			else if (LOWORD(wParam) == IDC_EDIT)
+			{
+				HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+				if (ListView_GetSelectedCount(hList) != 1)
+					break;
+
+				int sel = SendMessage(hList, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+				if (sel < 0)
+					break;
+
+				ShowAddReplacement(hwndDlg, sel);
+			}
+			else if (LOWORD(wParam) == IDC_REMOVE)
+			{
+				HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+
+				int sel = SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETCURSEL, 0, 0);
+				if (sel < 0)
+					break;
+
+				AutoreplaceData *data = (AutoreplaceData *) SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETITEMDATA, sel, 0);
+
+				BOOL changed = FALSE;
+
+				sel = SendMessage(hList, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+				while(sel >= 0)
+				{
+					TCHAR tmp[256];
+					ListView_GetItemText(hList, sel, 0, tmp, MAX_REGS(tmp));
+
+					data->RemoveWord(tmp);
+					changed = TRUE;
+
+					sel = SendMessage(hList, LVM_GETNEXTITEM, sel, LVNI_SELECTED);
+				}
+
+				if (changed)
+				{
+					LoadReplacements(hwndDlg);
+					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+				}
+			}
+
+			break;
+		}
+
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY && languages.getCount() > 0)
+			{
+				for(int i = 0; i < languages.getCount(); i++)
+				{
+					AutoreplaceData *data = (AutoreplaceData *) SendDlgItemMessage(hwndDlg, IDC_LANGUAGE, CB_GETITEMDATA, i, 0);
+					if (data->changed)
+					{
+						data->dict->autoReplace->setMap(data->autoReplaceMap);
+						data->changed = FALSE;
+					}
+				}
+			}
+			else if (lpnmhdr->idFrom == IDC_REPLACEMENTS)
+			{
+				HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
+
+				switch(lpnmhdr->code)
+				{
+					case LVN_ITEMCHANGED:
+					case NM_CLICK:
+						EnableDisableCtrls(hwndDlg);
+						break;
+
+					case NM_DBLCLK:
+						LPNMITEMACTIVATE lpnmitem = (LPNMITEMACTIVATE) lParam;
+						if (lpnmitem->iItem >= 0)
+							ShowAddReplacement(hwndDlg, lpnmitem->iItem);
+						break;
+				}
+			}
+			
+			break;
+		}
+
+		case WM_DRAWITEM:
+		{
+			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+			if(lpdis->CtlID != IDC_LANGUAGE) 
+				break;
+			if(lpdis->itemID == -1) 
+				break;
+
+			AutoreplaceData *data = (AutoreplaceData *) lpdis->itemData;
+			
+			DrawItem(hwndDlg, lpdis, data->dict);
+
+			return TRUE;
+		}
+
+		case WM_MEASUREITEM:
+		{
+			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
+			if(lpmis->CtlID != IDC_LANGUAGE) 
+				break;
+
+			MeasureItem(hwndDlg, lpmis);
+
+				
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 

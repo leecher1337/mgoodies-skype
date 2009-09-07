@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA.
 #include <richedit.h>
 #include <tom.h>
 #include <richole.h>
-
+#include <commctrl.h>
 
 // Disable "...truncated to '255' characters in the debug information" warnings
 #pragma warning(disable: 4786)
@@ -61,19 +61,21 @@ using namespace std;
 #include <m_message.h>
 #include <m_folders.h>
 #include <m_icolib.h>
+#include <m_variables.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
 #include "../utils/tstring.h"
 #include "../utils/utf8_helpers.h"
+#include "../utils/scope.h"
 
 #include "resource.h"
 #include "m_spellchecker.h"
 #include "options.h"
-
-
+#include "autoreplace.h"
 #include "dictionary.h"
+#include "ardialog.h"
 
 
 #define MODULE_NAME		"SpellChecker"
@@ -82,6 +84,8 @@ using namespace std;
 // Global Variables
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
+extern BOOL uinfoex_enabled;
+extern BOOL variables_enabled;
 
 
 #define MAX_REGS(_A_)	( sizeof(_A_) / sizeof(_A_[0]) )
@@ -135,7 +139,10 @@ struct Dialog
 
 HICON IcoLib_LoadIcon(Dictionary *dict, BOOL copy = FALSE);
 
+BOOL CenterParent(HWND hwnd);
 BOOL CreatePath(const TCHAR *path);
-
+TCHAR *lstrtrim(TCHAR *str);
+BOOL lstreq(TCHAR *a, TCHAR *b, size_t len = -1);
+BOOL IsNumber(TCHAR c);
 
 #endif // __COMMONS_H__

@@ -22,8 +22,6 @@ Boston, MA 02111-1307, USA.
 # define __OPTIONS_H__
 
 
-#include <windows.h>
-
 #define POPUP_ACTION_DONOTHING 0
 #define POPUP_ACTION_CLOSEPOPUP 1
 #define POPUP_ACTION_OPENHISTORY 2

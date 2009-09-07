@@ -9,6 +9,7 @@
 #define IDI_CHECK                       123
 #define IDI_UNKNOWN_FLAG                124
 #define IDD_ADD_REPLACEMENT             125
+#define IDD_REPLACEMENTS                126
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -27,6 +28,7 @@
 #define IDC_POPUPS                      1060
 #define IDC_AUTOCORRECT                 1060
 #define IDC_AUTO_DICT                   1060
+#define IDC_VARIABLES                   1060
 #define IDC_CHECK2                      1061
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
@@ -64,6 +66,13 @@
 #define IDC_SPELL_CHECKER               1080
 #define IDC_NEW                         1082
 #define IDC_OLD                         1083
+#define IDC_REPLACEMENTS                1084
+#define IDC_REMOVE                      1085
+#define IDC_ADD                         1086
+#define IDC_LANGUAGE                    1087
+#define IDC_EDIT                        1088
+#define IDC_VAR_HELP                    1088
+#define IDC_OLD_PS                      1089
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -74,7 +83,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40005
-#define _APS_NEXT_CONTROL_VALUE         1084
+#define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
