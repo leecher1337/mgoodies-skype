@@ -93,8 +93,8 @@ static LRESULT CALLBACK OnlyCharsEditProc(HWND hwnd, UINT msg, WPARAM wParam, LP
 				break;
 
 			TCHAR c = (TCHAR) wParam;
-			if (!data->dict->isWordChar(c) && !IsNumber(c))
-				return 0;
+			if (!data->dict->autoReplace->isWordChar(c))
+				return 1;
 
 			TCHAR tmp[2] = { c, 0 };
 			CharLower(tmp);
@@ -113,17 +113,8 @@ static LRESULT CALLBACK OnlyCharsEditProc(HWND hwnd, UINT msg, WPARAM wParam, LP
 		{
 			TCHAR text[256];
 			GetWindowText(hwnd, text, MAX_REGS(text));
-			lstrtrim(text);
 
-			TCHAR dest[256];
-			int size = lstrlen(text);
-			int pos = 0;
-			for(int i = 0; i < size; i++)
-				if (data->dict->isWordChar(text[i]))
-					dest[pos++] = text[i];
-			dest[pos] = 0;
-			CharLower(dest);
-
+			scoped_free<TCHAR> dest = data->dict->autoReplace->filterText(text);
 			SetWindowText(hwnd, dest);
 			break;
 		}

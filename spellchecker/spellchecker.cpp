@@ -112,6 +112,7 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ModifyIcon(Dialog *dlg);
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
+int ReplaceWordOnStopedRE(Dialog *dlg, CHARRANGE &sel, CHARRANGE &old_sel, TCHAR *new_word);
 
 int GetClosestLanguage(TCHAR *lang_name);
 
@@ -435,7 +436,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.ar"), customDictionariesFolder, dict->language);
-		dict->autoReplace = new AutoReplaceMap(filename);
+		dict->autoReplace = new AutoReplaceMap(filename, dict);
 
 		if (lstrcmp(dict->language, opts.default_language) == 0)
 			dict->load();
@@ -604,80 +605,12 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 	text[size] = _T('\0');
 }
 
-// Helper to avoid copy and pastle
-void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
-			 CHARRANGE &old_sel, int &diff,
-			 FoundWrongWordCallback callback, void *param)
-{
-	text[pos] = _T('\0');
-
-	// Is it upper?
-	BOOL upper = FALSE;
-	if (opts.ignore_uppercase)
-	{
-		upper = TRUE;
-		for(int i = last_pos; i < pos && upper; i++)
-			upper = IsCharUpper(text[i]);
-	}
-
-	// Is it correct?
-	BOOL correct = upper || dlg->lang->spell(&text[last_pos]);
-
-	CHARRANGE sel = { first_char + last_pos + diff, first_char + pos + diff };
-
-	// Has to auto-correct?
-	if (opts.auto_replace_dict || opts.auto_replace_user)
-	{
-		TCHAR *word = NULL;
-
-		if (opts.auto_replace_user)
-			word = dlg->lang->autoReplace->autoReplace(&text[last_pos]);
-
-		if (opts.auto_replace_dict && word == NULL && !correct)
-			word = dlg->lang->autoSuggestOne(&text[last_pos]);
-
-		if (word != NULL)
-		{
-			// Replace in rich edit
-			SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
-
-			RESUME_UNDO(dlg);
-
-			SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) word);
-
-			SUSPEND_UNDO(dlg);
-
-			// Fix old sel
-			int dif = lstrlen(word) - sel.cpMax + sel.cpMin;
-			if (old_sel.cpMin >= sel.cpMax)
-				old_sel.cpMin += dif;
-			if (old_sel.cpMax >= sel.cpMax)
-				old_sel.cpMax += dif;
-			diff += dif;
-
-			free(word);
-
-			return;
-		}
-	}
-
-
-	if (correct)
-		return;
-
-	// Mark
-	SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
-
-	dlg->markedSomeWord = TRUE;
-		
-	if (callback != NULL)
-		callback(&text[last_pos], sel, param);
-}
 
 BOOL IsNumber(TCHAR c)
 {
 	return c >= '0' && c <= '9';
 }
+
 
 BOOL IsURL(TCHAR c)
 {
@@ -692,6 +625,7 @@ BOOL IsURL(TCHAR c)
 		|| c == _T('@') || c == _T('#');
 }
 
+
 int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 {
 	int num_slashes = 0;
@@ -699,10 +633,6 @@ int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 	int num_dots = 0;
 
 	int i = start_pos;
-
-	for(; i >= 0 && (IsURL(text[i]) || dlg->lang->isWordChar(text[i])); i--) ;
-
-	i++;
 
 	for(; IsURL(text[i]) || dlg->lang->isWordChar(text[i]); i++) 
 	{
@@ -726,6 +656,217 @@ int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 }
 
 
+class TextParser
+{
+public:
+	virtual ~TextParser() {}
+
+	/// @return true when finished an word
+	virtual bool feed(int pos, TCHAR c) =0;
+	virtual int getFirstCharPos() =0;
+	virtual void reset() =0;
+	virtual void deal(const TCHAR *text, bool *mark, bool *replace, TCHAR **replacement) =0;
+};
+
+
+class SpellParser : public TextParser
+{
+	Dictionary *dict;
+	int last_pos;
+	BOOL found_real_char;
+
+public:
+	SpellParser(Dictionary *dict) : dict(dict) 
+	{ 
+		reset(); 
+	}
+
+	void reset()
+	{
+		last_pos = -1;
+		found_real_char = FALSE;
+	}
+
+	bool feed(int pos, TCHAR c)
+	{
+		// Is inside a word?
+		if (dict->isWordChar(c) || IsNumber(c))
+		{
+			if (last_pos == -1)
+				last_pos = pos;
+
+			if (c != _T('-') && !IsNumber(c))
+				found_real_char = TRUE;
+
+			return false;
+		}
+
+		if (!found_real_char)
+			last_pos = -1;
+
+		return (last_pos != -1);
+	}
+
+	int getFirstCharPos()
+	{
+		if (!found_real_char)
+			return -1;
+		else
+			return last_pos;
+	}
+
+	void deal(const TCHAR *text, bool *mark, bool *replace, TCHAR **replacement)
+	{
+		// Is it correct?
+		if (dict->spell(text))
+			return;
+
+		// Has to auto-correct?
+		if (opts.auto_replace_dict)
+		{
+			*replacement = dict->autoSuggestOne(text);
+			if (*replacement != NULL)
+			{
+				*replace = true;
+				return;
+			}
+		}
+
+		*mark = true;
+	}
+};
+
+
+class AutoReplaceParser : public TextParser
+{
+	AutoReplaceMap *ar;
+	int last_pos;
+
+public:
+	AutoReplaceParser(AutoReplaceMap *ar) : ar(ar) 
+	{ 
+		reset(); 
+	}
+
+	void reset()
+	{
+		last_pos = -1;
+	}
+
+	bool feed(int pos, TCHAR c)
+	{
+		// Is inside a word?
+		if (ar->isWordChar(c))
+		{
+			if (last_pos == -1)
+				last_pos = pos;
+			return false;
+		}
+
+		return (last_pos != -1);
+	}
+
+	int getFirstCharPos()
+	{
+		return last_pos;
+	}
+
+	void deal(const TCHAR *text, bool *mark, bool *replace, TCHAR **replacement)
+	{
+		*replacement = ar->autoReplace(text);
+		if (*replacement != NULL)
+			*replace = true;
+	}
+};
+
+void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
+				   BOOL check_all, CHARRANGE &old_sel, 
+				   FoundWrongWordCallback callback, void *param)
+{
+	int first_char;
+	TCHAR text[1024];
+
+	GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+	int len = lstrlen(text);
+
+	// Now lets get the words
+	for (int pos = 0; pos < len; pos++)
+	{
+		int p = FindURLEnd(dlg, text, pos) - 1;
+		if (p > pos)
+		{
+			pos = p;
+			continue;
+		}
+
+		TCHAR c = text[pos];
+
+		if (!parser->feed(pos, c))
+		{
+			if (pos >= len-1)
+				pos = len; // To check the last block
+			else
+				continue;
+		}
+
+		int last_pos = parser->getFirstCharPos();
+		parser->reset();
+
+		if (last_pos < 0)
+			continue;
+
+		// We found a word
+		CHARRANGE sel = { first_char + last_pos, first_char + pos };
+
+		// Is under cursor?
+		if (!check_all && sel.cpMin <= old_sel.cpMax && sel.cpMax >= old_sel.cpMin)
+			continue;
+
+		// Is it upper?
+		if (opts.ignore_uppercase)
+		{
+			BOOL upper = TRUE;
+			for(int i = last_pos; i < pos && upper; i++)
+				upper = IsCharUpper(text[i]);
+			if (upper)
+				continue;
+		}
+
+		text[pos] = 0;
+
+		bool mark = false;
+		bool replace = false;
+		TCHAR *replacement = NULL;
+		parser->deal(&text[last_pos], &mark, &replace, &replacement);
+
+		if (replace)
+		{
+			// Replace in rich edit
+			int dif = ReplaceWordOnStopedRE(dlg, sel, old_sel, replacement);
+			if (dif != 0)
+			{
+				pos += dif;
+
+				// Read line again
+				GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+				len = lstrlen(text);
+			}
+
+			free(replacement);
+		}
+		else if (mark)
+		{
+			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
+
+			dlg->markedSomeWord = TRUE;
+				
+			if (callback != NULL)
+				callback(&text[last_pos], sel, param);
+		}
+	}
+}
+
+
 // Checks for errors in all text
 void CheckText(Dialog *dlg, BOOL check_all, 
 			   FoundWrongWordCallback callback = NULL, void *param = NULL)
@@ -745,82 +886,19 @@ void CheckText(Dialog *dlg, BOOL check_all,
 			lines = min(lines, current_line + 2);
 		}
 
-		TCHAR text[1024];
 		for(; line < lines; line++) 
 		{
-			int first_char;
-
-			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
-			int len = lstrlen(text);
+			int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+			int len = SendMessage(dlg->hwnd, EM_LINELENGTH, (WPARAM) first_char, 0);
 
 			SetNoUnderline(dlg->hwnd, first_char, first_char + len);
 
-			// Now lets get the words
-			int last_pos = -1;
-			BOOL found_real_char = FALSE;
-			int pos;
-			for (pos = 0; pos < len; pos++)
-			{
-				TCHAR c = text[pos];
+			if (opts.auto_replace_user)
+				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), check_all,
+							  __old_sel, callback, param);
 
-				// Is inside a word?
-				if (dlg->lang->isWordChar(c) || IsNumber(c))
-				{
-					if (last_pos == -1)
-						last_pos = pos;
-
-					if (c != _T('-') && !IsNumber(c))
-						found_real_char = TRUE;
-
-					if (pos >= len-1)
-						// Move to the end to process one last time
-						pos = len;
-					else
-						continue;
-				}
-
-				if (!found_real_char)
-				{
-					last_pos = -1;
-					continue;
-				}
-
-				// We found a word
-
-				// Is this an URL?
-				int p = FindURLEnd(dlg, text, last_pos);
-				if (p >= pos)
-				{
-					pos = p;
-					found_real_char = FALSE;
-					last_pos = -1;
-					continue;
-				}
-
-				// Is under cursor?
-				if (!check_all && first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin)
-				{
-					found_real_char = FALSE;
-					last_pos = -1;
-					continue;
-				}
-
-				int diff = 0;
-				DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
-
-				if (diff != 0)
-				{
-					pos += diff;
-
-					// Read line again
-					GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
-					len = lstrlen(text);
-					SetNoUnderline(dlg->hwnd, first_char + pos + 1, first_char + len);
-				}
-
-				last_pos = -1;
-				found_real_char = FALSE;
-			}
+			CheckTextLine(dlg, line, &SpellParser(dlg->lang), check_all,
+						  __old_sel, callback, param);
 		}
 	}
 
@@ -1420,10 +1498,8 @@ int RemoveContactTextBox(HWND hwnd)
 }
 
 
-void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
+int ReplaceWordOnStopedRE(Dialog *dlg, CHARRANGE &sel, CHARRANGE &old_sel, TCHAR *new_word)
 {
-	STOP_RICHEDIT(dlg);
-
 	// Replace in rich edit
 	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
 
@@ -1435,10 +1511,20 @@ void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
 
 	// Fix old sel
 	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
-	if (__old_sel.cpMin >= sel.cpMax)
-		__old_sel.cpMin += dif;
-	if (__old_sel.cpMax >= sel.cpMax)
-		__old_sel.cpMax += dif;
+	if (old_sel.cpMin >= sel.cpMax)
+		old_sel.cpMin += dif;
+	if (old_sel.cpMax >= sel.cpMax)
+		old_sel.cpMax += dif;
+
+	return dif;
+}
+
+
+void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
+{
+	STOP_RICHEDIT(dlg);
+
+	ReplaceWordOnStopedRE(dlg, sel, __old_sel, new_word);
 
 	START_RICHEDIT(dlg);
 }

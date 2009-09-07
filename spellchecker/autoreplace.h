@@ -32,19 +32,24 @@ struct AutoReplacement
 };
 
 
+class Dictionary;
+
 
 class AutoReplaceMap 
 {
 private:
 	TCHAR filename[1024];
+	Dictionary *dict;
 	map<tstring, AutoReplacement> replacements;
 
 	void loadAutoReplaceMap();
 	void writeAutoReplaceMap();
 
-
 public:
-	AutoReplaceMap(TCHAR *filename);
+	AutoReplaceMap(TCHAR *filename, Dictionary *dict);
+
+	TCHAR *filterText(const TCHAR *find);
+	BOOL isWordChar(TCHAR c);
 
 	/// Return an auto replacement to a word or NULL if none exists.
 	/// You have to free the item.

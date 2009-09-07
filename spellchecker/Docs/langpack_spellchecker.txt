@@ -50,6 +50,8 @@
 [Add auto-replace word]
 [Wrong word:]
 [Correction:]
+[No separators and all lowercase chars]
+[Use variables in correction]
 [The wrong word can't be empty!]
 [The correction can't be empty!]
 [The correction can't be the equal to the wrong word!]
