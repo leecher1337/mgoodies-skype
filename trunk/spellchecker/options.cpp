@@ -63,8 +63,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Message Sessions");
-	odp.ptszTitle = TranslateT("Spell Checker");
+	odp.ptszGroup = _T("Message Sessions");
+	odp.ptszTitle = _T("Spell Checker");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
@@ -77,8 +77,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Message Sessions");
-	odp.ptszTitle = TranslateT("Auto-replacements");
+	odp.ptszGroup = _T("Message Sessions");
+	odp.ptszTitle = _T("Auto-replacements");
 	odp.pfnDlgProc = AutoreplaceDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_REPLACEMENTS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;

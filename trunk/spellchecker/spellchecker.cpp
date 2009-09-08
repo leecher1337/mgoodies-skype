@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,1,3,0),
+	PLUGIN_MAKE_VERSION(0,2,0,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
@@ -56,8 +56,8 @@ static IconStruct iconList[] =
 };
 
 #define TIMER_ID 17982
-#define WMU_DICT_CHANGED (WM_USER+1)
-#define WMU_KBDL_CHANGED (WM_USER+2)
+#define WMU_DICT_CHANGED (WM_USER+100)
+#define WMU_KBDL_CHANGED (WM_USER+101)
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
@@ -316,20 +316,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
     // Folders plugin support
 	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
 	{
-		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
-					Translate("Dictionaries"), 
+		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Dictionaries", 
 					_T(MIRANDA_PATH) _T("\\Dictionaries"));
 
 		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
 
-		hCustomDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
-					Translate("Custom Dictionaries"), 
+		hCustomDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Custom Dictionaries", 
 					_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Dictionaries"));
 
 		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
 		
-		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
-					Translate("Flags DLL"), 
+		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Flags DLL", 
 					_T(MIRANDA_PATH) _T("\\Icons"));
 
 		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
@@ -356,12 +353,12 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	SKINICONDESC sid = {0};
 	sid.cbSize = sizeof(SKINICONDESC);
 	sid.flags = SIDF_TCHAR;
-	sid.ptszSection = TranslateT("Spell Checker");
+	sid.ptszSection = _T("Spell Checker");
 	sid.pszDefaultFile = path;
 
 	for (unsigned i = 0; i < MAX_REGS(iconList); ++i)
 	{
-		sid.ptszDescription = TranslateTS(iconList[i].szDescr);
+		sid.ptszDescription = iconList[i].szDescr;
 		sid.pszName = iconList[i].szName;
 		sid.iDefaultIndex = -iconList[i].defIconID;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
@@ -381,7 +378,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		HMODULE hFlagsDll = LoadLibrary(flag_file);
 
 		sid.flags = SIDF_TCHAR | SIDF_SORTED;
-		sid.ptszSection = TranslateT("Languages/Flags");
+		sid.ptszSection = _T("Languages/Flags");
 
 		// Get language flags
 		for(int i = 0; i < languages.getCount(); i++)
@@ -848,8 +845,12 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 				pos += dif;
 
 				// Read line again
+				int old_first_char = first_char;
 				GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
 				len = lstrlen(text);
+				pos += old_first_char - first_char;
+
+				pos = max(-1, pos);
 			}
 
 			free(replacement);
@@ -986,7 +987,7 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		// Schedule to re-parse
 		KillTimer(dlg->hwnd, TIMER_ID);
-		SetTimer(dlg->hwnd, TIMER_ID, 10, NULL);
+		SetTimer(dlg->hwnd, TIMER_ID, 100, NULL);
 
 		dlg->changed = TRUE;
 		dlg->markedSomeWord = FALSE;
@@ -1115,7 +1116,6 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				
 				LoadDictFromKbdl(dlg);
 			}
-
 			break;
 		}
 
@@ -1416,6 +1416,9 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 			ModifyIcon(dlg);
 		}
 
+		if (dlg->lang != NULL)
+			dlg->lang->load();
+
 		SetTimer(hwnd, TIMER_ID, 1000, NULL);
 	}
 
@@ -1511,10 +1514,16 @@ int ReplaceWordOnStopedRE(Dialog *dlg, CHARRANGE &sel, CHARRANGE &old_sel, TCHAR
 
 	// Fix old sel
 	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
+	
 	if (old_sel.cpMin >= sel.cpMax)
 		old_sel.cpMin += dif;
+	else if (old_sel.cpMin >= sel.cpMax + dif)
+		old_sel.cpMin = sel.cpMax + dif;
+
 	if (old_sel.cpMax >= sel.cpMax)
 		old_sel.cpMax += dif;
+	else if (old_sel.cpMax >= sel.cpMax + dif)
+		old_sel.cpMax = sel.cpMax + dif;
 
 	return dif;
 }
@@ -1652,9 +1661,13 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 
 	InsertMenu(data.hReplaceSubMenu, 0, MF_BYPOSITION, 
 			base + AUTOREPLACE_MENU_ID_BASE + suggestions.count, TranslateT("Other..."));
-	for (int i = suggestions.count - 1; i >= 0; i--) 
-		InsertMenu(data.hReplaceSubMenu, 0, MF_BYPOSITION, 
-				base + AUTOREPLACE_MENU_ID_BASE + i, suggestions.words[i]);
+	if (suggestions.count > 0)
+	{
+		InsertMenu(data.hReplaceSubMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+		for (int i = suggestions.count - 1; i >= 0; i--) 
+			InsertMenu(data.hReplaceSubMenu, 0, MF_BYPOSITION, 
+					base + AUTOREPLACE_MENU_ID_BASE + i, suggestions.words[i]);
+	}
 
 	AppendSubmenu(hMenu, data.hReplaceSubMenu, TranslateT("Always replace with"));
 
@@ -1778,7 +1791,7 @@ static void AddWordToDictCallback(BOOL canceled, Dictionary *dict,
 
 	HWND hwndParent = (HWND) param;
 	if (hwndParent != NULL)
-		SendMessage(hwndParent, WMU_DICT_CHANGED, 0, 0);
+		PostMessage(hwndParent, WMU_DICT_CHANGED, 0, 0);
 }
 
 
@@ -1858,8 +1871,9 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 			selection -= AUTOREPLACE_MENU_ID_BASE;
 
 			if (selection == data.suggestions.count)
-			{
-				ShowAutoReplaceDialog(dlg->hwnd, FALSE, dlg->lang, data.word, NULL, FALSE,
+			{				
+				ShowAutoReplaceDialog(dlg->hwnd_owner != NULL ? dlg->hwnd_owner : dlg->hwnd, FALSE, 
+									  dlg->lang, data.word, NULL, FALSE,
 									  TRUE, &AddWordToDictCallback, dlg->hwnd);
 			}
 			else

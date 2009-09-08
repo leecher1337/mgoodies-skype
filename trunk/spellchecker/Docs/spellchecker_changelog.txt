@@ -4,9 +4,10 @@ Changelog:
 
 . 0.2.0.0
   + Allow editing of auto-replacements
-  + Allows variables in auto-replacements
+  + Allow variables in auto-replacements
   + Better handling of URLs
   * Fix for a lot of replacements at same line
+  PS: The auto-replacement files (*.ar) are now stored as UTF-8, so you may need to fix some old replacements
 
 . 0.1.2.0
   + Play nicer with underlines in IRC (it's not perfect)
