@@ -5,6 +5,7 @@
 
 [Message Sessions]
 [Spell Checker]
+[Auto-replacements]
 
 [Dictionaries]
 [Custom Dictionaries]
@@ -34,6 +35,10 @@
 [Use flags]
 [Use input language to select dictionary]
 
+[ Replacements ]
+[Wrong word]
+[Correction]
+
 
 ; Menu
 
@@ -47,6 +52,7 @@
 
 
 ; Add auto-replace word
+
 [Add auto-replace word]
 [Wrong word:]
 [Correction:]

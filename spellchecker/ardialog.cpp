@@ -199,7 +199,10 @@ static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			SendDlgItemMessage(hwndDlg, IDC_NEW, EM_LIMITTEXT, 256, 0);
 
 			if (data->find.length() > 0)
-				SetDlgItemText(hwndDlg, IDC_OLD, data->find.c_str());
+			{
+				scoped_free<TCHAR> tmp = data->dict->autoReplace->filterText(data->find.c_str());
+				SetDlgItemText(hwndDlg, IDC_OLD, tmp);
+			}
 			if (data->replace.length() > 0)
 				SetDlgItemText(hwndDlg, IDC_NEW, data->replace.c_str());
 
