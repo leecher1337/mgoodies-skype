@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,2,0,0),
+	PLUGIN_MAKE_VERSION(0,2,1,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
@@ -112,7 +112,6 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ModifyIcon(Dialog *dlg);
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
-int ReplaceWordOnStopedRE(Dialog *dlg, CHARRANGE &sel, CHARRANGE &old_sel, TCHAR *new_word);
 
 int GetClosestLanguage(TCHAR *lang_name);
 
@@ -126,42 +125,6 @@ typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
                 0x00,0xAA,0x00,0x47,0xBE,0x5D);
 
-#define SUSPEND_UNDO(dlg)														\
-	if (dlg->textDocument != NULL)												\
-		dlg->textDocument->Undo(tomSuspend, NULL)
-
-#define RESUME_UNDO(dlg)														\
-	if (dlg->textDocument != NULL)												\
-		dlg->textDocument->Undo(tomResume, NULL)
-
-#define	STOP_RICHEDIT(dlg)														\
-	dlg->processing = TRUE;														\
-	SUSPEND_UNDO(dlg);															\
-	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);								\
-	POINT __old_scroll_pos;														\
-	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &__old_scroll_pos);		\
-	CHARRANGE __old_sel;														\
-	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &__old_sel);				\
-	POINT __caretPos;															\
-	GetCaretPos(&__caretPos);													\
-    DWORD __old_mask = SendMessage(dlg->hwnd, EM_GETEVENTMASK, 0, 0);			\
-	SendMessage(dlg->hwnd, EM_SETEVENTMASK, 0, __old_mask & ~ENM_CHANGE);		\
-	BOOL __inverse = (__old_sel.cpMin >= LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &__caretPos)))
-
-#define START_RICHEDIT(dlg)														\
-	if (__inverse)																\
-	{																			\
-		LONG __tmp = __old_sel.cpMin;											\
-		__old_sel.cpMin = __old_sel.cpMax;										\
-		__old_sel.cpMax = __tmp;												\
-	}																			\
-	SendMessage(dlg->hwnd, EM_SETEVENTMASK, 0, __old_mask);						\
-	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &__old_sel);				\
-	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &__old_scroll_pos);		\
-	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);								\
-	InvalidateRect(dlg->hwnd, NULL, FALSE);										\
-	RESUME_UNDO(dlg);															\
-	dlg->processing = FALSE
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -536,21 +499,18 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 }
 
 
-void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE)
+void SetUnderline(Dialog *dlg, int pos_start, int pos_end)
 {
-	if (!all)
-	{
-		// Select this range
-		CHARRANGE sel = { pos_start, pos_end };
-		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &sel);
-	}
+	dlg->re->SetSel(pos_start, pos_end);
 
 	CHARFORMAT2 cf;
 	cf.cbSize = sizeof(CHARFORMAT2);
 	cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
 	cf.dwEffects = CFE_UNDERLINE;
 	cf.bUnderlineType = ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
-	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&cf);
+	dlg->re->SendMessage(EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+
+	dlg->markedSomeWord = TRUE;
 }
 
 
@@ -563,16 +523,15 @@ BOOL IsMyUnderline(const CHARFORMAT2 &cf)
 }
 
 
-void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
+void SetNoUnderline(RichEdit *re, int pos_start, int pos_end)
 {
 	for(int i = pos_start; i <= pos_end; i++)
 	{
-		CHARRANGE sel = { i, min(i+1, pos_end)  };
-		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &sel);
+		re->SetSel(i, min(i+1, pos_end));
 
 		CHARFORMAT2 cf;
 		cf.cbSize = sizeof(CHARFORMAT2);
-		SendMessage(hRichEdit, EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+		re->SendMessage(EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
 
 		if (IsMyUnderline(cf))
 		{
@@ -580,26 +539,17 @@ void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
 			cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
 			cf.dwEffects = 0;
 			cf.bUnderlineType = CFU_UNDERLINE;
-			SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+			re->SendMessage(EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
 		}
 	}
 }
 
-void SetNoUnderline(HWND hRichEdit)
+void SetNoUnderline(Dialog *dlg)
 {
-	int len = GetWindowTextLength(hRichEdit);
-	SetNoUnderline(hRichEdit, 0, len);
-}
-
-
-inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, size_t text_len)
-{
-	first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
-
-	*((WORD*)text) = text_len - 1;
-	unsigned size = (unsigned) SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
-	size = max(0, min(text_len-1, size-1));
-	text[size] = _T('\0');
+	dlg->re->Stop();
+	SetNoUnderline(dlg->re, 0, dlg->re->GetTextLength());
+	dlg->markedSomeWord = FALSE;
+	dlg->re->Start();
 }
 
 
@@ -633,7 +583,7 @@ int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 
 	for(; IsURL(text[i]) || dlg->lang->isWordChar(text[i]); i++) 
 	{
-		char c = text[i];
+		TCHAR c = text[i];
 
 		if (c == _T('\\') || c == _T('/'))
 			num_slashes++;
@@ -650,6 +600,20 @@ int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 		return -1;
 
 	return i;
+}
+
+
+int ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
+{
+	dlg->re->Stop();
+	dlg->re->ResumeUndo();
+
+	int dif = dlg->re->Replace(sel.cpMin, sel.cpMax, new_word);
+
+	dlg->re->SuspendUndo();
+	dlg->re->Start();
+
+	return dif;
 }
 
 
@@ -777,14 +741,12 @@ public:
 };
 
 void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
-				   BOOL check_all, CHARRANGE &old_sel, 
-				   FoundWrongWordCallback callback, void *param)
+				   const CHARRANGE &ignored, FoundWrongWordCallback callback, void *param)
 {
-	int first_char;
 	TCHAR text[1024];
-
-	GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+	dlg->re->GetLine(line, text, MAX_REGS(text));
 	int len = lstrlen(text);
+	int first_char = dlg->re->GetFirstCharOfLine(line);
 
 	// Now lets get the words
 	for (int pos = 0; pos < len; pos++)
@@ -815,8 +777,8 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 		// We found a word
 		CHARRANGE sel = { first_char + last_pos, first_char + pos };
 
-		// Is under cursor?
-		if (!check_all && sel.cpMin <= old_sel.cpMax && sel.cpMax >= old_sel.cpMin)
+		// Is in ignored range?
+		if (sel.cpMin <= ignored.cpMax && sel.cpMax >= ignored.cpMin)
 			continue;
 
 		// Is it upper?
@@ -839,27 +801,24 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 		if (replace)
 		{
 			// Replace in rich edit
-			int dif = ReplaceWordOnStopedRE(dlg, sel, old_sel, replacement);
+			int dif = dlg->re->Replace(sel.cpMin, sel.cpMax, replacement);
 			if (dif != 0)
 			{
-				pos += dif;
-
 				// Read line again
-				int old_first_char = first_char;
-				GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+				dlg->re->GetLine(line, text, MAX_REGS(text));
 				len = lstrlen(text);
-				pos += old_first_char - first_char;
 
-				pos = max(-1, pos);
+				int old_first_char = first_char;
+				first_char = dlg->re->GetFirstCharOfLine(line);
+
+				pos = max(-1, pos + dif + old_first_char - first_char);
 			}
 
 			free(replacement);
 		}
 		else if (mark)
 		{
-			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
-
-			dlg->markedSomeWord = TRUE;
+			SetUnderline(dlg, sel.cpMin, sel.cpMax);
 				
 			if (callback != NULL)
 				callback(&text[last_pos], sel, param);
@@ -872,42 +831,43 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 void CheckText(Dialog *dlg, BOOL check_all, 
 			   FoundWrongWordCallback callback = NULL, void *param = NULL)
 {
-	STOP_RICHEDIT(dlg);
+	dlg->re->Stop();
 
-	if (GetWindowTextLength(dlg->hwnd) > 0)
+	if (dlg->re->GetTextLength() > 0)
 	{
-		int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
+		int lines = dlg->re->GetLineCount();
 		int line = 0;
+		CHARRANGE cur_sel = { -1, -1 };
 
 		if (!check_all)
 		{
 			// Check only the current line, one up and one down
-			int current_line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) __old_sel.cpMin, 0);
+			int current_line = dlg->re->GetLineFromChar(dlg->re->GetSel().cpMin);
 			line = max(line, current_line - 1);
 			lines = min(lines, current_line + 2);
+			cur_sel = dlg->re->GetSel();
 		}
 
 		for(; line < lines; line++) 
 		{
-			int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
-			int len = SendMessage(dlg->hwnd, EM_LINELENGTH, (WPARAM) first_char, 0);
+			int first_char = dlg->re->GetFirstCharOfLine(line);
 
-			SetNoUnderline(dlg->hwnd, first_char, first_char + len);
+			SetNoUnderline(dlg->re, first_char, first_char + dlg->re->GetLineLength(line));
 
 			if (opts.auto_replace_user)
-				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), check_all,
-							  __old_sel, callback, param);
+				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), cur_sel,
+							  callback, param);
 
-			CheckTextLine(dlg, line, &SpellParser(dlg->lang), check_all,
-						  __old_sel, callback, param);
+			CheckTextLine(dlg, line, &SpellParser(dlg->lang), cur_sel,
+						  callback, param);
 		}
 	}
 
 	// Fix last char
-	int len = GetWindowTextLength(dlg->hwnd);
-	SetNoUnderline(dlg->hwnd, len, len);
+	int len = dlg->re->GetTextLength();
+	SetNoUnderline(dlg->re, len, len);
 
-	START_RICHEDIT(dlg);
+	dlg->re->Start();
 }
 
 
@@ -950,10 +910,10 @@ void TimerCheck(Dialog *dlg)
 		return;
 
 	// Don't check if field is read-only
-	if (GetWindowLong(dlg->hwnd, GWL_STYLE) & ES_READONLY)
+	if (dlg->re->IsReadOnly())
 		return;
 
-	int len = GetWindowTextLength(dlg->hwnd);
+	int len = dlg->re->GetTextLength();
 	if (len == dlg->old_text_len && !dlg->changed)
 		return;
 
@@ -978,19 +938,14 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		TimerCheck(dlg);
 
 		if (dlg->markedSomeWord)
-		{
 			// Remove underline
-			STOP_RICHEDIT(dlg);
-			SetNoUnderline(dlg->hwnd);
-			START_RICHEDIT(dlg);
-		}
+			SetNoUnderline(dlg);
 
 		// Schedule to re-parse
 		KillTimer(dlg->hwnd, TIMER_ID);
 		SetTimer(dlg->hwnd, TIMER_ID, 100, NULL);
 
 		dlg->changed = TRUE;
-		dlg->markedSomeWord = FALSE;
 	}
 
 	return CallWindowProc(dlg->owner_old_edit_proc, hwnd, msg, wParam, lParam);
@@ -1011,16 +966,12 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_KEYDOWN:
 		{
-			if (wParam != VK_DELETE
-				&& wParam != VK_UP
-				&& wParam != VK_DOWN
-				&& wParam != VK_HOME
-				&& wParam != VK_END)
+			if (wParam != VK_DELETE)
 				break;
 		}
 		case WM_CHAR:
 		{
-			if (dlg->processing)
+			if (dlg->re->IsStopped())
 				break;
 
 			if (lParam & (1 << 28))	// ALT key
@@ -1029,44 +980,52 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (GetKeyState(VK_CONTROL) & 0x8000)	// CTRL key
 				break;
 
+			TCHAR c = (TCHAR) wParam;
+			BOOL deleting = (c == VK_BACK || c == VK_DELETE);
+
 			// Need to do that to avoid changing the word while typing
 			KillTimer(hwnd, TIMER_ID);
 			SetTimer(hwnd, TIMER_ID, 1000, NULL);
 
 			dlg->changed = TRUE;
 
-			if ((lParam & 0xFF) > 1)	// Repeat rate
+			if (!deleting && (lParam & 0xFF) > 1)	// Repeat rate
 				break;
 
 			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
 			// Don't check if field is read-only
-			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
+			if (dlg->re->IsReadOnly())
 				break;
 
-			TCHAR c = (TCHAR) wParam;
-			if (!dlg->lang->isWordChar(c))
+
+			if (!deleting && !dlg->lang->isWordChar(c))
 			{
 				CheckText(dlg, FALSE);
 			}
 			else
 			{
-				// Assert no selection
-				STOP_RICHEDIT(dlg);
-
 				// Remove underline of current word
-				TCHAR text[1024];
-				int first_char;
-				CHARRANGE sel;
 
-				SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
+				CHARFORMAT2 cf;
+				cf.cbSize = sizeof(CHARFORMAT2);
+				dlg->re->SendMessage(EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
 
-				GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
+				if (IsMyUnderline(cf))
+				{
+					dlg->re->Stop();
 
-				SetNoUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
+					CHARRANGE sel = dlg->re->GetSel();
 
-				START_RICHEDIT(dlg);
+					TCHAR text[1024];
+					int first_char;
+					GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
+
+					SetNoUnderline(dlg->re, sel.cpMin, sel.cpMax);
+
+					dlg->re->Start();
+				}
 			}
 
 			break;
@@ -1077,7 +1036,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case EM_PASTESPECIAL:
 		case WM_PASTE:
 		{
-			if (dlg->processing)
+			if (dlg->re->IsStopped())
 				break;
 
 			KillTimer(hwnd, TIMER_ID);
@@ -1383,21 +1342,19 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		Dialog *dlg = (Dialog *) malloc(sizeof(Dialog));
 		ZeroMemory(dlg, sizeof(Dialog));
 
+		dlg->re = new RichEdit(hwnd);
+		if (!dlg->re->IsValid())
+		{
+			delete dlg->re;
+			free(dlg);
+			return 0;
+		}
+
 		dlg->hContact = hContact;
 		dlg->hwnd = hwnd;
 		strncpy(dlg->name, name, sizeof(dlg->name));
 		dlg->enabled = DBGetContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, 1);
 		dlg->srmm = srmm;
-
-		SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&dlg->ole);
-		if (dlg->ole == NULL)
-		{
-			free(dlg);
-			return 0;
-		}
-
-		if (dlg->ole->QueryInterface(IID_ITextDocument, (void**)&dlg->textDocument) != S_OK)
-			dlg->textDocument = NULL;
 
 		GetContactLanguage(dlg);
 
@@ -1489,10 +1446,7 @@ int RemoveContactTextBox(HWND hwnd)
 			dialogs.erase(dlg->hwnd_owner);
 		}
 
-		if (dlg->textDocument != NULL)
-			dlg->textDocument->Release();
-		dlg->ole->Release();
-
+		delete dlg->re;
 		FreePopupData(dlg);
 		free(dlg);
 	}
@@ -1501,61 +1455,25 @@ int RemoveContactTextBox(HWND hwnd)
 }
 
 
-int ReplaceWordOnStopedRE(Dialog *dlg, CHARRANGE &sel, CHARRANGE &old_sel, TCHAR *new_word)
-{
-	// Replace in rich edit
-	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
-
-	RESUME_UNDO(dlg);
-
-	SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
-
-	SUSPEND_UNDO(dlg);
-
-	// Fix old sel
-	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
-	
-	if (old_sel.cpMin >= sel.cpMax)
-		old_sel.cpMin += dif;
-	else if (old_sel.cpMin >= sel.cpMax + dif)
-		old_sel.cpMin = sel.cpMax + dif;
-
-	if (old_sel.cpMax >= sel.cpMax)
-		old_sel.cpMax += dif;
-	else if (old_sel.cpMax >= sel.cpMax + dif)
-		old_sel.cpMax = sel.cpMax + dif;
-
-	return dif;
-}
-
-
-void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
-{
-	STOP_RICHEDIT(dlg);
-
-	ReplaceWordOnStopedRE(dlg, sel, __old_sel, new_word);
-
-	START_RICHEDIT(dlg);
-}
-
-
+// TODO Make this better
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char)
 {
 	// Get line
-	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
+	int line = dlg->re->GetLineFromChar(sel.cpMin);
 
 	// Get text
-	GetLineOfText(dlg, line, first_char, text, text_len);
+	dlg->re->GetLine(line, text, text_len);
+	first_char = dlg->re->GetFirstCharOfLine(line);
 
 	// Find the word
 	sel.cpMin--;
 	while (sel.cpMin >= first_char && (dlg->lang->isWordChar(text[sel.cpMin - first_char]) 
-										|| (text[sel.cpMin - first_char] >= _T('0') && text[sel.cpMin - first_char] <= _T('9'))))
+										|| IsNumber(text[sel.cpMin - first_char])))
 		sel.cpMin--;
 	sel.cpMin++;
 
 	while (text[sel.cpMax - first_char] != _T('\0') && (dlg->lang->isWordChar(text[sel.cpMax - first_char])
-														|| (text[sel.cpMax - first_char] >= _T('0') && text[sel.cpMax - first_char] <= _T('9'))))
+														|| IsNumber(text[sel.cpMax - first_char])))
 		sel.cpMax++;
 
 	// Has a word?
@@ -1567,20 +1485,17 @@ BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len,
 	for (int i = sel.cpMin; i < sel.cpMax && !has_valid_char; i++)
 		has_valid_char = ( text[i - first_char] != _T('-') );
 
-	if (!has_valid_char)
-		return FALSE;
-
-	return TRUE;
+	return has_valid_char;
 }
 
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel)
 {
 	// Get text
-	if (GetWindowTextLength(dlg->hwnd) <= 0)
+	if (dlg->re->GetTextLength() <= 0)
 		return NULL;
 
 	// Get pos
-	sel.cpMin = sel.cpMax = LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
+	sel.cpMin = sel.cpMax = dlg->re->GetCharFromPos(pt);
 
 	// Get text
 	TCHAR text[1024];
@@ -1806,11 +1721,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 		DBWriteContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, dlg->enabled);
 
 		if (!dlg->enabled)
-		{
-			STOP_RICHEDIT(dlg);
-			SetNoUnderline(dlg->hwnd);
-			START_RICHEDIT(dlg);
-		}
+			SetNoUnderline(dlg);
 
 		if (dlg->srmm)
 			ModifyIcon(dlg);
@@ -1819,9 +1730,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 	}
 	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount())
 	{
-		STOP_RICHEDIT(dlg);
-		SetNoUnderline(dlg->hwnd);
-		START_RICHEDIT(dlg);
+		SetNoUnderline(dlg);
 
 		if (dlg->hContact == NULL)
 			DBWriteContactSettingTString(NULL, MODULE_NAME, dlg->name, 

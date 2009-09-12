@@ -2,6 +2,12 @@ Spell Checker
 
 Changelog:
 
+. 0.2.1.0
+  * Fixes for translation
+  * Better performance for backspace and delete
+  * Keep without redrawing when replacing text
+  * Fix for some cyrilic letters
+
 . 0.2.0.0
   + Allow editing of auto-replacements
   + Allow variables in auto-replacements
