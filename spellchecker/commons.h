@@ -76,6 +76,7 @@ using namespace std;
 #include "autoreplace.h"
 #include "dictionary.h"
 #include "ardialog.h"
+#include "RichEdit.h"
 
 
 #define MODULE_NAME		"SpellChecker"
@@ -120,13 +121,11 @@ struct Dialog
 	BOOL enabled;
 	BOOL srmm;
 
-	IRichEditOle *ole;
-	ITextDocument *textDocument;
+	RichEdit *re;
 
 	HWND hwnd_menu_owner;
 	WNDPROC old_menu_proc;
 
-	BOOL processing;
 	BOOL changed;
 	BOOL markedSomeWord;
 	int old_text_len;

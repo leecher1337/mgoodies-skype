@@ -404,6 +404,8 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 	{
 		case WM_INITDIALOG:
 		{
+			TranslateDialogDefault(hwndDlg);
+
 			int sel = -1;
 			for(int i = 0; i < languages.getCount(); i++)
 			{
