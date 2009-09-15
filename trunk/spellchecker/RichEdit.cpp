@@ -146,7 +146,10 @@ void RichEdit::GetLine(int line, TCHAR *text, size_t text_len) const
 {
 	*((WORD*)text) = text_len - 1;
 	unsigned size = (unsigned) SendMessage(EM_GETLINE, (WPARAM) line, (LPARAM) text);
-	size = max(0, min(text_len-1, size-1));
+	// Sometimes it likes to return size = lineLen+1, adding an \n at the end, so we remove it here
+	// to make both implementations return same size
+	int lineLen = GetLineLength(line);
+	size = max(0, min(text_len-1, min(size, lineLen)));
 	text[size] = _T('\0');
 
 /*
