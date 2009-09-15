@@ -1,3 +1,23 @@
+/*
+Copyright (C) 2009 Ricardo Pescuma Domenecci
+
+This is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this file; see the file license.txt.  If
+not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  
+*/
+
+
 #ifndef __UTF8_HELPERS_H__
 # define __UTF8_HELPERS_H__
 
@@ -39,9 +59,19 @@ public:
 			mir_free(utf8);
 	}
 
-	operator char *()
+	char * get() const
 	{
 		return utf8;
+	}
+
+	operator char *() const
+	{
+		return utf8;
+	}
+
+	char operator[](int pos) const
+	{
+		return utf8[pos];
 	}
 
 private:
@@ -121,9 +151,19 @@ public:
 		return ret;
 	}
 
-	operator TCHAR *()
+	TCHAR * get() const
 	{
 		return tchar;
+	}
+
+	operator TCHAR *() const
+	{
+		return tchar;
+	}
+
+	TCHAR operator[](int pos) const
+	{
+		return tchar[pos];
 	}
 
 private:
@@ -171,9 +211,19 @@ public:
 		return ret;
 	}
 
-	operator const TCHAR *()
+	const TCHAR * get() const
 	{
 		return tchar;
+	}
+
+	operator const TCHAR *() const
+	{
+		return tchar;
+	}
+
+	TCHAR operator[](int pos) const
+	{
+		return tchar[pos];
 	}
 
 private:
@@ -225,9 +275,19 @@ public:
 		return ret;
 	}
 
-	operator const TCHAR *()
+	const TCHAR * get() const
 	{
 		return tchar;
+	}
+
+	operator const TCHAR *() const
+	{
+		return tchar;
+	}
+
+	TCHAR operator[](int pos) const
+	{
+		return tchar[pos];
 	}
 
 private:
@@ -266,9 +326,19 @@ public:
 		return ret;
 	}
 
-	operator const WCHAR *()
+	const WCHAR * get() const
 	{
 		return wchar;
+	}
+
+	operator const WCHAR *() const
+	{
+		return wchar;
+	}
+
+	WCHAR operator[](int pos) const
+	{
+		return wchar[pos];
 	}
 
 private:
@@ -317,9 +387,19 @@ public:
 		return ret;
 	}
 
-	operator const char *()
+	const char * get() const
 	{
 		return val;
+	}
+
+	operator const char *() const
+	{
+		return val;
+	}
+
+	char operator[](int pos) const
+	{
+		return val[pos];
 	}
 
 private:
@@ -371,9 +451,19 @@ public:
 		return ret;
 	}
 
-	operator const WCHAR *()
+	const WCHAR * get() const
 	{
 		return val;
+	}
+
+	operator const WCHAR *() const
+	{
+		return val;
+	}
+
+	WCHAR operator[](int pos) const
+	{
+		return val[pos];
 	}
 
 private:
