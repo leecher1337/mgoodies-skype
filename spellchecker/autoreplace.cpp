@@ -160,7 +160,7 @@ TCHAR * AutoReplaceMap::autoReplace(const TCHAR * word)
 	size_t len = lstrlen(word);
 	size_t i;
 	for (i = 0; i < len; i++)
-		if (!IsCharUpper(word[i]))
+		if (IsCharLower(word[i]))
 			break;
 
 	if (i <= 0)

@@ -35,7 +35,7 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 
 static OptPageControl optionsControls[] = { 
 	{ &opts.auto_replace_dict,		CONTROL_CHECKBOX,		IDC_AUTO_DICT,				"AutoReplaceDict", FALSE },
-	{ &opts.auto_replace_user,		CONTROL_CHECKBOX,		IDC_AUTO_USER,				"AutoReplaceUser", TRUE },
+	{ &opts.ignore_with_numbers,	CONTROL_CHECKBOX,		IDC_IGNORE_NUMBERS,			"IgnoreWithNumbers", FALSE },
 	{ &opts.ignore_uppercase,		CONTROL_CHECKBOX,		IDC_IGNORE_UPPERCASE,		"IgnoreUppercase", FALSE },
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
@@ -49,6 +49,11 @@ static OptPageControl optionsControls[] = {
 static UINT optionsExpertControls[] = { 
 	IDC_ADVANCED, IDC_UNDERLINE_TYPE_L, IDC_UNDERLINE_TYPE, IDC_CASCADE_CORRECTIONS, IDC_SHOW_ALL_CORRECTIONS,
 	IDC_USE_FLAGS
+};
+
+
+static OptPageControl autoReplaceControls[] = { 
+	{ &opts.auto_replace_user,		CONTROL_CHECKBOX,		IDC_AUTO_USER,				"AutoReplaceUser", TRUE },
 };
 
 
@@ -105,6 +110,7 @@ void DeInitOptions()
 void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
+	LoadOpts(autoReplaceControls, MAX_REGS(autoReplaceControls), MODULE_NAME);
 	
 	if (languages.getCount() <= 0)
 	{
@@ -136,10 +142,29 @@ static void DrawItem(HWND hwndDlg, LPDRAWITEMSTRUCT lpdis, Dictionary *dict)
 
 	GetTextMetrics(lpdis->hDC, &tm);
 
-	COLORREF clrfore = SetTextColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHTTEXT:COLOR_WINDOWTEXT));
-	COLORREF clrback = SetBkColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHT:COLOR_WINDOW));
 
-	FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+	int foreIndex, backIndex;
+
+	if (lpdis->itemState & ODS_DISABLED)
+	{
+		foreIndex = COLOR_GRAYTEXT;
+		backIndex = COLOR_BTNFACE;
+	}
+	else if (lpdis->itemState & ODS_SELECTED)
+	{
+		foreIndex = COLOR_HIGHLIGHTTEXT;
+		backIndex = COLOR_HIGHLIGHT;
+	}
+	else
+	{
+		foreIndex = COLOR_WINDOWTEXT;
+		backIndex = COLOR_WINDOW;
+	}
+
+	COLORREF clrfore = SetTextColor(lpdis->hDC,GetSysColor(foreIndex));
+	COLORREF clrback = SetBkColor(lpdis->hDC,GetSysColor(backIndex));
+
+	FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(backIndex));
 
 	rc.left = lpdis->rcItem.left + 2;
 
@@ -299,9 +324,21 @@ struct AutoreplaceData
 
 static void EnableDisableCtrls(HWND hwndDlg)
 {
+	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_AUTO_USER);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_LANGUAGE_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_LANGUAGE), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACEMENTS), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ADD), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVE), enabled);
+	if (!enabled)
+		return;
+
 	HWND hList = GetDlgItem(hwndDlg, IDC_REPLACEMENTS);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT), ListView_GetSelectedCount(hList) == 1);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVE), ListView_GetSelectedCount(hList) > 0);
+
+
 }
 
 
@@ -404,7 +441,7 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 	{
 		case WM_INITDIALOG:
 		{
-			TranslateDialogDefault(hwndDlg);
+			BOOL ret = SaveOptsDlgProc(autoReplaceControls, MAX_REGS(autoReplaceControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 
 			int sel = -1;
 			for(int i = 0; i < languages.getCount(); i++)
@@ -435,7 +472,7 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 
 			LoadReplacements(hwndDlg);
 
-			break;
+			return ret;
 		}
 
 		case WM_COMMAND:
@@ -528,6 +565,10 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 						break;
 				}
 			}
+			else if (lpnmhdr->idFrom == IDC_AUTO_USER)
+			{
+				EnableDisableCtrls(hwndDlg);
+			}
 			
 			break;
 		}
@@ -560,7 +601,8 @@ static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, L
 		}
 	}
 
-	return FALSE;
+
+	return SaveOptsDlgProc(autoReplaceControls, MAX_REGS(autoReplaceControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 

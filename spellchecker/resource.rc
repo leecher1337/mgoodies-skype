@@ -33,13 +33,15 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Replacements ",IDC_STATIC,1,5,274,216
-    LTEXT           "Language:",IDC_STATIC,11,20,82,8
-    COMBOBOX        IDC_LANGUAGE,95,18,173,60,CBS_DROPDOWNLIST | 
+    CONTROL         "Enable auto-replacements",IDC_AUTO_USER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,20,256,10
+    LTEXT           "Language:",IDC_LANGUAGE_L,11,37,82,8
+    COMBOBOX        IDC_LANGUAGE,95,35,173,60,CBS_DROPDOWNLIST | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
                     WS_TABSTOP
     CONTROL         "List1",IDC_REPLACEMENTS,"SysListView32",LVS_REPORT | 
                     LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | 
-                    WS_TABSTOP,10,38,258,156
+                    WS_TABSTOP,10,55,258,139
     PUSHBUTTON      "Add...",IDC_ADD,124,199,46,15
     PUSHBUTTON      "Edit...",IDC_EDIT,173,199,46,15
     PUSHBUTTON      "Remove",IDC_REMOVE,222,199,46,15
@@ -67,7 +69,7 @@ END
 IDD_OPTIONS DIALOGEX 0, 0, 276, 229
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,274,99
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
@@ -77,9 +79,8 @@ BEGIN
     CONTROL         "Auto-replace words with dictionary suggestions",
                     IDC_AUTO_DICT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
                     40,230,10
-    CONTROL         "Auto-replace words with user defined replacements",
-                    IDC_AUTO_USER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    52,230,10
+    CONTROL         "Ignore words with numbers",IDC_IGNORE_NUMBERS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,52,230,10
     CONTROL         "Ignore words in UPPER CASE",IDC_IGNORE_UPPERCASE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,64,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",

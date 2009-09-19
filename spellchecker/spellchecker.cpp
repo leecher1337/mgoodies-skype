@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,2,1,0),
+	PLUGIN_MAKE_VERSION(0,2,2,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
@@ -741,6 +741,7 @@ public:
 };
 
 void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
+				   BOOL ignore_upper, BOOL ignore_with_numbers,
 				   const CHARRANGE &ignored, FoundWrongWordCallback callback, void *param)
 {
 	TCHAR text[1024];
@@ -781,13 +782,21 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 		if (sel.cpMin <= ignored.cpMax && sel.cpMax >= ignored.cpMin)
 			continue;
 
-		// Is it upper?
-		if (opts.ignore_uppercase)
+		if (ignore_upper)
 		{
 			BOOL upper = TRUE;
 			for(int i = last_pos; i < pos && upper; i++)
-				upper = IsCharUpper(text[i]);
+				upper = !IsCharLower(text[i]);
 			if (upper)
+				continue;
+		}
+
+		if (ignore_with_numbers)
+		{
+			BOOL hasNumbers = FALSE;
+			for(int i = last_pos; i < pos && !hasNumbers; i++)
+				hasNumbers = IsNumber(text[i]);
+			if (hasNumbers)
 				continue;
 		}
 
@@ -855,11 +864,12 @@ void CheckText(Dialog *dlg, BOOL check_all,
 			SetNoUnderline(dlg->re, first_char, first_char + dlg->re->GetLineLength(line));
 
 			if (opts.auto_replace_user)
-				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), cur_sel,
-							  callback, param);
+				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), 
+							  FALSE, FALSE, cur_sel, callback, param);
 
-			CheckTextLine(dlg, line, &SpellParser(dlg->lang), cur_sel,
-						  callback, param);
+			CheckTextLine(dlg, line, &SpellParser(dlg->lang), 
+						  opts.ignore_uppercase, opts.ignore_with_numbers,
+						  cur_sel, callback, param);
 		}
 	}
 
