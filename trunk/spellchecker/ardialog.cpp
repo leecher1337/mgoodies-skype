@@ -272,7 +272,7 @@ static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 						MessageBox(hwndDlg, TranslateT("The correction can't be empty!"), TranslateT("Wrong Correction"), 
 							MB_OK | MB_ICONERROR);
 					}
-					else if (lstreq(find, replace))
+					else if (_tcscmp(find, replace) == 0)
 					{
 						MessageBox(hwndDlg, TranslateT("The correction can't be the equal to the wrong word!"), TranslateT("Wrong Correction"), 
 							MB_OK | MB_ICONERROR);

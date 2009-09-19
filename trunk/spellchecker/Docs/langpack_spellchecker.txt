@@ -17,7 +17,8 @@
 [ Spell Checker ]
 [Default language:]
 [Auto-replace words with dictionary suggestions]
-[Auto-replace words with user defined replacements]
+[Ignore words with numbers]
+[Ignore words in UPPER CASE]
 [Download more dictionaries]
 
 [ Advanced ]
@@ -36,6 +37,8 @@
 [Use input language to select dictionary]
 
 [ Replacements ]
+[Enable auto-replacements]
+[Language:]
 [Wrong word]
 [Correction]
 

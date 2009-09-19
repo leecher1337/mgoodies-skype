@@ -36,6 +36,7 @@ struct Options {
 	BOOL auto_replace_dict;
 	BOOL auto_replace_user;
 	BOOL ignore_uppercase;
+	BOOL ignore_with_numbers;
 
 	WORD underline_type;
 	BOOL cascade_corrections;

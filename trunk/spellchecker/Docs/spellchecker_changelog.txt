@@ -2,6 +2,12 @@ Spell Checker
 
 Changelog:
 
+. 0.2.2.0
+  + Allow replacements that only change case
+  + Ignore words with numbers
+  * Fix for last char in a wrapped word
+  * Enable replacements is now on replacement dialog
+
 . 0.2.1.0
   * Fixes for translation
   * Better performance for backspace and delete

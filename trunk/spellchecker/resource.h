@@ -73,6 +73,8 @@
 #define IDC_EDIT                        1088
 #define IDC_VAR_HELP                    1088
 #define IDC_OLD_PS                      1089
+#define IDC_LANGUAGE_L                  1090
+#define IDC_IGNORE_NUMBERS              1091
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -83,7 +85,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40005
-#define _APS_NEXT_CONTROL_VALUE         1090
+#define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
