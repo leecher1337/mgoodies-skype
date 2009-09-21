@@ -73,7 +73,7 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
+	TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
 
 	data->second++;
 	if ((m_WriterID != id) && (data->second == 1))
@@ -92,7 +92,7 @@ void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 void CMultiReadExclusiveWriteSynchronizer::EndRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
+	TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
 
 	data->second--;
 	if ((data->second == 0) && (m_WriterID != id))
@@ -151,9 +151,8 @@ bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
 
 	if (m_WriterID != id)
 	{
-		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
+		TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
 
-		long oldrevision = m_Revision;
 		bool hasreadlock = data->second > 0;
 
 		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
@@ -179,7 +178,7 @@ bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 	m_WriteRecursion--;
 	if (m_WriteRecursion == 0)
 	{
-		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
+		TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
 
 		m_WriterID = 0;
 		if (data->second == 0)

@@ -374,7 +374,6 @@ inline bool CEvents::MarkEventsTree(TEventBase::iterator Iterator, TDBTEventHand
 inline void CEvents::FindNextUnreadEvent(TEventBase::iterator & Iterator)
 {
 	uint32_t sig = cEventSignature;
-	bool b = true;
 	uint32_t flags = DBT_EF_READ;
 	while (Iterator && (flags & DBT_EF_READ))
 	{
@@ -589,7 +588,7 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 		cryptsize = Event.cbBlob;
 	}
 
-	TEvent ev = {0,0,0,0,0,0,0};
+	TEvent ev = {0,0,0,0,0,0,0,0,0,0,0,0,0};
 	TEventKey key = {0,0};
 
 	ev.TimeStamp = Event.Timestamp;
@@ -933,8 +932,6 @@ TDBTEventHandle CEvents::compFirstEvent(TDBTEntityHandle hEntity)
 }
 TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 {
-	uint32_t sig = cEventSignature;
-
 	m_BlockManager.TransactionBeginRead();
 
 	TDBTEventHandle res = 0;

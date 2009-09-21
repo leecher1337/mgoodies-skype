@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "savestrings_gcc.h"
 #endif
 
-HANDLE gCompServices[31] = {0};
-HANDLE gEvents[6] = {0};
+HANDLE gCompServices[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+HANDLE gEvents[6] = {0,0,0,0,0,0};
 
 HANDLE hEventDeletedEvent,
        hEventAddedEvent,

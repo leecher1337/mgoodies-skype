@@ -203,7 +203,7 @@ CEntities::~CEntities()
 
 TDBTEntityHandle CEntities::_CreateRootEntity()
 {
-	TEntity Entity = {0,0,0,0,0,0,0,0,0};
+	TEntity Entity = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	TEntityKey key = {0,0,0};
 
 	Entity.Flags = DBT_NF_IsGroup | DBT_NF_IsRoot;
@@ -530,7 +530,7 @@ uint32_t CEntities::getAccount(TDBTEntityHandle hEntity)
 
 TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 {
-	TEntity en = {0,0,0,0,0,0,0,0,0}, parent;
+	TEntity en = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}, parent;
 	void* pparent = &parent;
 	uint32_t size = sizeof(en);
 	uint32_t sig = cEntitySignature;
