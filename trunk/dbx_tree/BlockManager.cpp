@@ -131,9 +131,6 @@ void CBlockManager::ExecuteOptimize()
 		
 		if ((m_BlockSync.Waiting() > 0) || (m_OptimizeDest - lastflush > (1 << 20)))
 		{
-			TBlockHeadFree fh = {cFreeBlockID, m_Optimize - m_OptimizeDest};
-			TBlockTailFree ft = {m_Optimize - m_OptimizeDest, cFreeBlockID};
-
 			if (m_OptimizeDest != m_Optimize)
 				InsertFreeBlock(m_OptimizeDest, m_Optimize - m_OptimizeDest, true, false);				
 
