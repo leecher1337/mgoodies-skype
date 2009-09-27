@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA.
 
 
 static LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 struct Data
@@ -79,7 +79,7 @@ BOOL ShowAutoReplaceDialog(HWND parent, BOOL modal,
 
 static LRESULT CALLBACK OnlyCharsEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	Data *data = (Data *) GetWindowLong(hwnd, GWL_USERDATA);
+	Data *data = (Data *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
 	switch(msg)
 	{
@@ -156,7 +156,7 @@ static BOOL CenterParent(HWND hwnd)
 
 static void Close(HWND hwndDlg, int ret)
 {
-	Data *data = (Data *) GetWindowLong(hwndDlg, GWL_USERDATA);
+	Data *data = (Data *) GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
 
 	if (!ret)
 	{
@@ -165,7 +165,7 @@ static void Close(HWND hwndDlg, int ret)
 					   data->find.c_str(), data->param);
 	}
 
-	SetWindowLong(GetDlgItem(hwndDlg, IDC_OLD), GWL_WNDPROC, (LONG) data->old_edit_proc);
+	SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_OLD), GWLP_WNDPROC, (LONG_PTR) data->old_edit_proc);
 	data->old_edit_proc = NULL;
 
 	if (data->modal)
@@ -176,7 +176,7 @@ static void Close(HWND hwndDlg, int ret)
 	delete data;
 }
 
-static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
@@ -185,11 +185,11 @@ static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			TranslateDialogDefault(hwndDlg);
 
 			Data *data = (Data *) lParam;
-			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) data);
+			SetWindowLongPtr(hwndDlg, GWLP_USERDATA, (LONG_PTR) data);
 
-			SetWindowLong(GetDlgItem(hwndDlg, IDC_OLD), GWL_USERDATA, (LONG) data);
-			data->old_edit_proc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_OLD), GWL_WNDPROC, 
-														  (LONG) OnlyCharsEditProc);
+			SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_OLD), GWLP_USERDATA, (LONG_PTR) data);
+			data->old_edit_proc = (WNDPROC) SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_OLD), GWLP_WNDPROC, 
+														  (LONG_PTR) OnlyCharsEditProc);
 
 			HICON hIcon = IcoLib_LoadIcon("spellchecker_enabled");
 			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) hIcon);
@@ -245,7 +245,7 @@ static BOOL CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			{
 				case IDOK:
 				{
-					Data *data = (Data *) GetWindowLong(hwndDlg, GWL_USERDATA);
+					Data *data = (Data *) GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
 
 					TCHAR find[256];
 					if (data->findReadOnly)

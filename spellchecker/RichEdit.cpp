@@ -71,8 +71,8 @@ void RichEdit::ResumeUndo()
 {
 	if (textDocument != NULL)
 	{
-		textDocument->Undo(tomSuspend, NULL);
-		undoEnabled = FALSE;
+		textDocument->Undo(tomResume, NULL);
+		undoEnabled = TRUE;
 	}
 }
 
@@ -253,7 +253,11 @@ void RichEdit::ReplaceSel(const TCHAR *new_text)
 	{
 		CHARRANGE sel = GetSel();
 
+		ResumeUndo();
+
 		SendMessage(EM_REPLACESEL, undoEnabled, (LPARAM) new_text);
+
+		SuspendUndo();
 
 		FixSel(&old_sel, sel, lstrlen(new_text));
 
