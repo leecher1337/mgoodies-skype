@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,2,2,0),
+	PLUGIN_MAKE_VERSION(0,2,4,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
@@ -103,9 +103,9 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 int RemoveContactTextBox(HWND hwnd);
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner);
 
-int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
-int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
-int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
+INT_PTR AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
+INT_PTR RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
+INT_PTR ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -128,41 +128,6 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
-
-
-int mlog(const char *function, const char *fmt, ...)
-{
-#if 0
-    va_list va;
-    char text[1024];
-	size_t len;
-	static DWORD tick = GetTickCount();
-
-	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%8u] [%s] ", 
-				 GetCurrentThreadId(), GetTickCount(), GetTickCount() - tick, function);
-	tick = GetTickCount();
-	len = strlen(text);
-
-    va_start(va, fmt);
-    mir_vsnprintf(&text[len], sizeof(text) - len, fmt, va);
-    va_end(va);
-
-	FILE *fp = fopen("c:\\miranda_spellchecker.log.txt","at");
-
-	if (fp != NULL)
-	{
-		fprintf(fp, "%s\n", text);
-		fclose(fp);
-		return 0;
-	}
-	else
-	{
-		return -1;
-	}
-#else
-	return 0;
-#endif
-}
 
 
 HICON IcoLib_LoadIcon(Dictionary *dict, BOOL copy)
@@ -338,7 +303,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		// Load flags dll
 		TCHAR flag_file[1024];
 		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
-		HMODULE hFlagsDll = LoadLibrary(flag_file);
+		HMODULE hFlagsDll = LoadLibraryEx(flag_file, NULL, LOAD_LIBRARY_AS_DATAFILE);
 
 		sid.flags = SIDF_TCHAR | SIDF_SORTED;
 		sid.ptszSection = _T("Languages/Flags");
@@ -740,10 +705,11 @@ public:
 	}
 };
 
-void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
+int CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 				   BOOL ignore_upper, BOOL ignore_with_numbers,
 				   const CHARRANGE &ignored, FoundWrongWordCallback callback, void *param)
 {
+	int errors = 0;
 	TCHAR text[1024];
 	dlg->re->GetLine(line, text, MAX_REGS(text));
 	int len = lstrlen(text);
@@ -831,15 +797,21 @@ void CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 				
 			if (callback != NULL)
 				callback(&text[last_pos], sel, param);
+
+			errors++;
 		}
 	}
+
+	return errors;
 }
 
 
 // Checks for errors in all text
-void CheckText(Dialog *dlg, BOOL check_all, 
-			   FoundWrongWordCallback callback = NULL, void *param = NULL)
+int CheckText(Dialog *dlg, BOOL check_all, 
+			  FoundWrongWordCallback callback = NULL, void *param = NULL)
 {
+	int errors = 0;
+
 	dlg->re->Stop();
 
 	if (dlg->re->GetTextLength() > 0)
@@ -864,12 +836,12 @@ void CheckText(Dialog *dlg, BOOL check_all,
 			SetNoUnderline(dlg->re, first_char, first_char + dlg->re->GetLineLength(line));
 
 			if (opts.auto_replace_user)
-				CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), 
-							  FALSE, FALSE, cur_sel, callback, param);
+				errors += CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), 
+										FALSE, FALSE, cur_sel, callback, param);
 
-			CheckTextLine(dlg, line, &SpellParser(dlg->lang), 
-						  opts.ignore_uppercase, opts.ignore_with_numbers,
-						  cur_sel, callback, param);
+			errors += CheckTextLine(dlg, line, &SpellParser(dlg->lang), 
+									opts.ignore_uppercase, opts.ignore_with_numbers,
+									cur_sel, callback, param);
 		}
 	}
 
@@ -878,6 +850,8 @@ void CheckText(Dialog *dlg, BOOL check_all,
 	SetNoUnderline(dlg->re, len, len);
 
 	dlg->re->Start();
+
+	return errors;
 }
 
 
@@ -898,8 +872,15 @@ void ToLocaleID(TCHAR *szKLName, size_t size)
 void LoadDictFromKbdl(Dialog *dlg)
 {
 	TCHAR szKLName[KL_NAMELENGTH + 1];
-	GetKeyboardLayoutName(szKLName);
+
+	// Use default input language
+	HKL hkl = GetKeyboardLayout(0);
+	mir_sntprintf(szKLName, MAX_REGS(szKLName), _T("%x"), (int) LOWORD(hkl));
 	ToLocaleID(szKLName, MAX_REGS(szKLName));
+
+	// Old code (use keyboard layout)
+//	GetKeyboardLayoutName(szKLName);
+//	ToLocaleID(szKLName, MAX_REGS(szKLName));
 
 	int d = GetClosestLanguage(szKLName);
 	if (d >= 0)
@@ -912,25 +893,25 @@ void LoadDictFromKbdl(Dialog *dlg)
 	}
 }
 
-void TimerCheck(Dialog *dlg)
+int TimerCheck(Dialog *dlg, BOOL forceCheck = FALSE)
 {
 	KillTimer(dlg->hwnd, TIMER_ID);
 
 	if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
-		return;
+		return -1;
 
 	// Don't check if field is read-only
 	if (dlg->re->IsReadOnly())
-		return;
+		return -1;
 
 	int len = dlg->re->GetTextLength();
-	if (len == dlg->old_text_len && !dlg->changed)
-		return;
+	if (!forceCheck && len == dlg->old_text_len && !dlg->changed)
+		return -1;
 
 	dlg->old_text_len = len;
 	dlg->changed = FALSE;
 
-	CheckText(dlg, TRUE);
+	return CheckText(dlg, TRUE);
 }
 
 
@@ -944,8 +925,23 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	if (msg == WM_COMMAND && (LOWORD(wParam) == IDOK || LOWORD(wParam) == 1624))
 	{
-		// Fix all
-		TimerCheck(dlg);
+		if (opts.ask_when_sending_with_error)
+		{
+			int errors = TimerCheck(dlg, TRUE);
+			if (errors> 0)
+			{
+				if (MessageBox(hwnd, TranslateT("There are spelling errors. Are you sure you want to send this message?"),
+							   TranslateT("Spell Checker"), MB_YESNO) == IDNO)
+				{
+					return TRUE;
+				}
+			}
+		}
+		else
+		{
+			// Fix all
+			TimerCheck(dlg);
+		}
 
 		if (dlg->markedSomeWord)
 			// Remove underline
@@ -1332,7 +1328,7 @@ void ModifyIcon(Dialog *dlg)
 	}
 }
 
-int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
+INT_PTR AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 {
 	SPELLCHECKER_ITEM *sci = (SPELLCHECKER_ITEM *) wParam;
 	if (sci == NULL || sci->cbSize != sizeof(SPELLCHECKER_ITEM))
@@ -1371,13 +1367,13 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		if (opts.auto_locale) 
 			LoadDictFromKbdl(dlg);
 
-		dlg->old_edit_proc = (WNDPROC) SetWindowLong(dlg->hwnd, GWL_WNDPROC, (LONG) EditProc);
+		dlg->old_edit_proc = (WNDPROC) SetWindowLongPtr(dlg->hwnd, GWLP_WNDPROC, (LONG_PTR) EditProc);
 		dialogs[hwnd] = dlg;
 
 		if (dlg->srmm && hwndOwner != NULL)
 		{
 			dlg->hwnd_owner = hwndOwner;
-			dlg->owner_old_edit_proc = (WNDPROC) SetWindowLong(dlg->hwnd_owner, GWL_WNDPROC, (LONG) OwnerProc);
+			dlg->owner_old_edit_proc = (WNDPROC) SetWindowLongPtr(dlg->hwnd_owner, GWLP_WNDPROC, (LONG_PTR) OwnerProc);
 			dialogs[dlg->hwnd_owner] = dlg;
 
 			ModifyIcon(dlg);
@@ -1400,7 +1396,7 @@ void FreePopupData(Dialog *dlg)
 	DESTROY_MENY(dlg->hWrongWordsSubMenu)
 
 	if (dlg->old_menu_proc != NULL)
-		SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) dlg->old_menu_proc);
+		SetWindowLongPtr(dlg->hwnd_menu_owner, GWLP_WNDPROC, (LONG_PTR) dlg->old_menu_proc);
 	dlg->old_menu_proc = NULL;
 
 	if (dlg->hwnd_menu_owner != NULL)
@@ -1426,7 +1422,7 @@ void FreePopupData(Dialog *dlg)
 }
 
 
-int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
+INT_PTR RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
 {
 	HWND hwnd = (HWND) wParam;
 	if (hwnd == NULL)
@@ -1446,13 +1442,13 @@ int RemoveContactTextBox(HWND hwnd)
 		KillTimer(hwnd, TIMER_ID);
 
 		if (dlg->old_edit_proc != NULL)
-			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) dlg->old_edit_proc);
+			SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR) dlg->old_edit_proc);
 		dialogs.erase(hwnd);
 
 		if (dlg->hwnd_owner != NULL)
 		{
 			if (dlg->owner_old_edit_proc != NULL)
-				SetWindowLong(dlg->hwnd_owner, GWL_WNDPROC, (LONG) dlg->owner_old_edit_proc);
+				SetWindowLongPtr(dlg->hwnd_owner, GWLP_WNDPROC, (LONG_PTR) dlg->owner_old_edit_proc);
 			dialogs.erase(dlg->hwnd_owner);
 		}
 
@@ -1847,7 +1843,7 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
 }
 
 
-int ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
+INT_PTR ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
 {
 	SPELLCHECKER_POPUPMENU *scp = (SPELLCHECKER_POPUPMENU *) wParam;
 	if (scp == NULL || scp->cbSize != sizeof(SPELLCHECKER_POPUPMENU))
@@ -1967,7 +1963,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 			{
 				menus[dlg->hwnd] = dlg;
 				dlg->hwnd_menu_owner = dlg->hwnd;
-				dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
+				dlg->old_menu_proc = (WNDPROC) SetWindowLongPtr(dlg->hwnd_menu_owner, GWLP_WNDPROC, (LONG_PTR) MenuWndProc);
 			}
 
 			// First add languages

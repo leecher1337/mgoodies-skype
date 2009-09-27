@@ -471,15 +471,37 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 
 	TCHAR name[64];
 	mir_sntprintf(name, MAX_REGS(name), _T("%s_%s"), ini, end);
+
 	for(int i = 0; i < tmp_dicts->getCount(); i++)
 	{
 		Dictionary *dict = (*tmp_dicts)[i];
 		if (lstrcmpi(dict->language, name) == 0)
 		{
-			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, dict->localized_name, MAX_REGS(dict->localized_name));
+#define LOCALE_SLOCALIZEDLANGUAGENAME 0x0000006f
+#define LOCALE_SNATIVEDISPLAYNAME 0x00000073
+			
 			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, dict->english_name, MAX_REGS(dict->english_name));
 
-			if (dict->localized_name[0] != _T('\0'))
+			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, dict->localized_name, MAX_REGS(dict->localized_name));
+			if (dict->localized_name[0] == 0)
+				GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLOCALIZEDLANGUAGENAME, dict->localized_name, MAX_REGS(dict->localized_name));
+			if (dict->localized_name[0] == 0)
+				GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SNATIVEDISPLAYNAME, dict->localized_name, MAX_REGS(dict->localized_name));
+			if (dict->localized_name[0] == 0 && dict->english_name[0] != 0)
+			{
+				TCHAR country[1024];
+				GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGCOUNTRY, country, MAX_REGS(country));
+
+				TCHAR name[1024];
+				if (country[0] != 0)
+					mir_sntprintf(name, MAX_REGS(name), _T("%s (%s)"), dict->english_name, country);
+				else
+					lstrcpyn(name, dict->english_name, MAX_REGS(name));
+
+				lstrcpyn(dict->localized_name, TranslateTS(name), MAX_REGS(dict->localized_name));
+			}
+
+			if (dict->localized_name[0] != 0)
 			{
 				mir_sntprintf(dict->full_name, MAX_REGS(dict->full_name), _T("%s [%s]"), dict->localized_name, dict->language);
 			}
@@ -499,6 +521,7 @@ void GetDictsInfo(LIST<Dictionary> &dicts)
 	for(int i = 0; i < dicts.getCount(); i++)
 	{
 		Dictionary *dict = dicts[i];
+		
 		if (dict->full_name[0] == _T('\0'))
 		{
 			DBVARIANT dbv;
@@ -660,6 +683,7 @@ void GetAvaibleDictionaries(LIST<Dictionary> &dicts, TCHAR *path, TCHAR *user_pa
 			{
 				TCHAR folder[1024];
 				mir_sntprintf(folder, MAX_REGS(folder), _T("%s\\Dictionaries"), key);
+
 				GetHunspellDictionariesFromFolder(languages, folder, user_path, otherHunspellApps[i]);
 			}       
 		}

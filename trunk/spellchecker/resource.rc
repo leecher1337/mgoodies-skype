@@ -66,43 +66,46 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,142,77,50,14
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 276, 229
+IDD_OPTIONS DIALOGEX 0, 0, 276, 235
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,274,99
+    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,274,109
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
     COMBOBOX        IDC_DEF_LANG,95,18,173,60,CBS_DROPDOWNLIST | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
                     WS_TABSTOP
     CONTROL         "Auto-replace words with dictionary suggestions",
                     IDC_AUTO_DICT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    40,230,10
+                    40,258,10
     CONTROL         "Ignore words with numbers",IDC_IGNORE_NUMBERS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,52,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,52,258,10
     CONTROL         "Ignore words in UPPER CASE",IDC_IGNORE_UPPERCASE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,64,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,64,258,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
-                    WS_TABSTOP | 0x1,10,85,258,12
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,107,274,113
-    LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,123,91,8
-    COMBOBOX        IDC_UNDERLINE_TYPE,110,121,158,60,CBS_DROPDOWNLIST | 
+                    WS_TABSTOP | 0x1,10,96,258,12
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,118,274,113
+    LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,134,91,8
+    COMBOBOX        IDC_UNDERLINE_TYPE,110,132,158,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show corrections in submenu",IDC_CASCADE_CORRECTIONS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,143,230,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,154,230,10
     CONTROL         "Show all corrections in context menu (takes more time to show)",
                     IDC_SHOW_ALL_CORRECTIONS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,155,230,10
+                    WS_TABSTOP,10,166,230,10
     CONTROL         "Show wrong word",IDC_SHOW_WRONG_WORD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,167,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,178,230,10
     CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,179,230,10
+                    WS_TABSTOP,10,190,230,10
     CONTROL         "Use input language to select dictionary",
                     IDC_AUTO_LOCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    191,230,10
+                    202,230,10
     CONTROL         "Use dictionaries from other programs",IDC_OTHER_PROGS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,203,230,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,214,230,10
+    CONTROL         "Ask before sending a message with spelling errors",
+                    IDC_ASK_ON_ERROR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,76,258,10
 END
 
 
@@ -135,7 +138,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 275
         TOPMARGIN, 1
-        BOTTOMMARGIN, 228
+        BOTTOMMARGIN, 234
     END
 END
 #endif    // APSTUDIO_INVOKED

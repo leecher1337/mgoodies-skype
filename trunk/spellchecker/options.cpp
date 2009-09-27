@@ -29,21 +29,22 @@ HANDLE hOptHook = NULL;
 Options opts;
 
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.auto_replace_dict,		CONTROL_CHECKBOX,		IDC_AUTO_DICT,				"AutoReplaceDict", FALSE },
-	{ &opts.ignore_with_numbers,	CONTROL_CHECKBOX,		IDC_IGNORE_NUMBERS,			"IgnoreWithNumbers", FALSE },
-	{ &opts.ignore_uppercase,		CONTROL_CHECKBOX,		IDC_IGNORE_UPPERCASE,		"IgnoreUppercase", FALSE },
-	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
-	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
-	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },
-	{ &opts.show_wrong_word,		CONTROL_CHECKBOX,		IDC_SHOW_WRONG_WORD,		"ShowWrongWord", TRUE },
-	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE },
-	{ &opts.auto_locale,			CONTROL_CHECKBOX,		IDC_AUTO_LOCALE,			"AutoLocale", FALSE },
-	{ &opts.use_other_apps_dicts,	CONTROL_CHECKBOX,		IDC_OTHER_PROGS,			"UseOtherAppsDicts", TRUE },
+	{ &opts.auto_replace_dict,				CONTROL_CHECKBOX,		IDC_AUTO_DICT,				"AutoReplaceDict", FALSE },
+	{ &opts.ignore_with_numbers,			CONTROL_CHECKBOX,		IDC_IGNORE_NUMBERS,			"IgnoreWithNumbers", FALSE },
+	{ &opts.ignore_uppercase,				CONTROL_CHECKBOX,		IDC_IGNORE_UPPERCASE,		"IgnoreUppercase", FALSE },
+	{ &opts.ask_when_sending_with_error,	CONTROL_CHECKBOX,		IDC_ASK_ON_ERROR,			"AskWhenSendingWithError", FALSE },
+	{ &opts.underline_type,					CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
+	{ &opts.cascade_corrections,			CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
+	{ &opts.show_all_corrections,			CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },
+	{ &opts.show_wrong_word,				CONTROL_CHECKBOX,		IDC_SHOW_WRONG_WORD,		"ShowWrongWord", TRUE },
+	{ &opts.use_flags,						CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE },
+	{ &opts.auto_locale,					CONTROL_CHECKBOX,		IDC_AUTO_LOCALE,			"AutoLocale", FALSE },
+	{ &opts.use_other_apps_dicts,			CONTROL_CHECKBOX,		IDC_OTHER_PROGS,			"UseOtherAppsDicts", TRUE },
 };
 
 static UINT optionsExpertControls[] = { 
@@ -205,7 +206,7 @@ static void MeasureItem(HWND hwndDlg, LPMEASUREITEMSTRUCT lpmis)
 }
 
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	switch (msg) 
 	{
@@ -435,7 +436,7 @@ static void ShowAddReplacement(HWND hwndDlg, int item = -1)
 }
 
 
-static BOOL CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static INT_PTR CALLBACK AutoreplaceDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	switch (msg) 
 	{

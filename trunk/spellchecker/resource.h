@@ -45,6 +45,7 @@
 #define IDC_IGNORE_UPPERCASE            1065
 #define IDC_PROTOCOLS_G                 1066
 #define IDC_AUTO_USER                   1066
+#define IDC_ASK_ON_ERROR                1066
 #define IDC_PROTOCOLS_L                 1067
 #define IDC_AUTO_LOCALE                 1067
 #define IDC_COLOURS_G                   1068

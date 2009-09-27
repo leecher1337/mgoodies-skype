@@ -2,6 +2,15 @@ Spell Checker
 
 Changelog:
 
+. 0.2.4.0
+  + Applied "patch" from miranda-avd with x64 code (but no build using it yet)
+  * Use default input language instead of keyboard layout to get language name (fixes issue #124)
+  * Ctr-Z is now working again (fixes issue #125)
+
+. 0.2.3.0
+  + Option to don't send message with error
+  * Better getting language name for non-english windows
+
 . 0.2.2.0
   + Allow replacements that only change case
   + Ignore words with numbers
