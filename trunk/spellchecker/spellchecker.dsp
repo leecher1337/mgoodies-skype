@@ -256,6 +256,10 @@ SOURCE=..\utils\mir_icons.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_log.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -365,6 +369,10 @@ SOURCE=.\dictionary.cpp
 # Begin Source File
 
 SOURCE=..\utils\mir_icons.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_log.cpp
 # End Source File
 # Begin Source File
 
