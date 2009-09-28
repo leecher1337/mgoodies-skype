@@ -1640,6 +1640,8 @@ void FoundWrongWord(TCHAR *word, CHARRANGE pos, void *param)
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
+	MLog log(MODULE_NAME, "AddItemsToMenu");
+
 	FreePopupData(dlg);
 	if (opts.use_flags)
 	{
@@ -1660,9 +1662,13 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		if (dlg->hwnd_menu_owner != NULL)
 			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
 
+		log.log("Adding languages");
+
 		// First add languages
 		for (int i = 0; i < languages.getCount(); i++)
 		{
+			log.log("%d : %S", i, languages[i]->full_name);
+
 			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages[i] == dlg->lang ? MF_CHECKED : 0),
 				LANGUAGE_MENU_ID_BASE + i, languages[i]->full_name);
 		}
@@ -2096,11 +2102,14 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_MEASUREITEM:
 		{
+			MLog log(MODULE_NAME, "WM_MEASUREITEM");
+
 			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
 			if (lpmis->CtlType != ODT_MENU || lpmis->itemID < LANGUAGE_MENU_ID_BASE || lpmis->itemID >= LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount()) 
 				break;
 
 			int pos = lpmis->itemID - LANGUAGE_MENU_ID_BASE;
+			log.log("pos = %d", pos);
 
 			Dictionary *dict = languages[pos];
 
@@ -2115,9 +2124,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
 
 			DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
+			log.log("rc (t %d, l %d, b %d, r %d)", rc.top, rc.left, rc.bottom, rc.right);
 
 			lpmis->itemHeight = max(ICON_SIZE, max(bmpChecked.bmHeight, rc.bottom));
 			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + ICON_SIZE + 4 + rc.right + 2;
+
+			log.log("(h %d, w %d)", lpmis->itemHeight, lpmis->itemWidth);
 
 			SelectObject(hdc, hFontOld);
 			DeleteObject(hFont);
