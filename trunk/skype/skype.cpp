@@ -127,7 +127,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,41),
+	PLUGIN_MAKE_VERSION(0,0,0,43),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -1036,6 +1036,13 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	free(ptr);
 	str[msgl]=0;
 
+	// skype sends some xml statics after a call has finished. Check if thats the case and suppress it if necessary...
+	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "SuppressCallSummaryMessage", 1) && strncmp(msg,"<partlist ",10)==0 || msg[0]==0)
+	{
+		free(who);
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
 
 	// Aaaand add it..
 	LOG("FetchMessageThread", "Finding contact handle");

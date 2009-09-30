@@ -19,7 +19,7 @@ extern BOOL bSkypeOut;
 extern char protocol;
 
 // Handles
-static HANDLE hMenuCallItem, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem;
+static HANDLE hMenuCallItem, hMenuCallHangup, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem;
 
 // Check if alpha blending icons are supported
 // Seems to be not neccessary
@@ -79,7 +79,7 @@ CLISTMENUITEM HupItem(void) {
 	mi.flags=CMIF_NOTOFFLINE;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
 	mi.pszName=Translate("Hang up call (Skype)");
-	mi.pszService=SKYPE_CALL;
+	mi.pszService=SKYPE_CALLHANGUP;
 
 	return mi;
 }
@@ -152,6 +152,8 @@ HANDLE add_contextmenu(HANDLE hContact) {
 	if (!HasVoiceService()) {
 		mi=CallItem();
 		hMenuCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+		mi=HupItem();
+		hMenuCallHangup=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 	}
 	
 	mi=SkypeOutCallItem();
@@ -200,6 +202,8 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	CLISTMENUITEM mi;
 	char *szProto;
+	bool callAvailable = false;
+	bool hangupAvailable = false;
 
 	if (!(szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0))) return 0;
 
@@ -218,15 +222,24 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 				mi.flags=CMIM_ALL;
 				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
 
-				mi=HupItem();
+				callAvailable = false;
+				hangupAvailable = true;
+
 				DBFreeVariant(&dbv);
-			} else mi=CallItem();
+			} else { callAvailable = true; hangupAvailable = false; }
         
-			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) 
-				mi.flags |= CMIF_HIDDEN;
-        
-			mi.flags|=CMIM_ALL;
+			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) {
+				callAvailable = false;
+				hangupAvailable = false;
+			}
+
+			mi = CallItem();
+			mi.flags |= CMIM_ALL | (!callAvailable?CMIF_HIDDEN:0);
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuCallItem,(LPARAM)&mi);
+
+			mi = HupItem();
+			mi.flags |= CMIM_ALL | (!hangupAvailable?CMIF_HIDDEN:0);
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuCallHangup,(LPARAM)&mi);
 		}
 
 		// Clear SkypeOut menu in case it exists
