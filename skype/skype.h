@@ -74,6 +74,7 @@ static int code_page = CP_ACP;
 // Program hooks
 
 #define SKYPE_CALL "Skype_protocol/CallUser"
+#define SKYPE_CALLHANGUP "Skype_protocol/CallHangupUser"
 #define SKYPEOUT_CALL "Skype_protocol/SkypeOutCallUser"
 #define SKYPE_ADDUSER "Skype_Protocol/AddUser"
 #define SKYPE_IMPORTHISTORY "Skype_Protocol/ImportHistory"

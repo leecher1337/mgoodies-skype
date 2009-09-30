@@ -15,6 +15,7 @@ void CreateServices(void)
 	char pszServiceName[MAX_PATH+30];
 
 	CreateServiceFunction(SKYPE_CALL, SkypeCall);
+	CreateServiceFunction(SKYPE_CALLHANGUP, SkypeCallHangup);
 	CreateServiceFunction(SKYPEOUT_CALL, SkypeOutCall);
 	CreateServiceFunction(SKYPE_HOLDCALL, SkypeHoldCall);
 	CreateServiceFunction(SKYPE_ADDUSER, SkypeAdduserDlg);

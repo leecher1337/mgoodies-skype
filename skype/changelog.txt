@@ -13,6 +13,12 @@ CODE
 
 HISTORY
 -------
+0.0.0.43 - + Added option to suppress summary chat message after call is finished (jls17)
+           ! Fix hangup cause a dial command if opponent hangs up a little bit earlier (jls17)
+           ! removed empty chat message on incoming call
+           ! empty mood message is send to skype correctly
+           
+           
 0.0.0.42 - + Added a trick to identify skype 3 version (fingerprint)
 0.0.0.41 - + Added option to enter user name and password. (Patch by NN)
 

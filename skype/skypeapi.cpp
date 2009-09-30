@@ -666,7 +666,8 @@ int SkypeMsgCollectGarbage(time_t age) {
 /* SkypeCall
  * 
  * Purpose: Give a Skype call to the given User in wParam
- *          or hangs up existing call
+ *          or hangs up existing call 
+ *          (hangUp is moved over to SkypeCallHangup)
  * Params : wParam - Handle to the User to be called
  *			lParam - Can be NULL
  * Returns: 0 - Success
@@ -674,19 +675,51 @@ int SkypeMsgCollectGarbage(time_t age) {
  */
 int SkypeCall(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
-	char *msg;
+	char *msg=0;
 	int res;
 
 	if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
-		msg=(char *)malloc(strlen(dbv.pszVal)+21);
-		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
-		res=SkypeSend(msg);
+		res = -1; // no direct return, because dbv needs to be freed
 	} else {
 		if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
 		msg=(char *)malloc(strlen(dbv.pszVal)+6);
 		strcpy(msg, "CALL ");
 		strcat(msg, dbv.pszVal);
 		res=SkypeSend(msg);
+	}
+	DBFreeVariant(&dbv);
+	free(msg);
+	return res;
+}
+
+/* SkypeCallHangup
+ *
+ * Prupose: Hangs up the existing call to the given User 
+ *          in wParam.
+ *
+ * Params : wParam - Handle to the User to be called
+ *          lParam - Can be NULL
+ *
+ * Returns: 0 - Success
+ *          1 - Failure
+ *
+ */
+int SkypeCallHangup(WPARAM wParam, LPARAM lParam)
+{
+	DBVARIANT dbv;
+	char *msg=0;
+	int res;
+
+	if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+		msg=(char *)malloc(strlen(dbv.pszVal)+21);
+		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
+		res=SkypeSend(msg);
+	//} else {
+	//	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
+	//	msg=(char *)malloc(strlen(dbv.pszVal)+6);
+	//	strcpy(msg, "CALL ");
+	//	strcat(msg, dbv.pszVal);
+	//	res=SkypeSend(msg);
 	}
 	DBFreeVariant(&dbv);
 	free(msg);
@@ -1070,7 +1103,7 @@ int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
  */
 int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 	int retval = -1;
-	char *Mood;
+	char *Mood = 0;
 	
 	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "MoodText", (const char *)lParam)) {
 		#if defined( _UNICODE )
@@ -1081,6 +1114,9 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 		#endif
 	}
 
+	
+	if (((char*)lParam) == NULL || ((char*)lParam)[0]==0)
+		return SkypeSend("SET PROFILE MOOD_TEXT ");
 
 	if(utf8_encode((const char *)lParam, &Mood) == -1 ) return -1;
 	 
