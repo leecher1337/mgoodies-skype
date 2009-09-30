@@ -1667,7 +1667,10 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		// First add languages
 		for (int i = 0; i < languages.getCount(); i++)
 		{
-			log.log("%d : %S", i, languages[i]->full_name);
+			log.log("%d : %x '%S' [%d]", i, languages[i]->full_name, languages[i]->full_name, sizeof(TCHAR));
+			BYTE *bs = (BYTE *) languages[i]->full_name;
+			for(int j = 0; j < 50; ++j)
+				log.log(" [%d] : %x %c", j, (int) bs[j], (char) bs[j]);
 
 			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages[i] == dlg->lang ? MF_CHECKED : 0),
 				LANGUAGE_MENU_ID_BASE + i, languages[i]->full_name);
