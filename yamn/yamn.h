@@ -48,7 +48,7 @@
 #include "m_protoplugin.h"	//Protocol registration and so on
 #include "m_synchro.h"	//Synchronization
 #include "debug.h"
-#include "m_folders.h"
+#include "include/m_folders.h"
 
 
 //icons definitions
@@ -67,6 +67,7 @@ void ContactDoubleclicked(WPARAM wParam,LPARAM lParam);
 int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam);
 
 //From debug.cpp
+#undef YAMN_DEBUG
 #ifdef YAMN_DEBUG
 void InitDebug();
 void UnInitDebug();

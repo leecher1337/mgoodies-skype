@@ -8,14 +8,23 @@
 
 #ifdef YAMN_DEBUG
 
+#pragma comment(lib, "th32.lib")
+
+#define _WIN32_WINNT 0x0501 // WinXP only.
+#define VC_EXTRALEAN
+#include <windows.h>
+#include <tlhelp32.h>
+#include <stdio.h>
+#include <shlwapi.h>
+
 #include <stdio.h>
 
-#define DEBUG_SYNCHRO			//debug synchro to a file
-#define DEBUG_COMM			//debug communiation to a file
-#define DEBUG_DECODE			//debug header decoding to a file
-#define DEBUG_DECODECODEPAGE		//add info about codepage used in conversion
-#define DEBUG_DECODEBASE64		//add info about base64 result
-#define DEBUG_DECODEQUOTED		//add info about quoted printable result
+//#define DEBUG_SYNCHRO			//debug synchro to a file
+//#define DEBUG_COMM			//debug communiation to a file
+//#define DEBUG_DECODE			//debug header decoding to a file
+//#define DEBUG_DECODECODEPAGE		//add info about codepage used in conversion
+//#define DEBUG_DECODEBASE64		//add info about base64 result
+//#define DEBUG_DECODEQUOTED		//add info about quoted printable result
 //#define DEBUG_FILEREAD			//debug file reading to message boxes
 //#define DEBUG_FILEREADMESSAGES		//debug file reading messages to message boxes
 

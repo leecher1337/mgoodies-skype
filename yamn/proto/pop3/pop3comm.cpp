@@ -27,8 +27,6 @@ void SetDefaultProtocolIcons();
 extern int POP3OptInit(WPARAM wParam,LPARAM lParam);
 //From netlib.cpp
 extern HANDLE RegisterNLClient(const char *name);
-//From ssl.cpp
-extern int RegisterSSL();
 //this is imported because of one bug, should not be imported normally (this POP3 is plugin of YAMN)
 extern int FilterMailSvc(WPARAM,LPARAM);
 
@@ -224,7 +222,6 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 		delete pYAMNFcn;
 		return 0;
 	}
-	RegisterSSL();
 
 	pYAMNFcn->SetProtocolPluginFcnImportFcn=(YAMN_SETPROTOCOLPLUGINFCNIMPORTFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_SETPROTOCOLPLUGINFCNIMPORTID,(LPARAM)0);
 	pYAMNFcn->WaitToWriteFcn=(YAMN_WAITTOWRITEFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_WAITTOWRITEID,(LPARAM)0);

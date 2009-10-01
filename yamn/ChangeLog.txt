@@ -1,3 +1,8 @@
+0.1.2.4
+=======
+* Only show popup tab if popup plugin is present
+! Wrong time displayed in mailbrower (fix by y_b)
+
 0.1.2.3
 =======
 * New design for the options pages (Thanks Eyecue)

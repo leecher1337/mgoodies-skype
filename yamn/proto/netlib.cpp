@@ -12,23 +12,34 @@
 #include <m_langpack.h>	//langpack for "connection" and other words
 #include "../debug.h"
 #include "netlib.h"
-#include "ssl.h"
-
-extern void __stdcall	SSL_DebugLog( const char *fmt, ... );
-extern PFN_SSL_pvoid_pvoid		SSL_new;			// SSL *SSL_new(SSL_CTX *ctx)
-extern PFN_SSL_void_pvoid		SSL_free;			// void SSL_free(SSL *ssl);
-extern PFN_SSL_int_pvoid_int		SSL_set_fd;			// int SSL_set_fd(SSL *ssl, int fd);
-extern PFN_SSL_int_pvoid		SSL_connect;			// int SSL_connect(SSL *ssl);
-extern PFN_SSL_int_pvoid_pvoid_int	SSL_read;			// int SSL_read(SSL *ssl, void *buffer, int bufsize)
-extern PFN_SSL_int_pvoid_pvoid_int	SSL_write;			// int SSL_write(SSL *ssl, void *buffer, int bufsize)
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
+BOOL SSLLoaded=FALSE;
 HANDLE hNetlibUser=NULL;
 
 extern PVOID TLSCtx;
 extern PVOID SSLCtx;
+
+void __stdcall	SSL_DebugLog(const char *fmt, ...)
+{
+	char		str[ 4096 ];
+	va_list	vararg;
+
+	va_start( vararg, fmt );
+	int tBytes = _vsnprintf( str, sizeof(str)-1, fmt, vararg );
+	if ( tBytes == 0 )
+		return;
+
+	if ( tBytes > 0 )
+		str[ tBytes ] = 0;
+	else
+		str[ sizeof(str)-1 ] = 0;
+
+	CallService(MS_NETLIB_LOG, (WPARAM)hNetlibUser, (LPARAM)str);
+	va_end( vararg );
+}
 
 HANDLE RegisterNLClient(const char *name)
 {
@@ -57,35 +68,28 @@ HANDLE RegisterNLClient(const char *name)
 
 //Move connection to SSL
 void CNLClient::SSLify() throw(DWORD){
-	SSL_DebugLog("Staring %s...",TLSCtx?"TLS":"SSL");
-	int socket = CallService( MS_NETLIB_GETSOCKET, ( WPARAM ) hConnection, 0 );
-	if ( (ssl=SSL_new( TLSCtx?TLSCtx:SSLCtx) ) != NULL ) 
+#ifdef DEBUG_COMM
+	SSL_DebugLog("Staring SSL...");
+#endif
+	int socket = CallService(MS_NETLIB_GETSOCKET, (WPARAM)hConnection, 0);
+	if (socket != INVALID_SOCKET)
 	{
-		SSL_DebugLog( "TLS(%08X) create layer %s",ssl,"ok" );
-		if ( SSL_set_fd( ssl, socket ) > 0 ) 
+#ifdef DEBUG_COMM
+			SSL_DebugLog("Staring netlib core SSL");
+#endif
+		if (CallService(MS_NETLIB_STARTSSL, (WPARAM)hConnection, 0)) 
 		{
-			SSL_DebugLog( "TLS(%08X) set fd %s",ssl,"ok" );
-			if ( SSL_connect( ssl ) > 0 ) 
-			{
-				isTLSed = true;	// This make all communication on this handle use SSL
-				SSL_DebugLog( "TLS(%08X) negotiation at (%08X:%d) %s", ssl, hConnection, socket, "ok" );
-				return;
-			} 
-			else 
-			{
-				SSL_DebugLog( "TLS(%08X) negotiation at (%08X:%d) %s", ssl, hConnection, socket, "failed" );
-		}	}
-		else 
-		{
-			SSL_DebugLog( "TLS(%08X) set fd %s",ssl,"failed" );
+#ifdef DEBUG_COMM
+			SSL_DebugLog("Netlib core SSL started");
+#endif
+			isTLSed = true;
+			SSLLoaded = TRUE;
+			return;
 		}
-		SSL_free( ssl );
-		ssl = NULL;  //::Disconnect should not try to SSL_free(ssl) again
-//		SSL_CTX_free(localSSLCtx);
-	} 
-	else 
-		SSL_DebugLog( "TLS(%08X) create layer %s",0,"failed" );
-	throw NetworkError=(DWORD)ESSL_CREATESSL;
+	}
+
+	//ssl could not be created
+	throw NetworkError = (DWORD)ESSL_CREATESSL;
 }
 
 //Connects to the server through the sock
@@ -96,7 +100,6 @@ void CNLClient::Connect(const char* servername,const int port) throw(DWORD)
 
 	NetworkError=SystemError=0;
 	isTLSed = false;
-	ssl = NULL;
 
 #ifdef DEBUG_COMM
 	DebugLog(CommFile,"<connect>\n");
@@ -131,16 +134,13 @@ void CNLClient::Connect(const char* servername,const int port) throw(DWORD)
 int CNLClient::LocalNetlib_Send(HANDLE hConn,const char *buf,int len,int flags) {
 	if (isTLSed) 
 	{
-		SSL_DebugLog("TLS(%08X) send: %s",ssl,buf);
-		int res = SSL_write(ssl,(PVOID)buf,len);
-//		SSL_DebugLog("TLS send result: %d",res);
-		return res;
+#ifdef DEBUG_COMM
+		SSL_DebugLog("SSL send: %s", buf);
+#endif
 	} 
-	else 
-	{
-		NETLIBBUFFER nlb={(char*)buf,len,flags};
-		return CallService(MS_NETLIB_SEND,(WPARAM)hConn,(LPARAM)&nlb);
-	}
+	
+	NETLIBBUFFER nlb={(char*)buf,len,flags};
+	return CallService(MS_NETLIB_SEND,(WPARAM)hConn,(LPARAM)&nlb);
 }
 
 void CNLClient::Send(const char *query) throw(DWORD)
@@ -182,23 +182,16 @@ void CNLClient::Send(const char *query) throw(DWORD)
 //if not success, exception is throwed
 
 int CNLClient::LocalNetlib_Recv(HANDLE hConn,char *buf,int len,int flags) {
-	if (isTLSed) 
+	NETLIBBUFFER nlb={buf,len,flags};
+	int iReturn = CallService(MS_NETLIB_RECV,(WPARAM)hConn,(LPARAM)&nlb);
+	if (isTLSed)
 	{
-//		SSL_DebugLog("SSL(%08X) recving",ssl);
-		if (ssl){
-			int res = SSL_read(ssl,buf,len);
-			SSL_DebugLog("TLS(%08X) recv: %s",ssl,buf);
-			return res;
-		} else {
-			SSL_DebugLog("TLS(%08X) SSL connection is lost",ssl);
-			return 0;
-		}
-	} 
-	else 
-	{
-		NETLIBBUFFER nlb={buf,len,flags};
-		return CallService(MS_NETLIB_RECV,(WPARAM)hConn,(LPARAM)&nlb);
+#ifdef DEBUG_COMM
+		SSL_DebugLog("SSL recv: %s", buf);
+#endif
 	}
+	
+	return iReturn;
 }
 
 char* CNLClient::Recv(char *buf,int buflen) throw(DWORD)
@@ -264,13 +257,6 @@ char* CNLClient::Recv(char *buf,int buflen) throw(DWORD)
 //Closes netlib connection
 void CNLClient::Disconnect()
 {
-	if (ssl) 
-	{
-		SSL_DebugLog("TLS(%08X) Unregistering",ssl);
-		SSL_free( ssl );
-		SSL_DebugLog("TLS(%08X) Done",ssl);
-		ssl = NULL;
-	}
 	Netlib_CloseHandle(hConnection);
 	hConnection=(HANDLE)NULL;
 }

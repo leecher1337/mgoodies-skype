@@ -52,10 +52,7 @@ char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL, BO
 	if(NetClient!=NULL)
 		delete NetClient;
 	SSL=UseSSL;
-	if(SSL)
-		NetClient=new CSSLClient;
-	else
-		NetClient=new CNLClient;
+	NetClient=new CNLClient;
 
 #ifdef DEBUG_DECODE
 	DebugLog(DecodeFile,"Connect:servername: %s port:%d\n",servername,port);
@@ -63,11 +60,20 @@ char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL, BO
 	POP3Error=EPOP3_CONNECT;
 	NetClient->Connect(servername,port);
 	POP3Error=0;
-//	CTCNetClient::Prepare(servername,port);
-//	CTCNetClient::Connect();
+
+	if (SSL)
+	{
+		try { NetClient->SSLify(); } 
+		catch (...) 
+		{
+			NetClient->Disconnect();
+			return NULL;
+		}
+	}
+
 	temp = RecvRest(NetClient->Recv(),POP3_SEARCHACK);
 	extern BOOL SSLLoaded;
-	if (!NoTLS & (SSLLoaded) & !(SSL)){
+	if (!NoTLS & !(SSL)){
 		if(NetClient->Stopped)			//check if we can work with this POP3 client session
 			throw POP3Error=(DWORD)EPOP3_STOPPED;
 		NetClient->Send("STLS\r\n");
