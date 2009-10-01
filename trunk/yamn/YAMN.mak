@@ -33,32 +33,55 @@ NULL=nul
 
 OUTDIR=.\Release\Win2in1
 INTDIR=.\Release\Win2in1
+# Begin Custom Macros
+OutDir=.\Release\Win2in1
+# End Custom Macros
 
-ALL : "..\..\bin\release\plugins\yamn.dll"
+ALL : "..\..\bin\release\plugins\yamn.dll" "$(OUTDIR)\YAMN.bsc"
 
 
 CLEAN :
 	-@erase "$(INTDIR)\account.obj"
+	-@erase "$(INTDIR)\account.sbr"
 	-@erase "$(INTDIR)\badconnect.obj"
+	-@erase "$(INTDIR)\badconnect.sbr"
 	-@erase "$(INTDIR)\debug.obj"
+	-@erase "$(INTDIR)\debug.sbr"
 	-@erase "$(INTDIR)\decode.obj"
+	-@erase "$(INTDIR)\decode.sbr"
 	-@erase "$(INTDIR)\filterplugin.obj"
+	-@erase "$(INTDIR)\filterplugin.sbr"
 	-@erase "$(INTDIR)\mailbrowser.obj"
+	-@erase "$(INTDIR)\mailbrowser.sbr"
 	-@erase "$(INTDIR)\mails.obj"
+	-@erase "$(INTDIR)\mails.sbr"
 	-@erase "$(INTDIR)\main.obj"
+	-@erase "$(INTDIR)\main.sbr"
 	-@erase "$(INTDIR)\md5.obj"
+	-@erase "$(INTDIR)\md5.sbr"
 	-@erase "$(INTDIR)\mime.obj"
+	-@erase "$(INTDIR)\mime.sbr"
 	-@erase "$(INTDIR)\netlib.obj"
+	-@erase "$(INTDIR)\netlib.sbr"
 	-@erase "$(INTDIR)\pop3.obj"
+	-@erase "$(INTDIR)\pop3.sbr"
 	-@erase "$(INTDIR)\pop3comm.obj"
+	-@erase "$(INTDIR)\pop3comm.sbr"
 	-@erase "$(INTDIR)\pop3opt.obj"
+	-@erase "$(INTDIR)\pop3opt.sbr"
 	-@erase "$(INTDIR)\protoplugin.obj"
+	-@erase "$(INTDIR)\protoplugin.sbr"
 	-@erase "$(INTDIR)\services.obj"
+	-@erase "$(INTDIR)\services.sbr"
 	-@erase "$(INTDIR)\ssl.obj"
+	-@erase "$(INTDIR)\ssl.sbr"
 	-@erase "$(INTDIR)\synchro.obj"
+	-@erase "$(INTDIR)\synchro.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\yamn.obj"
 	-@erase "$(INTDIR)\YAMN.res"
+	-@erase "$(INTDIR)\yamn.sbr"
+	-@erase "$(OUTDIR)\YAMN.bsc"
 	-@erase "$(OUTDIR)\yamn.exp"
 	-@erase "..\..\bin\release\plugins\yamn.dll"
 
@@ -66,7 +89,7 @@ CLEAN :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /Fp"$(INTDIR)\YAMN.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\YAMN.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -105,7 +128,31 @@ RSC_PROJ=/l 0x417 /fo"$(INTDIR)\YAMN.res" /d "NDEBUG"
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc" 
 BSC32_SBRS= \
-	
+	"$(INTDIR)\badconnect.sbr" \
+	"$(INTDIR)\mailbrowser.sbr" \
+	"$(INTDIR)\decode.sbr" \
+	"$(INTDIR)\mails.sbr" \
+	"$(INTDIR)\mime.sbr" \
+	"$(INTDIR)\md5.sbr" \
+	"$(INTDIR)\netlib.sbr" \
+	"$(INTDIR)\pop3.sbr" \
+	"$(INTDIR)\pop3comm.sbr" \
+	"$(INTDIR)\pop3opt.sbr" \
+	"$(INTDIR)\ssl.sbr" \
+	"$(INTDIR)\account.sbr" \
+	"$(INTDIR)\debug.sbr" \
+	"$(INTDIR)\filterplugin.sbr" \
+	"$(INTDIR)\main.sbr" \
+	"$(INTDIR)\protoplugin.sbr" \
+	"$(INTDIR)\services.sbr" \
+	"$(INTDIR)\synchro.sbr" \
+	"$(INTDIR)\yamn.sbr"
+
+"$(OUTDIR)\YAMN.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+    $(BSC32) @<<
+  $(BSC32_FLAGS) $(BSC32_SBRS)
+<<
+
 LINK32=link.exe
 LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\yamn.pdb" /machine:I386 /out:"../../bin/release/plugins/yamn.dll" /implib:"$(OUTDIR)\yamn.lib" /filealign:512 
 LINK32_OBJS= \
@@ -833,7 +880,7 @@ SOURCE=.\browser\badconnect.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\badconnect.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\badconnect.obj"	"$(INTDIR)\badconnect.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -879,7 +926,7 @@ SOURCE=.\browser\mailbrowser.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\mailbrowser.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mailbrowser.obj"	"$(INTDIR)\mailbrowser.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -925,7 +972,7 @@ SOURCE=.\mails\decode.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\decode.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\decode.obj"	"$(INTDIR)\decode.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -971,7 +1018,7 @@ SOURCE=.\mails\mails.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\mails.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mails.obj"	"$(INTDIR)\mails.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1017,7 +1064,7 @@ SOURCE=.\mails\mime.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\mime.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mime.obj"	"$(INTDIR)\mime.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1063,7 +1110,7 @@ SOURCE=.\proto\md5.c
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\md5.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\md5.obj"	"$(INTDIR)\md5.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1109,7 +1156,7 @@ SOURCE=.\proto\netlib.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\netlib.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\netlib.obj"	"$(INTDIR)\netlib.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1155,7 +1202,7 @@ SOURCE=.\proto\pop3\pop3.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\pop3.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\pop3.obj"	"$(INTDIR)\pop3.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1201,7 +1248,7 @@ SOURCE=.\proto\pop3\pop3comm.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\pop3comm.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\pop3comm.obj"	"$(INTDIR)\pop3comm.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1247,7 +1294,7 @@ SOURCE=.\proto\pop3\pop3opt.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\pop3opt.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\pop3opt.obj"	"$(INTDIR)\pop3opt.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1293,7 +1340,7 @@ SOURCE=.\proto\ssl.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\ssl.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\ssl.obj"	"$(INTDIR)\ssl.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -1339,7 +1386,7 @@ SOURCE=.\account.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\account.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\account.obj"	"$(INTDIR)\account.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1379,7 +1426,7 @@ SOURCE=.\debug.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\debug.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\debug.obj"	"$(INTDIR)\debug.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1419,7 +1466,7 @@ SOURCE=.\filterplugin.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\filterplugin.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\filterplugin.obj"	"$(INTDIR)\filterplugin.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1459,7 +1506,7 @@ SOURCE=.\main.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\main.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\main.obj"	"$(INTDIR)\main.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1499,7 +1546,7 @@ SOURCE=.\protoplugin.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\protoplugin.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\protoplugin.obj"	"$(INTDIR)\protoplugin.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1539,7 +1586,7 @@ SOURCE=.\services.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\services.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\services.obj"	"$(INTDIR)\services.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1579,7 +1626,7 @@ SOURCE=.\synchro.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\synchro.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\synchro.obj"	"$(INTDIR)\synchro.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
@@ -1619,7 +1666,7 @@ SOURCE=.\yamn.cpp
 !IF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 
-"$(INTDIR)\yamn.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\yamn.obj"	"$(INTDIR)\yamn.sbr" : $(SOURCE) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"

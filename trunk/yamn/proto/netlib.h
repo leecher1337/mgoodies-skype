@@ -20,10 +20,11 @@ public:
 protected:
 	HANDLE hConnection;
 	BOOL isTLSed;
-	PVOID ssl;
 	int LocalNetlib_Send(HANDLE hConn,const char *buf,int len,int flags);
 	int LocalNetlib_Recv(HANDLE hConn,char *buf,int len,int flags);
 };
+
+void SSL_DebugLog(const char *fmt, ...);
 
 enum
 {
@@ -37,4 +38,18 @@ enum
 	ENL_TIMEOUT,		//timed out during recv
 };
 
+enum
+{
+	ESSL_NOTLOADED=1,	//OpenSSL is not loaded
+	ESSL_WINSOCKINIT,	//WinSock 2.0 init failed
+	ESSL_GETHOSTBYNAME,	//DNS error
+	ESSL_CREATESOCKET,	//error creating socket
+	ESSL_SOCKETCONNECT,	//error connecting with socket
+	ESSL_CREATESSL,		//error creating SSL session structure
+	ESSL_SETSOCKET,		//error connect socket with SSL session for bidirect I/O space
+	ESSL_CONNECT,		//cannot connect to server
+	ESSL_SEND,		//cannot send data
+	ESSL_RECV,		//cannot receive data
+	ESSL_RECVALLOC,		//cannot allocate memory for received data
+};
 #endif
