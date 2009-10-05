@@ -38,6 +38,7 @@ WCHAR *UserDirectory;		//e.g. "F:\WINNT\Profiles\UserXYZ"
 char *ProtoName=YAMN_DBMODULE;
 //char *AltProtoName;
 char *szMirandaDir;
+char *szProfileDir;
 
 int YAMN_STATUS;
 
@@ -164,20 +165,16 @@ int FreeVSApi()
 static void GetProfileDirectory(char *szPath,int cbPath)
 //This is copied from Miranda's sources. In 0.2.1.0 it is needed, in newer vesions of Miranda use MS_DB_GETPROFILEPATH service
 {
-	szMirandaDir=new char[MAX_PATH];
+	szProfileDir=new char[MAX_PATH];
 	if (ServiceExists(MS_DB_GETPROFILEPATH)){
 		if (!CallService(MS_DB_GETPROFILEPATH,cbPath,(WPARAM)(UINT)szPath)) {
-			lstrcpy(szMirandaDir,szPath);
+			lstrcpy(szProfileDir,szPath);
 			return; //success
 		}
 	}
-	char *str2;
-	char szMirandaIni[MAX_PATH],szProfileDir[MAX_PATH],szExpandedProfileDir[MAX_PATH];
+	char szMirandaIni[MAX_PATH],szExpandedProfileDir[MAX_PATH];
 	DWORD dwAttributes;
 
-	GetModuleFileName(GetModuleHandle(NULL),szMirandaDir,MAX_PATH);
-	str2=strrchr(szMirandaDir,'\\');
-	if(str2!=NULL) *str2=0;
 	lstrcpy(szMirandaIni,szMirandaDir);
 	lstrcat(szMirandaIni,"\\mirandaboot.ini");
 	GetPrivateProfileString("Database","ProfileDir",".",szProfileDir,sizeof(szProfileDir),szMirandaIni);
@@ -419,12 +416,24 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink=link;
 
 	YAMN_STATUS = ID_STATUS_OFFLINE;
-	{
-		char szProfileDir[MAX_PATH+1];
-		GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
-		MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
-		//	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
+
+	//	we get the Miranda Root Path
+	szMirandaDir=new char[MAX_PATH];
+	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)){
+		CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)".",(LPARAM)szMirandaDir);
 	}
+	else {
+		char *str2;
+		GetModuleFileName(GetModuleHandle(NULL),szMirandaDir,MAX_PATH);
+		str2=strrchr(szMirandaDir,'\\');
+		if(str2!=NULL) *str2=0;
+	}
+
+	//	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
+	char szProfileDir[MAX_PATH+1];
+	GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
+
 	
 	// Enumerate all the code pages available for the System Locale
 	EnumSystemCodePages(EnumSystemCodePagesProc, CP_INSTALLED);
