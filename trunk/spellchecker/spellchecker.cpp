@@ -311,43 +311,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		// Get language flags
 		for(int i = 0; i < languages.getCount(); i++)
 		{
-BYTE *bytes = (BYTE *) languages[i]->full_name;
-bytes[0] = 0x20;
-bytes[1] = 0x4;
-bytes[2] = 0x43;
-bytes[3] = 0x4;
-bytes[4] = 0x41;
-bytes[5] = 0x4;
-bytes[6] = 0x41;
-bytes[7] = 0x4;
-bytes[8] = 0x3a;
-bytes[9] = 0x4;
-bytes[10] = 0x38;
-bytes[11] = 0x4;
-bytes[12] = 0x39;
-bytes[13] = 0x4;
-bytes[14] = 0x20;
-bytes[15] = 0x0;
-bytes[16] = 0x5b;
-bytes[17] = 0x0;
-bytes[18] = 0x72;
-bytes[19] = 0x0;
-bytes[20] = 0x75;
-bytes[21] = 0x0;
-bytes[22] = 0x5f;
-bytes[23] = 0x0;
-bytes[24] = 0x52;
-bytes[25] = 0x0;
-bytes[26] = 0x55;
-bytes[27] = 0x0;
-bytes[28] = 0x5d;
-bytes[29] = 0x0;
-bytes[30] = 0x0;
-bytes[31] = 0x0;
-bytes[32] = 0x0;
-bytes[33] = 0x0;
-
-
 			sid.ptszDescription = languages[i]->full_name;
 #ifdef UNICODE
 			char lang[32];
@@ -1677,8 +1640,6 @@ void FoundWrongWord(TCHAR *word, CHARRANGE pos, void *param)
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
-	MLog log(MODULE_NAME, "AddItemsToMenu");
-
 	FreePopupData(dlg);
 	if (opts.use_flags)
 	{
@@ -1699,16 +1660,9 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		if (dlg->hwnd_menu_owner != NULL)
 			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
 
-		log.log("Adding languages");
-
 		// First add languages
 		for (int i = 0; i < languages.getCount(); i++)
 		{
-			log.log("%d : %x [%d]", i, languages[i]->full_name, sizeof(TCHAR));
-			BYTE *bs = (BYTE *) languages[i]->full_name;
-			for(int j = 0; j < 50; ++j)
-				log.log(" [%d] : %x %c", j, (int) bs[j], (char) bs[j]);
-
 			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages[i] == dlg->lang ? MF_CHECKED : 0),
 				LANGUAGE_MENU_ID_BASE + i, languages[i]->full_name);
 		}
@@ -2142,14 +2096,11 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_MEASUREITEM:
 		{
-			MLog log(MODULE_NAME, "WM_MEASUREITEM");
-
 			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
 			if (lpmis->CtlType != ODT_MENU || lpmis->itemID < LANGUAGE_MENU_ID_BASE || lpmis->itemID >= LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount()) 
 				break;
 
 			int pos = lpmis->itemID - LANGUAGE_MENU_ID_BASE;
-			log.log("pos = %d", pos);
 
 			Dictionary *dict = languages[pos];
 
@@ -2162,60 +2113,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			HFONT hFont = CreateFontIndirect(&info.lfMenuFont);
 			HFONT hFontOld = (HFONT) SelectObject(hdc, hFont);
 
-			log.log("ORIG font %x %S %d", hFont, info.lfMenuFont.lfFaceName, info.lfMenuFont.lfHeight);
-
 			RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
 
-			log.log("dict->full_name : %x [%d]", dict->full_name, sizeof(TCHAR));
-			BYTE *bs = (BYTE *) dict->full_name;
-			for(int j = 0; j < 50; ++j)
-				log.log(" [%d] : %x %c", j, (int) bs[j], (char) bs[j]);
-
-			{
-				HFONT hFontTmp = (HFONT) GetCurrentObject(hdc, OBJ_FONT);
-				if (hFontTmp == NULL)
-				{
-					log.log("Failed to get font!! %x", hFontTmp);
-				}
-				else
-				{
-					LOGFONT font;
-					if (GetObject(hFontTmp, sizeof(font), &font))
-						log.log("font %x %S %d", hFontTmp, font.lfFaceName, font.lfHeight);
-					else
-						log.log("Failed to get font name!!");
-				}
-			}
-
-			int ret = DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_NOPREFIX | DT_SINGLELINE | DT_LEFT | DT_TOP | DT_CALCRECT);
-			if (ret == 0)
-			{
-				LPVOID lpMsgBuf;
-				DWORD dw = GetLastError(); 
-
-				FormatMessage(
-					FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-					FORMAT_MESSAGE_FROM_SYSTEM,
-					NULL,
-					dw,
-					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-					(LPTSTR) &lpMsgBuf,
-					0, NULL );
-
-				log.log("rc (t %d, l %d, b %d, r %d)  ret=%d err=%d %S", rc.top, rc.left, rc.bottom, rc.right, ret, dw, lpMsgBuf); 
-
-				LocalFree(lpMsgBuf);
-				ExitProcess(dw); 
-			}
-			else
-			{
-				log.log("rc (t %d, l %d, b %d, r %d)  ret=%d", rc.top, rc.left, rc.bottom, rc.right, ret); 
-			}
+			DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_NOPREFIX | DT_SINGLELINE | DT_LEFT | DT_TOP | DT_CALCRECT);
 
 			lpmis->itemHeight = max(ICON_SIZE, max(bmpChecked.bmHeight, rc.bottom));
 			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + ICON_SIZE + 4 + rc.right + 2;
-
-			log.log("(h %d, w %d)", lpmis->itemHeight, lpmis->itemWidth);
 
 			SelectObject(hdc, hFontOld);
 			DeleteObject(hFont);
