@@ -8,7 +8,7 @@ static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
 int nProtocol = 0;
-static HANDLE hEventOptionsInitialize, g_hIcon = NULL, g_hEventDbWindowEvent = NULL, g_hEventToolbarLoaded = NULL, g_hEventButtonPressed = NULL;
+static HANDLE g_hEventModulesLoaded = NULL, g_hEventIconsChanged = NULL,hEventOptionsInitialize, g_hIcon = NULL, g_hEventDbWindowEvent = NULL, g_hEventToolbarLoaded = NULL, g_hEventButtonPressed = NULL;
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 NudgeElementList *NudgeList;
@@ -442,7 +442,7 @@ void LoadProtocols(void)
 				sprintf(str,"%s/Nudge",ppProtocolDescriptors[i]->szName);
 				NudgeEvent = HookEvent(str, NudgeRecieved);
 				if(NudgeEvent != NULL)
-					Nudge_AddElement(ppProtocolDescriptors[i]->szName);
+					Nudge_AddElement(ppProtocolDescriptors[i]->szName, NudgeEvent);
 				
 				NudgeEvent = NULL;
 			}
@@ -513,7 +513,7 @@ void LoadIcons(void)
 		{			
 			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
 			sid.pszName = iconName;
-			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
+			sprintf(iconDesc,"%s %s",Translate("Nudge for"),n->item.ProtocolName);
 			sid.pszDescription = iconDesc;
 			sid.iDefaultIndex = -IDI_NUDGE;
 			sid.hDefaultIcon =  LoadIcon(hInst,MAKEINTRESOURCE(IDI_NUDGE));
@@ -524,7 +524,7 @@ void LoadIcons(void)
 
 		sprintf(iconName,"Nudge_Default");
 		sid.pszName = iconName;
-		sprintf(iconDesc,"Nudge as Default");
+		sprintf(iconDesc,Translate("Nudge as Default"));
 		sid.pszDescription = iconDesc;
 		sid.iDefaultIndex = -IDI_NUDGE;
 		sid.hDefaultIcon =  LoadIcon(hInst,MAKEINTRESOURCE(IDI_NUDGE));
@@ -644,9 +644,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 { 	
 	pluginLink = link;
 	NudgeList = NULL;
-	HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
+	g_hEventModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
 	if(ServiceExists(MS_SKIN2_ADDICON))
-        HookEvent(ME_SKIN2_ICONSCHANGED, LoadChangedIcons);
+        g_hEventIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, LoadChangedIcons);
 	
 	InitOptions();
 	InitVSApi();
@@ -665,10 +665,14 @@ extern "C" int __declspec(dllexport) Unload(void)
 	if(g_hEventDbWindowEvent) UnhookEvent(g_hEventButtonPressed);
 	if(g_hEventDbWindowEvent) UnhookEvent(g_hEventDbWindowEvent);
 
+	if(g_hEventModulesLoaded) UnhookEvent(g_hEventModulesLoaded);
+	if(g_hEventIconsChanged) UnhookEvent(g_hEventIconsChanged);
+
 	FreeVSApi();
 	NudgeElementList* p = NudgeList;
 	while ( p != NULL ) 
 	{
+		if(p->item.hEvent) UnhookEvent(p->item.hEvent);
 		NudgeElementList* p1 = p->next;
 		//free( p );
 		delete p;
@@ -933,7 +937,7 @@ void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont, DWORD timestamp)
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
-int Nudge_AddElement(char *protoName)
+int Nudge_AddElement(char *protoName, HANDLE hevent)
 {
 	nProtocol ++;
 	//Add contact menu entry
@@ -966,6 +970,8 @@ int Nudge_AddElement(char *protoName)
 	newNudge->item.hContactMenu = (HANDLE) CallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
 	newNudge->item.Load();
+
+	newNudge->item.hEvent = hevent;
 	
 	SkinAddNewSound( newNudge->item.NudgeSoundname, newNudge->item.NudgeSoundname, "nudge.wav" );
 	
