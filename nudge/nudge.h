@@ -55,6 +55,7 @@ public:
 	int popupTimeSec;
 	int iProtoNumber;
 	HICON hIcon;
+	HANDLE hEvent;
 	HANDLE hContactMenu;
 
 	void Load(void);

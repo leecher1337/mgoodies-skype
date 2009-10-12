@@ -68,7 +68,7 @@ void Nudge_SentStatus(CNudgeElement, HANDLE);
 /*
 *
 ****************************/
-int Nudge_AddElement(char*);
+int Nudge_AddElement(char*, HANDLE);
 
 /*
 *
