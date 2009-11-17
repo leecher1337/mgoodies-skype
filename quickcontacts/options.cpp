@@ -112,7 +112,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			enabled = IsDlgButtonChecked(hwndDlg, IDC_SUBCONTACTS);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_KEEP_OFFLINE), enabled);
 
-			if (!ServiceExists(MS_MC_GETMETACONTACT))
+			if (metacontacts_proto == NULL)
 			{
 				ShowWindow(GetDlgItem(hwndDlg, IDC_SUBCONTACTS), SW_HIDE);
 				ShowWindow(GetDlgItem(hwndDlg, IDC_KEEP_OFFLINE), SW_HIDE);

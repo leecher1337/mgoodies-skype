@@ -1,6 +1,6 @@
 ; Quick Contacts
 ; Author: micron-x, Pescuma
-; http://pescuma.mirandaim.ru/miranda/quickcontacts
+; http://pescuma.org/miranda/quickcontacts
 
 [Quick Contacts]
 
@@ -25,11 +25,12 @@
 [Open contact menu]
 
 ; Options
-[ Last Sent ]
+[Last Sent]
 [Enable last-sent-to]
 [recognize all messages sent]
 [recognize messages sent with hotkey only]
-[ Contacts ]
+
+[Contacts]
 [Show offline contacts on these protocols:]
 [But hide them if protocol is offline]
 [Append group name to contact name]

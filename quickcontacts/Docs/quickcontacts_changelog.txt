@@ -2,6 +2,12 @@ Quick Contacts
 
 Changelog:
 
+. 1.0.0.0
+  * Fix for group names (closes issue #83)
+  + Handle metacontacts off (closes issue #61)
+  + Show account name
+  * Removed spaces from frame names in options
+
 . 0.0.3.1
   + Number of contacts is not limited anymore
 

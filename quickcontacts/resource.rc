@@ -27,19 +27,19 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT DIALOG DISCARDABLE  0, 0, 257, 237
+IDD_OPT DIALOGEX 0, 0, 257, 237
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Last Sent ",IDC_STATIC,0,0,257,58
+    GROUPBOX        "Last Sent",IDC_STATIC,0,0,257,58
     CONTROL         "Enable last-sent-to",IDC_LASTSENTTO,"Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,18,14,221,10
     CONTROL         "recognize all messages sent",IDC_GLOBAL,"Button",
                     BS_AUTORADIOBUTTON | WS_DISABLED,30,27,209,10
     CONTROL         "recognize messages sent with hotkey only",IDC_LOCAL,
                     "Button",BS_AUTORADIOBUTTON | WS_DISABLED,30,39,209,10
-    GROUPBOX        " Contacts ",IDC_STATIC,0,59,257,177
+    GROUPBOX        "Contacts",IDC_STATIC,0,59,257,177
     LTEXT           "Show offline contacts on these protocols:",IDC_STATIC,
                     16,72,236,9
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
@@ -64,7 +64,7 @@ IDD_MAIN DIALOGEX 13, 55, 193, 54
 STYLE DS_FIXEDSYS | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "Enter username:"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_USERNAME,20,6,164,130,CBS_DROPDOWN | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | 
