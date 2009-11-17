@@ -45,11 +45,12 @@ static OptPageControl optionsControls[] = {
 	{ &opts.use_flags,						CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE },
 	{ &opts.auto_locale,					CONTROL_CHECKBOX,		IDC_AUTO_LOCALE,			"AutoLocale", FALSE },
 	{ &opts.use_other_apps_dicts,			CONTROL_CHECKBOX,		IDC_OTHER_PROGS,			"UseOtherAppsDicts", TRUE },
+	{ &opts.handle_underscore,				CONTROL_CHECKBOX,		IDC_HANDLE_UNDERSCORE,		"HandleUnderscore", FALSE },
 };
 
 static UINT optionsExpertControls[] = { 
 	IDC_ADVANCED, IDC_UNDERLINE_TYPE_L, IDC_UNDERLINE_TYPE, IDC_CASCADE_CORRECTIONS, IDC_SHOW_ALL_CORRECTIONS,
-	IDC_USE_FLAGS
+	IDC_SHOW_WRONG_WORD, IDC_USE_FLAGS, IDC_AUTO_LOCALE, IDC_OTHER_PROGS, IDC_HANDLE_UNDERSCORE
 };
 
 

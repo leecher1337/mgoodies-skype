@@ -274,7 +274,7 @@ static INT_PTR CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wPa
 					}
 					else if (_tcscmp(find, replace) == 0)
 					{
-						MessageBox(hwndDlg, TranslateT("The correction can't be the equal to the wrong word!"), TranslateT("Wrong Correction"), 
+						MessageBox(hwndDlg, TranslateT("The correction can't be equal to the wrong word!"), TranslateT("Wrong Correction"), 
 							MB_OK | MB_ICONERROR);
 					}
 					else

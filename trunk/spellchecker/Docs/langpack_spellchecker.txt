@@ -14,14 +14,14 @@
 [Enabled]
 [Disabled]
 
-[ Spell Checker ]
+[Spell Checker]
 [Default language:]
 [Auto-replace words with dictionary suggestions]
 [Ignore words with numbers]
 [Ignore words in UPPER CASE]
 [Download more dictionaries]
 
-[ Advanced ]
+[Advanced]
 [Underline type:]
 [Line]
 [Dotted]
@@ -36,7 +36,7 @@
 [Use flags]
 [Use input language to select dictionary]
 
-[ Replacements ]
+[Replacements]
 [Enable auto-replacements]
 [Language:]
 [Wrong word]
@@ -63,12 +63,12 @@
 [Use variables in correction]
 [The wrong word can't be empty!]
 [The correction can't be empty!]
-[The correction can't be the equal to the wrong word!]
+[The correction can't be equal to the wrong word!]
 [Wrong Correction]
 [The wrong word typed by the user]
 
 
 ; Message Box
 
-[Could not find the message dialog. This usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker)]
+[Something is wrong with the message window.\n\nThis usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker).\n   In this case, please install tabSRMM or Scriver.]
 [There are spelling errors. Are you sure you want to send this message?]

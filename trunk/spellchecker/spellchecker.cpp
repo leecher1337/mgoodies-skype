@@ -59,6 +59,8 @@ static IconStruct iconList[] =
 #define WMU_DICT_CHANGED (WM_USER+100)
 #define WMU_KBDL_CHANGED (WM_USER+101)
 
+#define HOTKEY_ACTION_TOGGLE 1
+
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 LIST_INTERFACE li;
@@ -402,6 +404,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 	}
 
+	if (ServiceExists(MS_HOTKEY_REGISTER))
+	{
+		HOTKEYDESC hkd = {0};
+		hkd.cbSize = sizeof(hkd);
+		hkd.pszName = Translate("Spell Checker/Toggle");
+		hkd.pszSection = Translate("Spell Checker");
+		hkd.pszDescription = Translate("Enable/disable spell checker");
+		hkd.lParam = HOTKEY_ACTION_TOGGLE;
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM) &hkd);
+	}
+
 	loaded = TRUE;
 
 	return 0;
@@ -490,24 +503,40 @@ BOOL IsMyUnderline(const CHARFORMAT2 &cf)
 
 void SetNoUnderline(RichEdit *re, int pos_start, int pos_end)
 {
-	for(int i = pos_start; i <= pos_end; i++)
+	if (opts.handle_underscore)
 	{
-		re->SetSel(i, min(i+1, pos_end));
+		for(int i = pos_start; i <= pos_end; i++)
+		{
+			re->SetSel(i, min(i+1, pos_end));
+
+			CHARFORMAT2 cf;
+			cf.cbSize = sizeof(CHARFORMAT2);
+			re->SendMessage(EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+
+			BOOL mine = IsMyUnderline(cf);
+			if (mine)
+			{
+				cf.cbSize = sizeof(CHARFORMAT2);
+				cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
+				cf.dwEffects = 0;
+				cf.bUnderlineType = CFU_UNDERLINE;
+				re->SendMessage(EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
+			}
+		}
+	}
+	else
+	{
+		re->SetSel(pos_start, pos_end);
 
 		CHARFORMAT2 cf;
 		cf.cbSize = sizeof(CHARFORMAT2);
-		re->SendMessage(EM_GETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
-
-		if (IsMyUnderline(cf))
-		{
-			cf.cbSize = sizeof(CHARFORMAT2);
-			cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
-			cf.dwEffects = 0;
-			cf.bUnderlineType = CFU_UNDERLINE;
-			re->SendMessage(EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
-		}
+		cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
+		cf.dwEffects = 0;
+		cf.bUnderlineType = CFU_UNDERLINE;
+		re->SendMessage(EM_SETCHARFORMAT, (WPARAM) SCF_SELECTION, (LPARAM)&cf);
 	}
 }
+
 
 void SetNoUnderline(Dialog *dlg)
 {
@@ -518,13 +547,13 @@ void SetNoUnderline(Dialog *dlg)
 }
 
 
-BOOL IsNumber(TCHAR c)
+inline BOOL IsNumber(TCHAR c)
 {
-	return c >= '0' && c <= '9';
+	return c >= _T('0') && c <= _T('9');
 }
 
 
-BOOL IsURL(TCHAR c)
+inline BOOL IsURL(TCHAR c)
 {
 	return (c >= _T('a') && c <= _T('z'))
 		|| (c >= _T('A') && c <= _T('Z'))
@@ -538,7 +567,7 @@ BOOL IsURL(TCHAR c)
 }
 
 
-int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
+int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos, int *checked_until = NULL)
 {
 	int num_slashes = 0;
 	int num_ats = 0;
@@ -552,16 +581,22 @@ int FindURLEnd(Dialog *dlg, TCHAR *text, int start_pos)
 
 		if (c == _T('\\') || c == _T('/'))
 			num_slashes++;
-		if (c == _T('.'))
+		else if (c == _T('.'))
 			num_dots++;
-		if (c == _T('@'))
+		else if (c == _T('@'))
 			num_ats++;
 	}
+
+	if (checked_until != NULL)
+		*checked_until = i;
 	
-	if (num_slashes < 0 && num_dots < 0 && num_ats < 0)
+	if (num_slashes <= 0 && num_ats <= 0 && num_dots <= 0)
 		return -1;
 
 	if (num_slashes == 0 && num_ats == 0 && num_dots < 2)
+		return -1;
+
+	if (i - start_pos < 2)
 		return -1;
 
 	return i;
@@ -706,7 +741,7 @@ public:
 };
 
 int CheckTextLine(Dialog *dlg, int line, TextParser *parser,
-				   BOOL ignore_upper, BOOL ignore_with_numbers,
+				   BOOL ignore_upper, BOOL ignore_with_numbers, BOOL test_urls,
 				   const CHARRANGE &ignored, FoundWrongWordCallback callback, void *param)
 {
 	int errors = 0;
@@ -716,28 +751,61 @@ int CheckTextLine(Dialog *dlg, int line, TextParser *parser,
 	int first_char = dlg->re->GetFirstCharOfLine(line);
 
 	// Now lets get the words
+	int next_char_for_url = 0;
 	for (int pos = 0; pos < len; pos++)
 	{
-		int p = FindURLEnd(dlg, text, pos) - 1;
-		if (p > pos)
+		int url_end = pos;
+		if (pos >= next_char_for_url)
 		{
-			pos = p;
-			continue;
+			url_end = FindURLEnd(dlg, text, pos, &next_char_for_url);
+			next_char_for_url++;
 		}
 
-		TCHAR c = text[pos];
-
-		if (!parser->feed(pos, c))
+		if (url_end > pos)
 		{
-			if (pos >= len-1)
-				pos = len; // To check the last block
+			BOOL ignore_url = FALSE;
+
+			if (test_urls)
+			{
+				// All the url must be handled by the parser
+				parser->reset();
+
+				BOOL feed = FALSE;
+				for(int j = pos; !feed && j <= url_end; j++)
+					feed = parser->feed(j, text[j]);
+
+				if (feed || parser->getFirstCharPos() != pos)
+					ignore_url = TRUE;
+			}
 			else
+				ignore_url = TRUE;
+
+			pos = url_end;
+
+			if (ignore_url)
+			{
+				parser->reset();
 				continue;
+			}
+		}
+		else
+		{
+			TCHAR c = text[pos];
+
+			BOOL feed = parser->feed(pos, c);
+
+			if (!feed)
+			{
+				if (pos >= len-1)
+					pos = len; // To check the last block
+				else
+					continue;
+			}
 		}
 
 		int last_pos = parser->getFirstCharPos();
 		parser->reset();
-
+		
 		if (last_pos < 0)
 			continue;
 
@@ -836,11 +904,14 @@ int CheckText(Dialog *dlg, BOOL check_all,
 			SetNoUnderline(dlg->re, first_char, first_char + dlg->re->GetLineLength(line));
 
 			if (opts.auto_replace_user)
+			{
 				errors += CheckTextLine(dlg, line, &AutoReplaceParser(dlg->lang->autoReplace), 
-										FALSE, FALSE, cur_sel, callback, param);
+										FALSE, FALSE, TRUE, 
+										cur_sel, callback, param);
+			}
 
 			errors += CheckTextLine(dlg, line, &SpellParser(dlg->lang), 
-									opts.ignore_uppercase, opts.ignore_with_numbers,
+									opts.ignore_uppercase, opts.ignore_with_numbers, FALSE, 
 									cur_sel, callback, param);
 		}
 	}
@@ -897,8 +968,14 @@ int TimerCheck(Dialog *dlg, BOOL forceCheck = FALSE)
 {
 	KillTimer(dlg->hwnd, TIMER_ID);
 
-	if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
+	if (!dlg->enabled || dlg->lang == NULL)
 		return -1;
+
+	if (!dlg->lang->isLoaded())
+	{
+		SetTimer(dlg->hwnd, TIMER_ID, 500, NULL);
+		return -1;
+	}
 
 	// Don't check if field is read-only
 	if (dlg->re->IsReadOnly())
@@ -928,7 +1005,7 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (opts.ask_when_sending_with_error)
 		{
 			int errors = TimerCheck(dlg, TRUE);
-			if (errors> 0)
+			if (errors > 0)
 			{
 				if (MessageBox(hwnd, TranslateT("There are spelling errors. Are you sure you want to send this message?"),
 							   TranslateT("Spell Checker"), MB_YESNO) == IDNO)
@@ -937,7 +1014,7 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
-		else
+		else if (opts.auto_replace_dict || opts.auto_replace_user)
 		{
 			// Fix all
 			TimerCheck(dlg);
@@ -958,6 +1035,26 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
+void ToggleEnabled(Dialog *dlg)
+{
+	dlg->enabled = !dlg->enabled;
+	DBWriteContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, dlg->enabled);
+
+	if (!dlg->enabled)
+	{
+		SetNoUnderline(dlg);
+	}
+	else
+	{
+		dlg->changed = TRUE;
+		SetTimer(dlg->hwnd, TIMER_ID, 100, NULL);
+	}
+
+	if (dlg->srmm)
+		ModifyIcon(dlg);
+}
+
+
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	DialogMapType::iterator dlgit = dialogs.find(hwnd);
@@ -965,6 +1062,24 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return -1;
 
 	Dialog *dlg = dlgit->second;
+	if (dlg == NULL)
+		return -1;
+
+	// Hotkey support
+	{
+		MSG msgData = {0};
+		msgData.hwnd = hwnd;
+		msgData.message = msg;
+		msgData.wParam = wParam;
+		msgData.lParam = lParam;
+
+		int action = CallService(MS_HOTKEY_CHECK, (WPARAM) &msgData, (LPARAM) "Spell Checker");
+		if (action == HOTKEY_ACTION_TOGGLE)
+		{
+			ToggleEnabled(dlg);
+			return 1;
+		}
+	}
 
 	LRESULT ret = CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
 
@@ -1337,6 +1452,22 @@ INT_PTR AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 	return AddContactTextBox(sci->hContact, sci->hwnd, sci->window_name, FALSE, NULL);
 }
 
+
+void NotifyWrongSRMM()
+{
+	static BOOL notified = FALSE;
+
+	if (notified)
+		return;
+
+	MessageBox(NULL, 
+		TranslateT("Something is wrong with the message window.\n\nThis usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker).\n   In this case, please install tabSRMM or Scriver."),
+		TranslateT("Spell Checker"), MB_ICONERROR | MB_OK);
+
+	notified = TRUE;
+}
+
+
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner) 
 {
 	if (languages.getCount() <= 0)
@@ -1353,6 +1484,10 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		{
 			delete dlg->re;
 			free(dlg);
+
+			if (srmm)
+				NotifyWrongSRMM();
+
 			return 0;
 		}
 
@@ -1716,21 +1851,13 @@ static void AddWordToDictCallback(BOOL canceled, Dictionary *dict,
 }
 
 
-
 BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 {
 	BOOL ret = FALSE;
 
 	if (selection == 1)
 	{
-		dlg->enabled = !dlg->enabled;
-		DBWriteContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, dlg->enabled);
-
-		if (!dlg->enabled)
-			SetNoUnderline(dlg);
-
-		if (dlg->srmm)
-			ModifyIcon(dlg);
+		ToggleEnabled(dlg);
 
 		ret = TRUE;
 	}
@@ -1944,9 +2071,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 
 	if (hwnd == NULL) 
 	{
-		MessageBox(NULL, 
-			TranslateT("Could not find the message dialog. This usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker)"),
-			TranslateT("Spell Checker"), MB_ICONERROR | MB_OK);
+		NotifyWrongSRMM();
 		return 0;
 	}
 

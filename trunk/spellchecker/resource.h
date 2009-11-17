@@ -53,6 +53,7 @@
 #define IDC_OTHER_PROGS                 1068
 #define IDC_BGCOLOR_L                   1069
 #define IDC_TRACK_REMOVE                1069
+#define IDC_HANDLE_UNDERSCORE           1069
 #define IDC_TEXTCOLOR_L                 1070
 #define IDC_ONLY_NOT_OFFLINE            1070
 #define IDC_DELAY_G                     1071

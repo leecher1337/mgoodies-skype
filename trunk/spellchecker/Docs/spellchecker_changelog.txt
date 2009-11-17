@@ -2,6 +2,12 @@ Spell Checker
 
 Changelog:
 
+. 0.2.5.0
+  * Removed space in frame names in options
+  * Added notification if using SRMM (closes issue #92)
+  * Fix for autoreplacement of URL like texts (closes issue #127)
+  * Better speed (but it is not "underscore-friendly" by default anymore)
+
 . 0.2.4.0
   + Applied "patch" from miranda-avd with x64 code (but no build using it yet)
   * Use default input language instead of keyboard layout to get language name (fixes issue #124)
