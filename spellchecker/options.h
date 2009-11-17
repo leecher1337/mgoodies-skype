@@ -46,6 +46,7 @@ struct Options {
 	BOOL use_flags;
 	BOOL auto_locale;
 	BOOL use_other_apps_dicts;
+	BOOL handle_underscore;
 };
 
 extern Options opts;

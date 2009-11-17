@@ -62,11 +62,11 @@ using namespace std;
 #include <m_folders.h>
 #include <m_icolib.h>
 #include <m_variables.h>
+#include <m_hotkeys.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
-#include "../utils/mir_log.h"
 #include "../utils/tstring.h"
 #include "../utils/utf8_helpers.h"
 #include "../utils/scope.h"
