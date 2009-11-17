@@ -135,7 +135,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /FR /YX /FD /c
-# ADD CPP /nologo /G4 /MTd /W3 /Gm /Gi /GX- /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "W32" /D "_DEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /FAcs /FR /FD /c
+# ADD CPP /nologo /G4 /MTd /W3 /Gm /Gi /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "W32" /D "_DEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /FAcs /FR /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -197,10 +197,6 @@ SOURCE=.\resource.rc
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Source File
-
-SOURCE=..\utils\mir_memory.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=..\utils\mir_options.cpp
