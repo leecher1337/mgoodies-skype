@@ -52,6 +52,8 @@ HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 HIMAGELIST hIml;
 LIST_INTERFACE li;
+MM_INTERFACE mmi;
+UTF8_INTERFACE utfi;
 
 HANDLE hModulesLoaded = NULL;
 HANDLE hEventAdded = NULL;
@@ -105,11 +107,14 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 }
 
 
-extern "C" __declspec(dllexport) int Load(PLUGINLINK *link) {
-	CLISTMENUITEM mi = {0};
-	
+extern "C" __declspec(dllexport) int Load(PLUGINLINK *link) 
+{
 	pluginLink = link;
-	
+
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
+	mir_getLI(&li);
+
 	CreateServiceFunction(MS_QC_SHOW_DIALOG, ShowDialog);
 
 	// hooks
@@ -135,9 +140,6 @@ extern "C" __declspec(dllexport) int Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	init_mir_malloc();
-	mir_getLI(&li);
-
 	InitOptions();
 
 	// add our modules to the KnownModules list
