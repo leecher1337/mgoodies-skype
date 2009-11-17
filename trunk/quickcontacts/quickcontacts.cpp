@@ -32,12 +32,12 @@ PLUGININFOEX pluginInfo={
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,3,1),
+	PLUGIN_MAKE_VERSION(1,0,0,0),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
-	"",
-	"© 2007 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/quickcontacts",
+	"pescuma@miranda-im.org",
+	"© 2007-2009 Ricardo Pescuma Domenecci",
+	"http://pescuma.org/miranda/quickcontacts",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -72,6 +72,8 @@ int hksModule = 0;
 int hksAction = 0;
 
 BOOL hasNewHotkeyModule = FALSE;
+
+char *metacontacts_proto = NULL;
 
 #define IDC_ICO 12344
 
@@ -281,6 +283,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.pszService = MS_QC_SHOW_DIALOG;
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
+	if (ServiceExists(MS_MC_GETPROTOCOLNAME) && ServiceExists(MS_MC_GETMETACONTACT))
+		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+
 	return 0;
 }
 
@@ -321,7 +326,15 @@ struct c_struct {
 	TCHAR szname[120];
 	TCHAR szgroup[50];
 	HANDLE hcontact;
-	char proto[20];
+	TCHAR proto[20];
+
+	c_struct()
+	{
+		szname[0] = 0;
+		szgroup[0] = 0;
+		hcontact = 0;
+		proto[0] = 0;
+	}
 };
 
 LIST<c_struct> contacts(200);
@@ -346,6 +359,27 @@ TCHAR *GetListName(c_struct *cs)
 }
 
 
+int lstreq(TCHAR *a, TCHAR *b, size_t len = -1)
+{
+#ifdef UNICODE
+	a = CharLower(_tcsdup(a));
+	b = CharLower(_tcsdup(b));
+	int ret;
+	if (len > 0)
+		ret = _tcsncmp(a, b, len);
+	else
+		ret = _tcscmp(a, b);
+	free(a);
+	free(b);
+	return ret;
+#else
+	if (len > 0)
+		return _tcsnicmp(a, b, len);
+	else
+		return _tcsicmp(a, b);
+#endif
+}
+
 
 // simple sorting function to have
 // the contact array in alphabetical order
@@ -359,15 +393,16 @@ void SortArray(void)
 	{
 		for(doop=loop+1;doop<contacts.getCount();doop++)
 		{
-			if(lstrcmp(contacts[loop]->szname,contacts[doop]->szname)>0)
+			int cmp = lstreq(contacts[loop]->szname,contacts[doop]->szname);
+			if (cmp > 0)
 			{
 				cs_temp=contacts[loop];
 				sl->items[loop]=contacts[doop];
 				sl->items[doop]=cs_temp;
 			}
-			else if(!lstrcmp(contacts[loop]->szname,contacts[doop]->szname))
+			else if (cmp == 0)
 			{
-				if(strcmp(contacts[loop]->proto,contacts[doop]->proto)>0)
+				if(lstreq(contacts[loop]->proto, contacts[doop]->proto) > 0)
 				{
 					cs_temp=contacts[loop];
 					sl->items[loop]=contacts[doop];
@@ -377,6 +412,18 @@ void SortArray(void)
 
 		}
 	}
+}
+
+
+int GetStatus(HANDLE hContact, char *proto = NULL)
+{
+	if (proto == NULL)
+		proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+
+	if (proto == NULL)
+		return ID_STATUS_OFFLINE;
+
+	return DBGetContactSettingWord(hContact, proto, "Status", ID_STATUS_OFFLINE);
 }
 
 
@@ -392,6 +439,10 @@ void FreeContacts()
 
 void LoadContacts(HWND hwndDlg, BOOL show_all)
 {
+	BOOL hasAccounts = ServiceExists(MS_PROTO_GETACCOUNT);
+	BOOL metacontactsEnabled = (metacontacts_proto != NULL
+				 && DBGetContactSettingByte(0, metacontacts_proto, "Enabled", 1));
+
 	// Read last-sent-to contact from db and set handle as window-userdata
 	HANDLE hlastsent = (HANDLE)DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1);
 	SetWindowLong(hwndMain, GWL_USERDATA, (LONG)hlastsent);
@@ -408,17 +459,22 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 		{
 			// Get meta
 			HANDLE hMeta = NULL;
-			if ( ( (!show_all && opts.hide_subcontacts) || opts.group_append )
-				 && ServiceExists(MS_MC_GETMETACONTACT))
+			if (metacontactsEnabled)
 			{
-				hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+				if ((!show_all && opts.hide_subcontacts) || opts.group_append)
+					hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
 			}
+			else
+			{
+				if (metacontacts_proto != NULL && strcmp(metacontacts_proto, pszProto) == 0)
+					continue;
+			}
+
 
 			if (!show_all)
 			{
 				// Check if is offline and have to show
-				int status = DBGetContactSettingWord(hContact, pszProto, "Status", ID_STATUS_OFFLINE);
-				if (status <= ID_STATUS_OFFLINE)
+				if (GetStatus(hContact, pszProto) <= ID_STATUS_OFFLINE)
 				{
 					// See if has to show
 					char setting[128];
@@ -440,12 +496,17 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 					if (!opts.keep_subcontacts_from_offline)
 						continue;
 
-					int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
-
-					if (meta_status > ID_STATUS_OFFLINE)
+					if (GetStatus(hMeta, metacontacts_proto) > ID_STATUS_OFFLINE)
+					{
 						continue;
-					else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
-						continue;
+					}
+					else 
+					{
+						char setting[128];
+						mir_snprintf(setting, sizeof(setting), "ShowOffline%s", metacontacts_proto);
+						if (DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE))
+							continue;
+					}
 				}
 			}
 
@@ -467,11 +528,20 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 			}
 
 			// Make contact name
-			TCHAR *tmp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR);
+			TCHAR *tmp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR);
 			lstrcpyn(contact->szname, tmp, MAX_REGS(contact->szname));
 
-			strncpy(contact->proto, pszProto, sizeof(contact->proto)-1);
-			contact->proto[sizeof(contact->proto)-1] = '\0';
+			PROTOACCOUNT *acc = (hasAccounts ? ProtoGetAccount(pszProto) : NULL);
+			if (acc != NULL)
+			{
+				lstrcpyn(contact->proto, acc->tszAccountName, MAX_REGS(contact->proto));
+			}
+			else
+			{
+				char szName[128];
+				CallProtoService(pszProto, PS_GETNAME, sizeof(szName), (LPARAM) szName);
+				lstrcpyn(contact->proto, CharToTchar(szName), MAX_REGS(contact->proto));
+			}
 
 			contact->hcontact = hContact;
 
@@ -540,26 +610,6 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 	}
 }
 
-BOOL lstreq(TCHAR *a, TCHAR *b, size_t len = -1)
-{
-#ifdef UNICODE
-	a = CharLower(_tcsdup(a));
-	b = CharLower(_tcsdup(b));
-	BOOL ret;
-	if (len > 0)
-		ret = !_tcsncmp(a, b, len);
-	else
-		ret = !_tcscmp(a, b);
-	free(a);
-	free(b);
-	return ret;
-#else
-	if (len > 0)
-		return !_tcsnicmp(a, b, len);
-	else
-		return !_tcsicmp(a, b);
-#endif
-}
 
 // check if the char(s) entered appears in a contacts name
 int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
@@ -571,20 +621,22 @@ int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
 
 	int len = lstrlen(sztext);
 
-	int loop;
-	for(loop=0;loop<contacts.getCount();loop++)
+	if (only_enable)
 	{
-		if (only_enable)
+		for(int loop=0;loop<contacts.getCount();loop++)
 		{
-			if(lstreq(sztext, contacts[loop]->szname) || lstreq(sztext, GetListName(contacts[loop])))
+			if(lstreq(sztext, contacts[loop]->szname)==0 || lstreq(sztext, GetListName(contacts[loop]))==0)
 			{
 				EnableButtons(hwndMain, contacts[loop]->hcontact);
 				return 0;
 			}
 		}
-		else
+	}
+	else
+	{
+		for(int loop=0;loop<contacts.getCount();loop++)
 		{
-			if(lstreq(sztext, GetListName(contacts[loop]), len))
+			if (lstreq(sztext, GetListName(contacts[loop]), len) == 0)
 			{
 				SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(contacts[loop]));
 				SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
@@ -1206,7 +1258,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					{
 						RECT rcc = { 0, 0, 0x7FFF, 0x7FFF };
 
-						DrawTextA(lpdis->hDC, contacts[loop]->proto, strlen(contacts[loop]->proto), 
+						DrawText(lpdis->hDC, contacts[loop]->proto, lstrlen(contacts[loop]->proto), 
 								 &rcc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
 						max_proto_width = max(max_proto_width, rcc.right - rcc.left);
 					}
@@ -1224,7 +1276,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 				rc_tmp.left = rc_tmp.right - max_proto_width;
 
-				DrawTextA(lpdis->hDC, contacts[lpdis->itemData]->proto, strlen(contacts[lpdis->itemData]->proto), 
+				DrawText(lpdis->hDC, contacts[lpdis->itemData]->proto, lstrlen(contacts[lpdis->itemData]->proto), 
 						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
 				rc.right = rc_tmp.left - 5;
@@ -1309,7 +1361,7 @@ int HotkeyPressed(WPARAM wParam, LPARAM lParam)
 
 
 // Show the main dialog
-int ShowDialog(WPARAM wParam,LPARAM lParam) 
+int ShowDialog(WPARAM wParam, LPARAM lParam) 
 {
 	if (!main_dialog_open) 
 	{
@@ -1317,47 +1369,6 @@ int ShowDialog(WPARAM wParam,LPARAM lParam)
 
 		hwndMain = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN), NULL, MainDlgProc);
 	}
-
-/* This is inside miranda now
-
-	// Make sure it is inside screen
-	RECT rc;
-	GetWindowRect(hwndMain, &rc);
-
-	HMONITOR hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
-
-	MONITORINFO mi;
-	mi.cbSize = sizeof(mi);
-	GetMonitorInfo(hMonitor, &mi);
-
-	RECT screen_rc = mi.rcWork;
-
-	if (rc.bottom > screen_rc.bottom)
-		OffsetRect(&rc, 0, screen_rc.bottom - rc.bottom);
-
-	if (rc.bottom < screen_rc.top)
-		OffsetRect(&rc, 0, screen_rc.top - rc.top);
-
-	if (rc.top > screen_rc.bottom)
-		OffsetRect(&rc, 0, screen_rc.bottom - rc.bottom);
-
-	if (rc.top < screen_rc.top)
-		OffsetRect(&rc, 0, screen_rc.top - rc.top);
-
-	if (rc.right > screen_rc.right)
-		OffsetRect(&rc, screen_rc.right - rc.right, 0);
-
-	if (rc.right < screen_rc.left)
-		OffsetRect(&rc, screen_rc.left - rc.left, 0);
-
-	if (rc.left > screen_rc.right)
-		OffsetRect(&rc, screen_rc.right - rc.right, 0);
-
-	if (rc.left < screen_rc.left)
-		OffsetRect(&rc, screen_rc.left - rc.left, 0);
-
-	MoveWindow(hwndMain, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
-*/
 
 	// Show it
 	SetForegroundWindow(hwndMain);

@@ -64,6 +64,7 @@ Boston, MA 02111-1307, USA.
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
+#include "../utils/utf8_helpers.h"
 
 #include "resource.h"
 #include "m_quickcontacts.h"
@@ -76,10 +77,11 @@ Boston, MA 02111-1307, USA.
 // Global Variables
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
-
+extern char *metacontacts_proto;
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
+
 
 
 
