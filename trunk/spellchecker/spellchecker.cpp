@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,2,4,0),
+	PLUGIN_MAKE_VERSION(0,2,5,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",

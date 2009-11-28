@@ -7,6 +7,8 @@ Changelog:
   * Added notification if using SRMM (closes issue #92)
   * Fix for autoreplacement of URL like texts (closes issue #127)
   * Better speed (but it is not "underscore-friendly" by default anymore)
+  + Added hotkey to disable spell checker in dialog window (closes issue #132)
+  * Fix icons in Vista
 
 . 0.2.4.0
   + Applied "patch" from miranda-avd with x64 code (but no build using it yet)
