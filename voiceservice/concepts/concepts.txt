@@ -15,12 +15,20 @@ General ideas about the plugin:
 - Voice provides should be as simple as possible (they are already complicated by the protocols itself)
 
 - As long as possible voice service should show the options to the user and the providers should only read it from the DB
+
 - All the GUI (as far as possible) is voice service's responsability
+
+
+Future:
 
 - Voice service will (with some luck) handle video in the future
 
-- In the future the dialpad will be skinnable
+- The dialpad will be skinnable
 
 
+
+- Some hookable way to fetch numbers from contacts
+
+- Number formaters
 
 

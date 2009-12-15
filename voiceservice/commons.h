@@ -112,6 +112,7 @@ extern HBRUSH bk_brush;
 
 struct MODULE_INTERNAL
 {
+	// TODO: Add icon and make name a buffer
 	const char *name;
 	int flags;
 	BOOL is_protocol;
