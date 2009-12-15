@@ -32,7 +32,80 @@ Boston, MA 02111-1307, USA.
 
 int MLog::deep = 0;
 
+MLog::MLog(const char *aModule, const char *aFunction) 
+	: module(aModule)
+{
+	memset(&total, 0, sizeof(total));
 
+	function = "";
+	for(int i = 0; i < deep; i++)
+		function += "   ";
+	function += aFunction;
+
+	deep ++;
+
+	mlog(module.c_str(), function.c_str(), "BEGIN");
+
+	StartTimer();
+}
+
+MLog::~MLog()
+{
+	StopTimer();
+
+	mlog(module.c_str(), function.c_str(), "END in %2.1lf ms", GetTotalTimeMS());
+	deep --;
+}
+
+int MLog::log(const char *fmt, ...)
+{
+	StopTimer();
+
+	double elapsed = GetElapsedTimeMS();
+
+	va_list va;
+	va_start(va, fmt);
+
+    char text[1024];
+	mir_snprintf(text, sizeof(text) - 10, "%s [in %2.1lf ms | total %2.1lf ms]", 
+											fmt, GetElapsedTimeMS(), GetTotalTimeMS());
+
+	int ret = mlog(module.c_str(), function.c_str(), text, va);
+
+	va_end(va);
+
+	StartTimer();
+
+	return ret;
+}
+
+void MLog::StartTimer()
+{
+	QueryPerformanceCounter(&start);
+}
+
+void MLog::StopTimer()
+{
+	QueryPerformanceCounter(&end);
+
+	total.QuadPart += end.QuadPart - start.QuadPart;
+}
+
+double MLog::GetElapsedTimeMS()
+{
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+
+	return (end.QuadPart - start.QuadPart) * 1000. / frequency.QuadPart;
+}
+
+double MLog::GetTotalTimeMS()
+{
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+
+	return total.QuadPart * 1000. / frequency.QuadPart;
+}
 
 
 int mlog(const char *module, const char *function, const char *fmt, va_list va)

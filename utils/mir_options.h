@@ -34,6 +34,8 @@ Boston, MA 02111-1307, USA.
 #define CONTROL_COMBO_TEXT 7		// Stored as TCHARs, max len 1024
 #define CONTROL_COMBO_ITEMDATA 8	// Stored as TCHARs, max len 1024
 #define CONTROL_FILE 9				// Stored as TCHARs, max len 1024
+#define CONTROL_INT 10				// Stored as DWORD
+#define CONTROL_PASSWORD 11			// Stored as chars, max len 1024
 
 
 typedef BOOL (* FPAllowProtocol) (const char *proto);
@@ -46,6 +48,7 @@ typedef struct {
 	union {
 		DWORD dwDefValue;
 		TCHAR *tszDefValue;
+		char *szDefValue;
 	};
 	union {
 		int nIDSpin;

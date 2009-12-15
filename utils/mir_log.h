@@ -37,39 +37,22 @@ class MLog
 private:
 	std::string module;
 	std::string function;
+	LARGE_INTEGER start;
+	LARGE_INTEGER end;
+	LARGE_INTEGER total;
 
 	static int deep;
 
+	void StartTimer();
+	void StopTimer();
+	double GetElapsedTimeMS();
+	double GetTotalTimeMS();
+
 public:
-	MLog(const char *aModule, const char *aFunction) : module(aModule) 
-	{
-		function = "";
-		for(int i = 0; i < deep; i++)
-			function += "   ";
-		function += aFunction;
+	MLog(const char *aModule, const char *aFunction);
+	~MLog();
 
-		deep ++;
-
-		mlog(module.c_str(), function.c_str(), "BEGIN");
-	}
-
-	~MLog()
-	{
-		mlog(module.c_str(), function.c_str(), "END");
-		deep --;
-	}
-
-	int log(const char *fmt, ...)
-	{
-		va_list va;
-		va_start(va, fmt);
-
-		int ret = mlog(module.c_str(), function.c_str(), fmt, va);
-
-		va_end(va);
-
-		return ret;
-	}
+	int log(const char *fmt, ...);
 };
 
 

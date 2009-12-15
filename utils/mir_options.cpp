@@ -187,6 +187,33 @@ void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
 					break;
 				}
+				case CONTROL_PASSWORD:
+				{
+					char tmp[1024];
+					tmp[0]=0;
+
+					DBVARIANT dbv = {0};
+					if (!DBGetContactSettingString(NULL, module, ctrl->setting, &dbv))
+					{
+						lstrcpynA(tmp, dbv.pszVal, MAX_REGS(tmp));
+						DBFreeVariant(&dbv);
+					}
+
+					if (tmp[0] != 0)
+						CallService(MS_DB_CRYPT_DECODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
+					else if (ctrl->szDefValue != NULL)
+						lstrcpynA(tmp, ctrl->szDefValue, MAX_REGS(tmp));
+
+					char *var = (char *) ctrl->var;
+					int size = min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024);
+					lstrcpynA(var, tmp, size);
+					break;
+				}
+				case CONTROL_INT:
+				{
+					*((int *) ctrl->var) = (int) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
+					break;
+				}
 				case CONTROL_FILE:
 				{
 					TCHAR tmp[1024];
@@ -327,6 +354,34 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), 0);
 						break;
 					}
+					case CONTROL_PASSWORD:
+					{
+						char tmp[1024];
+						tmp[0]=0;
+
+						DBVARIANT dbv = {0};
+						if (!DBGetContactSettingString(NULL, module, ctrl->setting, &dbv))
+						{
+							lstrcpynA(tmp, dbv.pszVal, MAX_REGS(tmp));
+							DBFreeVariant(&dbv);
+						}
+
+						if (tmp[0] != 0)
+							CallService(MS_DB_CRYPT_DECODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
+						else if (ctrl->szDefValue != NULL)
+							lstrcpynA(tmp, ctrl->szDefValue, MAX_REGS(tmp));
+
+						SetDlgItemTextA(hwndDlg, ctrl->nID, tmp);
+						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), 0);
+						break;
+					}
+					case CONTROL_INT:
+					{
+						DWORD var = DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
+						SetDlgItemInt(hwndDlg, ctrl->nID, var, ctrl->min <= 0);
+						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, 9, 0);
+						break;
+					}
 					case CONTROL_FILE:
 					{
 						TCHAR tmp[1024];
@@ -377,6 +432,8 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 					{
 						case CONTROL_TEXT:
 						case CONTROL_SPIN:
+						case CONTROL_INT:
+						case CONTROL_PASSWORD:
 						{
 							// Don't make apply enabled during buddy set
 							if (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus())
@@ -463,8 +520,29 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						case CONTROL_TEXT:
 						{
 							TCHAR tmp[1024];
-							GetDlgItemText(hwndDlg, ctrl->nID, tmp, 1024);
+							GetDlgItemText(hwndDlg, ctrl->nID, tmp, MAX_REGS(tmp));
 							DBWriteContactSettingTString(NULL, module, ctrl->setting, tmp);
+							break;
+						}
+						case CONTROL_PASSWORD:
+						{
+							char tmp[1024];
+							GetDlgItemTextA(hwndDlg, ctrl->nID, tmp, MAX_REGS(tmp));
+							CallService(MS_DB_CRYPT_ENCODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
+							DBWriteContactSettingString(NULL, module, ctrl->setting, tmp);
+							break;
+						}
+						case CONTROL_INT:
+						{
+							BOOL trans;
+							int val = GetDlgItemInt(hwndDlg, ctrl->nID, &trans, ctrl->min <= 0);
+							if (!trans)
+								val = ctrl->dwDefValue;
+							if (ctrl->max != 0)
+								val = min(val, ctrl->max);
+							if (ctrl->min != 0)
+								val = max(val, ctrl->min);
+							DBWriteContactSettingDword(NULL, module, ctrl->setting, val);
 							break;
 						}
 						case CONTROL_FILE:
