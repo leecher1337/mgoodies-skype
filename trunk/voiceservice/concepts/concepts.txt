@@ -19,6 +19,7 @@ General ideas about the plugin:
 - All the GUI (as far as possible) is voice service's responsability
 
 
+
 Future:
 
 - Voice service will (with some luck) handle video in the future
@@ -31,4 +32,4 @@ Future:
 
 - Number formaters
 
-
+- Record calls?
