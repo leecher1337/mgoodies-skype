@@ -80,7 +80,7 @@ Get protocol voice support flags
 
 wParam: ignored
 lParam: ignored
-return: 0 on success
+return: VOICE_* above
 */
 #define PS_VOICE_GETCAPS				"/Voice/GetCaps"
 
