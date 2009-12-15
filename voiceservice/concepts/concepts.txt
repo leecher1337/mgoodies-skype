@@ -1,0 +1,26 @@
+General ideas about the plugin:
+
+- A voice provider can call contacts from varios protocols (even if it is a protocol)
+
+- A voice contact can call a contact with diferent means (by the contact and by number associated with the contact)
+
+- A voice provider is a protocol if it has the same name as an account
+
+- Each can can have one contact associated with it (or none)
+
+- More than one call can happen at the same time
+
+- It is voice service's responsability to handle the call switching/answering/droping logic
+
+- Voice provides should be as simple as possible (they are already complicated by the protocols itself)
+
+- As long as possible voice service should show the options to the user and the providers should only read it from the DB
+- All the GUI (as far as possible) is voice service's responsability
+
+- Voice service will (with some luck) handle video in the future
+
+- In the future the dialpad will be skinnable
+
+
+
+

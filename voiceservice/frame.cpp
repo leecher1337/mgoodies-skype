@@ -365,6 +365,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			// Draw status
 			DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[vc->state], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
+			// TODO: Draw voice provider icon
+
 			// Draw contact
 			rc.left += ICON_SIZE + H_SPACE;
 			rc.right -= 2 * (ICON_SIZE + H_SPACE);

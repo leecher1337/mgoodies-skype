@@ -46,12 +46,13 @@ typedef struct {
 	int cbSize;				// Struct size
 	const char *szModule;	// The name of the protocol module (used only in notifications)
 	char *id;				// Protocol especific ID for this call
-	int flags;				// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING (VOICE_UNICODE to say the string is unicode)
-	union {					// Who to call
-		HANDLE hContact;
-		TCHAR *ptszContact;
-		char *pszContact;
-		WCHAR *pwszContact;
+	int flags;				// VOICE_UNICODE to say the string is unicode or 0
+
+	HANDLE hContact;		// Contact associated with the call (can be NULL)
+	union {					// Number to call (can be NULL)
+		TCHAR *ptszNumber;  // Or the contact or the number must be != NULL
+		char *pszNumber;	// If both are != NULL the call will be made to the number
+		WCHAR *pwszNumber;	// and will be associated with the contact
 	};
 	int state;				// VOICE_STATE_*
 
@@ -81,7 +82,7 @@ wParam: ignored
 lParam: ignored
 return: 0 on success
 */
-#define PS_VOICE_GETINFO				"/Voice/GetInfo"
+#define PS_VOICE_GETCAPS				"/Voice/GetCaps"
 
 /*
 Request to the protocol a voice call to hContact.
@@ -90,7 +91,7 @@ wParam: (HANDLE) hContact
 lParam: ignored
 return: 0 on success
 */
-#define PS_VOICE_CALL				"/Voice/Call"
+#define PS_VOICE_CALL					"/Voice/Call"
 
 /*
 Service called to make the protocol answer a call.

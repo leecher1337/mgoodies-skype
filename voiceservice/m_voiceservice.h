@@ -48,13 +48,14 @@ return: 0 on success
 struct VOICE_MODULE
 {
 	int cbSize;			// sizeof(VOICE_MODULE)
-	char *name;			// The internal name of the plugin. All PS_* serivces (except PS_VOICE_GETINFO)
+	char *name;			// The internal name of the plugin. All PS_* serivces (except PS_VOICE_GETCAPS)
 						// defined in m_voide.h need to be created based in this name. For example, 
 						// PS_VOICE_CALL (/Voice/Call) need to be created as <name>/Voice/Call
+	char *icon;			// Icon to identify provider (from icolib)
 	int flags;			// VOICE_* from m_voice.h
 };
 /*
-Register a new plugin that can make/receive voice calls.
+Register a new plugin that can make/receive voice calls (a voice provider).
 
 wParam: const VOICE_MODULE *
 lParam: ignored
@@ -62,6 +63,14 @@ return: 0 on success
 */
 #define MS_VOICESERVICE_REGISTER		"VoiceService/Register"
 
+/*
+Unregister a plugin that can make/receive voice calls (a voice provider).
+
+wParam: (const char *) Provider name
+lParam: ignored
+return: 0 on success
+*/
+#define MS_VOICESERVICE_UNREGISTER		"VoiceService/Unregister"
 
 /*
 Request a voice call to hContact.
@@ -76,7 +85,7 @@ return: the number of option calls for a contact. If > 0, it can be called
 Request a voice call to hContact.
 
 wParam: (HANDLE) hContact
-lParam: (char *) Protocol or NULL to use any proto avaiable
+lParam: (char *) Voice provider or NULL to use any provider avaiable
 return: 0 on success
 */
 #define MS_VOICESERVICE_CALL				"VoiceService/Call"
