@@ -1,0 +1,63 @@
+<mockup version="1.0" skin="sketch" measuredW="1117" measuredH="416" mockupW="1007" mockupH="388">
+  <controls>
+    <control controlID="1" controlTypeID="com.balsamiq.mockups::List" x="397" y="43" w="296" h="363" measuredW="100" measuredH="231" zOrder="0" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>...%0A...%0A...%0ACall%20with%20MSN%0ACall%201234-5678%0ACall%201234-5678%20with%20SkypeOut%0A...%0A...%0AAnswer%20call%20from%20MSN%0ADrop%20call%20from%201234-5678%20from%20SkypeOut%0A...</text>
+      </controlProperties>
+    </control>
+    <control controlID="3" controlTypeID="com.balsamiq.mockups::Icon" x="663" y="125" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="1" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>RightFillTriangleIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="4" controlTypeID="com.balsamiq.mockups::List" x="685" y="125" w="125" h="51" measuredW="100" measuredH="126" zOrder="2" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>With%20IAX%0AWith%20SkypeOut</text>
+      </controlProperties>
+    </control>
+    <control controlID="5" controlTypeID="com.balsamiq.mockups::Arrow" x="247" y="31" w="150" h="79" measuredW="150" measuredH="100" zOrder="3" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <leftArrow>false</leftArrow>
+      </controlProperties>
+    </control>
+    <control controlID="6" controlTypeID="com.balsamiq.mockups::Label" x="100" y="18" w="-1" h="-1" measuredW="147" measuredH="25" zOrder="4" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Calls%20for%20the%20hContact</text>
+      </controlProperties>
+    </control>
+    <control controlID="7" controlTypeID="com.balsamiq.mockups::Arrow" x="247" y="133" w="150" h="10" measuredW="150" measuredH="100" zOrder="5" locked="false" isInGroup="-1">
+      <controlProperties>
+        <curvature>0</curvature>
+        <leftArrow>false</leftArrow>
+      </controlProperties>
+    </control>
+    <control controlID="8" controlTypeID="com.balsamiq.mockups::Label" x="100" y="116" w="-1" h="-1" measuredW="234" measuredH="25" zOrder="6" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Calls%20from%20numbers%20from%20the%20contact</text>
+      </controlProperties>
+    </control>
+    <control controlID="9" controlTypeID="com.balsamiq.mockups::Arrow" x="794" y="138" w="86" h="26" measuredW="150" measuredH="100" zOrder="7" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <rightArrow>false</rightArrow>
+      </controlProperties>
+    </control>
+    <control controlID="10" controlTypeID="com.balsamiq.mockups::Paragraph" x="886" y="154" w="221" h="140" measuredW="200" measuredH="140" zOrder="8" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>If%20an%20item%20%28contact%20or%20number%29%20can%20be%20called%20from%20more%20than%20one%20provider%2C%20show%20a%20popup%20menu%20with%20options.%0ABut%20show%20all%20contact/numbers%20in%20the%20initial%20popup</text>
+      </controlProperties>
+    </control>
+    <control controlID="11" controlTypeID="com.balsamiq.mockups::Arrow" x="247" y="227" w="150" h="10" measuredW="150" measuredH="100" zOrder="9" locked="false" isInGroup="-1">
+      <controlProperties>
+        <curvature>0</curvature>
+        <leftArrow>false</leftArrow>
+      </controlProperties>
+    </control>
+    <control controlID="12" controlTypeID="com.balsamiq.mockups::Label" x="100" y="210" w="-1" h="-1" measuredW="287" measuredH="25" zOrder="10" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Current%20calls%20can%20be%20managed%20from%20popup%20too</text>
+      </controlProperties>
+    </control>
+  </controls>
+</mockup>

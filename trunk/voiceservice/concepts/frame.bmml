@@ -1,0 +1,212 @@
+<mockup version="1.0" skin="sketch" measuredW="999" measuredH="534" mockupW="936" mockupH="445">
+  <controls>
+    <control controlID="0" controlTypeID="com.balsamiq.mockups::FieldSet" x="255" y="191" w="317" h="333" measuredW="200" measuredH="170" zOrder="0" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+      </controlProperties>
+    </control>
+    <control controlID="2" controlTypeID="com.balsamiq.mockups::Icon" x="262" y="206" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="1" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>WirelessIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="3" controlTypeID="com.balsamiq.mockups::Label" x="314" y="206" w="-1" h="-1" measuredW="89" measuredH="25" zOrder="2" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Contact%20name</text>
+      </controlProperties>
+    </control>
+    <control controlID="4" controlTypeID="com.balsamiq.mockups::Icon" x="286" y="206" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="3" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>UserIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="5" controlTypeID="com.balsamiq.mockups::Icon" x="533" y="206" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="4" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>PauseIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="6" controlTypeID="com.balsamiq.mockups::Icon" x="509" y="206" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="5" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>TapeIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="7" controlTypeID="com.balsamiq.mockups::Icon" x="262" y="230" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="6" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>PauseIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="8" controlTypeID="com.balsamiq.mockups::Label" x="314" y="230" w="-1" h="-1" measuredW="176" measuredH="25" zOrder="7" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>1234-5678%20%28Contact%20name%29</text>
+      </controlProperties>
+    </control>
+    <control controlID="9" controlTypeID="com.balsamiq.mockups::Icon" x="286" y="230" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="8" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>UserIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="10" controlTypeID="com.balsamiq.mockups::Icon" x="533" y="230" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="9" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>RightTriangleIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="12" controlTypeID="com.balsamiq.mockups::Arrow" x="247" y="105" w="29" h="94" measuredW="150" measuredH="100" zOrder="10" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <direction>top</direction>
+        <leftArrow>false</leftArrow>
+      </controlProperties>
+    </control>
+    <control controlID="13" controlTypeID="com.balsamiq.mockups::Label" x="178" y="80" w="-1" h="-1" measuredW="71" measuredH="25" zOrder="11" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Call%20status</text>
+      </controlProperties>
+    </control>
+    <control controlID="14" controlTypeID="com.balsamiq.mockups::Label" x="286" y="79" w="-1" h="-1" measuredW="235" measuredH="25" zOrder="12" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Voice%20provider%20%28not%20contact%20protocol%29</text>
+      </controlProperties>
+    </control>
+    <control controlID="15" controlTypeID="com.balsamiq.mockups::Arrow" x="299" y="105" w="83" h="95" measuredW="150" measuredH="100" zOrder="13" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <direction>bottom</direction>
+        <rightArrow>false</rightArrow>
+      </controlProperties>
+    </control>
+    <control controlID="16" controlTypeID="com.balsamiq.mockups::Arrow" x="397" y="123" w="93" h="79" measuredW="150" measuredH="100" zOrder="14" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <direction>bottom</direction>
+        <rightArrow>false</rightArrow>
+      </controlProperties>
+    </control>
+    <control controlID="17" controlTypeID="com.balsamiq.mockups::Label" x="490" y="114" w="-1" h="-1" measuredW="186" measuredH="25" zOrder="15" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Contact%20name%20and/or%20number</text>
+      </controlProperties>
+    </control>
+    <control controlID="18" controlTypeID="com.balsamiq.mockups::Arrow" x="536" y="154" w="93" h="46" measuredW="150" measuredH="100" zOrder="16" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <direction>bottom</direction>
+        <rightArrow>false</rightArrow>
+      </controlProperties>
+    </control>
+    <control controlID="19" controlTypeID="com.balsamiq.mockups::Label" x="629" y="149" w="-1" h="-1" measuredW="80" measuredH="25" zOrder="17" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Action%20icons</text>
+      </controlProperties>
+    </control>
+    <control controlID="20" controlTypeID="com.balsamiq.mockups::Icon" x="262" y="271" w="-1" h="-1" measuredW="24" measuredH="24" zOrder="18" locked="false" isInGroup="-1">
+      <controlProperties>
+        <icon>DownTriangleIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="23" controlTypeID="com.balsamiq.mockups::TextInput" x="291" y="268" w="230" h="-1" measuredW="79" measuredH="29" zOrder="19" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+      </controlProperties>
+    </control>
+    <control controlID="24" controlTypeID="com.balsamiq.mockups::Button" x="521" y="267" w="-1" h="-1" measuredW="48" measuredH="32" zOrder="20" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <icon>TelephoneIcon%7Csmall</icon>
+      </controlProperties>
+    </control>
+    <control controlID="27" controlTypeID="com.balsamiq.mockups::MultilineButton" x="262" y="301" w="72" h="52" measuredW="43" measuredH="60" zOrder="21" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>1</text>
+      </controlProperties>
+    </control>
+    <control controlID="28" controlTypeID="com.balsamiq.mockups::MultilineButton" x="377" y="301" w="72" h="52" measuredW="43" measuredH="60" zOrder="22" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>2</text>
+      </controlProperties>
+    </control>
+    <control controlID="29" controlTypeID="com.balsamiq.mockups::MultilineButton" x="485" y="301" w="72" h="52" measuredW="43" measuredH="60" zOrder="23" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>3</text>
+      </controlProperties>
+    </control>
+    <control controlID="30" controlTypeID="com.balsamiq.mockups::MultilineButton" x="262" y="353" w="72" h="52" measuredW="43" measuredH="60" zOrder="24" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>4</text>
+      </controlProperties>
+    </control>
+    <control controlID="31" controlTypeID="com.balsamiq.mockups::MultilineButton" x="377" y="353" w="72" h="52" measuredW="43" measuredH="60" zOrder="25" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>5</text>
+      </controlProperties>
+    </control>
+    <control controlID="32" controlTypeID="com.balsamiq.mockups::MultilineButton" x="485" y="353" w="72" h="52" measuredW="43" measuredH="60" zOrder="26" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>6</text>
+      </controlProperties>
+    </control>
+    <control controlID="33" controlTypeID="com.balsamiq.mockups::MultilineButton" x="262" y="405" w="72" h="52" measuredW="43" measuredH="60" zOrder="27" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>7</text>
+      </controlProperties>
+    </control>
+    <control controlID="34" controlTypeID="com.balsamiq.mockups::MultilineButton" x="377" y="405" w="72" h="52" measuredW="43" measuredH="60" zOrder="28" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>8</text>
+      </controlProperties>
+    </control>
+    <control controlID="35" controlTypeID="com.balsamiq.mockups::MultilineButton" x="485" y="405" w="72" h="52" measuredW="43" measuredH="60" zOrder="29" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>9</text>
+      </controlProperties>
+    </control>
+    <control controlID="36" controlTypeID="com.balsamiq.mockups::MultilineButton" x="262" y="457" w="72" h="52" measuredW="42" measuredH="60" zOrder="30" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>*</text>
+      </controlProperties>
+    </control>
+    <control controlID="37" controlTypeID="com.balsamiq.mockups::MultilineButton" x="377" y="457" w="72" h="52" measuredW="43" measuredH="60" zOrder="31" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>0</text>
+      </controlProperties>
+    </control>
+    <control controlID="38" controlTypeID="com.balsamiq.mockups::MultilineButton" x="485" y="457" w="72" h="52" measuredW="47" measuredH="60" zOrder="32" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>%23</text>
+      </controlProperties>
+    </control>
+    <control controlID="39" controlTypeID="com.balsamiq.mockups::VCurly" x="595" y="199" w="180" h="57" measuredW="180" measuredH="140" zOrder="33" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Active%20calls</text>
+      </controlProperties>
+    </control>
+    <control controlID="40" controlTypeID="com.balsamiq.mockups::VCurly" x="597" y="264" w="180" h="254" measuredW="180" measuredH="140" zOrder="34" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Make%20calls</text>
+      </controlProperties>
+    </control>
+    <control controlID="41" controlTypeID="com.balsamiq.mockups::Arrow" x="105" y="277" w="150" h="24" measuredW="150" measuredH="100" zOrder="35" locked="false" isInGroup="-1">
+      <controlProperties>
+        <direction>bottom</direction>
+        <leftArrow>false</leftArrow>
+      </controlProperties>
+    </control>
+    <control controlID="42" controlTypeID="com.balsamiq.mockups::Label" x="53" y="301" w="-1" h="-1" measuredW="84" measuredH="25" zOrder="36" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Hide%20dialpad</text>
+      </controlProperties>
+    </control>
+    <control controlID="43" controlTypeID="com.balsamiq.mockups::Arrow" x="572" y="267" w="214" h="19" measuredW="150" measuredH="100" zOrder="37" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text/>
+        <curvature>0</curvature>
+        <direction>bottom</direction>
+        <rightArrow>false</rightArrow>
+      </controlProperties>
+    </control>
+    <control controlID="46" controlTypeID="com.balsamiq.mockups::Paragraph" x="789" y="247" w="-1" h="-1" measuredW="200" measuredH="140" zOrder="38" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Make%20call%0AIf%20more%20than%20one%20provider%20allowed%2C%20%0Ashow%20popup%20with%20provides.%0AChanges%20icon%20to%20X%20if%20no%20provide%20accepts%20that%20number</text>
+      </controlProperties>
+    </control>
+  </controls>
+</mockup>

@@ -48,6 +48,8 @@ PLUGININFOEX pluginInfo = {
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+MM_INTERFACE mmi;
+UTF8_INTERFACE utfi;
 
 HANDLE hModulesLoaded = NULL;
 HANDLE hPreShutdownHook = NULL;
@@ -149,7 +151,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	init_mir_malloc();
+	CHECK_VERSION("IAX")
+
+	// TODO Assert results here
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 
 	CreateServiceFunction(MS_VOICESERVICE_CLIST_DBLCLK, CListDblClick);
 	CreateServiceFunction(MS_VOICESERVICE_STATE, VoiceState);
@@ -333,7 +339,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
 			continue;
 
-		if (!ProtoServiceExists(protos[i]->szName, PS_VOICE_GETINFO))
+		if (!ProtoServiceExists(protos[i]->szName, PS_VOICE_GETCAPS))
 			continue;
 
 		// Found a protocol
@@ -341,7 +347,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		m.name = protos[i]->szName;
 		m.is_protocol = TRUE;
-		m.flags = CallProtoService(protos[i]->szName, PS_VOICE_GETINFO, 0, 0);
+		m.flags = CallProtoService(protos[i]->szName, PS_VOICE_GETCAPS, 0, 0);
 
 		char notify[128];
 		mir_snprintf(notify, MAX_REGS(notify), "%s" PE_VOICE_CALL_STATE, protos[i]->szName);
@@ -413,17 +419,20 @@ HANDLE ConvertMetacontact(HANDLE hContact)
 
 static void CopyVoiceCallData(VOICE_CALL_INTERNAL *out, VOICE_CALL *in)
 {
+	// TODO: Don't use VOICE_CALL_CONTACT/VOICE_CALL_STRING and test against which fields are != NULL
 	if (in->flags & VOICE_CALL_CONTACT)
 		out->flags = VOICE_CALL_CONTACT;
 	else
 		out->flags = VOICE_CALL_STRING | VOICE_TCHAR;
 
+	// TODO: New accounts 
 	char description[128];
 	if (ProtoServiceExists(in->szModule, PS_GETNAME))
 		CallProtoService(in->szModule, PS_GETNAME, MAX_REGS(description),(LPARAM) description);
 	else
 		strncpy(description, Translate(in->szModule), MAX_REGS(description));
 
+	// TODO: Handle contact + number
 	if (in->flags & VOICE_CALL_CONTACT)
 	{
 		if (in->hContact != NULL)
@@ -436,18 +445,16 @@ static void CopyVoiceCallData(VOICE_CALL_INTERNAL *out, VOICE_CALL *in)
 	}
 	else if (in->flags & VOICE_UNICODE)
 	{
-		out->hContact = NULL;
-		if (in->pwszContact[0] != L'\0')
+		if (in->pwszNumber[0] != L'\0')
 			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_SI) _T(" (") _T(_S) _T(")"), 
-				in->pwszContact,
+				in->pwszNumber,
 				description);
 	}
 	else
 	{
-		out->hContact = NULL;
-		if (in->pszContact[0] != '\0')
+		if (in->pszNumber[0] != '\0')
 			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_S) _T(" (") _T(_S) _T(")"), 
-				in->pszContact,
+				in->pszNumber,
 				description);
 	}
 }
