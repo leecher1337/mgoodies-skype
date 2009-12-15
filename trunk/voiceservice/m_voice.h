@@ -69,6 +69,7 @@ return: 0 on success
 #define PE_VOICE_CALL_STATE				"/Voice/State"
 
 
+// TODO Remove VOICE_CAN_SET_DEVICE, remove VOICE_CALL_CONTACT_NEED_TEST and test if the service exists
 #define VOICE_SUPPORTED					1	// Set if proto support voice calls. Probabilly will be 1 ;)
 #define VOICE_CALL_CONTACT				2	// Set if a call can be made to a hContact
 #define VOICE_CALL_CONTACT_NEED_TEST	4	// Set if the contact need to be tested with PS_VOICE_CALL_CONTACT_VALID (needs VOICE_CALL_CONTACT set to work)
@@ -85,11 +86,13 @@ return: VOICE_* above
 #define PS_VOICE_GETCAPS				"/Voice/GetCaps"
 
 /*
-Request to the protocol a voice call to hContact.
+Request to the protocol a make voice call
 
 wParam: (HANDLE) hContact
-lParam: ignored
+lParam: (const TCHAR *) number
 return: 0 on success
+Or the contact or the number must be != NULL. If both are != NULL the call will be 
+made to the numberand will be associated with the contact.
 */
 #define PS_VOICE_CALL					"/Voice/Call"
 

@@ -1,14 +1,20 @@
 General ideas about the plugin:
 
-- A voice provider can call contacts from varios protocols (even if it is a protocol)
+- A voice provider can call contacts from varios protocols (even if it is a protocol). A voice provider is a plugin that registered itself with MS_VOICESERVICE_REGISTER. The voice provider can be an account or just a usual plugin. It is an account if the name send in MS_VOICESERVICE_REGISTER == and account name. Even if it is an account, it can call contacts from any protocol, not just its contacts. For example, iax will be a protocol that can call any contact that has a phone number.
 
-- A voice contact can call a contact with diferent means (by the contact and by number associated with the contact)
+- A voice contact can call a contact with diferent means (by the contact and by number associated with the contact).  A call can be made to an HContact (for example using MSN) or to a number associated with an hContact (for example its home phone). More than that, you may be able to call a contact from 3 means: MSN / contact ; SkypeOut / home number ; SkypeOut / work number ; IAX / home number
 
 - A voice provider is a protocol if it has the same name as an account
 
-- Each can can have one contact associated with it (or none)
+- Each call can have one contact associated with it (or none)
 
 - More than one call can happen at the same time
+
+- my idea is that there are 3 types of calls:
+   1. to an hContact. That is a call made thought a protocol, like MSN or skype, that uses the protocol "im network"
+   2. a call to a number without an hContact. That is a phone call, or a SkypeOut call
+   3. a call with a hContact and a number. That is almost like 2, but we have more info to show the GUI and were to blink icons. For example in incoming phone call where the call id is the same as a contact, or if we use a phone number stored in a contact
+   2 and 3 are really "external" calls in the sense they are not using an im network, but instead are identified by a number that may be or may not be associated with a contact
 
 - It is voice service's responsability to handle the call switching/answering/droping logic
 
@@ -17,6 +23,7 @@ General ideas about the plugin:
 - As long as possible voice service should show the options to the user and the providers should only read it from the DB
 
 - All the GUI (as far as possible) is voice service's responsability
+
 
 
 
