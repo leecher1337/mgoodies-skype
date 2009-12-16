@@ -256,10 +256,6 @@ SOURCE=.\frame.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\utils\mir_memory.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\utils\mir_options.cpp
 # End Source File
 # Begin Source File

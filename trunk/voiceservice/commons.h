@@ -61,6 +61,7 @@ using namespace std;
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
+#include "../utils/utf8_helpers.h"
 
 #include "m_voice.h"
 #include "m_voiceservice.h"
@@ -112,11 +113,14 @@ extern HBRUSH bk_brush;
 
 struct MODULE_INTERNAL
 {
-	// TODO: Add icon and make name a buffer
-	const char *name;
+	TCHAR description[256];
+	char name[256];
 	int flags;
-	BOOL is_protocol;
+	bool is_protocol;
 	HANDLE state_hook;
+
+	bool CanCall(HANDLE hContact, BOOL now = TRUE);
+	bool CanCall(const TCHAR *number);
 };
 
 
@@ -124,19 +128,26 @@ struct VOICE_CALL_INTERNAL
 {
 	MODULE_INTERNAL *module;
 	char *id;					// Protocol especific ID for this call
-	int flags;					// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING
 	HANDLE hContact;
-	TCHAR ptszContact[128];
+	TCHAR number[256];
+	TCHAR displayName[256];
 	int state;
 	DWORD end_time;
 	HANDLE last_dbe;
 	HWND hwnd;
 
-	~VOICE_CALL_INTERNAL()
+	void DestroyWindow()
 	{
 		if (hwnd != NULL)
-			DestroyWindow(hwnd);
+		{
+			::DestroyWindow(hwnd);
+			hwnd = NULL;
+		}
+	}
 
+	~VOICE_CALL_INTERNAL()
+	{
+		DestroyWindow();
 		mir_free(id);
 	}
 };

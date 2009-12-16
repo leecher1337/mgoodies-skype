@@ -21,8 +21,6 @@ Boston, MA 02111-1307, USA.
 #ifndef __M_VOICESERVICE_H__
 # define __M_VOICESERVICE_H__
 
-#include "m_voice.h"
-
 
 #define MIID_VOICESERVICE  { 0x7d64437, 0xef2e, 0x4f60, { 0xbb, 0x2d, 0x3c, 0x51, 0x8f, 0xe2, 0x4d, 0x63 } }
 
@@ -44,15 +42,21 @@ return: 0 on success
 #define MS_VOICESERVICE_STATE			"VoiceService/State"
 
 
+#define VOICE_CAPS_CALL_CONTACT		(1<<0)	// Set if a call can be made to a hContact (PS_VOICE_CALL_CONTACT_VALID is used to validate the string)
+#define VOICE_CAPS_CALL_STRING		(1<<1)	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
+#define VOICE_CAPS_CAN_HOLD			(1<<2)	// Set if a call can be put on hold
+
 
 struct VOICE_MODULE
 {
 	int cbSize;			// sizeof(VOICE_MODULE)
-	char *name;			// The internal name of the plugin. All PS_* serivces (except PS_VOICE_GETCAPS)
+	TCHAR *description;	// The description of the voice provider. This is the name that will be shown
+						// to the user
+	char *name;			// The internal name of the voice provider. All PS_* serivces
 						// defined in m_voide.h need to be created based in this name. For example, 
 						// PS_VOICE_CALL (/Voice/Call) need to be created as <name>/Voice/Call
 	char *icon;			// Icon to identify provider (from icolib)
-	int flags;			// VOICE_* from m_voice.h
+	int flags;			// or of VOICE_CAPS_*
 };
 /*
 Register a new plugin that can make/receive voice calls (a voice provider).

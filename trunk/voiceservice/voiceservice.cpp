@@ -69,7 +69,9 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
 
 static int VoiceRegister(WPARAM wParam, LPARAM lParam);
+static int VoiceUnregister(WPARAM wParam, LPARAM lParam);
 static int VoiceState(WPARAM wParam, LPARAM lParam);
+static int VoiceEndedCall(VOICE_CALL_INTERNAL *vc);
 
 MODULE_INTERNAL * FindModule(const char *szModule);
 VOICE_CALL_INTERNAL * FindVoiceCall(const char *szModule, const char *id, BOOL add);
@@ -116,6 +118,7 @@ static VOID CALLBACK ClearOldVoiceCalls(HWND hwnd, UINT uMsg, UINT_PTR idEvent, 
 static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
+
 // Functions ////////////////////////////////////////////////////////////////////////////
 
 
@@ -151,7 +154,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	CHECK_VERSION("IAX")
+	CHECK_VERSION("Voice Service")
 
 	// TODO Assert results here
 	mir_getMMI(&mmi);
@@ -160,6 +163,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_VOICESERVICE_CLIST_DBLCLK, CListDblClick);
 	CreateServiceFunction(MS_VOICESERVICE_STATE, VoiceState);
 	CreateServiceFunction(MS_VOICESERVICE_REGISTER, VoiceRegister);
+	CreateServiceFunction(MS_VOICESERVICE_UNREGISTER, VoiceUnregister);
 
 	// Hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
@@ -196,14 +200,14 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/voiceservice_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/voiceservice#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/voiceservice_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/voiceservice#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Voice Service ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/voiceserviceW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/voiceserviceW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/voiceservice.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/voiceservice.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -325,37 +329,6 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	hPreBuildContactMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
 
-	// Hook protocol calls
-	PROTOCOLDESCRIPTOR **protos;
-	int count;
-
-	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-
-	for (int i = 0; i < count; i++)
-	{
-		if (protos[i]->type != PROTOTYPE_PROTOCOL && protos[i]->type != PROTOTYPE_VOICE)
-			continue;
-
-		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
-			continue;
-
-		if (!ProtoServiceExists(protos[i]->szName, PS_VOICE_GETCAPS))
-			continue;
-
-		// Found a protocol
-		MODULE_INTERNAL m = {0};
-
-		m.name = protos[i]->szName;
-		m.is_protocol = TRUE;
-		m.flags = CallProtoService(protos[i]->szName, PS_VOICE_GETCAPS, 0, 0);
-
-		char notify[128];
-		mir_snprintf(notify, MAX_REGS(notify), "%s" PE_VOICE_CALL_STATE, protos[i]->szName);
-		m.state_hook = HookEvent(notify, VoiceState);
-
-		modules.insert(modules.end(), m);
-	}
-
 	// Util services
 	CreateServiceFunction(MS_VOICESERVICE_CALL, Service_Call);
 	CreateServiceFunction(MS_VOICESERVICE_CAN_CALL, Service_CanCall);
@@ -383,6 +356,10 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	ssd.pszName = "voice_ended";
 	ssd.pszDescription = "End of a Call";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+	ssd.pszName = "voice_busy";
+	ssd.pszDescription = "Busy signal";
 	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
 
 
@@ -419,60 +396,51 @@ HANDLE ConvertMetacontact(HANDLE hContact)
 
 static void CopyVoiceCallData(VOICE_CALL_INTERNAL *out, VOICE_CALL *in)
 {
-	// TODO: Don't use VOICE_CALL_CONTACT/VOICE_CALL_STRING and test against which fields are != NULL
-	if (in->flags & VOICE_CALL_CONTACT)
-		out->flags = VOICE_CALL_CONTACT;
-	else
-		out->flags = VOICE_CALL_STRING | VOICE_TCHAR;
+	if (in->hContact != NULL)
+		out->hContact = in->hContact;
 
-	// TODO: New accounts 
-	char description[128];
-	if (ProtoServiceExists(in->szModule, PS_GETNAME))
-		CallProtoService(in->szModule, PS_GETNAME, MAX_REGS(description),(LPARAM) description);
-	else
-		strncpy(description, Translate(in->szModule), MAX_REGS(description));
+	if (in->ptszNumber != NULL)
+	{
+		TCHAR tmp[256];
+		if (in->flags == VOICE_UNICODE)
+			lstrcpyn(tmp, WcharToTchar(in->pwszNumber), MAX_REGS(tmp));
+		else
+			lstrcpyn(tmp, CharToTchar(in->pszNumber), MAX_REGS(tmp));
 
-	// TODO: Handle contact + number
-	if (in->flags & VOICE_CALL_CONTACT)
-	{
-		if (in->hContact != NULL)
-		{
-			out->hContact = in->hContact;
-			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T("%s (") _T(_S) _T(")"), 
-				(TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) in->hContact, GCDNF_TCHAR),
-				description);
-		}
+		if (tmp[0] != 0)
+			lstrcpyn(out->number, tmp, MAX_REGS(out->number));
 	}
-	else if (in->flags & VOICE_UNICODE)
+
+	TCHAR *contact = NULL;
+	if (out->hContact != NULL)
+		contact = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) out->hContact, GCDNF_TCHAR);
+
+	if (contact != NULL && out->number[0] != 0)
 	{
-		if (in->pwszNumber[0] != L'\0')
-			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_SI) _T(" (") _T(_S) _T(")"), 
-				in->pwszNumber,
-				description);
+		mir_sntprintf(out->displayName, MAX_REGS(out->displayName), _T("%s (%s)"), contact, out->number);
+	}
+	else if (contact != NULL)
+	{
+		lstrcpyn(out->displayName, contact, MAX_REGS(out->displayName));
+	}
+	else if (out->number[0] != 0)
+	{
+		lstrcpyn(out->displayName, out->number, MAX_REGS(out->displayName));
 	}
 	else
 	{
-		if (in->pszNumber[0] != '\0')
-			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_S) _T(" (") _T(_S) _T(")"), 
-				in->pszNumber,
-				description);
+		lstrcpyn(out->displayName, TranslateT("Unknown number"), MAX_REGS(out->displayName));
 	}
 }
 
 
 MODULE_INTERNAL * FindModule(const char *szModule) 
 {
-	MODULE_INTERNAL *module = NULL;
-	for(int i = 0; i < modules.size(); i++)
-	{
+	for(unsigned int i = 0; i < modules.size(); i++)
 		if (strcmp(modules[i].name, szModule) == 0)
-		{
-			module = &modules[i];
-			break;
-		}
-	}
+			return &modules[i];
 
-	return module;
+	return NULL;
 }
 
 VOICE_CALL_INTERNAL * FindVoiceCall(const char *szModule, const char *id, BOOL add)
@@ -523,10 +491,10 @@ static void RemoveVoiceCall(const char *szModule, const char *id)
 {
 	for(vector<VOICE_CALL_INTERNAL *>::iterator it = calls.begin(); it != calls.end(); it++)
 	{
-		if (strcmp((*it)->module->name, szModule) == 0 
-			&& strcmp((*it)->id, id) == 0)
+		VOICE_CALL_INTERNAL *call = *it;
+		if (strcmp(call->module->name, szModule) == 0 && strcmp(call->id, id) == 0)
 		{
-			delete *it;
+			delete call;
 			calls.erase(it);
 			break;
 		}
@@ -540,9 +508,11 @@ static VOID CALLBACK ClearOldVoiceCalls(HWND hwnd, UINT uMsg, UINT_PTR idEvent, 
 	BOOL refresh = FALSE;
 	for(vector<VOICE_CALL_INTERNAL *>::iterator it = calls.begin(); it != calls.end(); )
 	{
-		if ((*it)->state == VOICE_STATE_ENDED && (*it)->end_time + TIME_TO_SHOW_ENDED_CALL < now)
+		VOICE_CALL_INTERNAL *call = *it;
+
+		if (call->state == VOICE_STATE_ENDED && call->end_time + TIME_TO_SHOW_ENDED_CALL < now)
 		{
-			delete *it;
+			delete call;
 			it = calls.erase(it);
 			refresh = TRUE;
 		}
@@ -564,6 +534,7 @@ TCHAR *GetStateName(int state)
 		case VOICE_STATE_TALKING: return TranslateT("Talking");
 		case VOICE_STATE_CALLING: return TranslateT("Calling");
 		case VOICE_STATE_ENDED: return TranslateT("Ended");
+		case VOICE_STATE_BUSY: return TranslateT("Busy");
 		case VOICE_STATE_ON_HOLD: return TranslateT("On Hold");
 		case VOICE_STATE_RINGING: return TranslateT("Ringing");
 	}
@@ -599,6 +570,34 @@ char *GetActionNameA(int state)
 }
 
 
+static bool IsProtocol(char *module)
+{
+	PROTOACCOUNT **protos;
+	int count;
+
+	BOOL hasAccounts = ServiceExists(MS_PROTO_ENUMACCOUNTS);
+
+	if (hasAccounts)
+		CallService(MS_PROTO_ENUMACCOUNTS, (WPARAM)&count, (LPARAM)&protos);
+	else
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+	
+	for (int i = 0; i < count; i++)
+	{
+		if (protos[i]->type != PROTOTYPE_PROTOCOL)
+			continue;
+
+		if (protos[i]->szModuleName == NULL || protos[i]->szModuleName[0] == '\0')
+			continue;
+
+		if (strcmp(module, protos[i]->szModuleName) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+
 static int VoiceRegister(WPARAM wParam, LPARAM lParam)
 {
 	VOICE_MODULE *in = (VOICE_MODULE *) wParam;
@@ -609,10 +608,59 @@ static int VoiceRegister(WPARAM wParam, LPARAM lParam)
 		return -2;
 
 	MODULE_INTERNAL m = {0};
-	m.name = mir_strdup(in->name);
-	m.is_protocol = FALSE;
+	strncpy(m.name, in->name, MAX_REGS(m.name));
+	m.name[MAX_REGS(m.name)] = 0;
+	lstrcpyn(m.description, in->description, MAX_REGS(m.description));
 	m.flags = in->flags;
-	modules.insert(modules.end(), m);
+	m.is_protocol = IsProtocol(in->name);
+
+	modules.push_back(m);
+
+	return 0;
+}
+
+
+static int VoiceUnregister(WPARAM wParam, LPARAM lParam)
+{
+	char *moduleName = (char *) wParam;
+	if (moduleName == NULL || moduleName[0] == 0)
+		return -1;
+
+	MODULE_INTERNAL *module = FindModule(moduleName);
+	if (module == NULL)
+		return -2;
+
+	{
+		for(vector<VOICE_CALL_INTERNAL *>::iterator it = calls.begin(); it != calls.end(); )
+		{
+			VOICE_CALL_INTERNAL *call = *it;
+			if (call->module != module)
+			{
+				++it;
+			}
+			else
+			{
+				DropCall(call);
+				VoiceEndedCall(call);
+
+				delete call;
+				it = calls.erase(it);
+			}
+		}
+	}
+	{
+		for(vector<MODULE_INTERNAL>::iterator it = modules.begin(); it != modules.end(); ++it)
+		{
+			if (&*it == module)
+			{
+				modules.erase(it);
+				break;
+			}
+		}
+	}
+
+	if (hwnd_frame != NULL)
+		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
 
 	return 0;
 }
@@ -626,8 +674,11 @@ static int VoiceCalling(VOICE_CALL *in)
 		return 0;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (vc->state == VOICE_STATE_CALLING)
 		// Already here
@@ -643,7 +694,7 @@ static int VoiceCalling(VOICE_CALL *in)
 
 	// Notify
 	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateT("Calling %s"), vc->ptszContact);
+	mir_sntprintf(text, MAX_REGS(text), TranslateT("Calling %s"), vc->displayName);
 
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
@@ -670,8 +721,11 @@ static int VoiceRinging(VOICE_CALL *in)
 		return 0;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (vc->state == VOICE_STATE_RINGING)
 		// Already here
@@ -683,7 +737,7 @@ static int VoiceRinging(VOICE_CALL *in)
 
 	// Notify
 	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateT("Ringing call from %s"), vc->ptszContact);
+	mir_sntprintf(text, MAX_REGS(text), TranslateT("Ringing call from %s"), vc->displayName);
 
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
@@ -723,16 +777,15 @@ static int VoiceRinging(VOICE_CALL *in)
 	return 0;
 }
 
-static int VoiceEndedCall(VOICE_CALL *in)
-{
-	// Check if the call is aready in list
-	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
-	if (vc == NULL)
-		return 0;
 
+static int VoiceEndedCall(VOICE_CALL_INTERNAL *vc)
+{
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (vc->state == VOICE_STATE_ENDED)
 		// Already here
@@ -743,7 +796,6 @@ static int VoiceEndedCall(VOICE_CALL *in)
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) vc->hContact, (LPARAM) vc->last_dbe);
 
 	// Set data
-	CopyVoiceCallData(vc, in);
 	vc->state = VOICE_STATE_ENDED;
 	vc->end_time = GetTickCount();
 
@@ -756,7 +808,7 @@ static int VoiceEndedCall(VOICE_CALL *in)
 
 	// Notify
 	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s has ended"), vc->ptszContact);
+	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s has ended"), vc->displayName);
 
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
@@ -771,13 +823,18 @@ static int VoiceEndedCall(VOICE_CALL *in)
 	// sound
 	SkinPlaySound("voice_ended");
 
-	// RemoveVoiceCall(in->szModule, in->id);
-
-	// Need to answer other one?
-	if (currentCall.hungry_call != NULL)
-		AnswerCall(currentCall.hungry_call);
-
 	return 0;
+}
+
+
+static int VoiceEndedCall(VOICE_CALL *in)
+{
+	// Check if the call is aready in list
+	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, FALSE);
+	if (vc == NULL)
+		return 0;
+
+	return VoiceEndedCall(vc);
 }
 
 static int VoiceStartedCall(VOICE_CALL *in)
@@ -788,8 +845,11 @@ static int VoiceStartedCall(VOICE_CALL *in)
 		return 0;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (vc->state == VOICE_STATE_TALKING)
 		// Already here
@@ -806,7 +866,7 @@ static int VoiceStartedCall(VOICE_CALL *in)
 	if (currentCall.call != NULL && currentCall.call != vc)
 	{
 		// Well, can't do much more than try to hold/drop the current call
-		if (currentCall.call->module->flags & VOICE_CAN_HOLD)
+		if (currentCall.call->module->flags & VOICE_CAPS_CAN_HOLD)
 			CallProtoService(currentCall.call->module->name, PS_VOICE_HOLDCALL, (WPARAM) currentCall.call->id, 0);
 		else
 			CallProtoService(currentCall.call->module->name, PS_VOICE_DROPCALL, (WPARAM) currentCall.call->id, 0);
@@ -816,7 +876,7 @@ static int VoiceStartedCall(VOICE_CALL *in)
 
 	// Notify
 	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s started"), vc->ptszContact);
+	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s started"), vc->displayName);
 
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
@@ -846,8 +906,11 @@ static int VoiceHoldedCall(VOICE_CALL *in)
 		return 0;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (vc->state == VOICE_STATE_ON_HOLD)
 		// Already here
@@ -870,7 +933,7 @@ static int VoiceHoldedCall(VOICE_CALL *in)
 
 	// Notify
 	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s is on hold"), vc->ptszContact);
+	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s is on hold"), vc->displayName);
 
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
@@ -902,6 +965,7 @@ static int VoiceState(WPARAM wParam, LPARAM lParam)
 		case VOICE_STATE_ON_HOLD: VoiceHoldedCall(in); break;
 		case VOICE_STATE_CALLING: VoiceCalling(in); break;
 		case VOICE_STATE_ENDED: VoiceEndedCall(in); break;
+		case VOICE_STATE_BUSY: VoiceEndedCall(in); break;
 	}
 
 	return 0;
@@ -915,8 +979,11 @@ void DropCall(VOICE_CALL_INTERNAL * vc)
 		return;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	CallProtoService(vc->module->name, PS_VOICE_DROPCALL, (WPARAM) vc->id, 0);
 
@@ -931,8 +998,11 @@ void AnswerCall(VOICE_CALL_INTERNAL * vc)
 		return;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	if (currentCall.call != NULL && currentCall.call != vc)
 	{
@@ -941,7 +1011,7 @@ void AnswerCall(VOICE_CALL_INTERNAL * vc)
 
 		if (!currentCall.stopping)
 		{
-			if (currentCall.call->module->flags & VOICE_CAN_HOLD)
+			if (currentCall.call->module->flags & VOICE_CAPS_CAN_HOLD)
 				CallProtoService(currentCall.call->module->name, PS_VOICE_HOLDCALL, (WPARAM) currentCall.call->id, 0);
 			else
 				CallProtoService(currentCall.call->module->name, PS_VOICE_DROPCALL, (WPARAM) currentCall.call->id, 0);
@@ -961,12 +1031,15 @@ void AnswerCall(VOICE_CALL_INTERNAL * vc)
 void HoldCall(VOICE_CALL_INTERNAL * vc)
 {
 	// Sanity check
-	if (vc == NULL || vc->state != VOICE_STATE_TALKING || !(vc->module->flags & VOICE_CAN_HOLD))
+	if (vc == NULL || vc->state != VOICE_STATE_TALKING || !(vc->module->flags & VOICE_CAPS_CAN_HOLD))
 		return;
 
 	if (vc->hwnd != NULL)
+	{
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+		vc->hwnd = NULL;
+	}
 
 	CallProtoService(vc->module->name, PS_VOICE_HOLDCALL, (WPARAM) vc->id, 0);
 
@@ -1132,15 +1205,7 @@ static int Service_CanCall(WPARAM wParam,LPARAM lParam)
 	int i, avaiable = 0;
 	for(i = 0; i < modules.size(); i++)
 	{
-		if (!(modules[i].flags & VOICE_CALL_CONTACT))
-			continue;
-
-		if (modules[i].is_protocol
-			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-			continue;
-
-		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
-			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
+		if (!modules[i].CanCall(hContact))
 			continue;
 
 		// Oki, can call
@@ -1152,7 +1217,7 @@ static int Service_CanCall(WPARAM wParam,LPARAM lParam)
 }
 
 
-static int Service_Call(WPARAM wParam,LPARAM lParam) 
+static int Service_Call(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -1165,15 +1230,7 @@ static int Service_Call(WPARAM wParam,LPARAM lParam)
 	int i;
 	for(i = 0; i < modules.size(); i++)
 	{
-		if (!(modules[i].flags & VOICE_CALL_CONTACT))
-			continue;
-
-		if (modules[i].is_protocol
-			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-			continue;
-
-		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
-			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
+		if (!modules[i].CanCall(hContact))
 			continue;
 
 		// Oki, can call
@@ -1181,7 +1238,7 @@ static int Service_Call(WPARAM wParam,LPARAM lParam)
 	}
 
 	if (i == modules.size())
-		return 0;
+		return 1;
 
 	CallProtoService(modules[i].name, PS_VOICE_CALL, (WPARAM) hContact, 0);
 	return 0;
@@ -1243,24 +1300,6 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 
 	hContact = ConvertMetacontact(hContact);
 
-	// Some Module can handle it?
-	int i;
-	for(i = 0; i < modules.size(); i++)
-	{
-		if (!(modules[i].flags & VOICE_CALL_CONTACT))
-			continue;
-
-		if (modules[i].is_protocol
-			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-			continue;
-
-		// Oki, found a module that can handle it
-		break;
-	}
-
-	if (i == modules.size())
-		return 0;
-
 	// From now on unhide it
 	mi.flags = CMIM_FLAGS;
 
@@ -1268,16 +1307,25 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(hContact);
 	if (vc == NULL)
 	{
-		// Check if can call
-		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
-			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
+		// Some module can handle it?
+		int i;
+		for(i = 0; i < modules.size(); i++)
+		{
+			if (!modules[i].CanCall(hContact))
+				continue;
+
+			// Oki, found a module that can handle it
+			break;
+		}
+
+		if (i == modules.size())
 			return 0;
 
 		// Just call contact
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMCall, (LPARAM) &mi);
 	}
 	else
-	{
+	{		
 		switch (vc->state)
 		{
 			case VOICE_STATE_CALLING:
@@ -1287,7 +1335,7 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 			}
 			case VOICE_STATE_TALKING:
 			{
-				if (vc->module->flags & VOICE_CAN_HOLD)
+				if (vc->module->flags & VOICE_CAPS_CAN_HOLD)
 					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMHold, (LPARAM) &mi);
 				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMDrop, (LPARAM) &mi);
 				break;
@@ -1318,7 +1366,7 @@ static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			TCHAR text[1024];
 			mir_sntprintf(text, MAX_REGS(text), TranslateT("%s wants to start a voice call with you. What you want to do?"),
-				vc->ptszContact);
+				vc->displayName);
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_TEXT), WM_SETTEXT, 0, (LPARAM) text);
 
@@ -1372,3 +1420,29 @@ static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	return FALSE;
 }
 
+
+
+bool MODULE_INTERNAL::CanCall(HANDLE hContact, BOOL now)
+{
+	if ((flags & VOICE_CAPS_CALL_CONTACT) == 0)
+		return false;
+
+	if (ProtoServiceExists(name, PS_VOICE_CALL_CONTACT_VALID))
+		return CallProtoService(name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, now) != 0;
+
+	if (is_protocol)
+		return CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) name) != 0;
+
+	return true;
+}
+
+bool MODULE_INTERNAL::CanCall(const TCHAR *number)
+{
+	if ((flags & VOICE_CAPS_CALL_STRING) == 0)
+		return false;
+
+	if (ProtoServiceExists(name, PS_VOICE_CALL_STRING_VALID))
+		return CallProtoService(name, PS_VOICE_CALL_STRING_VALID, (WPARAM) number, 0) != 0;
+
+	return true;
+}
