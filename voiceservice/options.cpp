@@ -252,16 +252,7 @@ static void SetAllContactIcons(HWND hwndList)
 			int i;
 			for(i = 0; i < modules.size(); i++)
 			{
-				if (!(modules[i].flags & VOICE_CALL_CONTACT))
-					continue;
-
-				if (modules[i].is_protocol
-					&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-					continue;
-
-				// Check if can call
-				if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
-					&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, FALSE))
+				if (!modules[i].CanCall(hContact, FALSE))
 					continue;
 
 				// Oki, found a module that can handle it

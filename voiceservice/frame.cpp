@@ -160,7 +160,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			for(int i = 0; i < calls.size(); i++)
 			{
 				TCHAR text[512];
-				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i]->state, calls[i]->ptszContact);
+				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i]->state, calls[i]->displayName);
 
 				int pos = SendMessage(list, LB_ADDSTRING, 0, (LPARAM) text);
 				if (pos == LB_ERR)
@@ -297,7 +297,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				case VOICE_STATE_TALKING:
 				{
 					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
-					if (!(calls[pos]->module->flags & VOICE_CAN_HOLD))
+					if (!(calls[pos]->module->flags & VOICE_CAPS_CAN_HOLD))
 						DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
 					break;
 				}
@@ -374,7 +374,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			HFONT old_font = (HFONT) SelectObject(dis->hDC, fonts[vc->state]);
 			COLORREF old_color = SetTextColor(dis->hDC, font_colors[vc->state]);
 
-			DrawText(dis->hDC, vc->ptszContact, -1, &rc, DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_VCENTER);
+			DrawText(dis->hDC, vc->displayName, -1, &rc, DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_VCENTER);
 
 			SelectObject(dis->hDC, old_font);
 			SetTextColor(dis->hDC, old_color);
@@ -397,7 +397,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
-					if (vc->module->flags & VOICE_CAN_HOLD)
+					if (vc->module->flags & VOICE_CAPS_CAN_HOLD)
 					{
 						rc.right -= ICON_SIZE + H_SPACE;
 						rc.left = rc.right - ICON_SIZE;

@@ -40,7 +40,8 @@ Boston, MA 02111-1307, USA.
 #define VOICE_STATE_RINGING 1
 #define VOICE_STATE_CALLING 2
 #define VOICE_STATE_ON_HOLD 3
-#define VOICE_STATE_ENDED 4
+#define VOICE_STATE_ENDED   4
+#define VOICE_STATE_BUSY    5
 
 typedef struct {
 	int cbSize;				// Struct size
@@ -53,7 +54,8 @@ typedef struct {
 		TCHAR *ptszNumber;  // Or the contact or the number must be != NULL
 		char *pszNumber;	// If both are != NULL the call will be made to the number
 		WCHAR *pwszNumber;	// and will be associated with the contact
-	};
+	};						// This fields are only needed in first notification for a call id
+
 	int state;				// VOICE_STATE_*
 
 } VOICE_CALL;
@@ -69,21 +71,6 @@ return: 0 on success
 #define PE_VOICE_CALL_STATE				"/Voice/State"
 
 
-// TODO Remove VOICE_CAN_SET_DEVICE, remove VOICE_CALL_CONTACT_NEED_TEST and test if the service exists
-#define VOICE_SUPPORTED					1	// Set if proto support voice calls. Probabilly will be 1 ;)
-#define VOICE_CALL_CONTACT				2	// Set if a call can be made to a hContact
-#define VOICE_CALL_CONTACT_NEED_TEST	4	// Set if the contact need to be tested with PS_VOICE_CALL_CONTACT_VALID (needs VOICE_CALL_CONTACT set to work)
-#define VOICE_CALL_STRING				8	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
-#define VOICE_CAN_SET_DEVICE			16	// Set if the devices to mic in and sound out can be set (or the protocol will handle it internally)
-#define VOICE_CAN_HOLD					32	// Set if a call can be put on hold
-/*
-Get protocol voice support flags
-
-wParam: ignored
-lParam: ignored
-return: VOICE_* above
-*/
-#define PS_VOICE_GETCAPS				"/Voice/GetCaps"
 
 /*
 Request to the protocol a make voice call
@@ -92,13 +79,13 @@ wParam: (HANDLE) hContact
 lParam: (const TCHAR *) number
 return: 0 on success
 Or the contact or the number must be != NULL. If both are != NULL the call will be 
-made to the numberand will be associated with the contact.
+made to the number and will be associated with the contact.
 */
 #define PS_VOICE_CALL					"/Voice/Call"
 
 /*
-Service called to make the protocol answer a call.
-It is an async call. If the call was answered, the PE_VOICE_STARTEDCALL
+Service called to make the protocol answer a call or restore a hold call.
+It is an async call. If the call was answered, the PE_VOICE_CALL_STATE
 notification will be fired.
 
 wParam: (const char *) id
@@ -110,7 +97,7 @@ return: 0 on success
 /*
 Service called to make the protocol answer a call. This can be called if the 
 call is ringing or has started. If called any other time it should be ignored.
-It is an async call. If the call was droped, the PE_VOICE_ENDEDCALL
+It is an async call. If the call was droped, the PE_VOICE_CALL_STATE
 notification will be fired.
 
 wParam: (const char *) id
@@ -125,7 +112,7 @@ be droped, but it should be muted and put in a hold, to allow other call to be a
 If the protocol can't hold a cal, it should be droped.
 
 This can be called if the call has started. If called any other time it should be ignored.
-It is an async call. If the call was droped, the PE_VOICE_HOLDEDCALL
+It is an async call. If the call was droped, the PE_VOICE_CALL_STATE
 notification will be fired.
 
 wParam: (const char *) id
@@ -136,7 +123,7 @@ return: 0 on success
 
 /*
 Used if protocol support VOICE_CALL_STRING. The call string is passed as
-wParam and the proto should validate it. 
+wParam and the proto should validate it. If this service does not exist all numbers can be called.
 
 wParam: (const TCHAR *) call string
 lParam: ignored
@@ -145,9 +132,10 @@ return: 0 if wrong, 1 if correct
 #define PS_VOICE_CALL_STRING_VALID		"/Voice/CallStringValid"
 
 /*
-Used if protocol support VOICE_CALL_CONTACT and VOICE_CALL_CONTACT_NEED_TEST. 
+Used if protocol support VOICE_CALL_CONTACT. 
 The hContact is passed as wParam and the proto should tell if this contact can be 
-called. 
+called. If this service does not exist all contacts can be called (or, if it is a protocol,
+all contacts from the protocol can be called).
 
 wParam: (HANDLE) hContact
 lParam: (BOOL) TRUE if it is a test for 'can call now?', FALSE if is a test for 'will be possible to call someday?'
