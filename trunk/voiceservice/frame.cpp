@@ -46,16 +46,16 @@ void InitFrames()
 
 		CLISTFrame Frame = {0};
 		Frame.cbSize = sizeof(CLISTFrame);
-		Frame.name = Translate("Voice Calls");
+		Frame.tname = TranslateT("Voice Calls");
 		Frame.hWnd = hwnd_frame;
 		Frame.align = alBottom;
-		Frame.Flags = F_VISIBLE | F_SHOWTB | F_NOBORDER | F_LOCKED;
-		Frame.height = 50;
+		Frame.Flags = F_VISIBLE | F_NOBORDER | F_LOCKED | F_TCHAR;
+		Frame.height = 0;
 		Frame.hIcon = icons[MAIN_ICON];
 
 		frame_id = CallService(MS_CLIST_FRAMES_ADDFRAME, (WPARAM)&Frame, 0);
 
-		SendMessage(hwnd_frame, WMU_RESIZE_FRAME, 0, 0);
+		PostMessage(hwnd_frame, WMU_RESIZE_FRAME, 0, 0);
 	}
 }
 
@@ -83,8 +83,16 @@ BOOL FrameIsFloating(int frame_id)
 	return CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLOATING, frame_id), 0);
 }
 
-void ResizeFrame(int frame_id, HWND hwnd, int height)
+void ResizeFrame(int frame_id, HWND hwnd)
 {
+	int height = calls.getCount() * GetMaxLineHeight();
+	if (CanCallNumber())
+	{
+		RECT dp;
+		GetWindowRect(GetDlgItem(hwnd, IDC_NUMBER), &dp);
+		height += dp.bottom - dp.top + 1;
+	}
+
 	if (FrameIsFloating(frame_id)) 
 	{
 		HWND parent = GetParent(hwnd);
@@ -97,15 +105,16 @@ void ResizeFrame(int frame_id, HWND hwnd, int height)
 		if (r_client.bottom - r_client.top == height)
 			return;
 
-		RECT rp_client, rp_window, r_window;
-		GetClientRect(parent, &rp_client);
-		GetWindowRect(parent, &rp_window);
+		RECT parent_client, parent_window, r_window;
+		GetClientRect(parent, &parent_client);
+		GetWindowRect(parent, &parent_window);
 		GetWindowRect(hwnd, &r_window);
-		int diff = (rp_window.bottom - rp_window.top) - (rp_client.bottom - rp_client.top);
-		if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME))
-			diff += (r_window.top - rp_window.top);
 
-		SetWindowPos(parent, 0, 0, 0, rp_window.right - rp_window.left, height + diff, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+		int diff = (parent_window.bottom - parent_window.top) - (parent_client.bottom - parent_client.top);
+		if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME))
+			diff += (r_window.top - parent_window.top);
+
+		SetWindowPos(parent, 0, 0, 0, parent_window.right - parent_window.left, height + diff, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
 	}
 	else
 	{
@@ -130,6 +139,56 @@ void ShowFrame(int frame_id, HWND hwnd, int show)
 		ShowWindow(GetParent(hwnd), show);
 }
 
+
+static void ShowHideDialpad(HWND hwnd)
+{
+	if (!CanCallNumber())
+	{
+		ShowWindow(GetDlgItem(hwnd, IDC_NUMBER), SW_HIDE);
+		ShowWindow(GetDlgItem(hwnd, IDC_CALL), SW_HIDE);
+	}
+	else
+	{
+		ShowWindow(GetDlgItem(hwnd, IDC_NUMBER), SW_SHOW);
+		ShowWindow(GetDlgItem(hwnd, IDC_CALL), SW_SHOW);
+
+		BOOL enable = TRUE;
+		BOOL clear = FALSE;
+		for(int i = 0; i < calls.getCount(); i++)
+		{
+			VoiceCall *call = &calls[i];
+			if (call->state == VOICE_STATE_TALKING 
+				|| call->state == VOICE_STATE_RINGING
+				|| call->state == VOICE_STATE_CALLING)
+			{
+				enable = FALSE;
+			}
+			if (call->state == VOICE_STATE_RINGING)
+				clear = TRUE;
+		}
+
+		if (clear)
+			SetWindowText(GetDlgItem(hwnd, IDC_NUMBER), _T(""));
+
+		if (!enable)
+		{
+			EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), FALSE);
+			EnableWindow(GetDlgItem(hwnd, IDC_CALL), FALSE);
+		}
+		else
+		{
+			EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), TRUE);
+
+			TCHAR text[1024];
+			GetDlgItemText(hwnd, IDC_NUMBER, text, MAX_REGS(text));
+			lstrtrim(text);
+
+			EnableWindow(GetDlgItem(hwnd, IDC_CALL), CanCall(text));
+		}
+	}
+}
+
+
 static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	switch(msg) 
@@ -137,6 +196,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 		case WM_CREATE: 
 		case WM_INITDIALOG:
 		{
+			ShowHideDialpad(hwnd);
 			break;
 		}
 
@@ -147,7 +207,34 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_SIZE:
 		{
-			MoveWindow(GetDlgItem(hwnd, IDC_CALLS), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+			int width = LOWORD(lParam);
+			int height = HIWORD(lParam);
+
+			if (CanCallNumber())
+			{
+				RECT rc;
+				GetWindowRect(GetDlgItem(hwnd, IDC_CALL), &rc);
+
+				int call_height = rc.bottom - rc.top;
+				int call_width = rc.right - rc.left;
+				int top = height - call_height;
+
+				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), 0, top, width - call_width, call_height, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top, call_width, call_height, TRUE);
+
+				height -= call_height + 1;
+
+			}
+
+			if (height <= 0)
+			{
+				ShowWindow(GetDlgItem(hwnd, IDC_CALLS), SW_HIDE);
+			}
+			else
+			{
+				MoveWindow(GetDlgItem(hwnd, IDC_CALLS), 0, 0, width, height, TRUE);
+				ShowWindow(GetDlgItem(hwnd, IDC_CALLS), SW_SHOW);
+			}
 			break;
 		}
 
@@ -157,35 +244,35 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			SendMessage(list, LB_RESETCONTENT, 0, 0);
 
-			for(int i = 0; i < calls.size(); i++)
+			for(int i = 0; i < calls.getCount(); i++)
 			{
 				TCHAR text[512];
-				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i]->state, calls[i]->displayName);
+				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i].state, calls[i].displayName);
 
 				int pos = SendMessage(list, LB_ADDSTRING, 0, (LPARAM) text);
 				if (pos == LB_ERR)
 					// TODO Show error
 					break;
 
-				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) calls[i]);
+				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) &calls[i]);
 			}
 
-			SendMessage(hwnd, WMU_RESIZE_FRAME, 0, 0);
-			break;
+			ShowHideDialpad(hwnd);
+
+			// Fall throught
 		}
 
 		case WMU_RESIZE_FRAME:
 		{
 			if (opts.resize_frame)
 			{
-				int size = calls.size() * GetMaxLineHeight();
-				if (size <= 0) 
+				if (calls.getCount() == 0 && !CanCallNumber()) 
 				{
 					ShowFrame(frame_id, hwnd, SW_HIDE);
 				}
 				else 
 				{
-					ResizeFrame(frame_id, hwnd, size);
+					ResizeFrame(frame_id, hwnd);
 					ShowFrame(frame_id, hwnd, SW_SHOW);
 				}
 			}
@@ -195,61 +282,91 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_COMMAND:
 		{
-			HWND list = GetDlgItem(hwnd, IDC_CALLS);
-			int i = HIWORD(lParam);
-			if ((HANDLE) lParam != list || HIWORD(wParam) != LBN_SELCHANGE)
-				break;
-
-			int pos = SendMessage(list, LB_GETCURSEL, 0, 0);
-			if (pos == LB_ERR)
-				break;
-
-			POINT p;
-			GetCursorPos(&p);
-			ScreenToClient(list, &p);
-
-			int ret = SendMessage(list, LB_ITEMFROMPOINT, 0, MAKELONG(p.x, p.y));
-			if (HIWORD(ret))
-				break;
-			if (pos != LOWORD(ret))
-				break;
-
-			RECT rc;
-			SendMessage(list, LB_GETITEMRECT, pos, (LPARAM) &rc);
-			int x = rc.right - p.x;
-
-			int action;
-			if (x >= H_SPACE && x <= ICON_SIZE + H_SPACE)
-				action = 2;
-			else if (x >= ICON_SIZE + 2 * H_SPACE && x <= 2 * (ICON_SIZE + H_SPACE))
-				action = 1;
-			else
-				break;
-
-			VoiceCall *call = (VoiceCall *) SendMessage(list, LB_GETITEMDATA, pos, 0);
-			switch (call->state)
+			switch(LOWORD(wParam))
 			{
-				case VOICE_STATE_TALKING:
+				case IDC_CALL:
 				{
-					if (action == 1)
-						call->Hold();
-					else
-						call->Drop();
+					TCHAR number[1024];
+					GetDlgItemText(hwnd, IDC_NUMBER, number, MAX_REGS(number));
+					lstrtrim(number);
+
+					for(int i = 0; i < modules.getCount(); i++)
+					{
+						if (!modules[i].CanCall(number))
+							continue;
+
+						modules[i].Call(NULL, number);
+
+						break;
+					}
 					break;
 				}
-				case VOICE_STATE_RINGING:
-				case VOICE_STATE_ON_HOLD:
+				case IDC_NUMBER:
 				{
-					if (action == 1)
-						Answer(call);
-					else
-						call->Drop();
+					if (HIWORD(wParam) == EN_CHANGE)
+						ShowHideDialpad(hwnd);
 					break;
 				}
-				case VOICE_STATE_CALLING:
+				case IDC_CALLS:
 				{
-					if (action == 2)
-						call->Drop();
+					if (HIWORD(wParam) != LBN_SELCHANGE)
+						break;
+
+					HWND list = GetDlgItem(hwnd, IDC_CALLS);
+
+					int pos = SendMessage(list, LB_GETCURSEL, 0, 0);
+					if (pos == LB_ERR)
+						break;
+
+					POINT p;
+					GetCursorPos(&p);
+					ScreenToClient(list, &p);
+
+					int ret = SendMessage(list, LB_ITEMFROMPOINT, 0, MAKELONG(p.x, p.y));
+					if (HIWORD(ret))
+						break;
+					if (pos != LOWORD(ret))
+						break;
+
+					RECT rc;
+					SendMessage(list, LB_GETITEMRECT, pos, (LPARAM) &rc);
+					int x = rc.right - p.x;
+
+					int action;
+					if (x >= H_SPACE && x <= ICON_SIZE + H_SPACE)
+						action = 2;
+					else if (x >= ICON_SIZE + 2 * H_SPACE && x <= 2 * (ICON_SIZE + H_SPACE))
+						action = 1;
+					else
+						break;
+
+					VoiceCall *call = (VoiceCall *) SendMessage(list, LB_GETITEMDATA, pos, 0);
+					switch (call->state)
+					{
+						case VOICE_STATE_TALKING:
+						{
+							if (action == 1)
+								call->Hold();
+							else
+								call->Drop();
+							break;
+						}
+						case VOICE_STATE_RINGING:
+						case VOICE_STATE_ON_HOLD:
+						{
+							if (action == 1)
+								Answer(call);
+							else
+								call->Drop();
+							break;
+						}
+						case VOICE_STATE_CALLING:
+						{
+							if (action == 2)
+								call->Drop();
+							break;
+						}
+					}
 					break;
 				}
 			}
@@ -273,10 +390,10 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				break;
 			pos = LOWORD(pos);
 
-			if (pos >= calls.size())
+			if (pos >= calls.getCount())
 				break;
 
-			if (calls[pos]->state == VOICE_STATE_ENDED)
+			if (IsFinalState(calls[pos].state))
 				break;
 
 			// Just to get things strait
@@ -286,7 +403,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			HMENU submenu = GetSubMenu(menu, 0);
 			CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM)submenu, 0);
 
-			switch (calls[pos]->state)
+			switch (calls[pos].state)
 			{
 				case VOICE_STATE_CALLING:
 				{
@@ -297,7 +414,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				case VOICE_STATE_TALKING:
 				{
 					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
-					if (!(calls[pos]->module->flags & VOICE_CAPS_CAN_HOLD))
+					if (!calls[pos].module->CanHold())
 						DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
 					break;
 				}
@@ -312,17 +429,17 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			{
 				case ID_FRAMEPOPUP_DROPCALL:
 				{
-					calls[pos]->Drop();
+					calls[pos].Drop();
 					break;
 				}
 				case ID_FRAMEPOPUP_ANSWERCALL:
 				{
-					Answer(calls[pos]);
+					Answer(&calls[pos]);
 					break;
 				}
 				case ID_FRAMEPOPUP_HOLDCALL:
 				{
-					calls[pos]->Hold();
+					calls[pos].Hold();
 					break;
 				}
 			}
@@ -397,7 +514,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
-					if (call->module->flags & VOICE_CAPS_CAN_HOLD)
+					if (call->module->CanHold())
 					{
 						rc.right -= ICON_SIZE + H_SPACE;
 						rc.left = rc.right - ICON_SIZE;

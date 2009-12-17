@@ -38,6 +38,7 @@ using namespace std;
 
 
 // Miranda headers
+#define MIRANDA_VER 0x0900
 #include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
@@ -84,7 +85,7 @@ extern PLUGINLINK *pluginLink;
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
-#define NUM_STATES 5
+#define NUM_STATES 6
 
 #define ACTION_CALL 0
 #define ACTION_ANSWER 1
@@ -119,12 +120,20 @@ public:
 	char name[256];
 	int flags;
 	bool is_protocol;
-	HANDLE state_hook;
 
-	bool CanCall(HANDLE hContact, BOOL now = TRUE);
+	VoiceProvider(const char *name, const TCHAR *description, int flags);
+	~VoiceProvider();
+
 	bool CanCall(const TCHAR *number);
+	bool CanCall(HANDLE hContact, BOOL now = TRUE);
+
+	void Call(HANDLE hContact, const TCHAR *number);
 
 	bool CanHold();
+
+private:
+	bool canHold;
+	HANDLE state_hook;
 };
 
 
@@ -170,21 +179,43 @@ private:
 };
 
 
-extern vector<VoiceProvider> modules;
-extern vector<VoiceCall *> calls;
+extern OBJLIST<VoiceProvider> modules;
+extern OBJLIST<VoiceCall> calls;
 
 void Answer(VoiceCall *call);
 bool CanCall(HANDLE hContact, BOOL now = TRUE);
+bool CanCall(const TCHAR *number);
 bool CanCallNumber();
+bool IsFinalState(int state);
 
 
 // See if a protocol service exists
 __inline static int ProtoServiceExists(const char *szModule,const char *szService)
 {
 	char str[MAXMODULELABELLENGTH];
-	strcpy(str,szModule);
-	strcat(str,szService);
+	mir_snprintf(str, MAX_REGS(str), "%s%s", szModule, szService);
 	return ServiceExists(str);
+}
+
+
+static TCHAR *lstrtrim(TCHAR *str)
+{
+	int len = lstrlen(str);
+
+	int i;
+	for(i = len - 1; i >= 0 && (str[i] == ' ' || str[i] == '\t'); --i) ;
+	if (i < len - 1)
+	{
+		++i;
+		str[i] = _T('\0');
+		len = i;
+	}
+
+	for(i = 0; i < len && (str[i] == ' ' || str[i] == '\t'); ++i) ;
+	if (i > 0)
+		memmove(str, &str[i], (len - i + 1) * sizeof(TCHAR));
+
+	return str;
 }
 
 

@@ -32,20 +32,8 @@ are to be used by plugins that can make calls to contacts in multiple protocols.
 */
 
 
-/*
-Notifies that a voice call changed state
-
-wParam: const VOICE_CALL *
-lParam: ignored
-return: 0 on success
-*/
-#define MS_VOICESERVICE_STATE			"VoiceService/State"
-
-
 #define VOICE_CAPS_CALL_CONTACT		(1<<0)	// Set if a call can be made to a hContact (PS_VOICE_CALL_CONTACT_VALID is used to validate the string)
 #define VOICE_CAPS_CALL_STRING		(1<<1)	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
-#define VOICE_CAPS_CAN_HOLD			(1<<2)	// Set if a call can be put on hold
-
 
 struct VOICE_MODULE
 {
