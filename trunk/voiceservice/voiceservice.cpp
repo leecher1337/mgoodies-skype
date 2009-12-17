@@ -152,6 +152,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	CHECK_VERSION("Voice Service")
 
+	if (Pa_Initialize() != paNoError)
+		MessageBox(NULL, TranslateT("Error initializing portaudio."), TranslateT("Voice Service"), MB_OK | MB_ICONERROR);
+
 	// TODO Assert results here
 	mir_getMMI(&mmi);
 	mir_getUTFI(&utfi);
@@ -173,6 +176,8 @@ extern "C" int __declspec(dllexport) Unload(void)
 {
 	if (bk_brush != NULL)
 		DeleteObject(bk_brush);
+
+	Pa_Terminate();
 
 	return 0;
 }

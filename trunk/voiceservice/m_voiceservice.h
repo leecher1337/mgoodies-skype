@@ -29,6 +29,12 @@ Boston, MA 02111-1307, USA.
 This services are a mirror of the services/notifications in m_voice.h,
 with the difference that that ones are to be used by protocols, and this ones
 are to be used by plugins that can make calls to contacts in multiple protocols.
+
+To get the devices for input/output and some options, query the db directly:
+ VoiceService/EchoCancelation	BYTE		default: TRUE
+ VoiceService/MicBoost			BYTE		default: TRUE
+ VoiceService/Input				TString		default: windows default
+ VoiceService/Output			TString		default: windows default
 */
 
 

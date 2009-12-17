@@ -33,6 +33,7 @@ Options opts;
 
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK DevicesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -41,6 +42,10 @@ static OptPageControl optionsControls[] = {
 	{ &opts.resize_frame,					CONTROL_CHECKBOX,	IDC_FRAME_AUTOSIZE,	"FrameAutoSize", TRUE }
 };
 
+static OptPageControl devicesControls[] = { 
+	{ NULL,		CONTROL_CHECKBOX,	IDC_ECHO,	"EchoCancelation", TRUE },
+	{ NULL,		CONTROL_CHECKBOX,	IDC_MIC_BOOST,	"MicBoost", TRUE },
+};
 
 static OptPageControl popupsControls[] = { 
 	{ &opts.popup_enable,					CONTROL_CHECKBOX,	IDC_POPUPS,			"PopupsEnable", FALSE },
@@ -108,6 +113,16 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
+	ZeroMemory(&odp, sizeof(odp));
+    odp.cbSize = sizeof(odp);
+	odp.hInstance = hInst;
+	odp.ptszGroup = TranslateT("Voice Calls");
+	odp.ptszTitle = TranslateT("Devices");
+	odp.pfnDlgProc = DevicesDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_DEVICES);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
 	return 0;
 }
 
@@ -136,6 +151,79 @@ void LoadOptions()
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+
+static BOOL CALLBACK DevicesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			int defaultInput = Pa_GetDefaultInputDevice();
+			const char *defaultInputName = NULL;
+			
+			int defaultOutput = Pa_GetDefaultOutputDevice();
+			const char *defaultOutputName = NULL;
+
+			int devices = Pa_GetDeviceCount();
+			for(int i = 0; i < devices; i++)
+			{
+				const PaDeviceInfo *device = Pa_GetDeviceInfo(i);
+
+				if (device->maxInputChannels > 0)
+				{
+					SendDlgItemMessage(hwndDlg, IDC_INPUT, CB_ADDSTRING, 0, (WPARAM) CharToTchar(device->name).get());
+					if (i == defaultInput)
+						defaultInputName = device->name;
+				}
+
+				if (device->maxOutputChannels > 0)
+				{
+					SendDlgItemMessage(hwndDlg, IDC_OUTPUT, CB_ADDSTRING, 0, (WPARAM) CharToTchar(device->name).get());
+					if (i == defaultOutput)
+						defaultOutputName = device->name;
+				}
+			}
+
+			if (defaultInputName != NULL)
+				SendDlgItemMessage(hwndDlg, IDC_INPUT, CB_SELECTSTRING, -1, (WPARAM) CharToTchar(defaultInputName).get());
+
+			if (defaultOutputName != NULL)
+				SendDlgItemMessage(hwndDlg, IDC_OUTPUT, CB_SELECTSTRING, -1, (WPARAM) CharToTchar(defaultOutputName).get());
+
+			break;
+		}
+		case WM_COMMAND:
+		{
+			if (LOWORD(wParam) == IDC_INPUT || LOWORD(wParam) == IDC_OUTPUT)
+			{
+				if (HIWORD(wParam) != CBN_SELCHANGE || (HWND)lParam != GetFocus())
+					return 0;
+
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			}
+
+			break;
+		}
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			{
+				TCHAR tmp[1024];
+
+				GetWindowText(GetDlgItem(hwndDlg, IDC_INPUT), tmp, MAX_REGS(tmp));
+				DBWriteContactSettingTString(NULL, MODULE_NAME, "Input", tmp);
+
+				GetWindowText(GetDlgItem(hwndDlg, IDC_OUTPUT), tmp, MAX_REGS(tmp));
+				DBWriteContactSettingTString(NULL, MODULE_NAME, "Output", tmp);
+			}
+		}
+	}
+
+	return SaveOptsDlgProc(devicesControls, MAX_REGS(devicesControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 
