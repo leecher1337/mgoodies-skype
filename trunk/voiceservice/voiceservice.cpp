@@ -1203,7 +1203,7 @@ void VoiceCall::SetState(int aState)
 
 	state = aState;
 
-	if (IsFinished() && end_time == 0\)
+	if (IsFinished() && end_time == 0)
 		end_time = GetTickCount();
 
 	Notify();
