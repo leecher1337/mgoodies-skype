@@ -189,6 +189,7 @@ END
 IDI_TALKING             ICON    DISCARDABLE     "res\\Talking.ico"
 IDI_RINGING             ICON    DISCARDABLE     "res\\Rinning.ico"
 IDI_ENDED               ICON    DISCARDABLE     "res\\ended.ico"
+IDI_BUSY                ICON    DISCARDABLE     "res\\Busy.ico"
 IDI_ON_HOLD             ICON    DISCARDABLE     "res\\On hold.ico"
 IDI_ACTION_CALL         ICON    DISCARDABLE     "res\\Call.ico"
 IDI_ACTION_ANSWER       ICON    DISCARDABLE     "res\\Answer.ico"

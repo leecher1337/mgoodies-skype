@@ -9,11 +9,12 @@
 #define IDI_CALLING                     104
 #define IDI_ON_HOLD                     105
 #define IDI_ENDED                       106
-#define IDI_ACTION_CALL                 107
-#define IDI_ACTION_ANSWER               108
-#define IDI_ACTION_HOLD                 109
-#define IDI_ACTION_DROP                 110
-#define IDI_MAIN                        111
+#define IDI_BUSY                        107
+#define IDI_ACTION_CALL                 108
+#define IDI_ACTION_ANSWER               109
+#define IDI_ACTION_HOLD                 110
+#define IDI_ACTION_DROP                 111
+#define IDI_MAIN                        112
 #define IDD_NEW_CALL                    113
 #define IDD_POPUPS                      120
 #define IDI_SMALLDOT                    211

@@ -249,17 +249,7 @@ static void SetAllContactIcons(HWND hwndList)
 		if(hItem) 
 		{
 			// Some Module can handle it?
-			int i;
-			for(i = 0; i < modules.size(); i++)
-			{
-				if (!modules[i].CanCall(hContact, FALSE))
-					continue;
-
-				// Oki, found a module that can handle it
-				break;
-			}
-
-			if (i == modules.size())
+			if (CanCall(hContact, FALSE))
 			{
 				SendMessage(hwndList,CLM_DELETEITEM,(WPARAM)hItem,0);
 			}
