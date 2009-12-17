@@ -226,30 +226,30 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			else
 				break;
 
-			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) SendMessage(list, LB_GETITEMDATA, pos, 0);
-			switch (vc->state)
+			VoiceCall *call = (VoiceCall *) SendMessage(list, LB_GETITEMDATA, pos, 0);
+			switch (call->state)
 			{
 				case VOICE_STATE_TALKING:
 				{
 					if (action == 1)
-						HoldCall(vc);
+						call->Hold();
 					else
-						DropCall(vc);
+						call->Drop();
 					break;
 				}
 				case VOICE_STATE_RINGING:
 				case VOICE_STATE_ON_HOLD:
 				{
 					if (action == 1)
-						AnswerCall(vc);
+						Answer(call);
 					else
-						DropCall(vc);
+						call->Drop();
 					break;
 				}
 				case VOICE_STATE_CALLING:
 				{
 					if (action == 2)
-						DropCall(vc);
+						call->Drop();
 					break;
 				}
 			}
@@ -312,17 +312,17 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			{
 				case ID_FRAMEPOPUP_DROPCALL:
 				{
-					DropCall(calls[pos]);
+					calls[pos]->Drop();
 					break;
 				}
 				case ID_FRAMEPOPUP_ANSWERCALL:
 				{
-					AnswerCall(calls[pos]);
+					Answer(calls[pos]);
 					break;
 				}
 				case ID_FRAMEPOPUP_HOLDCALL:
 				{
-					HoldCall(calls[pos]);
+					calls[pos]->Hold();
 					break;
 				}
 			}
@@ -353,7 +353,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (dis->CtlID != IDC_CALLS || dis->itemID == -1)
 				break;
 
-			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) dis->itemData;
+			VoiceCall *call = (VoiceCall *) dis->itemData;
 
 			RECT rc = dis->rcItem;
 			rc.left += H_SPACE;
@@ -363,7 +363,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			int old_bk_mode = SetBkMode(dis->hDC, TRANSPARENT);
 
 			// Draw status
-			DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[vc->state], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[call->state], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
 			// TODO: Draw voice provider icon
 
@@ -371,10 +371,10 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			rc.left += ICON_SIZE + H_SPACE;
 			rc.right -= 2 * (ICON_SIZE + H_SPACE);
 
-			HFONT old_font = (HFONT) SelectObject(dis->hDC, fonts[vc->state]);
-			COLORREF old_color = SetTextColor(dis->hDC, font_colors[vc->state]);
+			HFONT old_font = (HFONT) SelectObject(dis->hDC, fonts[call->state]);
+			COLORREF old_color = SetTextColor(dis->hDC, font_colors[call->state]);
 
-			DrawText(dis->hDC, vc->displayName, -1, &rc, DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_VCENTER);
+			DrawText(dis->hDC, call->displayName, -1, &rc, DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS | DT_VCENTER);
 
 			SelectObject(dis->hDC, old_font);
 			SetTextColor(dis->hDC, old_color);
@@ -384,7 +384,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			rc.right -= H_SPACE;
 			rc.bottom --;
 
-			switch (vc->state)
+			switch (call->state)
 			{
 				case VOICE_STATE_CALLING:
 				{
@@ -397,7 +397,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
-					if (vc->module->flags & VOICE_CAPS_CAN_HOLD)
+					if (call->module->flags & VOICE_CAPS_CAN_HOLD)
 					{
 						rc.right -= ICON_SIZE + H_SPACE;
 						rc.left = rc.right - ICON_SIZE;

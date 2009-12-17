@@ -41,6 +41,7 @@ using namespace std;
 #include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
+#include <m_system_cpp.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
 #include <m_clist.h>
@@ -111,8 +112,9 @@ extern HBRUSH bk_brush;
 
 
 
-struct MODULE_INTERNAL
+class VoiceProvider
 {
+public:
 	TCHAR description[256];
 	char name[256];
 	int flags;
@@ -121,55 +123,59 @@ struct MODULE_INTERNAL
 
 	bool CanCall(HANDLE hContact, BOOL now = TRUE);
 	bool CanCall(const TCHAR *number);
+
+	bool CanHold();
 };
 
 
-struct VOICE_CALL_INTERNAL 
+class VoiceCall 
 {
-	MODULE_INTERNAL *module;
+public:
+	VoiceProvider *module;
 	char *id;					// Protocol especific ID for this call
 	HANDLE hContact;
 	TCHAR number[256];
 	TCHAR displayName[256];
 	int state;
 	DWORD end_time;
-	HANDLE last_dbe;
+
+	VoiceCall(VoiceProvider *module, const char *id);
+	~VoiceCall();
+
+	void AppendCallerID(HANDLE hContact, const TCHAR *number);
+
+	void SetState(int state);
+
+	void Drop();
+	void Answer();
+	void Hold();
+
+	bool CanDrop();
+	bool CanAnswer();
+	bool CanHold();
+
+	bool IsFinished();
+
+	void Notify(bool history = true, bool popup = true, bool sound = true, bool clist = true);
+	void SetNewCallHWND(HWND hwnd);
+
+private:
 	HWND hwnd;
+	HANDLE last_dbe;
+	bool clistBlinking;
 
-	void DestroyWindow()
-	{
-		if (hwnd != NULL)
-		{
-			::DestroyWindow(hwnd);
-			hwnd = NULL;
-		}
-	}
+	void RemoveNotifications();
+	void CreateDisplayName();
 
-	~VOICE_CALL_INTERNAL()
-	{
-		DestroyWindow();
-		mir_free(id);
-	}
 };
 
 
-typedef struct {
-	VOICE_CALL_INTERNAL *call;
-	VOICE_CALL_INTERNAL *hungry_call;
-	BOOL stopping;
-	
-} CURRENT_CALL;
+extern vector<VoiceProvider> modules;
+extern vector<VoiceCall *> calls;
 
-
-extern vector<MODULE_INTERNAL> modules;
-extern vector<VOICE_CALL_INTERNAL *> calls;
-extern CURRENT_CALL currentCall;
-
-TCHAR *GetStateName(int state);
-
-void AnswerCall(VOICE_CALL_INTERNAL * vc);
-void DropCall(VOICE_CALL_INTERNAL * vc);
-void HoldCall(VOICE_CALL_INTERNAL * vc);
+void Answer(VoiceCall *call);
+bool CanCall(HANDLE hContact, BOOL now = TRUE);
+bool CanCallNumber();
 
 
 // See if a protocol service exists
@@ -187,16 +193,6 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 #define TIME_TO_SHOW_ENDED_CALL		5000 // ms
 
 
-#ifdef UNICODE
-# define _S "%S"
-# define _SI "%s"
-#else
-# define _S "%s"
-# define _SI "%S"
-#endif
-
-
-
 #define MS_VOICESERVICE_CLIST_DBLCLK "VoiceService/CList/RingingDblClk"
 
 #define MS_VOICESERVICE_CM_CALL "VoiceService/ContactMenu/Call"
@@ -206,9 +202,51 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 
 
 
+static TCHAR *stateNames[] = {
+	_T("Talking"),
+	_T("Ringing"),
+	_T("Calling"),
+	_T("On Hold"),
+	_T("Ended"),
+	_T("Busy"),
+};
 
+static struct {
+	char *name;
+	char *description;
+} sounds[] = {
+	{ "voice_started", "Started talking"},
+	{ "voice_ringing", "Ringing"},
+	{ "voice_calling", "Calling a contact"},
+	{ "voice_holded", "Put a call on Hold"},
+	{ "voice_ended", "End of call"},
+	{ "voice_busy", "Busy signal"},
+};
 
+static TCHAR *stateTexts[] = {
+	_T("Call from %s has started"),
+	_T("Call from %s is ringing"),
+	_T("Calling %s"),
+	_T("Call from %s is on hold"),
+	_T("Call from %s has ended"),
+	_T("%s is busy"),
+};
 
+static TCHAR *popupTitles[] = {
+	_T("Voice call started"),
+	_T("Voice call ringing"),
+	_T("Voice call"),
+	_T("Voice call on hold"),
+	_T("Voice call ended"),
+	_T("Voice call busy"),
+};
+
+static TCHAR *actionNames[] = {
+	_T("Voice Call"),
+	_T("Answer Voice Call"),
+	_T("Hold Voice Call"),
+	_T("Drop Voice Call"),
+};
 
 
 
