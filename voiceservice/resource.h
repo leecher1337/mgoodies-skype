@@ -20,6 +20,7 @@
 #define IDI_SMALLDOT                    211
 #define IDD_OPT_AUTO                    215
 #define IDD_OPTS                        216
+#define IDD_OPT_DEVICES                 217
 #define IDC_CALLS                       1000
 #define IDC_DELAY                       1001
 #define IDC_TEXT                        1001
@@ -37,6 +38,10 @@
 #define IDC_CALL                        1007
 #define IDC_DELAYCUSTOM                 1008
 #define IDC_DELAYPERMANENT              1009
+#define IDC_INPUT                       1009
+#define IDC_OUTPUT                      1010
+#define IDC_ECHO                        1011
+#define IDC_MIC_BOOST                   1012
 #define IDC_RIGHT_ACTION                1022
 #define IDC_LEFT_ACTION                 1023
 #define IDC_POPUPS                      1060
@@ -61,7 +66,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        114
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

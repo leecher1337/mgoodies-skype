@@ -60,6 +60,7 @@ using namespace std;
 #include <m_metacontacts.h>
 #include <m_fontservice.h>
 #include <m_skin.h>
+#include <portaudio.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
