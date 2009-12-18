@@ -294,6 +294,34 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		HookEvent(ME_COLOUR_RELOAD, ReloadColor);
 	}
 
+	// Init history
+	if (ServiceExists(MS_HISTORYEVENTS_REGISTER))
+	{
+		char *templates[] = {
+			"Talking\nCall from %number% has started\n%number%\tOther side of the call",
+			"Ringing\nCall from %number% is ringing\n%number%\tOther side of the call",
+			"Calling\nCalling %number%\n%number%\tOther side of the call",
+			"On Hold\nCall from %number% is on hold\n%number%\tOther side of the call",
+			"Ended\nCall from %number% has ended\n%number%\tOther side of the call",
+			"Busy\n%number% is busy\n%number%\tOther side of the call",
+		};
+
+		HISTORY_EVENT_HANDLER heh = {0};
+		heh.cbSize = sizeof(heh);
+		heh.module = MODULE_NAME;
+		heh.name = "VoiceCall";
+		heh.description = "Voice calls";
+		heh.eventType = EVENTTYPE_VOICE_CALL;
+		heh.defaultIconName = "vca_call";
+		heh.supports = HISTORYEVENTS_FORMAT_TCHAR;
+		heh.flags = HISTORYEVENTS_FLAG_SHOW_IM_SRMM 
+					| HISTORYEVENTS_FLAG_USE_SENT_FLAG
+					| HISTORYEVENTS_REGISTERED_IN_ICOLIB;
+		heh.templates = templates;
+		heh.numTemplates = MAX_REGS(templates);
+		CallService(MS_HISTORYEVENTS_REGISTER, (WPARAM) &heh, 0);
+	}
+
 	InitOptions();
 	InitFrames();
 
@@ -1127,7 +1155,6 @@ VoiceCall::VoiceCall(VoiceProvider *module, const char *id)
 	displayName[0] = 0;
 	state = -1;
 	end_time = 0;
-	last_dbe = NULL;
 	clistBlinking = false;
 	hwnd = NULL;
 	CreateDisplayName();
@@ -1194,7 +1221,7 @@ void VoiceCall::RemoveNotifications()
 
 	if (clistBlinking)
 	{
-		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) last_dbe);
+		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) this);
 		clistBlinking = false;
 	}
 }
@@ -1217,15 +1244,22 @@ void VoiceCall::SetState(int aState)
 
 void VoiceCall::Notify(bool history, bool popup, bool sound, bool clist)
 {
-	// Notify
-	TCHAR text[512];
-	mir_sntprintf(text, MAX_REGS(text), TranslateTS(stateTexts[state]), displayName);
-
 	if (history)
-		last_dbe = HistoryLog(hContact, text); 
+	{
+		TCHAR *variables[] = {
+			_T("number"), displayName
+		};
+		HistoryEvents_AddToHistoryVars(hContact, EVENTTYPE_VOICE_CALL, state, variables, MAX_REGS(variables),
+			DBEF_READ | (incoming ? 0 : DBEF_SENT));
+	}
 
 	if (popup)
+	{
+		TCHAR text[512];
+		mir_sntprintf(text, MAX_REGS(text), TranslateTS(stateTexts[state]), displayName);
+
 		ShowPopup(NULL, TranslateTS(popupTitles[state]), text);
+	}
 
 	if (sound)
 		SkinPlaySound(sounds[state].name);
@@ -1236,7 +1270,7 @@ void VoiceCall::Notify(bool history, bool popup, bool sound, bool clist)
 		ce.cbSize = sizeof(ce);
 		ce.hContact = hContact;
 		ce.hIcon = icons[state];
-		ce.hDbEvent = last_dbe;
+		ce.hDbEvent = (HANDLE) this;
 		ce.pszService = MS_VOICESERVICE_CLIST_DBLCLK;
 		ce.lParam = (LPARAM) this;
 		CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) &ce);

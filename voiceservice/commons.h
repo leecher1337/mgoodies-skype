@@ -60,6 +60,7 @@ using namespace std;
 #include <m_metacontacts.h>
 #include <m_fontservice.h>
 #include <m_skin.h>
+#include <m_historyevents.h>
 #include <portaudio.h>
 
 #include "../utils/mir_memory.h"
@@ -148,6 +149,7 @@ public:
 	TCHAR displayName[256];
 	int state;
 	DWORD end_time;
+	bool incoming;
 
 	VoiceCall(VoiceProvider *module, const char *id);
 	~VoiceCall();
@@ -171,7 +173,6 @@ public:
 
 private:
 	HWND hwnd;
-	HANDLE last_dbe;
 	bool clistBlinking;
 
 	void RemoveNotifications();
