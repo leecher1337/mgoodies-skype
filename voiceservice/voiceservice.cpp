@@ -96,8 +96,6 @@ char *icon_names[NUM_ICONS] = { "vc_talking", "vc_ringing", "vc_calling", "vc_on
 
 #define IDI_BASE IDI_TALKING 
 
-static HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text);
-
 static int CListDblClick(WPARAM wParam,LPARAM lParam);
 
 static int Service_CanCall(WPARAM wParam,LPARAM lParam);
@@ -748,78 +746,6 @@ static int ReloadColor(WPARAM wParam, LPARAM lParam)
 }
 
 
-// Returns true if the unicode buffer only contains 7-bit characters.
-static BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize)
-{
-	BOOL bResult = TRUE;
-	int nIndex;
-
-	for (nIndex = 0; nIndex < nSize; nIndex++) {
-		if (pBuffer[nIndex] > 0x7F) {
-			bResult = FALSE;
-			break;
-		}
-	}
-	return bResult;
-}
-
-
-static HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
-{
-	if (log_text != NULL)
-	{
-		DBEVENTINFO event = { 0 };
-		BYTE *tmp = NULL;
-
-		event.cbSize = sizeof(event);
-
-#ifdef UNICODE
-
-		size_t needed = WideCharToMultiByte(CP_ACP, 0, log_text, -1, NULL, 0, NULL, NULL);
-		size_t len = lstrlen(log_text);
-		size_t size;
-
-		if (IsUnicodeAscii(log_text, len))
-			size = needed;
-		else
-			size = needed + (len + 1) * sizeof(WCHAR);
-
-		tmp = (BYTE *) mir_alloc0(size);
-
-		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
-
-		if (size > needed)
-			lstrcpyn((WCHAR *) &tmp[needed], log_text, len + 1);
-
-		event.pBlob = tmp;
-		event.cbBlob = size;
-
-#else
-
-		event.pBlob = (PBYTE) log_text;
-		event.cbBlob = strlen(log_text) + 1;
-
-#endif
-
-		event.eventType = EVENTTYPE_VOICE_CALL;
-		event.flags = DBEF_READ;
-		event.timestamp = (DWORD) time(NULL);
-
-		event.szModule = MODULE_NAME;
-
-		HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
-
-		mir_free(tmp);
-
-		return ret;
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-
 static int CListDblClick(WPARAM wParam,LPARAM lParam) 
 {
 	CLISTEVENT *ce = (CLISTEVENT *) lParam;
@@ -1156,6 +1082,7 @@ VoiceCall::VoiceCall(VoiceProvider *module, const char *id)
 	state = -1;
 	end_time = 0;
 	clistBlinking = false;
+	incoming = false;
 	hwnd = NULL;
 	CreateDisplayName();
 }
@@ -1231,6 +1158,11 @@ void VoiceCall::SetState(int aState)
 	if (state == aState)
 		return;
 
+	if (state == VOICE_STATE_RINGING)
+		incoming = true;
+	else if (state == VOICE_STATE_CALLING)
+		incoming = false;
+
 	RemoveNotifications();
 
 	state = aState;
@@ -1264,7 +1196,7 @@ void VoiceCall::Notify(bool history, bool popup, bool sound, bool clist)
 	if (sound)
 		SkinPlaySound(sounds[state].name);
 
-	if (clist && history && state == VOICE_STATE_RINGING)
+	if (clist && state == VOICE_STATE_RINGING)
 	{
 		CLISTEVENT ce = {0};
 		ce.cbSize = sizeof(ce);
@@ -1274,6 +1206,8 @@ void VoiceCall::Notify(bool history, bool popup, bool sound, bool clist)
 		ce.pszService = MS_VOICESERVICE_CLIST_DBLCLK;
 		ce.lParam = (LPARAM) this;
 		CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) &ce);
+
+		clistBlinking = true;
 	}
 	
 	if (hwnd_frame != NULL)
