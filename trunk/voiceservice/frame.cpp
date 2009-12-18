@@ -167,8 +167,15 @@ static void ShowHideDialpad(HWND hwnd)
 				clear = TRUE;
 		}
 
-		if (clear)
+		TCHAR number[1024];
+		GetDlgItemText(hwnd, IDC_NUMBER, number, MAX_REGS(number));
+		lstrtrim(number);
+
+		if (clear && number[0] != 0)
+		{
 			SetWindowText(GetDlgItem(hwnd, IDC_NUMBER), _T(""));
+			number[0] = 0;
+		}
 
 		if (!enable)
 		{
@@ -179,11 +186,7 @@ static void ShowHideDialpad(HWND hwnd)
 		{
 			EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), TRUE);
 
-			TCHAR text[1024];
-			GetDlgItemText(hwnd, IDC_NUMBER, text, MAX_REGS(text));
-			lstrtrim(text);
-
-			EnableWindow(GetDlgItem(hwnd, IDC_CALL), CanCall(text));
+			EnableWindow(GetDlgItem(hwnd, IDC_CALL), CanCall(number));
 		}
 	}
 }
