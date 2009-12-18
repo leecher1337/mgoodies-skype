@@ -51,6 +51,8 @@ PLUGININFOEX pluginInfo={
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+MM_INTERFACE mmi;
+UTF8_INTERFACE utfi;
 LIST_INTERFACE li;
 
 int SortHandlers(const HISTORY_EVENT_HANDLER *type1, const HISTORY_EVENT_HANDLER *type2);
@@ -141,7 +143,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	init_mir_malloc();
+	// TODO Assert results here
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 	mir_getLI(&li);
 
 	hDeleteThreadEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -286,11 +290,11 @@ int DbEventFilterAdd(WPARAM wParam, LPARAM lParam)
 HICON LoadIconEx(HISTORY_EVENT_HANDLER *heh, bool copy)
 {
 	if (heh->defaultIcon != NULL)
-		return LoadIconEx((char *) heh->defaultIcon, copy);
+		return IcoLib_LoadIcon((char *) heh->defaultIcon, copy);
 
 	char name[128];
 	mir_snprintf(name, sizeof(name), "historyevent_%s", heh->name);
-	return LoadIconEx(name, copy);
+	return IcoLib_LoadIcon(name, copy);
 }
 
 
