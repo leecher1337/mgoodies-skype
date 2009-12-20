@@ -176,6 +176,10 @@ SOURCE=.\m_voiceservice.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_icons.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -213,6 +217,10 @@ SOURCE=.\res\Call.ico
 # Begin Source File
 
 SOURCE=.\res\Calling.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\dialpad.ico
 # End Source File
 # Begin Source File
 
@@ -257,6 +265,10 @@ SOURCE=.\res\Talking.ico
 # Begin Source File
 
 SOURCE=.\frame.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_icons.cpp
 # End Source File
 # Begin Source File
 

@@ -119,6 +119,15 @@ return: 0 on success
 #define PS_VOICE_HOLDCALL				"/Voice/HoldCall"
 
 /*
+Send a DTMF (one digit text) to a talking call.
+
+wParam: (const char *) id
+lParam: (TCHAR) dtmf
+return: 0 on success
+*/
+#define PS_VOICE_SEND_DTMF				"/Voice/SendDTMF"
+
+/*
 Used if protocol support VOICE_CALL_STRING. The call string is passed as
 wParam and the proto should validate it. If this service does not exist all numbers can be called.
 

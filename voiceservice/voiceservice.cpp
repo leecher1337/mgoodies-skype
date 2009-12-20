@@ -90,7 +90,7 @@ HBRUSH bk_brush = NULL;
 HICON icons[NUM_ICONS] = {0};
 char *icon_names[NUM_ICONS] = { "vc_talking", "vc_ringing", "vc_calling", "vc_on_hold", "vc_ended", "vc_busy", 
 					 "vca_call", "vca_answer" , "vca_hold", "vca_drop",
-					 "vc_main"};
+					 "vc_main", "vc_dialpad" };
 
 
 
@@ -220,32 +220,18 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// Init icons
 	if (ServiceExists(MS_SKIN2_ADDICON)) 
 	{
-		SKINICONDESC sid = {0};
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.flags = SIDF_TCHAR;
-		sid.ptszSection = TranslateT("Voice Calls");
-
 		int p = 0, i;
 		for(i = 0; i < NUM_STATES; i++, p++)
-		{
-			sid.ptszDescription = stateNames[i];
-			sid.pszName = icon_names[p];
-			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
+			IcoLib_Register(icon_names[p], _T("Voice Calls"), stateNames[i], IDI_BASE + p);
 
 		for(i = 0; i < NUM_ACTIONS; i++, p++)
-		{
-			sid.ptszDescription = actionNames[i];
-			sid.pszName = icon_names[p];
-			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
+			IcoLib_Register(icon_names[p], _T("Voice Calls"), actionNames[i], IDI_BASE + p);
 
-		sid.ptszDescription = TranslateT("Main");
-		sid.pszName = icon_names[p];
-		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		IcoLib_Register(icon_names[p], _T("Voice Calls"), _T("Main"), IDI_BASE + p);
+		p++;
+
+		IcoLib_Register(icon_names[p], _T("Voice Calls"), _T("Dialpad"), IDI_BASE + p);
+
 
 		IconsChanged(0, 0);
 		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
@@ -617,7 +603,7 @@ bool IsFinalState(int state)
 }
 
 
-static VoiceCall * GetTalkingCall()
+VoiceCall * GetTalkingCall()
 {
 	for(int i = 0; i < calls.getCount(); ++i)
 	{
@@ -1066,6 +1052,11 @@ bool VoiceProvider::CanHold()
 	return canHold;
 }
 
+bool VoiceProvider::CanSendDTMF()
+{
+	return ProtoServiceExists(name, PS_VOICE_SEND_DTMF) != FALSE;
+}
+
 void VoiceProvider::Call(HANDLE hContact, const TCHAR *number)
 {
 	CallProtoService(name, PS_VOICE_CALL, (WPARAM) hContact, (LPARAM) number);
@@ -1267,6 +1258,20 @@ void VoiceCall::Hold()
 
 	CallProtoService(module->name, PS_VOICE_HOLDCALL, (WPARAM) id, 0);
 }
+
+bool VoiceCall::CanSendDTMF()
+{
+	return module->CanSendDTMF() && state == VOICE_STATE_TALKING;
+}
+
+void VoiceCall::SendDTMF(TCHAR c)
+{
+	if (!CanSendDTMF())
+		return;
+
+	CallProtoService(module->name, PS_VOICE_SEND_DTMF, (WPARAM) id, (LPARAM) c);
+}
+
 
 
 void VoiceCall::SetNewCallHWND(HWND hwnd)

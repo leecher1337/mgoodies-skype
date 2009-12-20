@@ -53,6 +53,7 @@ using namespace std;
 #include <m_database.h>
 #include <m_options.h>
 #include <m_utils.h>
+#include <m_button.h>
 #include <m_updater.h>
 #include <m_popup.h>
 #include <m_cluiframes.h>
@@ -64,6 +65,7 @@ using namespace std;
 #include <portaudio.h>
 
 #include "../utils/mir_memory.h"
+#include "../utils/mir_icons.h"
 #include "../utils/mir_options.h"
 #include "../utils/utf8_helpers.h"
 
@@ -97,7 +99,7 @@ extern PLUGINLINK *pluginLink;
 #define NUM_ACTIONS 4
 
 #define MAIN_ICON (NUM_STATES + NUM_ACTIONS)
-#define NUM_ICONS (NUM_STATES + NUM_ACTIONS + 1)
+#define NUM_ICONS (NUM_STATES + NUM_ACTIONS + 2)
 
 #define NUM_FONTS NUM_STATES
 
@@ -128,10 +130,11 @@ public:
 
 	bool CanCall(const TCHAR *number);
 	bool CanCall(HANDLE hContact, BOOL now = TRUE);
-
 	void Call(HANDLE hContact, const TCHAR *number);
 
 	bool CanHold();
+
+	bool CanSendDTMF();
 
 private:
 	bool canHold;
@@ -166,6 +169,9 @@ public:
 	bool CanAnswer();
 	bool CanHold();
 
+	bool CanSendDTMF();
+	void SendDTMF(TCHAR c);
+
 	bool IsFinished();
 
 	void Notify(bool history = true, bool popup = true, bool sound = true, bool clist = true);
@@ -188,6 +194,7 @@ void Answer(VoiceCall *call);
 bool CanCall(HANDLE hContact, BOOL now = TRUE);
 bool CanCall(const TCHAR *number);
 bool CanCallNumber();
+VoiceCall * GetTalkingCall();
 bool IsFinalState(int state);
 
 
@@ -254,6 +261,7 @@ static struct {
 	{ "voice_holded", "Put a call on Hold"},
 	{ "voice_ended", "End of call"},
 	{ "voice_busy", "Busy signal"},
+	{ "voice_dialpad", "Dialpad press"},
 };
 
 static TCHAR *stateTexts[] = {

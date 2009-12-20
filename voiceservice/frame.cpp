@@ -91,6 +91,15 @@ void ResizeFrame(int frame_id, HWND hwnd)
 		RECT dp;
 		GetWindowRect(GetDlgItem(hwnd, IDC_NUMBER), &dp);
 		height += dp.bottom - dp.top + 1;
+
+		if (SendMessage(GetDlgItem(hwnd, IDC_DIALPAD), BM_GETCHECK, 0, 0) == BST_CHECKED)
+		{
+			RECT first, last;
+			GetWindowRect(GetDlgItem(hwnd, IDC_1), &first);
+			GetWindowRect(GetDlgItem(hwnd, IDC_SHARP), &last);
+
+			height += last.bottom - first.top + 1;
+		}
 	}
 
 	if (FrameIsFloating(frame_id)) 
@@ -140,56 +149,107 @@ void ShowFrame(int frame_id, HWND hwnd, int show)
 }
 
 
+static int dialCtrls[] = {
+	IDC_DIALPAD, IDC_NUMBER, IDC_CALL,
+	IDC_1, IDC_2, IDC_3,
+	IDC_4, IDC_5, IDC_6,
+	IDC_7, IDC_8, IDC_9,
+	IDC_AST, IDC_0, IDC_SHARP
+};
+
+
+
+static void InvalidateAll(HWND hwnd)
+{
+	InvalidateRect(GetDlgItem(hwnd, IDC_CALLS), NULL, FALSE);
+	for(int i = 0; i < MAX_REGS(dialCtrls); ++i)
+		InvalidateRect(GetDlgItem(hwnd, dialCtrls[i]), NULL, FALSE);
+	InvalidateRect(hwnd, NULL, FALSE);
+}
+
+
 static void ShowHideDialpad(HWND hwnd)
 {
 	if (!CanCallNumber())
 	{
-		ShowWindow(GetDlgItem(hwnd, IDC_NUMBER), SW_HIDE);
-		ShowWindow(GetDlgItem(hwnd, IDC_CALL), SW_HIDE);
+		for(int i = 0; i < MAX_REGS(dialCtrls); ++i)
+			ShowWindow(GetDlgItem(hwnd, dialCtrls[i]), SW_HIDE);
 	}
 	else
 	{
-		ShowWindow(GetDlgItem(hwnd, IDC_NUMBER), SW_SHOW);
-		ShowWindow(GetDlgItem(hwnd, IDC_CALL), SW_SHOW);
+		int i;
+		for(i = 0; i < 3; ++i)
+			ShowWindow(GetDlgItem(hwnd, dialCtrls[i]), SW_SHOW);
 
-		BOOL enable = TRUE;
-		BOOL clear = FALSE;
-		for(int i = 0; i < calls.getCount(); i++)
+		bool showDialpad = (SendMessage(GetDlgItem(hwnd, IDC_DIALPAD), BM_GETCHECK, 0, 0) == BST_CHECKED);
+
+		for(i = 3; i < MAX_REGS(dialCtrls); ++i)
+			ShowWindow(GetDlgItem(hwnd, dialCtrls[i]), showDialpad ? SW_SHOW : SW_HIDE);
+
+		VoiceCall *talking = NULL;
+		bool ringing = false;
+		bool calling = false;
+		for(i = 0; i < calls.getCount(); i++)
 		{
 			VoiceCall *call = &calls[i];
-			if (call->state == VOICE_STATE_TALKING 
-				|| call->state == VOICE_STATE_RINGING
-				|| call->state == VOICE_STATE_CALLING)
-			{
-				enable = FALSE;
-			}
-			if (call->state == VOICE_STATE_RINGING)
-				clear = TRUE;
+			if (call->state == VOICE_STATE_TALKING)
+				talking = call;
+			else if (call->state == VOICE_STATE_CALLING)
+				calling = true;
+			else if (call->state == VOICE_STATE_RINGING)
+				ringing = true;
 		}
 
 		TCHAR number[1024];
 		GetDlgItemText(hwnd, IDC_NUMBER, number, MAX_REGS(number));
 		lstrtrim(number);
 
-		if (clear && number[0] != 0)
+		if (ringing && number[0] != 0)
 		{
 			SetWindowText(GetDlgItem(hwnd, IDC_NUMBER), _T(""));
 			number[0] = 0;
 		}
 
-		if (!enable)
+		if (ringing || calling)
 		{
-			EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), FALSE);
-			EnableWindow(GetDlgItem(hwnd, IDC_CALL), FALSE);
+			for(i = 0; i < MAX_REGS(dialCtrls); ++i)
+				EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), FALSE);
+		}
+		else if (talking)
+		{
+			if (!talking->CanSendDTMF())
+			{
+				for(i = 0; i < MAX_REGS(dialCtrls); ++i)
+					EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), FALSE);
+			}
+			else if (!showDialpad)
+			{
+				for(i = 0; i < MAX_REGS(dialCtrls); ++i)
+					EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), FALSE);
+
+				EnableWindow(GetDlgItem(hwnd, IDC_DIALPAD), TRUE);
+			}
+			else
+			{
+				for(i = 0; i < MAX_REGS(dialCtrls); ++i)
+					EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), TRUE);
+
+				EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), FALSE);
+				EnableWindow(GetDlgItem(hwnd, IDC_CALL), FALSE);
+			}
 		}
 		else
 		{
-			EnableWindow(GetDlgItem(hwnd, IDC_NUMBER), TRUE);
+			for(i = 0; i < MAX_REGS(dialCtrls); ++i)
+				EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), TRUE);
 
 			EnableWindow(GetDlgItem(hwnd, IDC_CALL), CanCall(number));
 		}
 	}
+
+	InvalidateAll(hwnd);
 }
+
 
 
 static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -199,7 +259,18 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 		case WM_CREATE: 
 		case WM_INITDIALOG:
 		{
+			SendDlgItemMessage(hwnd, IDC_DIALPAD, BUTTONSETASFLATBTN, TRUE, 0);
+			SendDlgItemMessage(hwnd, IDC_DIALPAD, BUTTONSETASPUSHBTN, TRUE, 0);
+			SendDlgItemMessageA(hwnd, IDC_DIALPAD, BUTTONADDTOOLTIP, (LPARAM) Translate("Show dialpad"), 0);
+			SendDlgItemMessage(hwnd, IDC_DIALPAD, BM_SETIMAGE, IMAGE_ICON, (LPARAM) IcoLib_LoadIcon("vc_dialpad", TRUE));
+
+			SendDlgItemMessage(hwnd, IDC_CALL, BUTTONSETASFLATBTN, TRUE, 0);
+			SendDlgItemMessageA(hwnd, IDC_CALL, BUTTONADDTOOLTIP, (LPARAM) Translate("Make call"), 0);
+			SendDlgItemMessage(hwnd, IDC_CALL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) IcoLib_LoadIcon("vca_call", TRUE));
+
 			ShowHideDialpad(hwnd);
+
+			InvalidateAll(hwnd);
 			break;
 		}
 
@@ -215,18 +286,46 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			if (CanCallNumber())
 			{
-				RECT rc;
-				GetWindowRect(GetDlgItem(hwnd, IDC_CALL), &rc);
+				bool showDialpad = (SendMessage(GetDlgItem(hwnd, IDC_DIALPAD), BM_GETCHECK, 0, 0) == BST_CHECKED);
 
-				int call_height = rc.bottom - rc.top;
-				int call_width = rc.right - rc.left;
+				RECT rc;
+				GetWindowRect(hwnd, &rc);
+
+				RECT first = {0}, last = {0};
+				GetWindowRect(GetDlgItem(hwnd, IDC_1), &first);
+				GetWindowRect(GetDlgItem(hwnd, IDC_SHARP), &last);
+
+				int dialpad_height = last.bottom - first.top;
+				int dialpad_width = last.right - first.left;
+
+
+				int call_height = 23;
+				int call_width = 25;
 				int top = height - call_height;
 
-				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), 0, top, width - call_width, call_height, TRUE);
-				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top, call_width, call_height, TRUE);
+				if (showDialpad)
+					top -= dialpad_height + 1;
+
+				MoveWindow(GetDlgItem(hwnd, IDC_DIALPAD), 1, top, call_width -2, call_height, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), call_width, top, width - 2 * call_width, call_height, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top -1, call_width, call_height +2, TRUE);
+
+				
+				int dialpad_top = top + call_height + 1;
+				int dialpad_left = ((rc.right - rc.left) - dialpad_width) / 2;
+				int deltaX = dialpad_left - first.left;
+				int deltaY = dialpad_top - first.top;
+				for(int i = 3; i < MAX_REGS(dialCtrls); ++i)
+				{
+					GetWindowRect(GetDlgItem(hwnd, dialCtrls[i]), &rc);
+					MoveWindow(GetDlgItem(hwnd, dialCtrls[i]), rc.left + deltaX, rc.top + deltaY, 
+								rc.right - rc.left, rc.bottom - rc.top, TRUE);
+				}
+
 
 				height -= call_height + 1;
-
+				if (showDialpad)
+					height -= dialpad_height + 1;;
 			}
 
 			if (height <= 0)
@@ -238,6 +337,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				MoveWindow(GetDlgItem(hwnd, IDC_CALLS), 0, 0, width, height, TRUE);
 				ShowWindow(GetDlgItem(hwnd, IDC_CALLS), SW_SHOW);
 			}
+
+			InvalidateAll(hwnd);
 			break;
 		}
 
@@ -279,7 +380,6 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					ShowFrame(frame_id, hwnd, SW_SHOW);
 				}
 			}
-
 			break;
 		}
 
@@ -307,7 +407,68 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				case IDC_NUMBER:
 				{
 					if (HIWORD(wParam) == EN_CHANGE)
+					{
 						ShowHideDialpad(hwnd);
+					}
+					break;
+				}
+				case IDC_DIALPAD:
+				{
+					ShowHideDialpad(hwnd);
+					SendMessage(hwnd, WMU_RESIZE_FRAME, 0, 0);
+					break;
+				}
+				case IDC_1:
+				case IDC_2:
+				case IDC_3:
+				case IDC_4:
+				case IDC_5:
+				case IDC_6:
+				case IDC_7:
+				case IDC_8:
+				case IDC_9:
+				case IDC_AST:
+				case IDC_0:
+				case IDC_SHARP:
+				{
+					TCHAR text[2];
+					switch(LOWORD(wParam))
+					{
+						case IDC_1: text[0] = _T('1'); break;
+						case IDC_2: text[0] = _T('2'); break;
+						case IDC_3: text[0] = _T('3'); break;
+						case IDC_4: text[0] = _T('4'); break;
+						case IDC_5: text[0] = _T('5'); break;
+						case IDC_6: text[0] = _T('6'); break;
+						case IDC_7: text[0] = _T('7'); break;
+						case IDC_8: text[0] = _T('8'); break;
+						case IDC_9: text[0] = _T('9'); break;
+						case IDC_AST: text[0] = _T('*'); break;
+						case IDC_0: text[0] = _T('0'); break;
+						case IDC_SHARP: text[0] = _T('#'); break;
+					}
+					text[1] = 0;
+
+					SkinPlaySound("voice_dialpad");
+
+					VoiceCall *call = GetTalkingCall();
+					if (call == NULL)
+					{
+						SendMessage(GetDlgItem(hwnd, IDC_NUMBER), EM_REPLACESEL, TRUE, (LPARAM) text);
+					}
+					else
+					{
+						TCHAR tmp[1024];
+
+						GetWindowText(GetDlgItem(hwnd, IDC_NUMBER), tmp, MAX_REGS(tmp));
+
+						tmp[MAX_REGS(tmp)-2] = 0;
+						lstrcat(tmp, text);
+
+						SetWindowText(GetDlgItem(hwnd, IDC_NUMBER), tmp);
+
+						call->SendDTMF(text[0]);
+					}
 					break;
 				}
 				case IDC_CALLS:
