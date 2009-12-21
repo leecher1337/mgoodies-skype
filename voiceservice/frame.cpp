@@ -51,11 +51,9 @@ void InitFrames()
 		Frame.align = alBottom;
 		Frame.Flags = F_VISIBLE | F_NOBORDER | F_LOCKED | F_TCHAR;
 		Frame.height = 0;
-		Frame.hIcon = icons[MAIN_ICON];
+		Frame.hIcon = IcoLib_LoadIcon(mainIcons[0], TRUE);
 
 		frame_id = CallService(MS_CLIST_FRAMES_ADDFRAME, (WPARAM)&Frame, 0);
-
-		PostMessage(hwnd_frame, WMU_RESIZE_FRAME, 0, 0);
 	}
 }
 
@@ -251,6 +249,16 @@ static void ShowHideDialpad(HWND hwnd)
 }
 
 
+static void DrawIconLib(HDC hDC, const RECT &rc, const char *icon)
+{
+	HICON hIcon = IcoLib_LoadIcon(icon);
+	if (hIcon == NULL)
+		return;
+
+	DrawIconEx(hDC, rc.left, (rc.top + rc.bottom - ICON_SIZE)/2, hIcon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+	IcoLib_ReleaseIcon(hIcon);
+}
+
 
 static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
@@ -271,6 +279,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			ShowHideDialpad(hwnd);
 
 			InvalidateAll(hwnd);
+
+			PostMessage(hwnd, WMU_RESIZE_FRAME, 0, 0);
 			break;
 		}
 
@@ -281,8 +291,11 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_SIZE:
 		{
-			int width = LOWORD(lParam);
-			int height = HIWORD(lParam);
+			RECT rc;
+			GetClientRect(hwnd, &rc);
+
+			int width = rc.right - rc.left;
+			int height = rc.bottom - rc.top;
 
 			if (CanCallNumber())
 			{
@@ -380,6 +393,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					ShowFrame(frame_id, hwnd, SW_SHOW);
 				}
 			}
+
+			SendMessage(hwnd, WM_SIZE, 0, 0);
 			break;
 		}
 
@@ -637,6 +652,9 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			VoiceCall *call = (VoiceCall *) dis->itemData;
 
 			RECT rc = dis->rcItem;
+
+			FillRect(dis->hDC, &rc, bk_brush);
+
 			rc.left += H_SPACE;
 			rc.right -= H_SPACE;
 			rc.bottom --;
@@ -644,9 +662,13 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			int old_bk_mode = SetBkMode(dis->hDC, TRANSPARENT);
 
 			// Draw status
-			DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[call->state], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			DrawIconLib(dis->hDC, rc, stateIcons[call->state]);
 
-			// TODO: Draw voice provider icon
+			// Draw voice provider icon
+			rc.left += ICON_SIZE + H_SPACE;
+			rc.right -= 2 * (ICON_SIZE + H_SPACE);
+
+			DrawIconLib(dis->hDC, rc, call->module->icon);
 
 			// Draw contact
 			rc.left += ICON_SIZE + H_SPACE;
@@ -670,19 +692,19 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				case VOICE_STATE_CALLING:
 				{
 					rc.left = rc.right - ICON_SIZE;
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					DrawIconLib(dis->hDC, rc, actionIcons[ACTION_DROP]);
 					break;
 				}
 				case VOICE_STATE_TALKING:
 				{
 					rc.left = rc.right - ICON_SIZE;
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					DrawIconLib(dis->hDC, rc, actionIcons[ACTION_DROP]);
 
 					if (call->module->CanHold())
 					{
 						rc.right -= ICON_SIZE + H_SPACE;
 						rc.left = rc.right - ICON_SIZE;
-						DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_HOLD], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+						DrawIconLib(dis->hDC, rc, actionIcons[ACTION_HOLD]);
 					}
 
 					break;
@@ -691,11 +713,11 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				case VOICE_STATE_ON_HOLD:
 				{
 					rc.left = rc.right - ICON_SIZE;
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					DrawIconLib(dis->hDC, rc, actionIcons[ACTION_DROP]);
 
 					rc.right -= ICON_SIZE + H_SPACE;
 					rc.left = rc.right - ICON_SIZE;
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_ANSWER], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					DrawIconLib(dis->hDC, rc, actionIcons[ACTION_ANSWER]);
 
 					break;
 				}

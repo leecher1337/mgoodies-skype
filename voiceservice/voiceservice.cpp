@@ -87,14 +87,7 @@ int font_max_height;
 COLORREF bkg_color = {0};
 HBRUSH bk_brush = NULL;
 
-HICON icons[NUM_ICONS] = {0};
-char *icon_names[NUM_ICONS] = { "vc_talking", "vc_ringing", "vc_calling", "vc_on_hold", "vc_ended", "vc_busy", 
-					 "vca_call", "vca_answer" , "vca_hold", "vca_drop",
-					 "vc_main", "vc_dialpad" };
 
-
-
-#define IDI_BASE IDI_TALKING 
 
 static int CListDblClick(WPARAM wParam,LPARAM lParam);
 
@@ -218,28 +211,18 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	}
 
 	// Init icons
-	if (ServiceExists(MS_SKIN2_ADDICON)) 
 	{
-		int p = 0, i;
-		for(i = 0; i < NUM_STATES; i++, p++)
-			IcoLib_Register(icon_names[p], _T("Voice Calls"), stateNames[i], IDI_BASE + p);
+		IcoLib_Register(mainIcons[0], _T("Voice Calls"), _T("Main"), IDI_MAIN);
+		IcoLib_Register(mainIcons[1], _T("Voice Calls"), _T("Dialpad"), IDI_DIALPAD);
 
-		for(i = 0; i < NUM_ACTIONS; i++, p++)
-			IcoLib_Register(icon_names[p], _T("Voice Calls"), actionNames[i], IDI_BASE + p);
+		int i;
+		for(i = 0; i < MAX_REGS(stateNames); i++)
+			IcoLib_Register(stateIcons[i], _T("Voice Calls"), stateNames[i], IDI_TALKING + i);
 
-		IcoLib_Register(icon_names[p], _T("Voice Calls"), _T("Main"), IDI_BASE + p);
-		p++;
+		for(i = 0; i < MAX_REGS(actionNames); i++)
+			IcoLib_Register(actionIcons[i], _T("Voice Calls"), actionNames[i], IDI_ACTION_CALL + i);
 
-		IcoLib_Register(icon_names[p], _T("Voice Calls"), _T("Dialpad"), IDI_BASE + p);
-
-
-		IconsChanged(0, 0);
 		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
-	}
-	else
-	{		
-		for(int i = 0; i < NUM_ICONS; i++)
-			icons[i] = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + i), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
 	}
 
 	// Init fonts
@@ -253,7 +236,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		{
 			fi.order = i;
 			lstrcpyn(fi.name, stateNames[i], MAX_REGS(fi.name));
-			strncpy(fi.prefix, icon_names[i], MAX_REGS(fi.prefix));
+			strncpy(fi.prefix, stateIcons[i], MAX_REGS(fi.prefix));
 
 			CallService(MS_FONT_REGISTERT, (WPARAM) &fi, 0);
 		}
@@ -315,16 +298,20 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.position = -2000020000;
 	mi.flags = GCMDF_TCHAR;
 
+	HICON icons[MAX_REGS(actionIcons)];
+	for(int i = 0; i < MAX_REGS(actionIcons); ++i)
+		icons[i] = IcoLib_LoadIcon(actionIcons[i]);
+
 	CreateServiceFunction(MS_VOICESERVICE_CM_CALL, Service_Call);
 	mi.ptszName = actionNames[ACTION_CALL];
-	mi.hIcon = icons[NUM_STATES + ACTION_CALL];
+	mi.hIcon = icons[ACTION_CALL];
 	mi.pszService = MS_VOICESERVICE_CM_CALL;
 	hCMCall = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) &mi);
 
 	CreateServiceFunction(MS_VOICESERVICE_CM_ANSWER, CMAnswer);
 	mi.position++;
 	mi.ptszName = actionNames[ACTION_ANSWER];
-	mi.hIcon = icons[VOICE_STATE_TALKING];
+	mi.hIcon = icons[ACTION_ANSWER];
 	mi.pszService = MS_VOICESERVICE_CM_ANSWER;
 	hCMAnswer = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) &mi);
 
@@ -332,16 +319,19 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.position++;
 	mi.position++;
 	mi.ptszName = actionNames[ACTION_HOLD];
-	mi.hIcon = icons[VOICE_STATE_ON_HOLD];
+	mi.hIcon = icons[ACTION_HOLD];
 	mi.pszService = MS_VOICESERVICE_CM_HOLD;
 	hCMHold = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) &mi);
 
 	CreateServiceFunction(MS_VOICESERVICE_CM_DROP, CMDrop);
 	mi.position++;
 	mi.ptszName = actionNames[ACTION_DROP];
-	mi.hIcon = icons[VOICE_STATE_ENDED];
+	mi.hIcon = icons[ACTION_DROP];
 	mi.pszService = MS_VOICESERVICE_CM_DROP;
 	hCMDrop = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) &mi);
+
+	for(i = 0; i < MAX_REGS(actionIcons); ++i)
+		IcoLib_ReleaseIcon(icons[i]);
 
 	hPreBuildContactMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
 
@@ -520,7 +510,7 @@ static int VoiceRegister(WPARAM wParam, LPARAM lParam)
 			|| !ProtoServiceExists(in->name, PS_VOICE_DROPCALL))
 		return -3;
 
-	modules.insert(new VoiceProvider(in->name, in->description, in->flags));
+	modules.insert(new VoiceProvider(in->name, in->description, in->flags, in->icon));
 
 	if (hwnd_frame != NULL)
 		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
@@ -679,8 +669,8 @@ static int VoiceState(WPARAM wParam, LPARAM lParam)
 
 static int IconsChanged(WPARAM wParam, LPARAM lParam)
 {
-	for(int i = 0; i < NUM_ICONS; i++)
-		icons[i] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) icon_names[i]);
+	if (hwnd_frame != NULL)
+		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
 
 	return 0;
 }
@@ -688,7 +678,6 @@ static int IconsChanged(WPARAM wParam, LPARAM lParam)
 
 static int ReloadFont(WPARAM wParam, LPARAM lParam) 
 {
-	LOGFONT log_font;
 	FontIDT fi = {0};
 	fi.cbSize = sizeof(fi);
 	lstrcpyn(fi.group, TranslateT("Voice Calls"), MAX_REGS(fi.group));
@@ -699,6 +688,8 @@ static int ReloadFont(WPARAM wParam, LPARAM lParam)
 		if (fonts[i] != 0) DeleteObject(fonts[i]);
 
 		lstrcpyn(fi.name, stateNames[i], MAX_REGS(fi.name));
+
+		LOGFONT log_font = {0};
 		font_colors[i] = CallService(MS_FONT_GETT, (WPARAM) &fi, (LPARAM) &log_font);
 		fonts[i] = CreateFontIndirect(&log_font);
 
@@ -706,7 +697,7 @@ static int ReloadFont(WPARAM wParam, LPARAM lParam)
 	}
 	
 	if (hwnd_frame != NULL)
-		InvalidateRect(hwnd_frame, NULL, FALSE);
+		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
 
 	return 0;
 }
@@ -918,7 +909,9 @@ static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_TEXT), WM_SETTEXT, 0, (LPARAM) text);
 
-			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) icons[VOICE_STATE_RINGING]);
+			HICON hIcon = IcoLib_LoadIcon(stateIcons[VOICE_STATE_RINGING]);
+			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) hIcon);
+			IcoLib_ReleaseIcon(hIcon);
 
 			if (call->hContact == NULL)
 				ShowWindow(GetDlgItem(hwndDlg, IDC_AUTO), SW_HIDE);
@@ -984,12 +977,17 @@ static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-VoiceProvider::VoiceProvider(const char *name, const TCHAR *description, int flags)
+VoiceProvider::VoiceProvider(const char *name, const TCHAR *description, int flags, const char *icon)
 {
 	strncpy(this->name, name, MAX_REGS(this->name));
 	this->name[MAX_REGS(this->name)-1] = 0;
 
 	lstrcpyn(this->description, description, MAX_REGS(this->description));
+
+	if (icon == NULL)
+		this->icon[0] = 0;
+	else
+		lstrcpynA(this->icon, icon, MAX_REGS(this->icon));
 
 	this->flags = flags;
 	is_protocol = IsProtocol(name);
@@ -1189,14 +1187,18 @@ void VoiceCall::Notify(bool history, bool popup, bool sound, bool clist)
 
 	if (clist && state == VOICE_STATE_RINGING)
 	{
+		HICON hIcon = IcoLib_LoadIcon(stateIcons[VOICE_STATE_RINGING]);
+
 		CLISTEVENT ce = {0};
 		ce.cbSize = sizeof(ce);
 		ce.hContact = hContact;
-		ce.hIcon = icons[state];
+		ce.hIcon = hIcon;
 		ce.hDbEvent = (HANDLE) this;
 		ce.pszService = MS_VOICESERVICE_CLIST_DBLCLK;
 		ce.lParam = (LPARAM) this;
 		CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) &ce);
+
+		IcoLib_ReleaseIcon(hIcon);
 
 		clistBlinking = true;
 	}
