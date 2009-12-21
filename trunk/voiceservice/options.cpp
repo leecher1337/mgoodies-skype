@@ -435,16 +435,25 @@ static void ResetListOptions(HWND hwndList)
 
 int ImageList_AddIcon_NotShared(HIMAGELIST hIml, HINSTANCE hInstance, LPCTSTR szResource) 
 {   
-    HICON hTempIcon=LoadIcon(hInstance, szResource);
-    int res=ImageList_AddIcon(hIml, hTempIcon);
-    DestroyIcon(hTempIcon); 
+    HICON hIcon = LoadIcon(hInstance, szResource);
+    int res = ImageList_AddIcon(hIml, hIcon);
+    DestroyIcon(hIcon); 
+    return res;
+}
+
+
+int ImageList_AddIcon_NotShared(HIMAGELIST hIml, char *iconName) 
+{   
+    HICON hIcon = IcoLib_LoadIcon(iconName);
+    int res = ImageList_AddIcon(hIml, hIcon);
+    IcoLib_ReleaseIcon(hIcon); 
     return res;
 }
 
 
 static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	static HICON hAnswerIcon,hDropIcon;
+	static HICON hAnswerIcon, hDropIcon;
 
 	switch (msg)
 	{
@@ -453,14 +462,16 @@ static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			TranslateDialogDefault(hwndDlg);
 
 			{
-				HIMAGELIST hIml;
-				hIml=ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),(IsWinVerXPPlus()?ILC_COLOR32:ILC_COLOR16)|ILC_MASK,3,3);
-				ImageList_AddIcon_NotShared(hIml,GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_SMALLDOT));
-				ImageList_AddIcon(hIml,icons[NUM_STATES + ACTION_ANSWER]);
-				ImageList_AddIcon(hIml,icons[NUM_STATES + ACTION_DROP]);
+				HIMAGELIST hIml = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),(IsWinVerXPPlus()?ILC_COLOR32:ILC_COLOR16)|ILC_MASK,3,3);
+
+				ImageList_AddIcon_NotShared(hIml, GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_SMALLDOT));
+				ImageList_AddIcon_NotShared(hIml, actionIcons[ACTION_ANSWER]);
+				ImageList_AddIcon_NotShared(hIml, actionIcons[ACTION_DROP]);
 				SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_SETEXTRAIMAGELIST,0,(LPARAM)hIml);
+
 				hAnswerIcon=ImageList_GetIcon(hIml,1,ILD_NORMAL);
 				SendDlgItemMessage(hwndDlg,IDC_ANSWER,STM_SETICON,(WPARAM)hAnswerIcon,0);
+
 				hDropIcon=ImageList_GetIcon(hIml,2,ILD_NORMAL);
 				SendDlgItemMessage(hwndDlg,IDC_DROP,STM_SETICON,(WPARAM)hDropIcon,0);
 			}

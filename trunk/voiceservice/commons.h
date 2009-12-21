@@ -89,25 +89,18 @@ extern PLUGINLINK *pluginLink;
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
-#define NUM_STATES 6
-
 #define ACTION_CALL 0
 #define ACTION_ANSWER 1
 #define ACTION_HOLD 2
 #define ACTION_DROP 3
 
-#define NUM_ACTIONS 4
-
-#define MAIN_ICON (NUM_STATES + NUM_ACTIONS)
-#define NUM_ICONS (NUM_STATES + NUM_ACTIONS + 2)
-
+#define NUM_STATES 6
 #define NUM_FONTS NUM_STATES
 
 #define AUTO_NOTHING 0
 #define AUTO_ACCEPT 1
 #define AUTO_DROP 2
 
-extern HICON icons[NUM_ICONS];
 extern HFONT fonts[NUM_FONTS];
 extern COLORREF font_colors[NUM_FONTS];
 extern int font_max_height;
@@ -122,10 +115,11 @@ class VoiceProvider
 public:
 	TCHAR description[256];
 	char name[256];
+	char icon[256];
 	int flags;
 	bool is_protocol;
 
-	VoiceProvider(const char *name, const TCHAR *description, int flags);
+	VoiceProvider(const char *name, const TCHAR *description, int flags, const char *icon);
 	~VoiceProvider();
 
 	bool CanCall(const TCHAR *number);
@@ -242,15 +236,6 @@ static TCHAR *lstrtrim(TCHAR *str)
 
 
 
-static TCHAR *stateNames[] = {
-	_T("Talking"),
-	_T("Ringing"),
-	_T("Calling"),
-	_T("On Hold"),
-	_T("Ended"),
-	_T("Busy"),
-};
-
 static struct {
 	char *name;
 	char *description;
@@ -282,12 +267,45 @@ static TCHAR *popupTitles[] = {
 	_T("Voice call busy"),
 };
 
+static TCHAR *stateNames[] = {
+	_T("Talking"),
+	_T("Ringing"),
+	_T("Calling"),
+	_T("On Hold"),
+	_T("Ended"),
+	_T("Busy"),
+};
+
 static TCHAR *actionNames[] = {
 	_T("Voice Call"),
 	_T("Answer Voice Call"),
 	_T("Hold Voice Call"),
 	_T("Drop Voice Call"),
 };
+
+static char *stateIcons[] = { 
+	"vc_talking", 
+	"vc_ringing", 
+	"vc_calling", 
+	"vc_on_hold", 
+	"vc_ended", 
+	"vc_busy" 
+};
+
+static char *actionIcons[] = {
+	"vca_call", 
+	"vca_answer" , 
+	"vca_hold", 
+	"vca_drop",
+	"vc_main", 
+	"vc_dialpad" 
+};
+
+static char *mainIcons[] = { 
+	"vc_main", 
+	"vc_dialpad" 
+};
+
 
 
 
