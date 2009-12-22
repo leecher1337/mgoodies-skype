@@ -215,12 +215,7 @@ static void ShowHideDialpad(HWND hwnd)
 		}
 		else if (talking)
 		{
-			if (!talking->CanSendDTMF())
-			{
-				for(i = 0; i < MAX_REGS(dialCtrls); ++i)
-					EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), FALSE);
-			}
-			else if (!showDialpad)
+			if (!showDialpad || !talking->CanSendDTMF())
 			{
 				for(i = 0; i < MAX_REGS(dialCtrls); ++i)
 					EnableWindow(GetDlgItem(hwnd, dialCtrls[i]), FALSE);

@@ -2,6 +2,12 @@ Voice Service
 
 Changelog:
 
+. 0.1.0.0
+  + Allow selection of input/output devices
+  + Dialpad
+  + Internal improviments and fixes
+  * Changed API (old plugins using it will no longer work)
+
 . 0.0.0.8
   + Auto-size frame
   * Fix for background color of list control
