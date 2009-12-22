@@ -84,44 +84,44 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 		ZeroMemory(&odp, sizeof(odp));
 		odp.cbSize = sizeof(odp);
 		odp.hInstance = hInst;
-		odp.ptszGroup = TranslateT("Popups");
-		odp.ptszTitle = TranslateT("Voice Calls");
+		odp.ptszGroup = LPGENT("Popups");
+		odp.ptszTitle = LPGENT("Voice Calls");
 		odp.pfnDlgProc = PopupsDlgProc;
 		odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
 		odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 		odp.expertOnlyControls = popupsExpertControls;
 		odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
-		CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
 	}
 
 	ZeroMemory(&odp, sizeof(odp));
     odp.cbSize = sizeof(odp);
 	odp.hInstance = hInst;
-	odp.ptszTitle = TranslateT("Voice Calls");
+	odp.ptszTitle = LPGENT("Voice Calls");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
 
 	ZeroMemory(&odp, sizeof(odp));
     odp.cbSize = sizeof(odp);
 	odp.hInstance = hInst;
-	odp.ptszGroup = TranslateT("Voice Calls");
-	odp.ptszTitle = TranslateT("Auto actions");
+	odp.ptszGroup = LPGENT("Voice Calls");
+	odp.ptszTitle = LPGENT("Auto actions");
 	odp.pfnDlgProc = AutoDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_AUTO);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
 
 	ZeroMemory(&odp, sizeof(odp));
     odp.cbSize = sizeof(odp);
 	odp.hInstance = hInst;
-	odp.ptszGroup = TranslateT("Voice Calls");
-	odp.ptszTitle = TranslateT("Devices");
+	odp.ptszGroup = LPGENT("Voice Calls");
+	odp.ptszTitle = LPGENT("Devices");
 	odp.pfnDlgProc = DevicesDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_DEVICES);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
 
 	return 0;
 }
@@ -186,11 +186,22 @@ static BOOL CALLBACK DevicesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				}
 			}
 
+			DBVARIANT dbvInput = {0};
+			if (DBGetContactSettingString(NULL, MODULE_NAME, "Input", &dbvInput) == 0 && dbvInput.ptszVal != NULL && dbvInput.ptszVal[0] != 0)
+				defaultInputName = dbvInput.pszVal;
+
+			DBVARIANT dbvOutput = {0};
+			if (DBGetContactSettingString(NULL, MODULE_NAME, "Output", &dbvOutput) == 0 && dbvOutput.ptszVal != NULL && dbvOutput.ptszVal[0] != 0)
+				defaultOutputName = dbvOutput.pszVal;
+
 			if (defaultInputName != NULL)
-				SendDlgItemMessage(hwndDlg, IDC_INPUT, CB_SELECTSTRING, -1, (WPARAM) CharToTchar(defaultInputName).get());
+				SendDlgItemMessageA(hwndDlg, IDC_INPUT, CB_SELECTSTRING, -1, (WPARAM) defaultInputName);
 
 			if (defaultOutputName != NULL)
-				SendDlgItemMessage(hwndDlg, IDC_OUTPUT, CB_SELECTSTRING, -1, (WPARAM) CharToTchar(defaultOutputName).get());
+				SendDlgItemMessageA(hwndDlg, IDC_OUTPUT, CB_SELECTSTRING, -1, (WPARAM) defaultOutputName);
+
+			DBFreeVariant(&dbvOutput);
+			DBFreeVariant(&dbvInput);
 
 			break;
 		}
@@ -220,6 +231,7 @@ static BOOL CALLBACK DevicesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				GetWindowText(GetDlgItem(hwndDlg, IDC_OUTPUT), tmp, MAX_REGS(tmp));
 				DBWriteContactSettingTString(NULL, MODULE_NAME, "Output", tmp);
 			}
+			break;
 		}
 	}
 
