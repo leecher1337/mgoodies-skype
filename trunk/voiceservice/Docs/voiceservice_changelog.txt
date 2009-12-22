@@ -5,6 +5,7 @@ Changelog:
 . 0.1.0.0
   + Allow selection of input/output devices
   + Dialpad
+  + USe history events
   + Internal improviments and fixes
   * Changed API (old plugins using it will no longer work)
 
