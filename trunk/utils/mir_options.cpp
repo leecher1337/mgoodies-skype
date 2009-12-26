@@ -143,92 +143,95 @@ static void PathToAbsolute(TCHAR *pOut, size_t outSize, const TCHAR *pSrc)
 }
 
 
+static void LoadOpt(OptPageControl *ctrl, char *module)
+{
+	if (ctrl->var == NULL)
+		return;
+	
+	switch(ctrl->type)
+	{
+		case CONTROL_CHECKBOX:
+		{
+			*((BYTE *) ctrl->var) = DBGetContactSettingByte(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_SPIN:
+		{
+			*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_COLOR:
+		{
+			*((COLORREF *) ctrl->var) = (COLORREF) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_RADIO:
+		{
+			*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_COMBO:
+		{
+			*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_PROTOCOL_LIST:
+		{
+			break;
+		}
+		case CONTROL_TEXT:
+		{
+			MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
+			break;
+		}
+		case CONTROL_PASSWORD:
+		{
+			char tmp[1024];
+			tmp[0]=0;
+
+			DBVARIANT dbv = {0};
+			if (!DBGetContactSettingString(NULL, module, ctrl->setting, &dbv))
+			{
+				lstrcpynA(tmp, dbv.pszVal, MAX_REGS(tmp));
+				DBFreeVariant(&dbv);
+			}
+
+			if (tmp[0] != 0)
+				CallService(MS_DB_CRYPT_DECODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
+			else if (ctrl->szDefValue != NULL)
+				lstrcpynA(tmp, ctrl->szDefValue, MAX_REGS(tmp));
+
+			char *var = (char *) ctrl->var;
+			int size = min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024);
+			lstrcpynA(var, tmp, size);
+			break;
+		}
+		case CONTROL_INT:
+		{
+			*((int *) ctrl->var) = (int) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
+			break;
+		}
+		case CONTROL_FILE:
+		{
+			TCHAR tmp[1024];
+			MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : ctrl->tszDefValue);
+			PathToAbsolute(((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), tmp);
+			break;
+		}
+		case CONTROL_COMBO_TEXT:
+		case CONTROL_COMBO_ITEMDATA:
+		{
+			MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
+			break;
+		}
+	}
+}
+
 void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 {
 	for (int i = 0 ; i < controlsSize ; i++)
 	{
-		OptPageControl *ctrl = &controls[i];
-
-		if (ctrl->var != NULL)
-		{
-			switch(ctrl->type)
-			{
-				case CONTROL_CHECKBOX:
-				{
-					*((BYTE *) ctrl->var) = DBGetContactSettingByte(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_SPIN:
-				{
-					*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_COLOR:
-				{
-					*((COLORREF *) ctrl->var) = (COLORREF) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_RADIO:
-				{
-					*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_COMBO:
-				{
-					*((WORD *) ctrl->var) = DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_PROTOCOL_LIST:
-				{
-					break;
-				}
-				case CONTROL_TEXT:
-				{
-					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
-					break;
-				}
-				case CONTROL_PASSWORD:
-				{
-					char tmp[1024];
-					tmp[0]=0;
-
-					DBVARIANT dbv = {0};
-					if (!DBGetContactSettingString(NULL, module, ctrl->setting, &dbv))
-					{
-						lstrcpynA(tmp, dbv.pszVal, MAX_REGS(tmp));
-						DBFreeVariant(&dbv);
-					}
-
-					if (tmp[0] != 0)
-						CallService(MS_DB_CRYPT_DECODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
-					else if (ctrl->szDefValue != NULL)
-						lstrcpynA(tmp, ctrl->szDefValue, MAX_REGS(tmp));
-
-					char *var = (char *) ctrl->var;
-					int size = min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024);
-					lstrcpynA(var, tmp, size);
-					break;
-				}
-				case CONTROL_INT:
-				{
-					*((int *) ctrl->var) = (int) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->dwDefValue);
-					break;
-				}
-				case CONTROL_FILE:
-				{
-					TCHAR tmp[1024];
-					MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : ctrl->tszDefValue);
-					PathToAbsolute(((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), tmp);
-					break;
-				}
-				case CONTROL_COMBO_TEXT:
-				case CONTROL_COMBO_ITEMDATA:
-				{
-					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
-					break;
-				}
-			}
-		}
+		LoadOpt(&controls[i], module);
 	}
 }
 
@@ -528,9 +531,25 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						{
 							char tmp[1024];
 							GetDlgItemTextA(hwndDlg, ctrl->nID, tmp, MAX_REGS(tmp));
+
+							if (ctrl->var != NULL)
+							{
+								char *var = (char *) ctrl->var;
+								int size = min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024);
+								lstrcpynA(var, tmp, size);
+							}
+
+							if (ctrl->checkboxID != 0 && !IsDlgButtonChecked(hwndDlg, ctrl->checkboxID))
+							{
+								DBDeleteContactSetting(NULL, module, ctrl->setting);
+								continue;
+							}
+
 							CallService(MS_DB_CRYPT_ENCODESTRING, MAX_REGS(tmp), (LPARAM) tmp);
 							DBWriteContactSettingString(NULL, module, ctrl->setting, tmp);
-							break;
+
+							// Don't load from DB
+							continue;
 						}
 						case CONTROL_INT:
 						{
@@ -568,10 +587,10 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							break;
 						}
 					}
+
+					LoadOpt(ctrl, module);
 				}
 				
-				LoadOpts(controls, controlsSize, module);
-
 				return TRUE;
 			}
 			else if (lpnmhdr->idFrom != 0 && lpnmhdr->code == LVN_ITEMCHANGED)

@@ -40,9 +40,15 @@ HICON IcoLib_LoadIcon(const char *iconName, BOOL copy)
 	if (copy && hIcon != NULL)
 	{
 		hIcon = CopyIcon(hIcon);
-		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM) iconName);
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hIcon, 0);
 	}
 	return hIcon;
+}
+
+void IcoLib_ReleaseIcon(const char *iconName)
+{
+	if (ServiceExists(MS_SKIN2_RELEASEICON))
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM) iconName);
 }
 
 

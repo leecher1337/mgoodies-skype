@@ -7,7 +7,7 @@ class scope
 {
 public:
 	scope(T t) : p(t) {}
-	~scope() { free(); }
+	~scope() { mir_free(); }
 
 	void free()
 	{

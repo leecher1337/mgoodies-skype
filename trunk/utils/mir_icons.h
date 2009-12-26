@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.
 void IcoLib_Register(char *name, TCHAR *section, TCHAR *description, int id);
 
 HICON IcoLib_LoadIcon(const char *iconName, BOOL copy = FALSE);
+void IcoLib_ReleaseIcon(const char *iconName);
 void IcoLib_ReleaseIcon(HICON hIcon);
 
 

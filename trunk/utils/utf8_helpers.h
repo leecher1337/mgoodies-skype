@@ -74,6 +74,11 @@ public:
 		return utf8[pos];
 	}
 
+	char & operator[](int pos)
+	{
+		return utf8[pos];
+	}
+
 private:
 	char *utf8;
 
@@ -166,6 +171,11 @@ public:
 		return tchar[pos];
 	}
 
+	TCHAR & operator[](int pos)
+	{
+		return tchar[pos];
+	}
+
 private:
 	TCHAR *tchar;
 };
@@ -222,6 +232,11 @@ public:
 	}
 
 	TCHAR operator[](int pos) const
+	{
+		return tchar[pos];
+	}
+
+	TCHAR & operator[](int pos)
 	{
 		return tchar[pos];
 	}
@@ -290,6 +305,11 @@ public:
 		return tchar[pos];
 	}
 
+	const TCHAR & operator[](int pos)
+	{
+		return tchar[pos];
+	}
+
 private:
 #ifdef UNICODE
 	const TCHAR *tchar;
@@ -337,6 +357,11 @@ public:
 	}
 
 	WCHAR operator[](int pos) const
+	{
+		return wchar[pos];
+	}
+
+	WCHAR & operator[](int pos)
 	{
 		return wchar[pos];
 	}
@@ -402,6 +427,11 @@ public:
 		return val[pos];
 	}
 
+	char & operator[](int pos)
+	{
+		return val[pos];
+	}
+
 private:
 #ifdef UNICODE
 	char *val;
@@ -462,6 +492,11 @@ public:
 	}
 
 	WCHAR operator[](int pos) const
+	{
+		return val[pos];
+	}
+
+	const WCHAR & operator[](int pos)
 	{
 		return val[pos];
 	}
