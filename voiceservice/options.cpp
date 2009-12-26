@@ -349,7 +349,7 @@ static void SetAllContactIcons(HWND hwndList)
 		if(hItem) 
 		{
 			// Some Module can handle it?
-			if (CanCall(hContact, FALSE))
+			if (!CanCall(hContact, FALSE))
 			{
 				SendMessage(hwndList,CLM_DELETEITEM,(WPARAM)hItem,0);
 			}
@@ -432,16 +432,16 @@ static void SetAllChildIcons(HWND hwndList,HANDLE hFirstItem,int iColumn,int iIm
 
 static void ResetListOptions(HWND hwndList)
 {
-	int i;
+	SendMessage(hwndList,CLM_SETBKBITMAP, 0, 0);
+	SendMessage(hwndList,CLM_SETBKCOLOR, GetSysColor(COLOR_WINDOW), 0);
+	SendMessage(hwndList,CLM_SETGREYOUTFLAGS, 0, 0);
+	SendMessage(hwndList,CLM_SETLEFTMARGIN, 2, 0);
+	SendMessage(hwndList,CLM_SETINDENT, 10, 0);
 
-	SendMessage(hwndList,CLM_SETBKBITMAP,0,(LPARAM)(HBITMAP)NULL);
-	SendMessage(hwndList,CLM_SETBKCOLOR,GetSysColor(COLOR_WINDOW),0);
-	SendMessage(hwndList,CLM_SETGREYOUTFLAGS,0,0);
-	SendMessage(hwndList,CLM_SETLEFTMARGIN,2,0);
-	SendMessage(hwndList,CLM_SETINDENT,10,0);
-	for(i=0;i<=FONTID_MAX;i++)
-		SendMessage(hwndList,CLM_SETTEXTCOLOR,i,GetSysColor(COLOR_WINDOWTEXT));
-	SetWindowLong(hwndList,GWL_STYLE,GetWindowLong(hwndList,GWL_STYLE)|CLS_SHOWHIDDEN);
+	for(int i=0;i<=FONTID_MAX;i++)
+		SendMessage(hwndList, CLM_SETTEXTCOLOR, i, GetSysColor(COLOR_WINDOWTEXT));
+
+//	SetWindowLong(hwndList,GWL_STYLE,GetWindowLong(hwndList,GWL_STYLE)|CLS_SHOWHIDDEN|CLS_NOHIDEOFFLINE|CLS_GREYALTERNATE);
 }
 
 
@@ -474,9 +474,10 @@ static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			TranslateDialogDefault(hwndDlg);
 
 			{
-				HIMAGELIST hIml = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),(IsWinVerXPPlus()?ILC_COLOR32:ILC_COLOR16)|ILC_MASK,3,3);
+				HIMAGELIST hIml = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),
+													(IsWinVerXPPlus()?ILC_COLOR32:ILC_COLOR16)|ILC_MASK,3,3);
 
-				ImageList_AddIcon_NotShared(hIml, GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_SMALLDOT));
+				ImageList_AddIcon_NotShared(hIml, GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_SMALLDOT));
 				ImageList_AddIcon_NotShared(hIml, actionIcons[ACTION_ANSWER]);
 				ImageList_AddIcon_NotShared(hIml, actionIcons[ACTION_DROP]);
 				SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_SETEXTRAIMAGELIST,0,(LPARAM)hIml);
@@ -499,7 +500,8 @@ static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			SetFocus(GetDlgItem(hwndDlg,IDC_LIST));
 			break;
 		case WM_NOTIFY:
-			switch(((LPNMHDR)lParam)->idFrom) {
+			switch(((LPNMHDR)lParam)->idFrom) 
+			{
 				case IDC_LIST:
 					switch (((LPNMHDR)lParam)->code)
 					{
@@ -507,14 +509,18 @@ static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						case CLN_LISTREBUILT:
 							SetAllContactIcons(GetDlgItem(hwndDlg,IDC_LIST));
 							//fall through
+
 						case CLN_CONTACTMOVED:
 							SetListGroupIcons(GetDlgItem(hwndDlg,IDC_LIST),(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_GETNEXTITEM,CLGN_ROOT,0),NULL,NULL);
 							break;
+
 						case CLN_OPTIONSCHANGED:
 							ResetListOptions(GetDlgItem(hwndDlg,IDC_LIST));
 							break;
+
 						case NM_CLICK:
-						{	HANDLE hItem;
+						{
+							HANDLE hItem;
 							NMCLISTCONTROL *nm=(NMCLISTCONTROL*)lParam;
 							DWORD hitFlags;
 							int iImage;
@@ -569,7 +575,8 @@ static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					switch (((LPNMHDR)lParam)->code)
 					{
 						case PSN_APPLY:
-						{	HANDLE hContact,hItem;
+						{
+							HANDLE hContact,hItem;
 							int set,i,iImage;
 
 							hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST,0,0);

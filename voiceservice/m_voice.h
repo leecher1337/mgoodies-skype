@@ -92,7 +92,7 @@ return: 0 on success
 
 
 /*
-Request to the protocol a make voice call
+Request the protocol to make a voice call
 
 wParam: (HANDLE) hContact
 lParam: (const TCHAR *) number
