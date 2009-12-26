@@ -25,6 +25,20 @@ Boston, MA 02111-1307, USA.
 #define EVENTTYPE_VOICE_CALL 8739
 
 
+#define VOICE_CAPS_VOICE			(1<<0)  // Voice is supported for this protocol. You need to set this one.
+#define VOICE_CAPS_CALL_CONTACT		(1<<1)	// Set if a call can be made to a hContact (PS_VOICE_CALL_CONTACT_VALID is used to validate the string)
+#define VOICE_CAPS_CALL_STRING		(1<<3)	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
+/*
+Request to the protocol capabilities relative to voice.
+
+wParam: 0
+lParam: 0
+return: VOICE_CAPS_*
+*/
+#define PS_VOICE_CAPS					"/Voice/Caps"
+
+
+
 #define VOICE_UNICODE	0x80000000
 
 #ifdef UNICODE
@@ -47,11 +61,19 @@ typedef struct {
 	int flags;				// VOICE_UNICODE to say the string is unicode or 0
 
 	HANDLE hContact;		// Contact associated with the call (can be NULL)
+
 	union {					// Number to call (can be NULL)
 		TCHAR *ptszNumber;  // Or the contact or the number must be != NULL
 		char *pszNumber;	// If both are != NULL the call will be made to the number
 		WCHAR *pwszNumber;	// and will be associated with the contact
 	};						// This fields are only needed in first notification for a call id
+
+	union {					// Name of the caller. This makes sense only on incoming calls,
+		TCHAR *ptszName;	// where no contact is associated and the caller has a name and a number.
+		char *pszName;
+		WCHAR *pwszName;
+	};
+
 
 	int state;				// VOICE_STATE_*
 

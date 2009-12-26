@@ -38,9 +38,6 @@ To get the devices for input/output and some options, query the db directly:
 */
 
 
-#define VOICE_CAPS_CALL_CONTACT		(1<<0)	// Set if a call can be made to a hContact (PS_VOICE_CALL_CONTACT_VALID is used to validate the string)
-#define VOICE_CAPS_CALL_STRING		(1<<1)	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
-
 struct VOICE_MODULE
 {
 	int cbSize;			// sizeof(VOICE_MODULE)
@@ -50,7 +47,7 @@ struct VOICE_MODULE
 						// defined in m_voide.h need to be created based in this name. For example, 
 						// PS_VOICE_CALL (/Voice/Call) need to be created as <name>/Voice/Call
 	char *icon;			// Icon to identify provider (from icolib)
-	int flags;			// or of VOICE_CAPS_*
+	int flags;			// or of VOICE_CAPS_*. You don't need to send VOICE_CAPS_VOICE.
 };
 /*
 Register a new plugin that can make/receive voice calls (a voice provider).

@@ -142,6 +142,7 @@ public:
 	VoiceProvider *module;
 	char *id;					// Protocol especific ID for this call
 	HANDLE hContact;
+	TCHAR name[256];
 	TCHAR number[256];
 	TCHAR displayName[256];
 	int state;
@@ -151,7 +152,7 @@ public:
 	VoiceCall(VoiceProvider *module, const char *id);
 	~VoiceCall();
 
-	void AppendCallerID(HANDLE hContact, const TCHAR *number);
+	void AppendCallerID(HANDLE hContact, const TCHAR *name, const TCHAR *number);
 
 	void SetState(int state);
 
@@ -220,6 +221,24 @@ static TCHAR *lstrtrim(TCHAR *str)
 
 	return str;
 }
+
+
+static BOOL IsEmptyA(const char *str)
+{
+	return str == NULL || str[0] == 0;
+}
+
+static BOOL IsEmptyW(const WCHAR *str)
+{
+	return str == NULL || str[0] == 0;
+}
+
+#ifdef UNICODE
+# define IsEmpty IsEmptyW
+#else
+# define IsEmpty IsEmptyA
+#endif
+
 
 
 #define ICON_SIZE 16

@@ -12,3 +12,7 @@ Many thanks to Angeli-Ka for creating the icons.
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?p=114862
 
 This plugin needs Miranda 0.9 to work.
+
+Todo:
+- Add meSpeak support
+- Handle more than one way to call a contact
