@@ -130,6 +130,9 @@ public:
 
 	bool CanSendDTMF();
 
+	HICON GetIcon();
+	void ReleaseIcon(HICON hIcon);
+
 private:
 	bool canHold;
 	HANDLE state_hook;
@@ -296,7 +299,7 @@ static TCHAR *stateNames[] = {
 };
 
 static TCHAR *actionNames[] = {
-	_T("Voice Call"),
+	_T("Make Voice Call"),
 	_T("Answer Voice Call"),
 	_T("Hold Voice Call"),
 	_T("Drop Voice Call"),

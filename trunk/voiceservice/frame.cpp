@@ -322,7 +322,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 				MoveWindow(GetDlgItem(hwnd, IDC_DIALPAD), 1, top, call_width -2, call_height, TRUE);
 				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), call_width, top, width - 2 * call_width, call_height, TRUE);
-				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top -1, call_width, call_height +2, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top, call_width, call_height +1, TRUE);
 
 				
 				int dialpad_top = top + call_height + 1;
@@ -726,22 +726,36 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			// Draw voice provider icon
 			rc.left += ICON_SIZE + H_SPACE;
-			rc.right -= 2 * (ICON_SIZE + H_SPACE);
 
-			if (!IsEmptyA(call->module->icon))
+			HICON hIcon = call->module->GetIcon();
+			if (hIcon != NULL)
 			{
-				DrawIconLib(dis->hDC, rc, call->module->icon);
-			}
-			else if (call->module->is_protocol)
-			{
-				HICON hIcon = LoadSkinnedProtoIcon(call->module->name, ID_STATUS_ONLINE);
-				if (hIcon != NULL)
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - ICON_SIZE)/2, hIcon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+				DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - ICON_SIZE)/2, hIcon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+				call->module->ReleaseIcon(hIcon);
 			}
 
 			// Draw contact
 			rc.left += ICON_SIZE + H_SPACE;
-			rc.right -= 2 * (ICON_SIZE + H_SPACE);
+
+			int numIcons = 0;
+			switch (call->state)
+			{
+				case VOICE_STATE_CALLING: 
+					numIcons = 1; 
+					break;
+				case VOICE_STATE_TALKING:
+					if (call->module->CanHold())
+						numIcons = 2; 
+					else
+						numIcons = 1; 
+					break;
+				case VOICE_STATE_RINGING:
+				case VOICE_STATE_ON_HOLD:
+					numIcons = 2; 
+					break;
+			}
+
+			rc.right -= numIcons * (ICON_SIZE + H_SPACE);
 
 			HFONT old_font = (HFONT) SelectObject(dis->hDC, fonts[call->state]);
 			COLORREF old_color = SetTextColor(dis->hDC, font_colors[call->state]);

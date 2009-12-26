@@ -52,8 +52,9 @@ MM_INTERFACE mmi;
 UTF8_INTERFACE utfi;
 LIST_INTERFACE li;
 
-vector<HANDLE> hHooks;
+static vector<HANDLE> hHooks;
 
+static vector<HANDLE> hCMCalls;
 static HANDLE hCMCall = NULL;
 static HANDLE hCMAnswer = NULL;
 static HANDLE hCMDrop = NULL;
@@ -62,15 +63,15 @@ static HANDLE hCMHold = NULL;
 char *metacontacts_proto = NULL;
 
 
-static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
-static int PreShutdown(WPARAM wParam, LPARAM lParam);
-static int ProtoAck(WPARAM wParam, LPARAM lParam);
-static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
-static int AccListChanged(WPARAM wParam, LPARAM lParam);
+static INT_PTR ModulesLoaded(WPARAM wParam, LPARAM lParam);
+static INT_PTR PreShutdown(WPARAM wParam, LPARAM lParam);
+static INT_PTR ProtoAck(WPARAM wParam, LPARAM lParam);
+static INT_PTR PreBuildContactMenu(WPARAM wParam, LPARAM lParam);
+static INT_PTR AccListChanged(WPARAM wParam, LPARAM lParam);
 
-static int VoiceRegister(WPARAM wParam, LPARAM lParam);
-static int VoiceUnregister(WPARAM wParam, LPARAM lParam);
-static int VoiceState(WPARAM wParam, LPARAM lParam);
+static INT_PTR VoiceRegister(WPARAM wParam, LPARAM lParam);
+static INT_PTR VoiceUnregister(WPARAM wParam, LPARAM lParam);
+static INT_PTR VoiceState(WPARAM wParam, LPARAM lParam);
 
 VoiceProvider * FindModule(const char *szModule);
 VoiceCall * FindVoiceCall(const char *szModule, const char *id, BOOL add);
@@ -94,21 +95,161 @@ HBRUSH bk_brush = NULL;
 
 
 
-static int CListDblClick(WPARAM wParam,LPARAM lParam);
+static INT_PTR CListDblClick(WPARAM wParam, LPARAM lParam);
 
-static int Service_CanCall(WPARAM wParam,LPARAM lParam);
-static int Service_Call(WPARAM wParam,LPARAM lParam); 
-static int CMAnswer(WPARAM wParam,LPARAM lParam); 
-static int CMHold(WPARAM wParam,LPARAM lParam);
-static int CMDrop(WPARAM wParam,LPARAM lParam);
+static INT_PTR Service_CanCall(WPARAM wParam, LPARAM lParam);
+static INT_PTR Service_Call(WPARAM wParam, LPARAM lParam); 
+static INT_PTR CMAnswer(WPARAM wParam, LPARAM lParam); 
+static INT_PTR CMHold(WPARAM wParam, LPARAM lParam);
+static INT_PTR CMDrop(WPARAM wParam, LPARAM lParam);
 
-static int IconsChanged(WPARAM wParam, LPARAM lParam);
-static int ReloadFont(WPARAM wParam, LPARAM lParam);
-static int ReloadColor(WPARAM wParam, LPARAM lParam);
+static INT_PTR IconsChanged(WPARAM wParam, LPARAM lParam);
+static INT_PTR ReloadFont(WPARAM wParam, LPARAM lParam);
+static INT_PTR ReloadColor(WPARAM wParam, LPARAM lParam);
 static VOID CALLBACK ClearOldVoiceCalls(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
 static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
+
+
+class DBTString
+{
+	DBVARIANT dbv;
+	bool exists;
+
+public:
+	DBTString(HANDLE hContact, char *module, char *setting)
+	{
+		ZeroMemory(&dbv, sizeof(dbv));
+		exists = (DBGetContactSettingTString(hContact, module, setting, &dbv) == 0);
+	}
+
+	~DBTString()
+	{
+		if (exists)
+			DBFreeVariant(&dbv);
+	}
+
+	const TCHAR * get() const
+	{
+		if (!exists)
+			return NULL;
+		else
+			return dbv.ptszVal;
+	}
+
+	const operator==(const TCHAR *other)
+	{
+		return get() == other;
+	}
+
+	const operator!=(const TCHAR *other)
+	{
+		return get() != other;
+	}
+
+	operator const TCHAR *() const
+	{
+		return get();
+	}
+};
+
+
+
+
+class CallingMethod
+{
+public:
+	VoiceProvider *provider;
+	HANDLE hContact;
+	TCHAR number[128];
+
+	CallingMethod(VoiceProvider *provider, HANDLE hContact, const TCHAR *number = NULL)
+		: provider(provider), hContact(hContact)
+	{
+		if (number == NULL)
+			this->number[0] = 0;
+		else
+			lstrcpyn(this->number, number, MAX_REGS(this->number));
+	}
+
+	void Call()
+	{
+		provider->Call(hContact, number);
+	}
+};
+
+
+static int sttCompareCallingMethods(const CallingMethod *p1, const CallingMethod *p2)
+{
+	if (p1->hContact != p2->hContact)
+		return (int)p2->hContact - (int)p1->hContact;
+
+	BOOL noNum1 = (IsEmpty(p1->number) ? 1 : 0);
+	BOOL noNum2 = (IsEmpty(p2->number) ? 1 : 0);
+	if (noNum1 != noNum2)
+		return noNum2 - noNum1;
+
+	if (!noNum1)
+	{
+		int numDif = lstrcmp(p1->number, p2->number);
+		if (numDif != 0)
+			return numDif;
+	}
+	
+	BOOL isProto1 = (CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) p1->hContact, (LPARAM) p1->provider->name) ? 1 : 0);
+	BOOL isProto2 = (CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) p2->hContact, (LPARAM) p2->provider->name) ? 1 : 0);
+	if (isProto1 != isProto2)
+		return isProto2 - isProto1;
+
+	return lstrcmp(p1->provider->description, p2->provider->description);
+}
+
+
+static void AddMethodsFrom(OBJLIST<CallingMethod> *list, HANDLE hContact)
+{
+	for(int i = 0; i < modules.getCount(); i++)
+	{
+		VoiceProvider *provider = &modules[i];
+		if (provider->CanCall(hContact))
+			list->insert(new CallingMethod(provider, hContact));
+	}
+}
+
+static void AddMethodsFrom(OBJLIST<CallingMethod> *list, HANDLE hContact, const TCHAR *number)
+{
+	for(int i = 0; i < modules.getCount(); i++)
+	{
+		VoiceProvider *provider = &modules[i];
+		if (provider->CanCall(number))
+			list->insert(new CallingMethod(provider, hContact, number));
+	}
+}
+
+static void BuildCallingMethodsList(OBJLIST<CallingMethod> *list, HANDLE hContact)
+{
+	AddMethodsFrom(list, hContact);
+
+	// Fetch contact number
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+
+	DBTString protoNumber(hContact, proto, "Number");
+	if (protoNumber != NULL)
+		AddMethodsFrom(list, hContact, protoNumber);
+
+	for(int i = 0; ;i++)
+	{
+		char tmp[128];
+		mir_snprintf(tmp, MAX_REGS(tmp), "MyPhone%d", i);
+
+		DBTString number(hContact, "UserInfo", tmp);
+		if (number != NULL)
+			AddMethodsFrom(list, hContact, number);
+
+		if (number == NULL && i >= 4)
+			break;
+	}
+}
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -186,15 +327,10 @@ static void AddAccount(PROTOACCOUNT *acc)
 		return;
 	if (IsEmptyA(acc->szModuleName))
 		return;
+	if (!ProtoServiceExists(acc->szModuleName, PS_VOICE_CAPS))
+		return;
 
-	int flags = 0;
-
-	if (ProtoServiceExists(acc->szModuleName, PS_VOICE_CAPS))
-		flags = CallProtoService(acc->szModuleName, PS_VOICE_CAPS, 0, 0);
-
-	// Support for old version of service
-	else if (ProtoServiceExists(acc->szModuleName, "/Voice/GetInfo"))
-		flags = CallProtoService(acc->szModuleName, "/Voice/GetInfo", 0, 0);
+	int flags = CallProtoService(acc->szModuleName, PS_VOICE_CAPS, 0, 0);
 
 	if ((flags & VOICE_CAPS_VOICE) == 0)
 		return;
@@ -209,7 +345,7 @@ static void AddAccount(PROTOACCOUNT *acc)
 
 
 // Called when all the modules are loaded
-static int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
+static INT_PTR ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
@@ -330,7 +466,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
 	mi.position = -2000020000;
-	mi.flags = GCMDF_TCHAR;
+	mi.flags = CMIF_TCHAR;
 
 	HICON icons[MAX_REGS(actionIcons)];
 	for(int i = 0; i < MAX_REGS(actionIcons); ++i)
@@ -402,7 +538,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int AccListChanged(WPARAM wParam, LPARAM lParam)
+static INT_PTR AccListChanged(WPARAM wParam, LPARAM lParam)
 {
 	PROTOACCOUNT *acc = (PROTOACCOUNT *) lParam;
 	if (acc == NULL)
@@ -451,7 +587,7 @@ static int AccListChanged(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int PreShutdown(WPARAM wParam, LPARAM lParam)
+static INT_PTR PreShutdown(WPARAM wParam, LPARAM lParam)
 {
 	DeInitFrames();
 	DeInitOptions();
@@ -464,7 +600,7 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam)
 }
 
 
-int ProtoAck(WPARAM wParam, LPARAM lParam)
+static INT_PTR ProtoAck(WPARAM wParam, LPARAM lParam)
 {
 	ACKDATA *ack = (ACKDATA*)lParam;
 
@@ -605,7 +741,7 @@ static bool IsProtocol(const char *module)
 }
 
 
-static int VoiceRegister(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceRegister(WPARAM wParam, LPARAM lParam)
 {
 	VOICE_MODULE *in = (VOICE_MODULE *) wParam;
 	if (in == NULL || in->cbSize < sizeof(VOICE_MODULE) || in->name == NULL || in->description == NULL)
@@ -628,7 +764,7 @@ static int VoiceRegister(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int VoiceUnregister(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceUnregister(WPARAM wParam, LPARAM lParam)
 {
 	char *moduleName = (char *) wParam;
 	if (moduleName == NULL || moduleName[0] == 0)
@@ -745,7 +881,7 @@ void Answer(VoiceCall *call)
 }
 
 
-static int VoiceState(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceState(WPARAM wParam, LPARAM lParam)
 {
 	VOICE_CALL *in = (VOICE_CALL *) wParam;
 	if (in == NULL || in->cbSize < sizeof(VOICE_CALL) || in->szModule == NULL || in->id == NULL)
@@ -786,7 +922,7 @@ static int VoiceState(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int IconsChanged(WPARAM wParam, LPARAM lParam)
+static INT_PTR IconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	if (hwnd_frame != NULL)
 		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
@@ -795,7 +931,7 @@ static int IconsChanged(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int ReloadFont(WPARAM wParam, LPARAM lParam) 
+static INT_PTR ReloadFont(WPARAM wParam, LPARAM lParam) 
 {
 	FontIDT fi = {0};
 	fi.cbSize = sizeof(fi);
@@ -822,7 +958,7 @@ static int ReloadFont(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int ReloadColor(WPARAM wParam, LPARAM lParam) 
+static INT_PTR ReloadColor(WPARAM wParam, LPARAM lParam) 
 {
 	ColourIDT ci = {0};
 	ci.cbSize = sizeof(ci);
@@ -842,7 +978,7 @@ static int ReloadColor(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int CListDblClick(WPARAM wParam,LPARAM lParam) 
+static INT_PTR CListDblClick(WPARAM wParam, LPARAM lParam) 
 {
 	CLISTEVENT *ce = (CLISTEVENT *) lParam;
 	
@@ -858,7 +994,7 @@ static int CListDblClick(WPARAM wParam,LPARAM lParam)
 }
 
 
-static int Service_CanCall(WPARAM wParam, LPARAM lParam) 
+static INT_PTR Service_CanCall(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -870,7 +1006,7 @@ static int Service_CanCall(WPARAM wParam, LPARAM lParam)
 }
 
 
-static int Service_Call(WPARAM wParam, LPARAM lParam) 
+static INT_PTR Service_Call(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -878,22 +1014,45 @@ static int Service_Call(WPARAM wParam, LPARAM lParam)
 
 	hContact = ConvertMetacontact(hContact);
 
-	// Find a module that can call that contact
-	// TODO: Add options to call from more than one module
-	for(int i = 0; i < modules.getCount(); i++)
-	{
-		if (!modules[i].CanCall(hContact))
-			continue;
+	OBJLIST<CallingMethod> methods(10, sttCompareCallingMethods);
+	BuildCallingMethodsList(&methods, hContact);
 
-		CallProtoService(modules[i].name, PS_VOICE_CALL, (WPARAM) hContact, 0);
-		return 0;
-	}
+	if (methods.getCount() < 1)
+		return -2;
 
-	return 1;
+	CallingMethod *method = &methods[0];
+	if (!IsEmpty(method->number))
+		return -2;
+
+	method->Call();
+
+	return 0;
 }
 
 
-static int CMAnswer(WPARAM wParam,LPARAM lParam) 
+static INT_PTR Service_CallItem(WPARAM wParam, LPARAM lParam, LPARAM param)
+{
+	HANDLE hContact = (HANDLE) wParam;
+	int index = (int) param;
+
+	if (hContact == NULL)
+		return -1;
+
+	hContact = ConvertMetacontact(hContact);
+
+	OBJLIST<CallingMethod> methods(10, sttCompareCallingMethods);
+	BuildCallingMethodsList(&methods, hContact);
+
+	if (index < 0 || index >= methods.getCount())
+		return -2;
+
+	methods[index].Call();
+
+	return 0;
+}
+
+
+static INT_PTR CMAnswer(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -909,7 +1068,7 @@ static int CMAnswer(WPARAM wParam,LPARAM lParam)
 }
 
 
-static int CMHold(WPARAM wParam,LPARAM lParam) 
+static INT_PTR CMHold(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -925,7 +1084,7 @@ static int CMHold(WPARAM wParam,LPARAM lParam)
 }
 
 
-static int CMDrop(WPARAM wParam,LPARAM lParam) 
+static INT_PTR CMDrop(WPARAM wParam, LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -941,15 +1100,34 @@ static int CMDrop(WPARAM wParam,LPARAM lParam)
 }
 
 
-static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
+static void HideMenuItem(HANDLE hMenu)
 {
 	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
-	mi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMCall, (LPARAM) &mi);
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMAnswer, (LPARAM) &mi);
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMHold, (LPARAM) &mi);
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMDrop, (LPARAM) &mi);
+	mi.flags = CMIM_FLAGS | CMIF_HIDDEN | CMIF_TCHAR;
+
+	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMenu, (LPARAM) &mi);
+}
+
+
+static void ShowMenuItem(HANDLE hMenu)
+{
+	CLISTMENUITEM mi = {0};
+	mi.cbSize = sizeof(mi);
+	mi.flags = CMIM_FLAGS | CMIF_TCHAR;
+
+	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMenu, (LPARAM) &mi);
+}
+
+
+static INT_PTR PreBuildContactMenu(WPARAM wParam, LPARAM lParam) 
+{
+	HideMenuItem(hCMCall);
+	HideMenuItem(hCMAnswer);
+	HideMenuItem(hCMHold);
+	HideMenuItem(hCMDrop);
+	for(unsigned int i = 0; i < hCMCalls.size(); ++i)
+		HideMenuItem(hCMCalls[i]);
 
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -957,15 +1135,85 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 
 	hContact = ConvertMetacontact(hContact);
 
-	// From now on unhide it
-	mi.flags = CMIM_FLAGS;
-
 	// There is a current call already?
 	VoiceCall *call = FindVoiceCall(hContact);
 	if (call == NULL)
 	{
-		if (CanCall(hContact))
+		OBJLIST<CallingMethod> methods(10, sttCompareCallingMethods);
+		BuildCallingMethodsList(&methods, hContact);
+
+		if (methods.getCount() == 1)
+		{
+			CallingMethod *method = &methods[0];
+
+			TCHAR name[128];
+			if (!IsEmpty(method->number))
+				mir_sntprintf(name, MAX_REGS(name), TranslateT("Call %s with %s"), 
+													method->number, method->provider->description);
+			else
+				mir_sntprintf(name, MAX_REGS(name), TranslateT("Call with %s"), 
+													method->provider->description);
+
+			CLISTMENUITEM mi = {0};
+			mi.cbSize = sizeof(mi);
+			mi.flags = CMIM_FLAGS | CMIF_TCHAR | CMIM_NAME;
+			mi.ptszName = name;
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMCall, (LPARAM) &mi);
+		}
+		else if (methods.getCount() > 1)
+		{
+			CLISTMENUITEM mi = {0};
+			mi.cbSize = sizeof(mi);
+			mi.flags = CMIM_FLAGS | CMIF_TCHAR | CMIM_NAME;
+			mi.ptszName = _T("Call");
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMCall, (LPARAM) &mi);
+
+			for(int i = 0; i < methods.getCount(); ++i)
+			{
+				CallingMethod *method = &methods[i];
+
+				HICON hIcon = method->provider->GetIcon();
+
+				TCHAR name[128];
+				if (!IsEmpty(method->number))
+					mir_sntprintf(name, MAX_REGS(name), TranslateT("%s with %s"), 
+														method->number, method->provider->description);
+				else
+					mir_sntprintf(name, MAX_REGS(name), TranslateT("with %s"), 
+														method->provider->description);
+
+				char service[128];
+				mir_snprintf(service, MAX_REGS(service), "VoiceService/ContactMenu/Call_%d", i);
+
+				CLISTMENUITEM mi = {0};
+				mi.cbSize = sizeof(mi);
+				mi.position = i;
+				mi.flags = CMIF_TCHAR | CMIF_ROOTHANDLE;
+				mi.ptszName = name;
+				mi.hIcon = hIcon;
+				mi.pszService = service;
+				mi.hParentMenu = (HGENMENU) hCMCall;
+
+				if (i == hCMCalls.size())
+				{
+					CreateServiceFunctionParam(service, Service_CallItem, i);
+
+					HANDLE hMenu = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) &mi);
+
+					hCMCalls.push_back(hMenu);
+				}
+				else
+				{
+					HANDLE hMenu = hCMCalls[i];
+
+					mi.flags = mi.flags | CMIM_ALL;
+
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMenu, (LPARAM) &mi);
+				}
+
+				method->provider->ReleaseIcon(hIcon);
+			}
+		}
 	}
 	else
 	{		
@@ -973,21 +1221,21 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 		{
 			case VOICE_STATE_CALLING:
 			{
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMDrop, (LPARAM) &mi);
+				ShowMenuItem(hCMDrop);
 				break;
 			}
 			case VOICE_STATE_TALKING:
 			{
 				if (call->module->CanHold())
-					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMHold, (LPARAM) &mi);
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMDrop, (LPARAM) &mi);
+					ShowMenuItem(hCMHold);
+				ShowMenuItem(hCMDrop);
 				break;
 			}
 			case VOICE_STATE_RINGING:
 			case VOICE_STATE_ON_HOLD:
 			{
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMAnswer, (LPARAM) &mi);
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMDrop, (LPARAM) &mi);
+				ShowMenuItem(hCMAnswer);
+				ShowMenuItem(hCMDrop);
 				break;
 			}
 		}
@@ -1127,18 +1375,24 @@ VoiceProvider::~VoiceProvider()
 
 bool VoiceProvider::CanCall(HANDLE hContact, BOOL now)
 {
+	if (hContact == NULL)
+		return false;
+
 	if ((flags & VOICE_CAPS_CALL_CONTACT) == 0)
 		return false;
 
 	if (ProtoServiceExists(name, PS_VOICE_CALL_CONTACT_VALID))
-		return CallProtoService(name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, now) != 0;
+		return CallProtoService(name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, now) != FALSE;
 
 	if (is_protocol)
 	{
-		if (CallProtoService(name, PS_GETSTATUS, 0, 0) <= ID_STATUS_OFFLINE)
+		if (now && CallProtoService(name, PS_GETSTATUS, 0, 0) <= ID_STATUS_OFFLINE)
 			return false;
 
-		return CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) name) != 0;
+		if (!CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) name))
+			return false;
+
+		return DBGetContactSettingWord(hContact, name, "Status", ID_STATUS_OFFLINE) > ID_STATUS_OFFLINE;
 	}
 
 	return true;
@@ -1153,12 +1407,11 @@ bool VoiceProvider::CanCall(const TCHAR *number)
 		return false;
 
 	if (ProtoServiceExists(name, PS_VOICE_CALL_STRING_VALID))
-		return CallProtoService(name, PS_VOICE_CALL_STRING_VALID, (WPARAM) number, 0) != 0;
+		return CallProtoService(name, PS_VOICE_CALL_STRING_VALID, (WPARAM) number, 0) != FALSE;
 
 	if (is_protocol)
 	{
-		if (CallProtoService(name, PS_GETSTATUS, 0, 0) <= ID_STATUS_OFFLINE)
-			return false;
+		return CallProtoService(name, PS_GETSTATUS, 0, 0) > ID_STATUS_OFFLINE;
 	}
 
 	return true;
@@ -1178,6 +1431,32 @@ void VoiceProvider::Call(HANDLE hContact, const TCHAR *number)
 {
 	CallProtoService(name, PS_VOICE_CALL, (WPARAM) hContact, (LPARAM) number);
 }
+
+HICON VoiceProvider::GetIcon()
+{
+	if (!IsEmptyA(icon))
+	{
+		return IcoLib_LoadIcon(icon);
+	}
+	else if (is_protocol)
+	{
+		return LoadSkinnedProtoIcon(name, ID_STATUS_ONLINE);
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+void VoiceProvider::ReleaseIcon(HICON hIcon)
+{
+	if (hIcon == NULL)
+		return;
+
+	if (!IsEmptyA(icon))
+		IcoLib_ReleaseIcon(hIcon);
+}
+
 
 
 
