@@ -54,6 +54,7 @@ typedef struct {
 		int nIDSpin;
 		int value;
 		FPAllowProtocol allowProtocol;
+		unsigned int checkboxID;
 	};
 	WORD min;
 	WORD max;
