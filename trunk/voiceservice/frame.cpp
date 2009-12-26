@@ -244,6 +244,12 @@ static void ShowHideDialpad(HWND hwnd)
 }
 
 
+static int sttCompareProvidesByDescription(const VoiceProvider *p1, const VoiceProvider *p2)
+{
+	return lstrcmp(p2->description, p1->description);
+}
+
+
 static void DrawIconLib(HDC hDC, const RECT &rc, const char *icon)
 {
 	HICON hIcon = IcoLib_LoadIcon(icon);
@@ -354,20 +360,23 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 		{
 			HWND list = GetDlgItem(hwnd, IDC_CALLS);
 
+			SendMessage(list, WM_SETREDRAW, FALSE, 0);
 			SendMessage(list, LB_RESETCONTENT, 0, 0);
-
 			for(int i = 0; i < calls.getCount(); i++)
 			{
+				VoiceCall *call = &calls[i];
+
 				TCHAR text[512];
-				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i].state, calls[i].displayName);
+				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), call->state, call->displayName);
 
 				int pos = SendMessage(list, LB_ADDSTRING, 0, (LPARAM) text);
 				if (pos == LB_ERR)
 					// TODO Show error
-					break;
+					continue;
 
-				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) &calls[i]);
+				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) call);
 			}
+			SendMessage(list, WM_SETREDRAW, TRUE, 0);
 
 			ShowHideDialpad(hwnd);
 
@@ -403,15 +412,69 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					GetDlgItemText(hwnd, IDC_NUMBER, number, MAX_REGS(number));
 					lstrtrim(number);
 
+					LIST<VoiceProvider> candidates(10, &sttCompareProvidesByDescription);
+
 					for(int i = 0; i < modules.getCount(); i++)
 					{
 						if (!modules[i].CanCall(number))
 							continue;
 
-						modules[i].Call(NULL, number);
+						candidates.insert(&modules[i]);
+					}
 
+					int selected;
+
+					if (candidates.getCount() < 1)
+					{
 						break;
 					}
+					else if (candidates.getCount() == 1)
+					{
+						selected = 0;
+					}
+					else
+					{
+						HMENU menu = CreatePopupMenu();
+
+						for (int i = 0; i < candidates.getCount(); ++i)
+						{
+							TCHAR text[1024];
+							mir_sntprintf(text, MAX_REGS(text), TranslateT("Call with %s"), 
+										  candidates[i]->description);
+
+							MENUITEMINFO mii = {0};
+							mii.cbSize = sizeof(mii);
+							mii.fMask = MIIM_ID | MIIM_TYPE;
+							mii.fType = MFT_STRING;
+							mii.dwTypeData = text;
+							mii.cch = lstrlen(text);
+							mii.wID = i + 1;
+
+							// TODO: Add icon to menu
+
+							InsertMenuItem(menu, 0, TRUE, &mii);
+						}
+
+						RECT rc;
+						GetWindowRect(GetDlgItem(hwnd, IDC_CALL), &rc);
+
+						POINT p;
+						p.x = rc.right;
+						p.y =  rc.bottom+1;
+						
+						selected = TrackPopupMenu(menu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD|TPM_RIGHTALIGN, 
+												 p.x, p.y, 0, hwnd, NULL);
+
+						DestroyMenu(menu);
+
+						if (selected == 0)
+							break;
+
+						selected--;
+					}
+
+					candidates[selected]->Call(NULL, number);
+
 					break;
 				}
 				case IDC_NUMBER:
@@ -645,6 +708,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				break;
 
 			VoiceCall *call = (VoiceCall *) dis->itemData;
+			if (call == NULL)
+				break;
 
 			RECT rc = dis->rcItem;
 
@@ -663,7 +728,16 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			rc.left += ICON_SIZE + H_SPACE;
 			rc.right -= 2 * (ICON_SIZE + H_SPACE);
 
-			DrawIconLib(dis->hDC, rc, call->module->icon);
+			if (!IsEmptyA(call->module->icon))
+			{
+				DrawIconLib(dis->hDC, rc, call->module->icon);
+			}
+			else if (call->module->is_protocol)
+			{
+				HICON hIcon = LoadSkinnedProtoIcon(call->module->name, ID_STATUS_ONLINE);
+				if (hIcon != NULL)
+					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - ICON_SIZE)/2, hIcon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			}
 
 			// Draw contact
 			rc.left += ICON_SIZE + H_SPACE;
