@@ -112,51 +112,6 @@ static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 
 
-class DBTString
-{
-	DBVARIANT dbv;
-	bool exists;
-
-public:
-	DBTString(HANDLE hContact, char *module, char *setting)
-	{
-		ZeroMemory(&dbv, sizeof(dbv));
-		exists = (DBGetContactSettingTString(hContact, module, setting, &dbv) == 0);
-	}
-
-	~DBTString()
-	{
-		if (exists)
-			DBFreeVariant(&dbv);
-	}
-
-	const TCHAR * get() const
-	{
-		if (!exists)
-			return NULL;
-		else
-			return dbv.ptszVal;
-	}
-
-	const operator==(const TCHAR *other)
-	{
-		return get() == other;
-	}
-
-	const operator!=(const TCHAR *other)
-	{
-		return get() != other;
-	}
-
-	operator const TCHAR *() const
-	{
-		return get();
-	}
-};
-
-
-
-
 class CallingMethod
 {
 public:

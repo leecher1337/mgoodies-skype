@@ -176,6 +176,10 @@ SOURCE=.\m_voiceservice.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_dbutils.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_icons.h
 # End Source File
 # Begin Source File

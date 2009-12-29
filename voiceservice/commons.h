@@ -67,6 +67,7 @@ using namespace std;
 #include "../utils/mir_memory.h"
 #include "../utils/mir_icons.h"
 #include "../utils/mir_options.h"
+#include "../utils/mir_dbutils.h"
 #include "../utils/utf8_helpers.h"
 
 #include "m_voice.h"
