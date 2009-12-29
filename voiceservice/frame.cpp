@@ -84,11 +84,12 @@ BOOL FrameIsFloating(int frame_id)
 void ResizeFrame(int frame_id, HWND hwnd)
 {
 	int height = calls.getCount() * GetMaxLineHeight();
+	if (height > 0)
+		height += 2;
+
 	if (CanCallNumber())
 	{
-		RECT dp;
-		GetWindowRect(GetDlgItem(hwnd, IDC_NUMBER), &dp);
-		height += dp.bottom - dp.top + 1;
+		height += 23 + 2;
 
 		if (SendMessage(GetDlgItem(hwnd, IDC_DIALPAD), BM_GETCHECK, 0, 0) == BST_CHECKED)
 		{
@@ -125,7 +126,7 @@ void ResizeFrame(int frame_id, HWND hwnd)
 	}
 	else
 	{
-		int old_height = CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), 0);
+		int old_height = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), 0);
 		if (old_height == height)
 			return;
 		
@@ -163,11 +164,16 @@ static void InvalidateAll(HWND hwnd)
 	for(int i = 0; i < MAX_REGS(dialCtrls); ++i)
 		InvalidateRect(GetDlgItem(hwnd, dialCtrls[i]), NULL, FALSE);
 	InvalidateRect(hwnd, NULL, FALSE);
+
+	if (frame_id != -1) 
+		CallService(MS_CLIST_FRAMES_UPDATEFRAME, (WPARAM)frame_id, (LPARAM)(FU_FMREDRAW));
 }
 
 
 static void ShowHideDialpad(HWND hwnd)
 {
+	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+
 	if (!CanCallNumber())
 	{
 		for(int i = 0; i < MAX_REGS(dialCtrls); ++i)
@@ -240,6 +246,8 @@ static void ShowHideDialpad(HWND hwnd)
 		}
 	}
 
+	SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+
 	InvalidateAll(hwnd);
 }
 
@@ -277,11 +285,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			SendDlgItemMessageA(hwnd, IDC_CALL, BUTTONADDTOOLTIP, (LPARAM) Translate("Make call"), 0);
 			SendDlgItemMessage(hwnd, IDC_CALL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) IcoLib_LoadIcon("vca_call", TRUE));
 
-			ShowHideDialpad(hwnd);
-
-			InvalidateAll(hwnd);
-
-			PostMessage(hwnd, WMU_RESIZE_FRAME, 0, 0);
+			PostMessage(hwnd, WMU_RESIZE_FRAME, 0, 1);
 			break;
 		}
 
@@ -292,6 +296,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 		case WM_SIZE:
 		{
+			SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+
 			RECT rc;
 			GetClientRect(hwnd, &rc);
 
@@ -315,14 +321,14 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 				int call_height = 23;
 				int call_width = 25;
-				int top = height - call_height;
+				int top = height - call_height - 1;
 
 				if (showDialpad)
 					top -= dialpad_height + 1;
 
-				MoveWindow(GetDlgItem(hwnd, IDC_DIALPAD), 1, top, call_width -2, call_height, TRUE);
-				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), call_width, top, width - 2 * call_width, call_height, TRUE);
-				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top, call_width, call_height +1, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_DIALPAD), 1, top, call_width -2, call_height, FALSE);
+				MoveWindow(GetDlgItem(hwnd, IDC_NUMBER), call_width, top, width - 2 * call_width, call_height, FALSE);
+				MoveWindow(GetDlgItem(hwnd, IDC_CALL), width - call_width, top, call_width, call_height +1, FALSE);
 
 				
 				int dialpad_top = top + call_height + 1;
@@ -333,24 +339,26 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				{
 					GetWindowRect(GetDlgItem(hwnd, dialCtrls[i]), &rc);
 					MoveWindow(GetDlgItem(hwnd, dialCtrls[i]), rc.left + deltaX, rc.top + deltaY, 
-								rc.right - rc.left, rc.bottom - rc.top, TRUE);
+								rc.right - rc.left, rc.bottom - rc.top, FALSE);
 				}
 
 
-				height -= call_height + 1;
+				height -= call_height + 2;
 				if (showDialpad)
-					height -= dialpad_height + 1;;
+					height -= dialpad_height + 1;
 			}
 
-			if (height <= 0)
+			if (height <= 2)
 			{
 				ShowWindow(GetDlgItem(hwnd, IDC_CALLS), SW_HIDE);
 			}
 			else
 			{
-				MoveWindow(GetDlgItem(hwnd, IDC_CALLS), 0, 0, width, height, TRUE);
+				MoveWindow(GetDlgItem(hwnd, IDC_CALLS), 1, 1, width-2, height-2, FALSE);
 				ShowWindow(GetDlgItem(hwnd, IDC_CALLS), SW_SHOW);
 			}
+
+			SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
 
 			InvalidateAll(hwnd);
 			break;
@@ -378,13 +386,16 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			}
 			SendMessage(list, WM_SETREDRAW, TRUE, 0);
 
-			ShowHideDialpad(hwnd);
-
 			// Fall throught
 		}
 
 		case WMU_RESIZE_FRAME:
 		{
+			ShowHideDialpad(hwnd);
+
+			if (lParam)
+				SendMessage(hwnd, WM_SIZE, 0, 0);
+
 			if (opts.resize_frame)
 			{
 				if (calls.getCount() == 0 && !CanCallNumber()) 
@@ -398,7 +409,6 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				}
 			}
 
-			SendMessage(hwnd, WM_SIZE, 0, 0);
 			break;
 		}
 
