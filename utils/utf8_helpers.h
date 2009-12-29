@@ -59,6 +59,13 @@ public:
 			mir_free(utf8);
 	}
 
+	char *detach()
+	{
+		char *ret = utf8;
+		utf8 = NULL;
+		return ret;
+	}
+
 	char * get() const
 	{
 		return utf8;
