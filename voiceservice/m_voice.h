@@ -39,6 +39,7 @@ return: VOICE_CAPS_*
 
 
 
+#define VOICE_SECURE	0x00000001
 #define VOICE_UNICODE	0x80000000
 
 #ifdef UNICODE
@@ -58,7 +59,8 @@ typedef struct {
 	int cbSize;				// Struct size
 	const char *szModule;	// The name of the protocol module (used only in notifications)
 	char *id;				// Protocol especific ID for this call
-	int flags;				// VOICE_UNICODE to say the string is unicode or 0
+	int flags;				// VOICE_UNICODE to say the string is unicode or 0. VOICE_SECURE to say this is a
+							// encrypted call
 
 	HANDLE hContact;		// Contact associated with the call (can be NULL)
 

@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo = {
 #else
 	"Voice Service",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,0),
+	PLUGIN_MAKE_VERSION(0,1,2,0),
 	"Provide services for protocols that support voice calls",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
@@ -339,6 +339,7 @@ static INT_PTR ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{
 		IcoLib_Register(mainIcons[0], _T("Voice Calls"), _T("Main"), IDI_MAIN);
 		IcoLib_Register(mainIcons[1], _T("Voice Calls"), _T("Dialpad"), IDI_DIALPAD);
+		IcoLib_Register(mainIcons[2], _T("Voice Calls"), _T("Secure Overlay"), IDI_SECURE);
 
 		int i;
 		for(i = 0; i < MAX_REGS(stateNames); i++)
@@ -850,6 +851,7 @@ static INT_PTR VoiceState(WPARAM wParam, LPARAM lParam)
 	call->AppendCallerID(in->hContact, 
 		(in->flags & VOICE_UNICODE) ? WcharToTchar(in->pwszName).get() : CharToTchar(in->pszName).get(),
 		(in->flags & VOICE_UNICODE) ? WcharToTchar(in->pwszNumber).get() : CharToTchar(in->pszNumber).get());
+	call->secure = (in->flags & VOICE_SECURE) != 0;
 
 	if (in->state == VOICE_STATE_RINGING && call->hContact != NULL)
 	{
@@ -1426,6 +1428,7 @@ VoiceCall::VoiceCall(VoiceProvider *module, const char *id)
 	end_time = 0;
 	clistBlinking = false;
 	incoming = false;
+	secure = false;
 	hwnd = NULL;
 	CreateDisplayName();
 }

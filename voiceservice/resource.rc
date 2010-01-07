@@ -234,6 +234,7 @@ IDI_MAIN                ICON    DISCARDABLE     "res\\Main.ico"
 IDI_CALLING             ICON    DISCARDABLE     "res\\Calling.ico"
 IDI_DIALPAD             ICON    DISCARDABLE     "res\\dialpad.ico"
 IDI_SMALLDOT            ICON    DISCARDABLE     "res/smalldot.ico"
+IDI_SECURE              ICON    DISCARDABLE     "res\\secure.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

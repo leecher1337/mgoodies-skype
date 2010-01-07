@@ -256,6 +256,10 @@ SOURCE=.\res\Rinning.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\secure.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\smalldot.ico
 # End Source File
 # Begin Source File
