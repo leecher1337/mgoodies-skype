@@ -66,22 +66,17 @@ public:
 		return ret;
 	}
 
-	char * get() const
+	const char * get() const
 	{
 		return utf8;
 	}
 
-	operator char *() const
+	operator const char *() const
 	{
 		return utf8;
 	}
 
-	char operator[](int pos) const
-	{
-		return utf8[pos];
-	}
-
-	char & operator[](int pos)
+	const char & operator[](int pos) const
 	{
 		return utf8[pos];
 	}
@@ -163,22 +158,17 @@ public:
 		return ret;
 	}
 
-	TCHAR * get() const
+	const TCHAR * get() const
 	{
 		return tchar;
 	}
 
-	operator TCHAR *() const
+	operator const TCHAR *() const
 	{
 		return tchar;
 	}
 
-	TCHAR operator[](int pos) const
-	{
-		return tchar[pos];
-	}
-
-	TCHAR & operator[](int pos)
+	const TCHAR & operator[](int pos) const
 	{
 		return tchar[pos];
 	}
@@ -238,12 +228,7 @@ public:
 		return tchar;
 	}
 
-	TCHAR operator[](int pos) const
-	{
-		return tchar[pos];
-	}
-
-	TCHAR & operator[](int pos)
+	const TCHAR & operator[](int pos) const
 	{
 		return tchar[pos];
 	}
@@ -307,12 +292,7 @@ public:
 		return tchar;
 	}
 
-	TCHAR operator[](int pos) const
-	{
-		return tchar[pos];
-	}
-
-	const TCHAR & operator[](int pos)
+	const TCHAR & operator[](int pos) const
 	{
 		return tchar[pos];
 	}
@@ -363,12 +343,7 @@ public:
 		return wchar;
 	}
 
-	WCHAR operator[](int pos) const
-	{
-		return wchar[pos];
-	}
-
-	WCHAR & operator[](int pos)
+	const WCHAR & operator[](int pos) const
 	{
 		return wchar[pos];
 	}
@@ -429,12 +404,7 @@ public:
 		return val;
 	}
 
-	char operator[](int pos) const
-	{
-		return val[pos];
-	}
-
-	char & operator[](int pos)
+	const char & operator[](int pos) const
 	{
 		return val[pos];
 	}
@@ -498,12 +468,7 @@ public:
 		return val;
 	}
 
-	WCHAR operator[](int pos) const
-	{
-		return val[pos];
-	}
-
-	const WCHAR & operator[](int pos)
+	const WCHAR & operator[](int pos) const
 	{
 		return val[pos];
 	}
@@ -585,7 +550,7 @@ public:
 #endif
 	}
 
-	operator const BSTR()
+	operator const BSTR() const 
 	{
 		return bstr;
 	}
