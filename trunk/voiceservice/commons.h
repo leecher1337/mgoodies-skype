@@ -38,7 +38,7 @@ using namespace std;
 
 
 // Miranda headers
-#define MIRANDA_VER 0x0900
+#define MIRANDA_VER 0x0800
 #include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
@@ -152,6 +152,7 @@ public:
 	int state;
 	DWORD end_time;
 	bool incoming;
+	bool secure;
 
 	VoiceCall(VoiceProvider *module, const char *id);
 	~VoiceCall();
@@ -326,7 +327,8 @@ static char *actionIcons[] = {
 
 static char *mainIcons[] = { 
 	"vc_main", 
-	"vc_dialpad" 
+	"vc_dialpad",
+	"vc_secure"
 };
 
 

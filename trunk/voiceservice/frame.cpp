@@ -734,6 +734,9 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			// Draw status
 			DrawIconLib(dis->hDC, rc, stateIcons[call->state]);
 
+			if (call->secure)
+				DrawIconLib(dis->hDC, rc, "vc_secure");
+
 			// Draw voice provider icon
 			rc.left += ICON_SIZE + H_SPACE;
 
