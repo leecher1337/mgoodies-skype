@@ -158,17 +158,17 @@ public:
 		return ret;
 	}
 
-	const TCHAR * get() const
+	TCHAR * get() const
 	{
 		return tchar;
 	}
 
-	operator const TCHAR *() const
+	operator TCHAR *() const
 	{
 		return tchar;
 	}
 
-	const TCHAR & operator[](int pos) const
+	TCHAR & operator[](int pos)
 	{
 		return tchar[pos];
 	}
