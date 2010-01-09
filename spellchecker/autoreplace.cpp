@@ -120,9 +120,9 @@ void AutoReplaceMap::writeAutoReplaceMap()
 			TcharToUtf8 replace(ar.replace.c_str());
 
 			if (ar.useVariables)
-				fprintf(file, "%s-V>%s\n", (char *)find, (char *)replace);
+				fprintf(file, "%s-V>%s\n", (const char *)find, (const char *)replace);
 			else
-				fprintf(file, "%s->%s\n", (char *)find, (char *)replace);
+				fprintf(file, "%s->%s\n", (const char *)find, (const char *)replace);
 		}
 		fclose(file);
 	}
