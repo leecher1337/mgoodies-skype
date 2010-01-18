@@ -56,28 +56,28 @@ return: VOICE_CAPS_*
 #define VOICE_STATE_BUSY    5
 
 typedef struct {
-	int cbSize;				// Struct size
-	const char *szModule;	// The name of the protocol module (used only in notifications)
-	char *id;				// Protocol especific ID for this call
-	int flags;				// VOICE_UNICODE to say the string is unicode or 0. VOICE_SECURE to say this is a
-							// encrypted call
+	int cbSize;					// Struct size
+	const char *moduleName;		// The name of the module (the same as VOICE_MODULE.name or the protocol szModule)
+	char *id;					// Protocol especific ID for this call
+	int flags;					// VOICE_UNICODE to say the string is unicode or 0. VOICE_SECURE to say this is a
+								// encrypted call
 
-	HANDLE hContact;		// Contact associated with the call (can be NULL)
+	HANDLE hContact;			// Contact associated with the call (can be NULL)
 
-	union {					// Number to call (can be NULL)
-		TCHAR *ptszNumber;  // Or the contact or the number must be != NULL
-		char *pszNumber;	// If both are != NULL the call will be made to the number
-		WCHAR *pwszNumber;	// and will be associated with the contact
-	};						// This fields are only needed in first notification for a call id
+	union {						// Number to call (can be NULL)
+		const TCHAR *ptszNumber;// Or the contact or the number must be != NULL
+		const char *pszNumber;	// If both are != NULL the call will be made to the number
+		const WCHAR *pwszNumber;// and will be associated with the contact
+	};							// This fields are only needed in first notification for a call id
 
-	union {					// Name of the caller. This makes sense only on incoming calls,
-		TCHAR *ptszName;	// where no contact is associated and the caller has a name and a number.
-		char *pszName;
-		WCHAR *pwszName;
+	union {						// Name of the caller. This makes sense only on incoming calls,
+		const TCHAR *ptszName;	// where no contact is associated and the caller has a name and a number.
+		const char *pszName;
+		const WCHAR *pwszName;
 	};
 
 
-	int state;				// VOICE_STATE_*
+	int state;					// VOICE_STATE_*
 
 } VOICE_CALL;
 
