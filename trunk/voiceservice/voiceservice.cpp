@@ -840,11 +840,11 @@ void Answer(VoiceCall *call)
 static INT_PTR VoiceState(WPARAM wParam, LPARAM lParam)
 {
 	VOICE_CALL *in = (VOICE_CALL *) wParam;
-	if (in == NULL || in->cbSize < sizeof(VOICE_CALL) || in->szModule == NULL || in->id == NULL)
+	if (in == NULL || in->cbSize < sizeof(VOICE_CALL) || in->moduleName == NULL || in->id == NULL)
 		return 0;
 
 	// Check if the call is aready in list
-	VoiceCall *call = FindVoiceCall(in->szModule, in->id, !IsFinalState(in->state));
+	VoiceCall *call = FindVoiceCall(in->moduleName, in->id, !IsFinalState(in->state));
 	if (call == NULL)
 		return 0;
 
