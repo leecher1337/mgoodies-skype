@@ -149,7 +149,7 @@ void RichEdit::GetLine(int line, TCHAR *text, size_t text_len) const
 	// Sometimes it likes to return size = lineLen+1, adding an \n at the end, so we remove it here
 	// to make both implementations return same size
 	int lineLen = GetLineLength(line);
-	size = max(0, min(text_len-1, min(size, lineLen)));
+	size = (unsigned) max(0, min((int)text_len - 1, min((int) size, lineLen)));
 	text[size] = _T('\0');
 
 /*

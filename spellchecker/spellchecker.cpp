@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
 	"Ricardo Pescuma Domenecci",
 	"pescuma@miranda-im.org",
-	"© 2006-2009 Ricardo Pescuma Domenecci",
+	"© 2006-2010 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/spellchecker",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -194,6 +194,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 extern "C" int __declspec(dllexport) Unload(void) 
 {
 	DeleteObject(hCheckedBmp);
+	FreeDictionaries(languages);
 
 	return 0;
 }
@@ -230,7 +231,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaVersionURL = "http://pescuma.org/miranda/spellchecker_version.txt";
 		upd.szBetaChangelogURL = "http://pescuma.org/miranda/spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
-		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+		upd.cpbBetaVersionPrefix = (int)strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
 		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellcheckerW.zip";
 #else
@@ -238,7 +239,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
-		upd.cpbVersion = strlen((char *)upd.pbVersion);
+		upd.cpbVersion = (int)strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
@@ -1793,7 +1794,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		dlg->hLanguageSubMenu = CreatePopupMenu();
 
 		if (dlg->hwnd_menu_owner != NULL)
-			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
+			dlg->old_menu_proc = (WNDPROC) SetWindowLongPtr(dlg->hwnd_menu_owner, GWLP_WNDPROC, (LONG_PTR) MenuWndProc);
 
 		// First add languages
 		for (int i = 0; i < languages.getCount(); i++)
@@ -2075,7 +2076,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	if (sicd->flags & MBCF_RIGHTBUTTON)
+	if ((sicd->flags & MBCF_RIGHTBUTTON) == 0)
 	{
 		FreePopupData(dlg);
 

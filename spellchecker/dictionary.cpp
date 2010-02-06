@@ -265,7 +265,7 @@ public:
 		{
 			for (int i = 0; i < MAX_REGS(codepages); i++)
 			{
-				if (strcmpi(codepages[i].name, dic_enc) == 0)
+				if (_strcmpi(codepages[i].name, dic_enc) == 0)
 				{
 					if (IsValidCodePage(codepages[i].codepage))
 						codePage = codepages[i].codepage;
