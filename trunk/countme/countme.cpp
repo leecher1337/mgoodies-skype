@@ -34,12 +34,12 @@ static int 	version = 1031;
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"CountMe Plugin",
-	PLUGIN_MAKE_VERSION(1,0,3,1),
-	"CountMe Plugin (1.0.3.1 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,3,2),
+	"CountMe Plugin (1.0.3.2 "__DATE__")",
 	"Piotr Piastucki",
-	"the_leech@sf.net",
-	"(c) 2005 Piotr Piastucki",
-	"http://developer.berlios.de/projects/mtlen",
+	"the_leech@users.berlios.de",
+	"(c) 2005-2010 Piotr Piastucki",
+	"http://developer.berlios.de/projects/mgoodies",
 	0,
 	0
 };
@@ -187,6 +187,7 @@ static void __cdecl CountThread(void* ptr) {
 	mode = DBGetContactSettingDword(NULL, countmeModuleName, "Mode", 0);
 	while (!stopThread) {
         NETLIBHTTPREQUEST nlhr;
+        memset(&nlhr, 0, sizeof(NETLIBHTTPREQUEST));
         nlhr.cbSize = sizeof(NETLIBHTTPREQUEST);
 		if (DBGetContactSetting(NULL, countmeModuleName, "CountID", &dbv)) {
 			char url[2048];
@@ -251,6 +252,7 @@ static void __cdecl CountThread(void* ptr) {
 			} else {
 				sprintf(url, "%s?mode=%d&ver=%d&id=%s&xid=%s", countLink, mode, version, dbv.pszVal, xid);
 			}
+            memset(&nlhr, 0, sizeof(NETLIBHTTPREQUEST));
 	        nlhr.requestType = REQUEST_GET;
 	        nlhr.flags = NLHRF_GENERATEHOST;
 	        nlhr.headers = NULL;
