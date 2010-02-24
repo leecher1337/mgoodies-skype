@@ -46,7 +46,7 @@ HANDLE RegisterNLClient(const char *name)
 	static NETLIBUSER nlu={0};
 	char desc[128];
 
-	sprintf(desc, "%s %s",name,Translate("connection"));
+	sprintf(desc, TranslateT("%s connection"),name);
 
 #ifdef DEBUG_COMM
 	DebugLog(CommFile,"<Register PROXY support>");
