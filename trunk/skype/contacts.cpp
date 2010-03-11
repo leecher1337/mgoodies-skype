@@ -78,6 +78,7 @@ CLISTMENUITEM HupItem(void) {
 	mi.position=-2000005000;
 	mi.flags=CMIF_NOTOFFLINE;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
+	mi.pszContactOwner=pszSkypeProtoName;
 	mi.pszName=Translate("Hang up call (Skype)");
 	mi.pszService=SKYPE_CALLHANGUP;
 

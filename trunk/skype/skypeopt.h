@@ -40,4 +40,10 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 */
 BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
+/*
+ * Helper functions
+ *
+ */
+void DoAutoDetect(HWND dlg);
+
 ;

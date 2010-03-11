@@ -13,6 +13,7 @@
 #include "../../include/m_utils.h"
 #include "../../include/m_langpack.h"
 #include "m_toptoolbar.h"
+#include "cshelper.h"
 
 // Imported Globals
 extern HWND hSkypeWnd, hWnd;
@@ -43,8 +44,23 @@ status_map status_codes[] = {
 	{0, NULL}
 };
 
+status_map status_codes_in[] = { // maps the right string to the left status value
+	{ID_STATUS_AWAY, "AWAY"},
+	{ID_STATUS_NA, "NA"},
+	{ID_STATUS_DND, "DND"},
+	{ID_STATUS_ONLINE, "ONLINE"},
+	{ID_STATUS_FREECHAT, "SKYPEME"},	// Unfortunately Skype API tells us userstatus ONLINE, if we are free for chat
+	{ID_STATUS_OFFLINE, "OFFLINE"},
+	{ID_STATUS_INVISIBLE, "INVISIBLE"},
+	{ID_STATUS_CONNECTING, "CONNECTING"},
+	{0, NULL}
+};
+
+//status_map 
+
+
 CRITICAL_SECTION MsgQueueMutex, ConnectMutex;
-BOOL rcvThreadRunning=FALSE;
+BOOL rcvThreadRunning=FALSE; BOOL isConnecting = FALSE;
 SOCKET ClientSocket=INVALID_SOCKET;
 
 /*
@@ -713,7 +729,11 @@ int SkypeCallHangup(WPARAM wParam, LPARAM lParam)
 	if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
 		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
+		//sprintf(msg, "ALTER CALL %s HANGUP", dbv.pszVal);
 		res=SkypeSend(msg);
+#if _DEBUG
+		DBDeleteContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId");
+#endif
 	//} else {
 	//	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
 	//	msg=(char *)malloc(strlen(dbv.pszVal)+6);
@@ -1301,9 +1321,9 @@ void SkypeFlush(void) {
 int SkypeStatusToMiranda(char *s) {
 	int i;
 	if (!strcmp("SKYPEOUT", s)) return DBGetContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", ID_STATUS_ONTHEPHONE);
-	for(i=0; status_codes[i].szStat; i++)
-		if (!strcmp(status_codes[i].szStat, s))
-		return status_codes[i].id;
+	for(i=0; status_codes_in[i].szStat; i++)
+		if (!strcmp(status_codes_in[i].szStat, s))
+		return status_codes_in[i].id;
 	return 0;
 }
 
@@ -1397,11 +1417,23 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
-	char *args[6];
+	char *args[7];
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:"};
 	const int SkypeDefaults[]={0, 1, 1, 0, 0};
 
 	// Prevent reentrance
+	CCriticalSectionHelper csh(&ConnectMutex);
+	EnterCriticalSection(&ConnectMutex);
+	BOOL isInConnect = isConnecting;
+	if (!isConnecting) 
+	{ 
+		isConnecting = TRUE;
+	}
+	LeaveCriticalSection(&ConnectMutex);
+
+	if (isInConnect) return -1;
+	csh.SetResetFlag(&isConnecting);
+
 	LOG("ConnectToSkypeAPI", "started.");
 	if (UseSockets) 
 	{
@@ -1551,10 +1583,15 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 								if(args[i] != NULL)
 									LOG("ConnectToSkypeAPI", args[i]);
 							}*/
-							_spawnv(_P_NOWAIT, dbv.pszVal, args);
+							intptr_t pid = _spawnv(_P_NOWAIT, dbv.pszVal, args);
+							if (pid == -1)
+							{
+								int i = errno; //EINVAL
+								LOG("ConnectToSkypeAPI","Failed to launch skype!");
+							}
 							DBFreeVariant(&dbv);
 
-                            setUserNamePassword();
+							setUserNamePassword();
 						}
 					}
 					else
@@ -1566,6 +1603,12 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 							if(args[i] != NULL)
 									LOG("ConnectToSkypeAPI", args[i]);
 						}*/
+
+						// if there is no skype installed and no custom command line, then exit .. else it crashes
+						if (args[0] == NULL || strlen(args[0])==0)
+						{
+							return -1;
+						}
 						_spawnv(_P_NOWAIT, path, args);
 
                         setUserNamePassword();
@@ -1613,6 +1656,38 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 	return 0;
 }
 
+/* CloseSkypeAPI
+ * Purpose: Closes existing api connection
+ * Params: path - Path to the Skype application; could be NULL when using proxy
+ * Returns: always 0
+ */
+int CloseSkypeAPI(char *skypePath)
+{
+
+	if (UseSockets)
+	{
+		if (ClientSocket != INVALID_SOCKET)
+		{
+			closesocket(ClientSocket);
+			ClientSocket = INVALID_SOCKET;
+		}
+	}
+	else {
+		if (AttachStatus!=-1) 
+		{
+			// it was crashing when the skype-network-proxy is used (imo2sproxy for imo.im) and skype-path is empty 
+			// now, with the "UseSockets" check and the skypePath[0] != 0 check its fixed
+			if (skypePath != NULL && skypePath[0] != 0)
+				_spawnl(_P_NOWAIT, skypePath, skypePath, "/SHUTDOWN", NULL);
+		}
+	}
+	logoff_contacts();
+	SkypeInitialized=FALSE;
+	ResetEvent(SkypeReady);
+	AttachStatus=-1;
+	if (hWnd) KillTimer (hWnd, 1);
+	return 0;
+}
 /* ConnectToSkypeAPI
  * 
  * Purpose: Establish a connection to the Skype API
@@ -1620,22 +1695,22 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
  * Returns: 0 - Connecting succeeded
  *		   -1 - Something went wrong
  */
-int __connectAPI(char *path) {
-  int retval;
-  
-  EnterCriticalSection(&ConnectMutex);
-  if (AttachStatus!=-1) {
-	  LeaveCriticalSection(&ConnectMutex);
-	  return -1;
-  }
-  InterlockedExchange((long *)&SkypeStatus, ID_STATUS_CONNECTING);
-  ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
-  retval=__connectAPI(path);
-  if (retval==-1) {
-	logoff_contacts();
-	InterlockedExchange((long *)&SkypeStatus, ID_STATUS_OFFLINE);
-	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
-  }
-  LeaveCriticalSection(&ConnectMutex);
-  return retval;
-}
+//int __connectAPI(char *path) {
+//  int retval;
+//  
+//  EnterCriticalSection(&ConnectMutex);
+//  if (AttachStatus!=-1) {
+//	  LeaveCriticalSection(&ConnectMutex);
+//	  return -1;
+//  }
+//  InterlockedExchange((long *)&SkypeStatus, ID_STATUS_CONNECTING);
+//  ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
+//  retval=__connectAPI(path);
+//  if (retval==-1) {
+//	logoff_contacts();
+//	InterlockedExchange((long *)&SkypeStatus, ID_STATUS_OFFLINE);
+//	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
+//  }
+//  LeaveCriticalSection(&ConnectMutex);
+//  return retval;
+//}

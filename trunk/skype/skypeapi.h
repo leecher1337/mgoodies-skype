@@ -47,6 +47,7 @@ char *MirandaStatusToSkype(int id);
 char *GetSkypeErrorMsg(char *str);
 BOOL testfor(char *what, DWORD maxwait);
 int ConnectToSkypeAPI(char *path, bool bStart);
+int CloseSkypeAPI(char *skypePath);
 int SkypeAdduserDlg(WPARAM wParam, LPARAM lParam);
 int SkypeAnswerCall(WPARAM wParam, LPARAM lParam);
 int SkypeMsgCollectGarbage(time_t age);

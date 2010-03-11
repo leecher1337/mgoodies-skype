@@ -13,8 +13,20 @@ CODE
 
 HISTORY
 -------
+
+0.0.0.45 - ! "NA" and "Free for chat" status are available again; NA is supported by skype and Free for chat 
+             uses skypes "Skype Me" status; better leave it that way
+           ! changes to the mood message of a contact were only visible after a status change
+           ! plugin was crashing when status changed to offline and a proxy is used
+
+0.0.0.44 - ! menu item "Hang up (Skype)" was show on none skype contacts
+           ! fixed serveral bugs in skype startup (including starting skype twice)
+           ! show connecting state correctly
+           ! hangup while ringing caused a state where contact isnt callable anymore
+           * removed "NA" and "Free for chat" status
+
 0.0.0.43 - + Added option to suppress summary chat message after call is finished (jls17)
-           ! Fix hangup cause a dial command if opponent hangs up a little bit earlier (jls17)
+           ! Fix hangup causes a dial command if opponent hangs up a little bit earlier (jls17)
            ! removed empty chat message on incoming call
            ! empty mood message is send to skype correctly
            

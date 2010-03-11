@@ -16,6 +16,8 @@ static int code_page = CP_ACP;
 #include "resource.h"
 #include <stdlib.h>
 #include <stddef.h>
+#include <shlobj.h>
+
 
 // Miranda Includes
 #include "../../include/newpluginapi.h"

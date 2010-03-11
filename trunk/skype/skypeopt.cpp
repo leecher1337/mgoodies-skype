@@ -4,6 +4,7 @@
 #include "gchat.h"
 #include "skypeprofile.h"
 #include "uxtheme.h"
+#include "tinyxml/tinyxml.h"
 
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
@@ -32,14 +33,14 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.hInstance = hInst;
    odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS);
    odp.pszGroup = Translate("Network");
-   odp.pszTitle = pszSkypeProtoName;
+   odp.pszTitle = _T("Skype");
    odp.pfnDlgProc = OptionsDlgProc;
    odp.flags = ODPF_BOLDGROUPS;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 
    odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_POPUP);
    odp.pszGroup = Translate("Popups");
-   odp.pszTitle = pszSkypeProtoName;
+   odp.pszTitle = _T("Skype");
    odp.pfnDlgProc = OptPopupDlgProc;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    return 0;
@@ -553,7 +554,11 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				case IDC_CUSTOMCOMMAND:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 					break;
-
+#ifdef SKYPE_AUTO_DETECTION
+				case IDC_AUTODETECTION:
+					DoAutoDetect(hwndDlg);
+					break;
+#endif
 			}
 			if (!initDlg) SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 		}
@@ -747,3 +752,65 @@ BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 	return 0;
 }
+
+#ifdef SKYPE_AUTO_DETECTION
+/**
+ * DoAutoDetect
+ * @param dlg The default option dialog handle
+ */
+void DoAutoDetect(HWND dlg)
+{
+	char basePath[MAX_PATH];
+	char fileName[MAX_PATH];
+	char accountName[129];
+	
+	if (FAILED(SHGetFolderPath(dlg,CSIDL_APPDATA,NULL,0,basePath)))
+	{
+		OUTPUT("Error in retrieving appdata path!");
+		return;
+	}
+
+	strcat(basePath,"\\Skype\\");
+	strcpy(fileName,basePath);
+	strcat(fileName,"\\shared.xml");
+
+	TiXmlDocument doc(fileName); // TODO: build path based on named folders
+	if (!doc.LoadFile())
+	{
+		OUTPUT("Failed to open skypes configuration files!");
+		return;
+	}
+	
+	TiXmlHandle docHandle(&doc);
+	TiXmlElement* defaultAccount = docHandle.FirstChild("config").FirstChild("Lib").FirstChild("Account").FirstChild("Default").Element();
+	if (defaultAccount)
+	{
+		strncpy(accountName, defaultAccount->GetText(), min(strlen(defaultAccount->GetText()),128)+1);
+		char tmpUser[255];
+		GetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),tmpUser,255);
+		if (strlen(tmpUser)==0)
+		{
+			SetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),accountName);
+		}
+	}
+
+	strcpy(fileName,basePath);
+	strcat(fileName,accountName);
+	strcat(fileName,"\\config.xml");
+
+	TiXmlDocument docConf(fileName);
+	if (!docConf.LoadFile())
+	{
+		OUTPUT("Failed to open skypes configuration files!");
+		return;
+	}
+	TiXmlHandle confHandle(&docConf);
+	TiXmlElement* openWindowInCompactMode = confHandle.FirstChild("config").FirstChild("UI").FirstChild("Messages").FirstChild("OpenWindowInCompactMode").Element();
+	if (openWindowInCompactMode && strcmp(openWindowInCompactMode->GetText(),"0")!=0)
+	{
+		openWindowInCompactMode->Clear();
+		openWindowInCompactMode->LinkEndChild(new TiXmlText("0"));
+		docConf.SaveFile();
+	}
+}
+#endif
