@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_toptoolbar.h"
 #include "time.h"
 #include "voiceservice.h"
+#include "cshelper.h"
 
 struct MM_INTERFACE   mmi; 
 
@@ -47,6 +48,7 @@ HANDLE hProtocolAvatarsFolder;
 char DefaultAvatarsFolder[MAX_PATH+1];
 DWORD mirandaVersion;
 
+CRITICAL_SECTION RingAndEndcallMutex;
 
 // Module Internal Globals
 PLUGINLINK *pluginLink;
@@ -127,9 +129,9 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,43),
+	PLUGIN_MAKE_VERSION(0,0,0,45),
 	"Support for Skype network",
-	"leecher - tweety",
+	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
 	"© 2004-2006 leecher - tweety",
 	"http://dose.0wnz.at - http://developer.berlios.de/projects/mgoodies/",
@@ -139,6 +141,7 @@ PLUGININFOEX pluginInfo = {
 };
 
 #define MAPDND	1	// Map Occupied to DND status and say that you support it
+//#define MAPNA   1 // Map NA status to Away and say that you support it
 
 /*                           P R O G R A M                                */
 
@@ -781,7 +784,9 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 	RegisterToUpdate();
 	RegisterToDbeditorpp();
-	VoiceServiceModulesLoaded() ;
+	VoiceServiceModulesLoaded();
+
+	InitializeCriticalSection(&RingAndEndcallMutex);
 	
 	add_contextmenu(NULL);
 	if ( ServiceExists( MS_GC_REGISTER )) 
@@ -1321,7 +1326,21 @@ void RingThread(char *szSkypeMsg) {
 	DBVARIANT dbv;
 	char *ptr;
 
-    LOG("RingThread", "started.");
+	// We use a single critical section for the RingThread- and the EndCallThread-functions
+	// so that only one function is running at the same time. This is needed, because when
+	// a initated and unaccepted call (which is still ringing) is hangup/canceled, skype
+	// sends two messages. First "CALL xxx STATUS RINGING" .. second "CALL xx STATUS CANCELED".
+	// This starts two independend threads (first: RingThread; second: EndCallThread). Now 
+	// the two message are processed in reverse order sometimes. This causes the EndCallThread to
+	// delete the contacts "CallId" property and after that the RingThread saves the contacts 
+	// "CallId" again. After that its not possible to call this contact, because the plugin
+	// thinks that there is already a call going and the hangup-function isnt working, because 
+	// skype doesnt accept status-changes for finished calls. The CriticalSection syncronizes
+	// the threads and the messages are processed in correct order. 
+	// Not the best solution, but it works.
+	CCriticalSectionHelper csHelp(&RingAndEndcallMutex); csHelp.Enter();
+
+  LOG("RingThread", "started.");
 	if (protocol >= 5) SkypeSend ("MINIMIZE");
 	if (hContact=GetCallerContact(szSkypeMsg)) {
 		// Make sure that an answering thread is not already in progress so that we don't get
@@ -1444,6 +1463,21 @@ void EndCallThread(char *szSkypeMsg) {
 	DBVARIANT dbv;
 	int tCompareResult;
 
+	// We use a single critical section for the RingThread- and the EndCallThread-functions
+	// so that only one function is running at the same time. This is needed, because when
+	// a initated and unaccepted call (which is still ringing) is hangup/canceled, skype
+	// sends two messages. First "CALL xxx STATUS RINGING" .. second "CALL xx STATUS CANCELED".
+	// This starts two independend threads (first: RingThread; second: EndCallThread). Now 
+	// the two message are processed in reverse order sometimes. This causes the EndCallThread to
+	// delete the contacts "CallId" property and after that the RingThread saves the contacts 
+	// "CallId" again. After that its not possible to call this contact, because the plugin
+	// thinks that there is already a call going and the hangup-function isnt working, because 
+	// skype doesnt accept status-changes for finished calls. The CriticalSection syncronizes
+	// the threads and the messages are processed in correct order. 
+	// Not the best solution, but it works.
+	CCriticalSectionHelper csHelp(&RingAndEndcallMutex); csHelp.Enter();
+
+  LOG("EndCallThread", "started.");
 	if (szSkypeMsg) {
 		for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 			if (DBGetContactSetting(hContact, pszSkypeProtoName, "CallId", &dbv)) continue;
@@ -1537,9 +1571,13 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 	   }
 */
 	LOG ("LaunchSkypeAndSetStatusThread", "started.");
+
+	int oldStatus=SkypeStatus;
+
+	InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_CONNECTING);
+	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	   
 	if (ConnectToSkypeAPI(skype_path, true)!=-1) {
-		int oldStatus=SkypeStatus;
 		pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 		InterlockedExchange((long *)&SkypeStatus, (int)newStatus);
 		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
@@ -1602,9 +1640,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 //				if ((sstat=SkypeStatusToMiranda(szSkypeMsg+11)) && SkypeStatus!=ID_STATUS_CONNECTING) {
 				if ((sstat=SkypeStatusToMiranda(szSkypeMsg+11))) {				
 						if (RestoreUserStatus && RequestedStatus) {
-							SkypeSend ("SET USERSTATUS %s", RequestedStatus);
-
 							RestoreUserStatus=FALSE;
+							SkypeSend ("SET USERSTATUS %s", RequestedStatus);
 						}
 						oldstatus=SkypeStatus;
 						InterlockedExchange((long*)&SkypeStatus, sstat);
@@ -1690,16 +1727,17 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					free(buf);
 					break;
 				}
+				*/
 				if (!strcmp(ptr, "MOOD_TEXT")){
 					LOG("WndProc", "MOOD_TEXT");
 					if (!(hContact=find_contact(nick)))
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
 					else
 					{
-						TCHAR *unicode = NULL;
+						char *Mood = NULL;
 						
 						if(utf8_decode((ptr+10), &Mood)==-1) break;
-
+						
 						//DBWriteContactSettingString(hContact, "CList", "StatusMsg", Mood);
 						if(DBWriteContactSettingTString(hContact, "CList", "StatusMsg", Mood)) 
 						{
@@ -1717,7 +1755,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
-
+				/*
 				if (!strcmp(ptr, "TIMEZONE")){
 					time_t temp;
 					struct tm tms;
@@ -2014,38 +2052,36 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 	if ((int)wParam==ID_STATUS_OCCUPIED || (int)wParam==ID_STATUS_ONTHEPHONE) wParam=ID_STATUS_DND;
 	if ((int)wParam==ID_STATUS_OUTTOLUNCH) wParam=ID_STATUS_NA;
 #endif
+#ifdef MAPNA
+	if ((int)wParam==ID_STATUS_NA) wParam = ID_STATUS_AWAY;
+#endif
 
    RequestedStatus=MirandaStatusToSkype((int)wParam);
 
-   InterlockedExchange((long*)&SkypeStatus, (int)wParam);
-   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
-   
-   if ((int)wParam==ID_STATUS_OFFLINE) 
+   if (SkypeStatus != ID_STATUS_OFFLINE)
    {
-	   if (UnloadOnOffline) {
-		   if (AttachStatus!=-1) 
-		   {
-			   if(UseCustomCommand)
-			   {
-				   DBVARIANT dbv;
-					if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
-					{
-						_spawnl(_P_NOWAIT, dbv.pszVal, dbv.pszVal, "/SHUTDOWN", NULL);
-						DBFreeVariant(&dbv);
-					}
-			   }
-			   else
-			   {
-				   _spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
-			   }
-		   }
-	 	   logoff_contacts();
-		   SkypeInitialized=FALSE;
-		   ResetEvent(SkypeReady);
-		   AttachStatus=-1;
-		   if (hWnd) KillTimer (hWnd, 1);
-		   return 0;
-	   }
+     InterlockedExchange((long*)&SkypeStatus, (int)wParam);
+     ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
+   }
+   
+   if ((int)wParam==ID_STATUS_OFFLINE && UnloadOnOffline) 
+   {
+			char* path = NULL;
+
+			if(UseCustomCommand)
+			{
+				DBVARIANT dbv;
+				if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
+				{
+					CloseSkypeAPI(dbv.pszVal);
+					DBFreeVariant(&dbv);
+				}
+			}
+			else
+			{
+				CloseSkypeAPI(skype_path);
+			}
+
    } else if (AttachStatus==-1) 
    {
 	   pthread_create(LaunchSkypeAndSetStatusThread, (void *)wParam);
@@ -2933,7 +2969,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
     pthread_create (( pThreadFunc )MsgPump, NULL);
 	WaitForSingleObject(MessagePumpReady, INFINITE);
 	return 0;
-
 }
 
 
