@@ -54,6 +54,8 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				Culture="1033"
+				AdditionalIncludeDirectories="../../include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -65,6 +67,7 @@
 				OptimizeForWindows98="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -132,6 +135,8 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				Culture="1033"
+				AdditionalIncludeDirectories="../../include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -145,6 +150,7 @@
 				OptimizeForWindows98="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 				AllowIsolation="true"
 				CLRImageType="0"
@@ -212,6 +218,8 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				Culture="1033"
+				AdditionalIncludeDirectories="../../include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -222,6 +230,7 @@
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -271,15 +280,20 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
+				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="UNICODE;_UNICODE"
-				RuntimeLibrary="0"
+				StringPooling="true"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableFunctionLevelLinking="false"
 				EnableEnhancedInstructionSet="2"
+				FloatingPointModel="2"
 				AssemblerOutput="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -291,6 +305,8 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				Culture="1033"
+				AdditionalIncludeDirectories="../../include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -304,6 +320,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 				AllowIsolation="true"
 				CLRImageType="0"
@@ -383,6 +400,7 @@
 				LinkTimeCodeGeneration="0"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -486,6 +504,14 @@
 				<File
 					RelativePath=".\BlockManager.cpp"
 					>
+					<FileConfiguration
+						Name="Release Unicode|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							GeneratePreprocessedFile="0"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\DirectAccess.cpp"
@@ -605,6 +631,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Logger.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MREWSync.cpp"
 				>
 			</File>
@@ -637,6 +667,10 @@
 				</File>
 				<File
 					RelativePath=".\lockfree_hashmultimap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Logger.h"
 					>
 				</File>
 				<File

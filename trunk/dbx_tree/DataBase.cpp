@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2009 Michael "Protogenes" Kunz,
+Copyright 2007-2010 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _MSC_VER
 #include "savestrings_gcc.h"
 #endif
+#include "Logger.h"
 
 CDataBase *gDataBase = NULL;
 
@@ -166,22 +167,31 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
 
-	assertThrow(m_HeaderBlock[Index] != 0, 
-		          _T("Header Block not found! File damaged: \"%s\""), m_FileName[Index]);
+	if (m_HeaderBlock[Index] == 0)
+	{
+		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block not found! File damaged: \"%s\""), m_FileName[Index]);
+		return -1;
+	}
 
 	TGenericFileHeader buf;
 	void* pbuf = &buf;
 	uint32_t size = sizeof(buf);
 	uint32_t sig = cHeaderBlockSignature;
-	assertThrow(m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig), 
-		          _T("Header Block cannot be read! File damaged: \"%s\""), m_FileName[Index]);
+	if (!m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig))
+	{
+		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block cannot be read! File damaged: \"%s\""), m_FileName[Index]);
+		return -1;
+	}
 
 	m_EncryptionManager[Index]->Decrypt(pbuf, size, ET_DATA, cHeaderBlockSignature, 0);
 
 	buf.Gen.Obscure = 0;
 
-	assertThrow(memcmp(&m_Header[Index], pbuf, size) == 0,
-		          _T("Header Block in \"%s\" damaged!"), m_FileName[Index]);
+	if (memcmp(&m_Header[Index], pbuf, size))
+	{
+		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block in \"%s\" damaged!"), m_FileName[Index]);
+		return -1;
+	}
 
 	return 0;
 }
@@ -196,10 +206,19 @@ int CDataBase::OpenDB()
 	}
 
 	int res = LoadFile(DBFileSetting);
-	if (res != 0) return res;
+	if ((res != 0) && (CLogger::logERROR <= CLogger::Instance().ShowMessage()))
+	{
+		return res;
+	}
 
 	res = LoadFile(DBFilePrivate);
-	if (res != 0) return res;
+
+	if ((res != 0) && (CLogger::logERROR <= CLogger::Instance().ShowMessage()))
+	{
+		return res;
+	}
+	if (CLogger::logERROR <= CLogger::Instance().ShowMessage())
+		return -1;
 
 	m_Entities = new CEntities(*m_BlockManager[DBFilePrivate],
 													 m_Header[DBFilePrivate].Pri.RootEntity,

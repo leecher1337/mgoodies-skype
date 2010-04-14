@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2009 Michael "Protogenes" Kunz,
+Copyright 2007-2010 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "Compatibility.h"
+#include "Logger.h"
 #define DB_NOHELPERFUNCTIONS
 	#include "m_database.h"
 #undef DB_NOHELPERFUNCTIONS
@@ -141,7 +142,10 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 		{
 			dbcgs->pValue->type = DBVT_WCHAR;
 			dbcgs->pValue->pwszVal = mir_utf8decodeW(set.Value.pUTF8);
-			dbcgs->pValue->cchVal = wcslen(dbcgs->pValue->pwszVal);
+			if (dbcgs->pValue->pwszVal)
+				dbcgs->pValue->cchVal = wcslen(dbcgs->pValue->pwszVal);
+			else
+				dbcgs->pValue->cchVal = 0;
 			mir_free(set.Value.pUTF8);
 		} break;
 		case DBT_ST_WCHAR:
@@ -207,7 +211,8 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	if (dbcgs->szModule)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
-	strcat_s(namebuf, dbcgs->szSetting);
+	if (dbcgs->szSetting)
+		strcat_s(namebuf, dbcgs->szSetting);
 
 	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	TDBTSetting set = {0,0,0,0};
@@ -308,7 +313,8 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 	if (dbcgs->szModule)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
-	strcat_s(namebuf, dbcgs->szSetting);
+	if (dbcgs->szSetting)
+		strcat_s(namebuf, dbcgs->szSetting);
 
 	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	TDBTSetting set = {0,0,0,0};
@@ -446,7 +452,8 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (dbcws->szModule)
 		strcpy_s(namebuf, dbcws->szModule);
 	strcat_s(namebuf, "/");
-	strcat_s(namebuf, dbcws->szSetting);
+	if (dbcws->szSetting)
+		strcat_s(namebuf, dbcws->szSetting);
 
 	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	TDBTSetting set = {0,0,0,0};
@@ -466,6 +473,23 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 		} break;
 		case DBVT_UTF8:
 		{
+			wchar_t * tmp = mir_utf8decodeW(dbcws->value.pszVal);
+			if (tmp == 0)
+			{
+				if (IsDebuggerPresent())
+				{
+					DebugBreak();
+#ifdef _DEBUG
+				} else {
+					CLogger::Instance().Append(CLogger::logWARNING, _T("Trying to write malformed UTF8 setting \"%hs\" in module \"%hs\""), dbcws->szSetting, dbcws->szModule);
+					CLogger::Instance().ShowMessage();
+#endif
+				}
+				return -1;
+			} else {
+				mir_free(tmp);
+			}
+
 			set.Type = DBT_ST_UTF8;
 			set.Value.pUTF8 = dbcws->value.pszVal;
 		} break;
@@ -529,7 +553,8 @@ int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (dbcgs->szModule)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
-	strcat_s(namebuf, dbcgs->szSetting);
+	if (dbcgs->szSetting)
+		strcat_s(namebuf, dbcgs->szSetting);
 
 	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	desc.cbSize = sizeof(desc);
@@ -559,7 +584,8 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 
 	char namebuf[512];
 	namebuf[0] = 0;
-	strcpy_s(namebuf, pces->szModule);
+	if (pces->szModule)
+		strcpy_s(namebuf, pces->szModule);
 	strcat_s(namebuf, "/");
 
 	TDBTSettingIterFilter filter = {0,0,0,0,0,0,0,0};
@@ -603,6 +629,9 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 
 int CompGetEventCount(WPARAM hContact, LPARAM lParam)
 {
+	if (hContact == 0)
+		hContact = gDataBase->getEntities().getRootEntity();
+
 	return DBEventGetCount(hContact, 0);
 }
 int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)

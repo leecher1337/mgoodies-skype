@@ -257,16 +257,21 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
+				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;DBX_TREE_ENCRYPTION_EXPORTS"
+				StringPooling="true"
+				ExceptionHandling="1"
 				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="false"
 				EnableEnhancedInstructionSet="2"
+				FloatingPointModel="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 			/>
 			<Tool
