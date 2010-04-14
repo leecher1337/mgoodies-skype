@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2009 Michael "Protogenes" Kunz,
+Copyright 2007-2010 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -44,15 +44,15 @@ extern DATABASELINK gDBLink;
 #endif 
 
 
-#define gVersion 0x00000009
-#define gResVersion 0,0,0,9
-#define gResVersionString "0.0.0.9"
+#define gVersion 0x0000000a
+#define gResVersion 0,0,0,10
+#define gResVersionString "0.0.0.10"
 #define gInternalName "dbx_tree"
 #define gInternalNameLong "Miranda dbx_tree database driver"
 #define gDescription "Provides extended Miranda database support"
 #define gAutor "Michael 'Protogenes' Kunz"
 #define gAutorEmail "Michael.Kunz@s2005.TU-Chemnitz.de"
-#define gCopyright "2007 - 2009 Michael 'Protogenes' Kunz"
+#define gCopyright "2007 - 2010 Michael 'Protogenes' Kunz"
 
 
 

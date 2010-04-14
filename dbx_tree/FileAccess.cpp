@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2009 Michael "Protogenes" Kunz,
+Copyright 2007-2010 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "savestrings_gcc.h"
 #define _time32 time
 #endif
+#include "Logger.h"
 
 
 CFileAccess::CFileAccess(const TCHAR* FileName)
@@ -91,7 +92,8 @@ void CFileAccess::FlushJournal()
 	if (!ReadFile(m_Journal, buf, filesize, &read, NULL) || (read != filesize))
 	{
 		free(buf);
-		throwException(_T("Couldn't flush the journal because ReadFile failed!"));
+		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Couldn't flush the journal because ReadFile failed!"));
+		return;
 	}
 
 	std::vector<TJournalEntry*> currentops;
@@ -182,7 +184,11 @@ void CFileAccess::FlushJournal()
 					filesize = filesize - sizeof(TJournalEntry);
 				}
 			} break;
-			default: throwException(_T("Jounral corrupt!"));
+			default:
+			{
+				filesize = 0;
+				CLogger::Instance().Append(CLogger::logWARNING, _T("Your database journal wasn't completely written to disk."));
+			} break;
 		}
 	}
 
@@ -197,13 +203,79 @@ void CFileAccess::FlushJournal()
 void CFileAccess::InitJournal()
 {
 	m_Journal = CreateFile(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
-	assertThrow(m_Journal != INVALID_HANDLE_VALUE,
-		          _T("CreateFile failed on Journal %s"), m_JournalFileName);
+	if (m_Journal == INVALID_HANDLE_VALUE)
+	{
+		CLogger::Instance().Append(CLogger::logCRITICAL, _T("CreateFile failed on Journal %s"), m_JournalFileName);
+		return;
+	}
 
 	uint8_t h[sizeof(cJournalSignature)];
 	DWORD read;
 	if (ReadFile(m_Journal, &h, sizeof(h), &read, NULL) && (read == sizeof(h)) && (0 == memcmp(h, cJournalSignature, sizeof(h))))
+	{
+		TCHAR * bckname = new TCHAR[_tcslen(m_FileName) + 12];
+		_tcscpy_s(bckname, _tcslen(m_FileName) + 12, m_FileName);
+		_tcscat_s(bckname, _tcslen(m_FileName) + 12, _T(".autobackup"));
+
+		TCHAR * bckjrnname = new TCHAR[_tcslen(m_JournalFileName) + 12];
+		_tcscpy_s(bckjrnname, _tcslen(m_JournalFileName) + 12, m_JournalFileName);
+		_tcscat_s(bckjrnname, _tcslen(m_JournalFileName) + 12, _T(".autobackup"));
+
+		char buf[4096];
+		HANDLE hfilebackup = CreateFile(bckname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		if (hfilebackup)
+		{
+			uint32_t i = 0;
+			while (i + sizeof(buf) <= m_AllocSize)
+			{
+				DWORD w;
+				mRead(buf, i, sizeof(buf));
+				i += sizeof(buf);
+				WriteFile(hfilebackup, buf, sizeof(buf), &w, NULL);
+			}
+			if (i < m_AllocSize)
+			{
+				DWORD w;
+				mRead(buf, i, m_AllocSize - i);
+				WriteFile(hfilebackup, buf, m_AllocSize - i, &w, NULL);
+			}
+
+			CloseHandle(hfilebackup);
+		}
+
+		HANDLE hjrnfilebackup = CreateFile(bckjrnname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		if (hjrnfilebackup)
+		{
+			size_t i = 0;
+
+			uint32_t filesize = GetFileSize(m_Journal, NULL);
+			while (i + sizeof(buf) <= filesize)
+			{
+				DWORD w, r;
+				ReadFile(m_Journal, buf, sizeof(buf), &r, NULL);
+				i += sizeof(buf);
+				WriteFile(hjrnfilebackup, buf, sizeof(buf), &w, NULL);
+			}
+			if (i < filesize)
+			{
+				DWORD w, r;
+				ReadFile(m_Journal, buf, filesize - i, &r, NULL);
+				WriteFile(hjrnfilebackup, buf, filesize - i, &w, NULL);
+			}
+			CloseHandle(hjrnfilebackup);
+		}
+
+		CLogger::Instance().Append(CLogger::logWARNING,
+		                           _T("Journal \"%s\" found on start.\nBackup \"%s\"%s created.\nBackup \"%s\"%s created.\nYou may delete these files after successful start."), 
+		                           m_JournalFileName, 
+															 bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(""):_T(" could not be"),
+															 bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(""):_T(" could not be"));
+
+		delete [] bckname;
+		delete [] bckjrnname;
+
 		FlushJournal();
+	}
 
 	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
 	SetEndOfFile(m_Journal);

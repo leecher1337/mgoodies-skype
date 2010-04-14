@@ -2,7 +2,7 @@
 
 dbx_tree: tree database driver for Miranda IM
 
-Copyright 2007-2009 Michael "Protogenes" Kunz,
+Copyright 2007-2010 Michael "Protogenes" Kunz,
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -80,6 +80,7 @@ CMappedMemory::CMappedMemory(const TCHAR* FileName)
 		size = m_AllocGranularity;
 
 	mSetSize(size);
+	m_AllocSize = size;
 
 	InitJournal();
 }

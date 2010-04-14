@@ -298,7 +298,7 @@ namespace lockfree
 
 		iterator find(const TKey & Key);
 
-		iterator erase(iterator Where);
+		iterator erase(const iterator & Where);
 
 		size_t erase(const TKey & Key);
 
@@ -553,7 +553,7 @@ namespace lockfree
 	};
 
 	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::iterator hash_map<TKey, TData>::erase(iterator Where)
+	typename hash_map<TKey, TData>::iterator hash_map<TKey, TData>::erase(const iterator & Where)
 	{
 		iterator dummyreference(this, NULL);
 		uint32_t hash = Where.m_Item->Hash;

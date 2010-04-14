@@ -21,9 +21,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #pragma once
-#include <windows.h>
+
+#include <vector>
+#include <time.h>
 #include "Interface.h"
-#include "Database.h"
-#include "Services.h"
-#include "Compatibility.h"
-#include "m_updater.h"
+
+class CLogger
+{
+	public:
+		enum TLevel
+		{
+			logNOTICE,
+			logWARNING,
+			logERROR,
+			logCRITICAL
+		};
+
+		CLogger();
+		virtual ~CLogger();
+
+		virtual void Append(TLevel Level, const TCHAR * Message, ...);
+
+		virtual TLevel ShowMessage();
+
+		static CLogger & Instance()
+			{	return _Instance; };
+
+	protected:
+		std::vector<TCHAR *> m_Messages;
+		size_t m_Length;
+		TLevel m_Level;
+
+	private:
+		static CLogger _Instance;
+
+};
