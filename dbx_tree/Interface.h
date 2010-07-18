@@ -44,9 +44,9 @@ extern DATABASELINK gDBLink;
 #endif 
 
 
-#define gVersion 0x0000000a
-#define gResVersion 0,0,0,10
-#define gResVersionString "0.0.0.10"
+#define gVersion 0x0000000b
+#define gResVersion 0,0,0,11
+#define gResVersionString "0.0.0.11"
 #define gInternalName "dbx_tree"
 #define gInternalNameLong "Miranda dbx_tree database driver"
 #define gDescription "Provides extended Miranda database support"

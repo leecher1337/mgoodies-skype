@@ -30,197 +30,322 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _MSC_VER
 #include <intrin.h>
 
-#pragma intrinsic (_InterlockedIncrement)
-#pragma intrinsic (_InterlockedDecrement)
-#pragma intrinsic (_InterlockedExchangeAdd)
-#pragma intrinsic (_InterlockedCompareExchange)
+#pragma intrinsic (_InterlockedCompareExchange64)
 #else
 #include "intrin_gcc.h"
 #endif
 
-#define WRITEREQUEST 0x10000
-#define SOMEONEHASLOCK(Sentinel) ((Sentinel & (WRITEREQUEST - 1)) != 0)
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// +------------+---------------+---------------+------------+---------------+
+// | ReaderBusy | ReaderWaiting | WriterWaiting | WriterBusy | UseOddReader? |
+// +------------+---------------+---------------+------------+---------------+
+//     63..44         43..24          23..4            3             0
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#define isWriterBusy(Sentinel)    (Sentinel & 0x0000000000000008ULL)
+#define isWriterWaiting(Sentinel) (Sentinel & 0x0000000000fffff0ULL)
+#define isReaderWaiting(Sentinel) (Sentinel & 0x00000fffff000000ULL)
+#define isReaderBusy(Sentinel)    (Sentinel & 0xfffff00000000000ULL)
+
+#define countWriterWaiting(Sentinel) ((Sentinel & 0x0000000000fffff0ULL) >>  4)
+#define countReaderWaiting(Sentinel) ((Sentinel & 0x00000fffff000000ULL) >> 24)
+#define countReaderBusy(Sentinel)    ((Sentinel & 0xfffff00000000000ULL) >> 44)
+
+#define WriterBusy    (1ULL <<  3)
+#define WriterWaiting (1ULL <<  4)
+#define ReaderWaiting (1ULL << 24)
+#define ReaderBusy    (1ULL << 44)
+
+#define isUseOddReader(Sentinel) (Sentinel & 0x0000000000000001ULL)
+#define useOddReader             (1ULL)
+
+#define CAS(Destination, Exchange, Comperand) _InterlockedCompareExchange64(&(Destination), Exchange, Comperand)
 
 CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
-: tls()
+: tls(),
+	m_Sentinel(0LL)
 {
-	m_Sentinel = WRITEREQUEST;
-	m_ReadSignal = CreateEvent(NULL, true, true, NULL);
-	m_WriteSignal = CreateEvent(NULL, false, true, NULL);
-	m_WriteRecursion = 0;
+	m_ReadSignal[0] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_ReadSignal[1] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	m_WriteSignal   = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_WriterID = 0;
+	m_WriteRecursion = 0;
 	m_Revision = 0;
-	m_Waiting = 0;
+
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	char fn[MAX_PATH];
 	sprintf_s(fn, "dbx_treeSync%08x.log", this);
 	m_Log = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 #endif
-
 }
 
 CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void)
 {
 	BeginWrite();
-	CloseHandle(m_ReadSignal);
 	CloseHandle(m_WriteSignal);
+	CloseHandle(m_ReadSignal[0]);
+	CloseHandle(m_ReadSignal[1]);
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	CloseHandle(m_Log);
 #endif
-
 }
 
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
-
-	data->second++;
-	if ((m_WriterID != id) && (data->second == 1))
+	unsigned & reccount(tls.Open(this, 0));
+	
+	reccount++;
+	if ((m_WriterID != id) && (reccount == 1))
 	{
-		_InterlockedIncrement(&m_Waiting);
-		while (_InterlockedDecrement(&m_Sentinel) <= 0)
-		{
-			if (!SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
-				UnblockOneWriter();
-			WaitForReadSignal();
-		}
+		int64_t old;
+		int64_t newvalue;
 
-		_InterlockedDecrement(&m_Waiting);
+		do {
+			old = m_Sentinel;
+			if (isWriterBusy(old))
+				newvalue = old + ReaderBusy; // writer has lock -> we are going to enter after he leaves -> we are busy but have to wait
+			else if (isWriterWaiting(old))
+				newvalue = old + ReaderWaiting; // writer is waiting for lock -> don't set myself busy as he waits for all readers to leave lock
+			else 
+				newvalue = old + ReaderBusy; // no writer in sight, just take lock
+		
+		} while (CAS(m_Sentinel, newvalue, old) != old);
+
+
+		if (isWriterBusy(old) || isWriterWaiting(old))
+		{
+			if (isUseOddReader(old))
+				WaitForSingleObject(m_ReadSignal[1], INFINITE);
+			else
+				WaitForSingleObject(m_ReadSignal[0], INFINITE);
+		}
 	}
 }
 void CMultiReadExclusiveWriteSynchronizer::EndRead()
 {
 	unsigned long id = GetCurrentThreadId();
-	TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
+	unsigned & reccount(tls.Open(this, 1));
+	reccount--;
 
-	data->second--;
-	if ((data->second == 0) && (m_WriterID != id))
+	if ((reccount == 0) && (m_WriterID != id))
 	{
-		if (!SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
-			UnblockOneWriter();
-		tls.erase(data);
+		int64_t old;
+		int64_t newvalue;
+
+		do {
+			old = m_Sentinel;
+			if ((countReaderBusy(old) == 1) && isWriterWaiting(old))
+			{ // give control to the writer... move waiting readers to busy (but blocked)
+				newvalue = old - WriterWaiting + WriterBusy - ReaderBusy + countReaderWaiting(old) * (ReaderBusy - ReaderWaiting);
+			} else {
+				newvalue = old - ReaderBusy;
+			}
+		} while (CAS(m_Sentinel, newvalue, old) != old);
+
+		if ((countReaderBusy(old) == 1) && isWriterWaiting(old))
+		{
+			SetEvent(m_WriteSignal);
+		}
 	}
+
+	if (reccount == 0)
+		tls.Remove(this);
 }
 bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 {
 	unsigned long id = GetCurrentThreadId();
+	unsigned * reccount = tls.Find(this);
 	bool res = true;
-	
+
 	if (m_WriterID != id)
 	{
-		TThreadStorage & data = tls.insert(std::make_pair(id, 0)).first;
+		int64_t old;
+		int64_t newvalue;
+		unsigned int oldrevision = m_Revision;
 
-		long oldrevision = m_Revision;
-		bool hasreadlock = data->second > 0;
-		
-		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
-			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
+		if (reccount) // upgrade our readlock
 		{
-
-			_InterlockedIncrement(&m_Waiting);
-			if (!hasreadlock || (hasreadlock && SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel))))
-				WaitForWriteSignal();
-			
-			if (SOMEONEHASLOCK(_InterlockedExchangeAdd(&m_Sentinel, -WRITEREQUEST - 1)))
-			{
-				do
+			do {
+				old = m_Sentinel;
+				// isWriterBusy cannot happen because we have a readlock, so we ignore it
+				if (countReaderBusy(old) > 1) // there is another reader.. we have to wait for him. set arriving readers to waiting state
 				{
-					BlockReaders();
-					if (SOMEONEHASLOCK(_InterlockedIncrement(&m_Sentinel)))
-						WaitForWriteSignal();
+					newvalue = old + WriterWaiting - ReaderBusy;
+				} else if (isWriterWaiting(old)) // there is another writer waiting, who arrived earlier. we will sign him in and wait. we are the last reader, so we have to update the sentinel
+				{
+					newvalue = old + WriterBusy - ReaderBusy + countReaderWaiting(old) * (ReaderBusy - ReaderWaiting);
+				} else { // nobody is busy, we want the lock
+					newvalue = old + WriterBusy - ReaderBusy;
+				}
+			} while (CAS(m_Sentinel, newvalue, old) != old);
 
-				} while (SOMEONEHASLOCK(_InterlockedDecrement(&m_Sentinel) + 1));
+			if (countReaderBusy(old) > 1)
+			{
+				WaitForSingleObject(m_WriteSignal, INFINITE); // someone woke me up... he had to take care of all state changes of the sentinel
+			} else if (isWriterWaiting(old)) // we will wait for the other writer, as we are the last reader, we have to wake him up
+			{
+				SetEvent(m_WriteSignal);
+				Sleep(0); // yield thread trying to keep FIFO order
+				WaitForSingleObject(m_WriteSignal, INFINITE); // someone woke me up... he had to take care of all state changes of the sentinel
 			}
+		} else { // gain write lock
+			do {
+				old = m_Sentinel;
+				if (isWriterBusy(old)) // there is a writer.. we have to wait for him
+				{
+					newvalue = old + WriterWaiting;
+				} else if (isReaderBusy(old)) // there is a reader.. we have to wait for him. set arriving readers to waiting state
+				{
+					newvalue = old + WriterWaiting;
+				} else if (isWriterWaiting(old)) // there is another writer waiting, who arrived earlier. we will wait
+				{
+					newvalue = old + WriterWaiting;
+				} else { // nobody is busy, we want the lock
+					newvalue = old + WriterBusy;
+				}
+			} while (CAS(m_Sentinel, newvalue, old) != old);
 
-			_InterlockedDecrement(&m_Waiting);
+			if (isWriterBusy(old) || isReaderBusy(old) || isWriterWaiting(old))
+			{
+				WaitForSingleObject(m_WriteSignal, INFINITE); // someone woke me up... he had to take care of all state changes of the sentinel
+			}
 		}
-
-		BlockReaders();
-		m_WriterID = id;
-
 		res = (oldrevision == (_InterlockedIncrement(&m_Revision) - 1));
+
+		m_WriterID = id;
 	}
 	m_WriteRecursion++;
+
 	return res;
 }
 
-bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
-{
-	unsigned long id = GetCurrentThreadId();
-
-	if (m_WriterID != id)
-	{
-		TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
-
-		bool hasreadlock = data->second > 0;
-
-		if (! ((!hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST) == WRITEREQUEST))
-			  || ( hasreadlock && (_InterlockedCompareExchange(&m_Sentinel, -1, WRITEREQUEST - 1) == WRITEREQUEST - 1))))
-		{
-			return false;
-		}
-
-		BlockReaders();
-		m_WriterID = id;
-
-		_InterlockedIncrement(&m_Revision);
-	}
-	m_WriteRecursion++;
-	
-	return true;
-}
 bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 {
 	unsigned long id = GetCurrentThreadId();
-	assert(m_WriterID == id);
+	unsigned * reccount = tls.Find(this);
 
 	m_WriteRecursion--;
+
 	if (m_WriteRecursion == 0)
 	{
-		TThreadStorage data = tls.insert(std::make_pair(id, 0)).first;
+		int64_t old;
+		int64_t newvalue;
 
 		m_WriterID = 0;
-		if (data->second == 0)
+
+		if (isUseOddReader(m_Sentinel)) // reset upcoming signal
+			ResetEvent(m_ReadSignal[0]);
+		else
+			ResetEvent(m_ReadSignal[1]);
+
+		if (reccount) // downgrade to reader lock
 		{
-			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST + 1);
-			UnblockReaders();
-			UnblockOneWriter();
+			do {
+				old = m_Sentinel;
+				newvalue = (old ^ useOddReader) - WriterBusy + ReaderBusy; // single case... we are a waiting reader and we will keep control of the lock
+			} while (CAS(m_Sentinel, newvalue, old) != old);
 
-			tls.erase(data);
+			if (isUseOddReader(old)) // allow additional readers to pass
+				SetEvent(m_ReadSignal[1]);
+			else
+				SetEvent(m_ReadSignal[0]);
+
 		} else {
-			_InterlockedExchangeAdd(&m_Sentinel, WRITEREQUEST);
-			UnblockReaders();
 
+			do {
+				old = m_Sentinel;
+				if (isReaderBusy(old)) // give control to waiting readers
+				{
+					newvalue = (old ^ useOddReader) - WriterBusy;
+				} else if (isWriterWaiting(old)) // no reader arrived while i was working... give control to next writer 
+				{
+					newvalue = (old ^ useOddReader) - WriterWaiting;
+				} else { // nobody else is there... just close lock
+					newvalue = (old ^ useOddReader) - WriterBusy;
+				}
+			} while (CAS(m_Sentinel, newvalue, old) != old);
+
+			if (isReaderBusy(old)) // release waiting readers
+			{
+				if (isUseOddReader(old))
+					SetEvent(m_ReadSignal[1]);
+				else
+					SetEvent(m_ReadSignal[0]);
+			} else if (isWriterWaiting(old))
+			{
+				SetEvent(m_WriteSignal);
+			}
 		}
-
 		return true;
 	}
 
 	return false;
 }
 
+bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
+{
+	unsigned long id = GetCurrentThreadId();
+	unsigned * reccount = tls.Find(this); 
 
-void CMultiReadExclusiveWriteSynchronizer::BlockReaders()
-{
-	ResetEvent(m_ReadSignal);
+	if (m_WriterID != id)
+	{
+		int64_t old;
+		int64_t newvalue;
+		unsigned int oldrevision = m_Revision;
+
+		if (reccount) // upgrade our readlock
+		{
+			do {
+				old = m_Sentinel;
+				// isWriterBusy cannot happen because we have a readlock, so we ignore it
+				if (countReaderBusy(old) > 1) // there is another reader.. we have to wait for him. set arriving readers to waiting state
+				{
+					return false;
+				} else if (isWriterWaiting(old)) // there is another writer waiting, who arrived earlier. we will sign him in and wait. we are the last reader, so we have to update the sentinel
+				{
+					return false;
+				} else { // nobody is busy, we want the lock
+					newvalue = old + WriterBusy - ReaderBusy;
+				}
+			} while (CAS(m_Sentinel, newvalue, old) != old);
+
+		} else { // gain write lock
+			do {
+				old = m_Sentinel;
+				if (isWriterBusy(old)) // there is a writer.. we have to wait for him
+				{
+					return false;
+				} else if (isReaderBusy(old)) // there is a reader.. we have to wait for him. set arriving readers to waiting state
+				{
+					return false;
+				} else if (isWriterWaiting(old)) // there is another writer waiting, who arrived earlier. we will wait
+				{
+					return false;
+				} else { // nobody is busy, we want the lock
+					newvalue = old + WriterBusy;
+				}
+			} while (CAS(m_Sentinel, newvalue, old) != old);
+		}
+		_InterlockedIncrement(&m_Revision);
+
+		m_WriterID = id;
+	}
+	m_WriteRecursion++;
+
+	return true;
 }
-void CMultiReadExclusiveWriteSynchronizer::UnblockReaders()
+
+unsigned int CMultiReadExclusiveWriteSynchronizer::Waiting()
 {
-	SetEvent(m_ReadSignal);
-}
-void CMultiReadExclusiveWriteSynchronizer::UnblockOneWriter()
-{
-	SetEvent(m_WriteSignal);
-}
-void CMultiReadExclusiveWriteSynchronizer::WaitForReadSignal()
-{
-	WaitForSingleObject(m_ReadSignal, INFINITE);
-}
-void CMultiReadExclusiveWriteSynchronizer::WaitForWriteSignal()
-{
-	WaitForSingleObject(m_WriteSignal, INFINITE);
-}
+	int64_t old = m_Sentinel;
+	if (isWriterBusy(old))
+	{ // cast is safe, we don't loose data because these fields are max 20 bits
+		return static_cast<unsigned int>(countReaderBusy(old) + countReaderWaiting(old) + countWriterWaiting(old));
+	} else {
+		return static_cast<unsigned int>(countReaderWaiting(old) + countWriterWaiting(old));
+	}
+};
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 

@@ -23,7 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma once
 
 #include <windows.h>
-#include "lockfree_hashmap.h"
+#include "TLS.h"
+#include "stdint.h"
 
 //#define MREW_DO_DEBUG_LOGGING 1
 
@@ -45,30 +46,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class CMultiReadExclusiveWriteSynchronizer
 {
 private:
-	volatile long m_Sentinel;
-	HANDLE m_ReadSignal;
+	volatile int64_t m_Sentinel;
+	HANDLE m_ReadSignal[2];
 	HANDLE m_WriteSignal;
+
+	volatile long m_Revision;
+	unsigned int m_WriterID;
 	unsigned int m_WriteRecursion;
 
-	lockfree::hash_map<DWORD, unsigned int> tls;
-	typedef lockfree::hash_map<DWORD, unsigned int>::iterator TThreadStorage;
-
-	unsigned long m_WriterID;
-	volatile long m_Revision;
-	volatile long m_Waiting;
-
-	void BlockReaders();
-	void UnblockReaders();
-	void UnblockOneWriter();
-	void WaitForReadSignal();
-	void WaitForWriteSignal();
+	CThreadLocalStorage<CMultiReadExclusiveWriteSynchronizer, unsigned> tls;
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	HANDLE m_Log;
 	void  DoLog(char * Desc, char * File, int Line, char * Function);
-
 #endif
-
 
 public:
 	CMultiReadExclusiveWriteSynchronizer();
@@ -87,7 +78,7 @@ public:
 	bool TryBeginWrite();
 	bool EndWrite();
 
-	long Waiting() {return m_Waiting;};
+	unsigned int Waiting();
 	unsigned int WriteRecursionCount() {return m_WriteRecursion;};
 
 };
