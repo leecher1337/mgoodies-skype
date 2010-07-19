@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace lockfree
 {
 
-	template <typename TKey, typename TData>
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t) = Hash>
 	class hash_map
 	{
 	public:
@@ -176,11 +176,11 @@ namespace lockfree
 		class iterator
 		{
 		protected:
-			friend class hash_map<TKey, TData>;				
+			friend class hash_map<TKey, TData, FHash>;				
 			PListItem m_Item;
-			hash_map<TKey, TData> * m_Owner;
+			hash_map<TKey, TData, FHash> * m_Owner;
 
-			iterator(hash_map<TKey, TData> * Owner, PListItem Item)
+			iterator(hash_map<TKey, TData, FHash> * Owner, PListItem Item)
 			: m_Owner(Owner)
 			{
 				m_Owner->addRef();
@@ -306,8 +306,8 @@ namespace lockfree
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::PListItem hash_map<TKey, TData>::listInsert(PListItem BucketNode, PListItem Node)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::PListItem hash_map<TKey, TData, FHash>::listInsert(PListItem BucketNode, PListItem Node)
 	{
 		PListItem *prev, curr, next;
 		do 
@@ -322,8 +322,8 @@ namespace lockfree
 	};
 
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::PListItem hash_map<TKey, TData>::listDelete(PListItem BucketNode, uint32_t Hash, const TKey & Key)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::PListItem hash_map<TKey, TData, FHash>::listDelete(PListItem BucketNode, uint32_t Hash, const TKey & Key)
 	{
 		PListItem *prev, curr, next;
 		do 
@@ -346,8 +346,8 @@ namespace lockfree
 		return POINTER(curr);
 	};
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::PListItem hash_map<TKey, TData>::listDelete(PListItem BucketNode, PListItem Node)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::PListItem hash_map<TKey, TData, FHash>::listDelete(PListItem BucketNode, PListItem Node)
 	{
 		PListItem *prev, curr, next;
 		do 
@@ -370,8 +370,8 @@ namespace lockfree
 		return POINTER(curr);
 	};
 
-	template <typename TKey, typename TData>
-	bool hash_map<TKey, TData>::listFind(const PListItem BucketNode, const uint32_t Hash, const TKey & Key, const PListItem Node, PListItem * & Prev, PListItem & Curr, PListItem & Next)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	bool hash_map<TKey, TData, FHash>::listFind(const PListItem BucketNode, const uint32_t Hash, const TKey & Key, const PListItem Node, PListItem * & Prev, PListItem & Curr, PListItem & Next)
 	{
 		Prev = &(BucketNode->Next);
 		Curr = *Prev;
@@ -415,8 +415,8 @@ namespace lockfree
 
 	};
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::PListItem hash_map<TKey, TData>::initializeBucket(uint32_t Bucket, uint32_t Mask)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::PListItem hash_map<TKey, TData, FHash>::initializeBucket(uint32_t Bucket, uint32_t Mask)
 	{
 		uint32_t parent = Bucket & (Mask << 1);
 		PListItem parentnode = getBucket(parent);
@@ -435,8 +435,8 @@ namespace lockfree
 		return dummy;
 	}
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::PListItem hash_map<TKey, TData>::getBucket(uint32_t Bucket)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::PListItem hash_map<TKey, TData, FHash>::getBucket(uint32_t Bucket)
 	{
 		THashTableData table;
 		uint32_t mask;
@@ -456,8 +456,8 @@ namespace lockfree
 		return table.Table->Table[(Bucket & mask) >> 24];
 	};
 
-	template <typename TKey, typename TData>
-	void hash_map<TKey, TData>::setBucket(uint32_t Bucket, PListItem Dummy)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	void hash_map<TKey, TData, FHash>::setBucket(uint32_t Bucket, PListItem Dummy)
 	{
 		THashTableData table;
 		PHashTable *last;
@@ -490,13 +490,13 @@ namespace lockfree
 		table.Table->Table[(Bucket & mask) >> 24] = Dummy;
 	};
 
-	template <typename TKey, typename TData>
-	typename std::pair<typename hash_map<TKey, TData>::iterator, bool> hash_map<TKey, TData>::insert(const value_type & Val)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename std::pair<typename hash_map<TKey, TData, FHash>::iterator, bool> hash_map<TKey, TData, FHash>::insert(const value_type & Val)
 	{
 		iterator dummyreference(this, NULL);
 		PListItem node = new TListItem;
 		node->Value = Val;
-		node->Hash = Hash(&node->Value.first, sizeof(TKey)) | 1;
+		node->Hash = FHash(&node->Value.first, sizeof(TKey)) | 1;
 		node->NextPurge = NULL;
 		node->Next = NULL;
 
@@ -534,11 +534,11 @@ namespace lockfree
 		return std::make_pair(iterator(this, node), true);
 	};
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::iterator hash_map<TKey, TData>::find(const TKey & Key)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::iterator hash_map<TKey, TData, FHash>::find(const TKey & Key)
 	{
 		iterator dummyreference(this, NULL);
-		uint32_t hash = Hash(&Key, sizeof(TKey)) | 1;
+		uint32_t hash = FHash(&Key, sizeof(TKey)) | 1;
 		uint32_t mask = getMask(m_HashTableData.Size);
 		uint32_t bucket = hash & mask;
 		PListItem bucketnode = getBucket(bucket);
@@ -552,8 +552,8 @@ namespace lockfree
 		return iterator(this, NULL);
 	};
 
-	template <typename TKey, typename TData>
-	typename hash_map<TKey, TData>::iterator hash_map<TKey, TData>::erase(const iterator & Where)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	typename hash_map<TKey, TData, FHash>::iterator hash_map<TKey, TData, FHash>::erase(const iterator & Where)
 	{
 		iterator dummyreference(this, NULL);
 		uint32_t hash = Where.m_Item->Hash;
@@ -573,11 +573,11 @@ namespace lockfree
 		return iterator(this, res);
 	};
 
-	template <typename TKey, typename TData>
-	size_t hash_map<TKey, TData>::erase(const TKey & Key)
+	template <typename TKey, typename TData, uint32_t (*FHash)(const void *, uint32_t)>
+	size_t hash_map<TKey, TData, FHash>::erase(const TKey & Key)
 	{
 		iterator dummyreference(this, NULL);
-		uint32_t hash = Hash(&Key, sizeof(TKey)) | 1;
+		uint32_t hash = FHash(&Key, sizeof(TKey)) | 1;
 		uint32_t mask = getMask(m_HashTableData.Size);
 		uint32_t bucket = hash & mask;
 		PListItem bucketnode = getBucket(bucket);
