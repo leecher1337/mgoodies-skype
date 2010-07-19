@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 
+#include "lockfree_hashmap.h"
+
 template <typename TAdministrator, typename TData>
 class CThreadLocalStorage
 {
@@ -37,80 +39,122 @@ class CThreadLocalStorage
 
 		} TListElem, *PListElem;
 		static __declspec(thread) PListElem m_Head;
+		
+		static inline uint32_t DummyHash(const void * Data, uint32_t Length)
+		{
+			return *reinterpret_cast<const uint32_t *>(Data);
+		}
+		
+		lockfree::hash_map<DWORD, TData, DummyHash> * m_LockfreeList;
+		typedef typename lockfree::hash_map<DWORD, TData, DummyHash>::iterator TThreadStorage;
+
 	public:
-		CThreadLocalStorage()
-			{	};
-		~CThreadLocalStorage()
-			{	};
+		CThreadLocalStorage();
+		~CThreadLocalStorage();
 
 		TData & Open(TAdministrator * Admin, const TData & Default);
 		TData * Find(TAdministrator * Admin);
 		void    Remove(TAdministrator * Admin);
 };
 
-
+const bool _CanUseTLS = ((LOBYTE(LOWORD(GetVersion()))) >= 6);
 
 template <typename TAdministrator, typename TData>
 typename CThreadLocalStorage<TAdministrator, TData>::PListElem CThreadLocalStorage<TAdministrator, TData>::m_Head = NULL;
 
+
+template <typename TAdministrator, typename TData>
+CThreadLocalStorage<TAdministrator, TData>::CThreadLocalStorage()
+{
+	if (!_CanUseTLS)
+		m_LockfreeList = new lockfree::hash_map<DWORD, TData, DummyHash>();
+}
+template <typename TAdministrator, typename TData>
+CThreadLocalStorage<TAdministrator, TData>::~CThreadLocalStorage()
+{
+	if (m_LockfreeList)
+		delete m_LockfreeList;
+}
+
+
 template <typename TAdministrator, typename TData>
 typename TData & CThreadLocalStorage<TAdministrator, TData>::Open(typename TAdministrator * Admin, const TData & Default)
 {
-	PListElem * last = &m_Head;
-	PListElem i = m_Head;
-	while (i && (i->Admin != Admin))
+	if (_CanUseTLS)
 	{
-		last = &i->Next;
-		i = i->Next;
-	}
+		PListElem * last = &m_Head;
+		PListElem i = m_Head;
+		while (i && (i->Admin != Admin))
+		{
+			last = &i->Next;
+			i = i->Next;
+		}
 
-	if (i)
-	{
-		*last = i->Next;
-		i->Next = m_Head;
-		m_Head = i;
+		if (i)
+		{
+			*last = i->Next;
+			i->Next = m_Head;
+			m_Head = i;
+		} else {
+			m_Head = new TListElem(m_Head, Admin, Default);
+		}
+		return m_Head->Data;
 	} else {
-		m_Head = new TListElem(m_Head, Admin, Default);
+		TThreadStorage & res = m_LockfreeList->insert(std::make_pair(GetCurrentThreadId(), Default)).first;
+		return res->second;
 	}
-	return m_Head->Data;
 }
 
 template <typename TAdministrator, typename TData>
 typename TData * CThreadLocalStorage<TAdministrator, TData>::Find(typename TAdministrator * Admin)
 {
-	PListElem * last = &m_Head;
-	PListElem i = m_Head;
-	while (i && (i->Admin != Admin))
+	if (_CanUseTLS)
 	{
-		last = &i->Next;
-		i = i->Next;
-	}
+		PListElem * last = &m_Head;
+		PListElem i = m_Head;
+		while (i && (i->Admin != Admin))
+		{
+			last = &i->Next;
+			i = i->Next;
+		}
 
-	if (i)
-	{
-		*last = i->Next;
-		i->Next = m_Head;
-		m_Head = i;
+		if (i)
+		{
+			*last = i->Next;
+			i->Next = m_Head;
+			m_Head = i;
+		} else {
+			return NULL;
+		}
+		return &m_Head->Data;
 	} else {
-		return NULL;
+		TThreadStorage & res = m_LockfreeList->find(GetCurrentThreadId());
+		if (res != m_LockfreeList->end())
+			return &res->second;
+		else 
+			return NULL;
 	}
-	return &m_Head->Data;
 }
 
 template <typename TAdministrator, typename TData>
 void    CThreadLocalStorage<TAdministrator, TData>::Remove(typename TAdministrator * Admin)
 {
-	PListElem * last = &m_Head;
-	PListElem i = m_Head;
-	while (i && (i->Admin != Admin))
+	if (_CanUseTLS)
 	{
-		last = &i->Next;
-		i = i->Next;
-	}
+		PListElem * last = &m_Head;
+		PListElem i = m_Head;
+		while (i && (i->Admin != Admin))
+		{
+			last = &i->Next;
+			i = i->Next;
+		}
 
-	if (i)
-	{
-		*last = i->Next;
-		delete i;
+		if (i)
+		{
+			*last = i->Next;
+			delete i;
+		}
+	} else {
+		m_LockfreeList->erase(GetCurrentThreadId());
 	}
 }
