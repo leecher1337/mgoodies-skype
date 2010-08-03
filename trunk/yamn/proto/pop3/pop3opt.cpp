@@ -945,12 +945,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					DlgShowAccount(hDlg,(WPARAM)M_SHOWDEFAULT,0);
 					DlgEnableAccount(hDlg,(WPARAM)TRUE,(LPARAM)TRUE);
 					EnableWindow(GetDlgItem(hDlg,IDC_BTNDEL),FALSE);
-					DlgSetItemText(hDlg,(WPARAM)IDC_EDITNAME,(LPARAM)"New Account");
-					index=SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)"New Account");
+					DlgSetItemText(hDlg,(WPARAM)IDC_EDITNAME,(LPARAM)TranslateT("New Account"));
+					index=SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)TranslateT("New Account"));
 					
 					if((index==CB_ERR) || (index==CB_ERRSPACE))
 						break;
-					SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_SETCURSEL,(WPARAM)index,(LPARAM)"New Account");
+					SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_SETCURSEL,(WPARAM)index,(LPARAM)TranslateT("New Account"));
 					break;
 				}
 				
