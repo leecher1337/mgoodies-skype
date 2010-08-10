@@ -4,7 +4,9 @@
  * (c) majvan 2002-2004
  */
 
-#include "filter/simple/AggressiveOptimize.h"
+#if !defined(_WIN64)
+	#include "filter/simple/AggressiveOptimize.h"
+#endif
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -41,15 +43,15 @@ extern int WaitForAllAccounts(HYAMNPROTOPLUGIN Plugin,BOOL GetAccountBrowserAcce
 WCHAR FileName2[]=L"%s\\yamn-accounts.%s.%s.book";		//UserDirectory\\yamn-accounts.PluginName.UserProfileName.book
 PYAMN_PROTOPLUGINQUEUE FirstProtoPlugin=NULL;
 
-int RegisterProtocolPluginSvc(WPARAM,LPARAM);
+INT_PTR RegisterProtocolPluginSvc(WPARAM,LPARAM);
 
 //Removes plugin from queue and deletes registration structures
-int UnregisterProtocolPlugin(HYAMNPROTOPLUGIN Plugin);
+INT_PTR UnregisterProtocolPlugin(HYAMNPROTOPLUGIN Plugin);
 
-int UnregisterProtocolPluginSvc(WPARAM,LPARAM);
+INT_PTR UnregisterProtocolPluginSvc(WPARAM,LPARAM);
 
 //Removes plugins from queue and deletes registration structures
-int UnregisterProtoPlugins();
+INT_PTR UnregisterProtoPlugins();
 
 //Sets imported functions for an plugin and therefore it starts plugin to be registered and running
 // Plugin- plugin, which wants to set its functions
@@ -60,9 +62,9 @@ int UnregisterProtoPlugins();
 // returns nonzero if success
 int WINAPI SetProtocolPluginFcnImportFcn(HYAMNPROTOPLUGIN Plugin,PYAMN_PROTOIMPORTFCN YAMNFcn,DWORD YAMNFcnVer,PYAMN_MAILIMPORTFCN YAMNMailFcn,DWORD YAMNMailFcnVer);
 
-int GetFileNameWSvc(WPARAM,LPARAM);
-int GetFileNameASvc(WPARAM,LPARAM);
-int DeleteFileNameSvc(WPARAM,LPARAM);
+INT_PTR GetFileNameWSvc(WPARAM,LPARAM);
+INT_PTR GetFileNameASvc(WPARAM,LPARAM);
+INT_PTR DeleteFileNameSvc(WPARAM,LPARAM);
 
 struct CExportedFunctions ProtoPluginExportedFcn[]=
 {
@@ -81,7 +83,7 @@ struct CExportedServices ProtoPluginExportedSvc[]=
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-int RegisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR RegisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
 {
 	PYAMN_PROTOREGISTRATION Registration=(PYAMN_PROTOREGISTRATION)wParam;
 	HYAMNPROTOPLUGIN Plugin;
@@ -89,9 +91,9 @@ int RegisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
 	if(lParam!=YAMN_PROTOREGISTRATIONVERSION)
 		return 0;
 	if((Registration->Name==NULL) || (Registration->Ver==NULL))
-		return (int)NULL;
+		return (INT_PTR)NULL;
 	if(NULL==(Plugin=new YAMN_PROTOPLUGIN))
-		return (int)NULL;
+		return (INT_PTR)NULL;
 
 	Plugin->PluginInfo=Registration;
 
@@ -106,7 +108,7 @@ int RegisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
 #ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"::: YAMN- new protocol registered: %0x (%s) :::\n",Plugin,Registration->Name);
 #endif
-	return (int)Plugin;
+	return (INT_PTR)Plugin;
 }
 
 int WINAPI SetProtocolPluginFcnImportFcn(HYAMNPROTOPLUGIN Plugin,PYAMN_PROTOIMPORTFCN YAMNFcn,DWORD YAMNFcnVer,PYAMN_MAILIMPORTFCN YAMNMailFcn,DWORD YAMNMailFcnVer)
@@ -149,7 +151,7 @@ int WINAPI SetProtocolPluginFcnImportFcn(HYAMNPROTOPLUGIN Plugin,PYAMN_PROTOIMPO
 	return 1;
 }
 
-int UnregisterProtocolPlugin(HYAMNPROTOPLUGIN Plugin)
+INT_PTR UnregisterProtocolPlugin(HYAMNPROTOPLUGIN Plugin)
 {
 	PYAMN_PROTOPLUGINQUEUE Parser,Found;
 
@@ -192,7 +194,7 @@ int UnregisterProtocolPlugin(HYAMNPROTOPLUGIN Plugin)
 	return 1;
 }
 
-int UnregisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR UnregisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 
@@ -203,7 +205,7 @@ int UnregisterProtocolPluginSvc(WPARAM wParam,LPARAM lParam)
 
 }
 
-int UnregisterProtoPlugins()
+INT_PTR UnregisterProtoPlugins()
 {
 	EnterCriticalSection(PluginRegCS);
 //We remove protocols from the protocol list
@@ -213,7 +215,7 @@ int UnregisterProtoPlugins()
 	return 1;
 }
 
-int GetFileNameWSvc(WPARAM wParam,LPARAM)
+INT_PTR GetFileNameWSvc(WPARAM wParam,LPARAM)
 {
 	WCHAR *FileName;
 
@@ -221,10 +223,10 @@ int GetFileNameWSvc(WPARAM wParam,LPARAM)
 		return NULL;
 	swprintf(FileName,FileName2,UserDirectory,(WCHAR *)wParam,ProfileName);
 //	MessageBoxW(NULL,FileName,L"GetFileNameW",MB_OK);
-	return (int)FileName;
+	return (INT_PTR)FileName;
 }
 
-int GetFileNameASvc(WPARAM wParam,LPARAM)
+INT_PTR GetFileNameASvc(WPARAM wParam,LPARAM)
 {
 	WCHAR *ConvertedInput;
 	WCHAR *FileName;
@@ -238,16 +240,16 @@ int GetFileNameASvc(WPARAM wParam,LPARAM)
 	}
 
 // Convert input string to unicode
-	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,(char *)wParam,-1,ConvertedInput,strlen((char *)wParam)+1);
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,(char *)wParam,-1,ConvertedInput,(int)strlen((char *)wParam)+1);
 
 	swprintf(FileName,FileName2,UserDirectory,ConvertedInput,ProfileName);
 //	MessageBoxW(NULL,FileName,L"GetFileNameA",MB_OK);
 	delete[] ConvertedInput;
 
-	return (int)FileName;
+	return (INT_PTR)FileName;
 }
 
-int DeleteFileNameSvc(WPARAM wParam,LPARAM)
+INT_PTR DeleteFileNameSvc(WPARAM wParam,LPARAM)
 {
 	if((WCHAR *)wParam!=NULL)
 		delete[] (WCHAR *)wParam;

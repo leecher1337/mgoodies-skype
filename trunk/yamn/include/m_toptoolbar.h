@@ -8,7 +8,10 @@
 #define TTBBF_PUSHED			4
 #define TTBBF_SHOWTOOLTIP		8
 #define TTBBF_DRAWBORDER		16//draw border for bitmap,bitmap must be WxH 16x12
+#define TTBBF_ISSEPARATOR		32
 
+//for internal launch buttons
+#define TTBBF_ISLBUTTON			64
 
 typedef struct {
 	int cbSize;
@@ -25,6 +28,24 @@ typedef struct {
 
 } TTBButton, * lpTTBButton;
 
+typedef struct {
+	int cbSize;
+	HBITMAP hbBitmapUp;
+	HBITMAP hbBitmapDown;
+	char *pszServiceUp;
+	char *pszServiceDown;
+	DWORD dwFlags;
+	LPARAM lParamUp;
+	WPARAM wParamUp;
+	LPARAM lParamDown;
+	WPARAM wParamDown;
+	char *name;
+	HICON hIconUp,hIconDn;
+	char *tooltipUp;
+	char *tooltipDn;
+
+} TTBButtonV2, * lpTTBButtonV2;
+
 //=== EVENTS ===
 /*
 toptoolbar/moduleloaded event
@@ -33,8 +54,6 @@ Called when the toolbar services are available
 
 !!!Warning you may work with TTB services only in this event or later.
 
-Im use settimer() - so notify appear in miranda message loop
-after all onmodulesload calls.
 */
 #define ME_TTB_MODULELOADED				"TopToolBar/ModuleLoaded"
 
@@ -102,5 +121,5 @@ returns: 1 on success, -1 on failure.
 */
 #define MS_TTB_SETBUTTONOPTIONS					"TopToolBar/SetOptions"
 
-#endif
 
+#endif

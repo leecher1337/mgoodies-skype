@@ -1,23 +1,23 @@
 # Microsoft Developer Studio Project File - Name="proto_YAMN" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** DO NOT EDIT **
+# ** NICHT BEARBEITEN **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 CFG=proto_YAMN - Win32 Release
-!MESSAGE This is not a valid makefile. To build this project using NMAKE,
-!MESSAGE use the Export Makefile command and run
+!MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
+!MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
 !MESSAGE 
 !MESSAGE NMAKE /f "proto_YAMN.mak".
 !MESSAGE 
-!MESSAGE You can specify a configuration when running NMAKE
-!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
+!MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
 !MESSAGE 
 !MESSAGE NMAKE /f "proto_YAMN.mak" CFG="proto_YAMN - Win32 Release"
 !MESSAGE 
-!MESSAGE Possible choices for configuration are:
+!MESSAGE Für die Konfiguration stehen zur Auswahl:
 !MESSAGE 
-!MESSAGE "proto_YAMN - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "proto_YAMN - Win32 Release" (basierend auf  "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -38,8 +38,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo 
-# ADD CPP /nologo 
+# ADD BASE CPP /nologo
+# ADD CPP /nologo
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -47,7 +47,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /filealign:512 /noentry
-# ADD LINK32 /nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /filealign:512 /noentry
+# ADD LINK32 /nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/Release/Icons/proto_YAMN.dll" /filealign:512 /noentry
 # Begin Target
 
 # Name "proto_YAMN - Win32 Release"

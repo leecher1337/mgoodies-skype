@@ -70,10 +70,10 @@ HANDLE ExitEV;
 HANDLE WriteToFileEV;
 
 //Returns pointer to YAMN exported function
-int GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
 
 //Returns pointer to YAMN variables
-int GetVariablesSvc(WPARAM wParam,LPARAM);
+INT_PTR GetVariablesSvc(WPARAM wParam,LPARAM);
 
 // Thread running only to catch hotkeys
 DWORD WINAPI YAMNHotKeyThread(LPVOID Param);
@@ -84,7 +84,7 @@ void CALLBACK TimerProc(HWND,UINT,UINT,DWORD);
 
 // Function called to check all accounts immidialtelly
 // no params
-int ForceCheckSvc(WPARAM,LPARAM);
+INT_PTR ForceCheckSvc(WPARAM,LPARAM);
 
 //thread is running all the time
 //waits for WriteToFileEV and then writes all accounts to file
@@ -101,43 +101,43 @@ int ForceCheckSvc(WPARAM,LPARAM);
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-int GetFcnPtrSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR GetFcnPtrSvc(WPARAM wParam,LPARAM lParam)
 {
 	register int i;
 
 	for(i=0;i<sizeof(ProtoPluginExportedFcn)/sizeof(ProtoPluginExportedFcn[0]);i++)
 		if(0==lstrcmp((char *)wParam,ProtoPluginExportedFcn[i].ID))
-			return (int)ProtoPluginExportedFcn[i].Ptr;
+			return (INT_PTR)ProtoPluginExportedFcn[i].Ptr;
 	for(i=0;i<sizeof(ProtoPluginExportedSvc)/sizeof(ProtoPluginExportedSvc[0]);i++)
 		if(0==lstrcmp((char *)wParam,ProtoPluginExportedSvc[i].ID))
-			return (int)ProtoPluginExportedSvc[i].Ptr;
+			return (INT_PTR)ProtoPluginExportedSvc[i].Ptr;
 	for(i=0;i<sizeof(SynchroExportedFcn)/sizeof(SynchroExportedFcn[0]);i++)
 		if(0==lstrcmp((char *)wParam,SynchroExportedFcn[i].ID))
-			return (int)SynchroExportedFcn[i].Ptr;
+			return (INT_PTR)SynchroExportedFcn[i].Ptr;
 	for(i=0;i<sizeof(AccountExportedFcn)/sizeof(AccountExportedFcn[0]);i++)
 		if(0==lstrcmp((char *)wParam,AccountExportedFcn[i].ID))
-			return (int)AccountExportedFcn[i].Ptr;
+			return (INT_PTR)AccountExportedFcn[i].Ptr;
 	for(i=0;i<sizeof(AccountExportedSvc)/sizeof(AccountExportedSvc[0]);i++)
 		if(0==lstrcmp((char *)wParam,AccountExportedSvc[i].ID))
-			return (int)AccountExportedSvc[i].Ptr;
+			return (INT_PTR)AccountExportedSvc[i].Ptr;
 	for(i=0;i<sizeof(MailExportedFcn)/sizeof(MailExportedFcn[0]);i++)
 		if(0==lstrcmp((char *)wParam,MailExportedFcn[i].ID))
-			return (int)MailExportedFcn[i].Ptr;
+			return (INT_PTR)MailExportedFcn[i].Ptr;
 	for(i=0;i<sizeof(MailExportedSvc)/sizeof(MailExportedSvc[0]);i++)
 		if(0==lstrcmp((char *)wParam,MailExportedSvc[i].ID))
-			return (int)MailExportedSvc[i].Ptr;
+			return (INT_PTR)MailExportedSvc[i].Ptr;
 	for(i=0;i<sizeof(FilterPluginExportedFcn)/sizeof(FilterPluginExportedFcn[0]);i++)
 		if(0==lstrcmp((char *)wParam,FilterPluginExportedFcn[i].ID))
-			return (int)FilterPluginExportedFcn[i].Ptr;
+			return (INT_PTR)FilterPluginExportedFcn[i].Ptr;
 	for(i=0;i<sizeof(FilterPluginExportedSvc)/sizeof(FilterPluginExportedSvc[0]);i++)
 		if(0==lstrcmp((char *)wParam,FilterPluginExportedSvc[i].ID))
-			return (int)FilterPluginExportedSvc[i].Ptr;
-	return (int)NULL;
+			return (INT_PTR)FilterPluginExportedSvc[i].Ptr;
+	return (INT_PTR)NULL;
 }
 
-int GetVariablesSvc(WPARAM wParam,LPARAM)
+INT_PTR GetVariablesSvc(WPARAM wParam,LPARAM)
 {
-	return wParam==YAMN_VARIABLESVERSION ? (int)&YAMNVar : (int)NULL;
+	return wParam==YAMN_VARIABLESVERSION ? (INT_PTR)&YAMNVar : (INT_PTR)NULL;
 }
 
 DWORD WINAPI YAMNHotKeyThread(LPVOID Param)
@@ -335,7 +335,7 @@ ChangeIsCountingStatusLabel:
 	return;
 }
 
-int ForceCheckSvc(WPARAM,LPARAM)
+INT_PTR ForceCheckSvc(WPARAM,LPARAM)
 {
 	PYAMN_PROTOPLUGINQUEUE ActualPlugin;
 	HACCOUNT ActualAccount;

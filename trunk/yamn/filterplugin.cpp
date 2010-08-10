@@ -24,26 +24,26 @@ extern YAMN_VARIABLES YAMNVar;
 extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER=NULL);
 extern void WINAPI WriteDoneFcn(PSWMRG SObject,PSCOUNTER=NULL);
 //From maild.cpp
-extern int LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
-extern int UnloadMailDataSvc(WPARAM wParam,LPARAM);
-extern int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
+extern INT_PTR LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
+extern INT_PTR UnloadMailDataSvc(WPARAM wParam,LPARAM);
+extern INT_PTR SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
 PYAMN_FILTERPLUGINQUEUE FirstFilterPlugin=NULL;
 
-int RegisterFilterPluginSvc(WPARAM,LPARAM);
+INT_PTR RegisterFilterPluginSvc(WPARAM,LPARAM);
 
 //Removes plugin from queue and deletes its structures
-int UnregisterFilterPlugin(HYAMNFILTERPLUGIN Plugin);
+INT_PTR UnregisterFilterPlugin(HYAMNFILTERPLUGIN Plugin);
 
-int UnregisterFilterPluginSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR UnregisterFilterPluginSvc(WPARAM wParam,LPARAM lParam);
 
 //Removes all filter plugins
-int UnregisterFilterPlugins();
+INT_PTR UnregisterFilterPlugins();
 
-int FilterMailSvc(WPARAM,LPARAM);
+INT_PTR FilterMailSvc(WPARAM,LPARAM);
 
 //Sets imported functions for an plugin and therefore it starts plugin to be registered and running
 // Plugin- plugin, which wants to set its functions
@@ -67,7 +67,7 @@ struct CExportedServices FilterPluginExportedSvc[]=
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-int RegisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR RegisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
 {
 	PYAMN_FILTERREGISTRATION Registration=(PYAMN_FILTERREGISTRATION)wParam;
 	HYAMNFILTERPLUGIN Plugin;
@@ -75,9 +75,9 @@ int RegisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
 	if(lParam!=YAMN_FILTERREGISTRATIONVERSION)
 		return 0;
 	if((Registration->Name==NULL) || (Registration->Ver==NULL))
-		return (int)NULL;
+		return NULL;
 	if(NULL==(Plugin=new YAMN_FILTERPLUGIN))
-		return (int)NULL;
+		return NULL;
 
 	Plugin->PluginInfo=Registration;
 
@@ -86,10 +86,10 @@ int RegisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
 #ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"::: YAMN- new filter registered: %0x (%s) :::\n",Plugin,Registration->Name);
 #endif
-	return (int)Plugin;
+	return (INT_PTR)Plugin;
 }
 
-int UnregisterFilterPlugin(HYAMNFILTERPLUGIN Plugin)
+INT_PTR UnregisterFilterPlugin(HYAMNFILTERPLUGIN Plugin)
 {
 	PYAMN_FILTERPLUGINQUEUE Parser,Found;
 
@@ -125,7 +125,7 @@ int UnregisterFilterPlugin(HYAMNFILTERPLUGIN Plugin)
 	return 1;
 }
 
-int UnregisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR UnregisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNFILTERPLUGIN Plugin=(HYAMNFILTERPLUGIN)wParam;
 
@@ -135,7 +135,7 @@ int UnregisterFilterPluginSvc(WPARAM wParam,LPARAM lParam)
 	return 1;
 }
 
-int UnregisterFilterPlugins()
+INT_PTR UnregisterFilterPlugins()
 {
 	EnterCriticalSection(PluginRegCS);
 //We remove protocols from the protocol list
@@ -181,7 +181,7 @@ int WINAPI SetFilterPluginFcnImportFcn(HYAMNFILTERPLUGIN Plugin,DWORD Importance
 	return 1;
 }
 
-int FilterMailSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR FilterMailSvc(WPARAM wParam,LPARAM lParam)
 {
 	HACCOUNT Account=(HACCOUNT)wParam;
 	HYAMNMAIL Mail=(HYAMNMAIL)lParam;

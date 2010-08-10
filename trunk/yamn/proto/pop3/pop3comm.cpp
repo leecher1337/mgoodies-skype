@@ -28,10 +28,10 @@ extern int POP3OptInit(WPARAM wParam,LPARAM lParam);
 //From netlib.cpp
 extern HANDLE RegisterNLClient(const char *name);
 //this is imported because of one bug, should not be imported normally (this POP3 is plugin of YAMN)
-extern int FilterMailSvc(WPARAM,LPARAM);
+extern INT_PTR FilterMailSvc(WPARAM,LPARAM);
 
 extern char *ProtoName;
-extern int YAMN_STATUS;
+extern INT_PTR YAMN_STATUS;
 extern PLUGININFO pluginInfo;
 
 //--------------------------------------------------------------------------------------------------
@@ -169,7 +169,7 @@ CPOP3Account::CPOP3Account()
 	InternetQueries=new SCOUNTER;
 	AbilityFlags=YAMN_ACC_BROWSE | YAMN_ACC_POPUP;
 
-	SetAccountStatus((HACCOUNT)this,Translate("Disconnected"));
+	SetAccountStatus((HACCOUNT)this,TranslateT("Disconnected"));
 }
 
 CPOP3Account::~CPOP3Account()
@@ -531,7 +531,7 @@ static void PostErrorProc(HPOP3ACCOUNT ActualAccount,void *ParamToBadConnection,
 
 	if((ActualAccount->BadConnectN.Flags & YAMN_ACC_MSG) || (ActualAccount->BadConnectN.Flags & YAMN_ACC_ICO) || (ActualAccount->BadConnectN.Flags & YAMN_ACC_POP))
 	{
-		YAMN_BADCONNECTIONPARAM cp={(HANDLE)0,ActualAccount,(DWORD)ErrorCode,ParamToBadConnection};
+		YAMN_BADCONNECTIONPARAM cp={(HANDLE)0,ActualAccount,(UINT_PTR)ErrorCode,ParamToBadConnection};
 
 		CallService(MS_YAMN_BADCONNECTION,(WPARAM)&cp,(LPARAM)YAMN_BADCONNECTIONVERSION);
 	}
@@ -1038,7 +1038,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 {
 	HPOP3ACCOUNT ActualAccount;
 	LPVOID YAMNParam;
-	DWORD POP3PluginParam;
+	UINT_PTR POP3PluginParam;
 	CPop3Client *MyClient;
 	HYAMNMAIL DeleteMails,NewMails=NULL,MsgQueuePtr;
 	char* DataRX=NULL;
@@ -1067,7 +1067,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 
 	ActualAccount=(HPOP3ACCOUNT)((struct DeleteParam *)WhichTemp)->AccountParam;			//copy address of structure from calling thread to stack of this thread
 	YAMNParam=((struct DeleteParam *)WhichTemp)->BrowserParam;
-	POP3PluginParam=(DWORD)((struct DeleteParam *)WhichTemp)->CustomParam;
+	POP3PluginParam=(UINT_PTR)((struct DeleteParam *)WhichTemp)->CustomParam;
 #ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"DeleteMailsPOP3:Incrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
 #endif
@@ -1603,7 +1603,7 @@ WCHAR* WINAPI GetErrorString(DWORD Code)
 
 	char *ErrorStringA=new char[ERRORSTR_MAXLEN];
 	WCHAR *ErrorStringW=new WCHAR[ERRORSTR_MAXLEN];
-	POP3_ERRORCODE *ErrorCode=(POP3_ERRORCODE *)Code;
+	POP3_ERRORCODE *ErrorCode=(POP3_ERRORCODE *)(UINT_PTR)Code;
 
 	sprintf(ErrorStringA,Translate("Error %d-%d-%d-%d:"),ErrorCode->AppError,ErrorCode->POP3Error,ErrorCode->NetError,ErrorCode->SystemError);
 	if(ErrorCode->POP3Error)
@@ -1617,9 +1617,9 @@ WCHAR* WINAPI GetErrorString(DWORD Code)
 #ifdef DEBUG_COMM
 	DebugLog(CommFile,"%s\n",ErrorStringA);
 #endif
-	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,ErrorStringA,-1,ErrorStringW,strlen(ErrorStringA)+1);
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,ErrorStringA,-1,ErrorStringW,(int)strlen(ErrorStringA)+1);
 	delete[] ErrorStringA;		//we delete ErrorStringA, used to get error string, because Translate() doesn't works in unicode
-	delete ErrorCode;		//now we can delete ErrorCode, that will not be used anymore
+	delete ErrorCode;			//now we can delete ErrorCode, that will not be used anymore
 	return ErrorStringW;
 }
 

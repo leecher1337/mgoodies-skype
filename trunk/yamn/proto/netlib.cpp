@@ -4,7 +4,9 @@
  * (c) majvan 2002-2004
  */
 
-#include "../filter/simple/AggressiveOptimize.h"
+#if !defined(_WIN64)
+	#include "../filter/simple/AggressiveOptimize.h"
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include <newpluginapi.h>	//CallService,UnHookEvent
@@ -156,7 +158,7 @@ void CNLClient::Send(const char *query) throw(DWORD)
 #endif
 	try
 	{
-		if((SOCKET_ERROR==(Sent=LocalNetlib_Send(hConnection,query,strlen(query),MSG_DUMPASTEXT))) || Sent!=strlen(query))
+		if((SOCKET_ERROR==(Sent=LocalNetlib_Send(hConnection,query,(int)strlen(query),MSG_DUMPASTEXT))) || Sent!=(unsigned int)strlen(query))
 		{
 			SystemError=WSAGetLastError();
 			throw NetworkError=(DWORD)ENL_SEND;

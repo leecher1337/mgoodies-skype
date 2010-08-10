@@ -8,9 +8,11 @@
 #include <m_langpack.h>
 #include <m_options.h>
 #include "../../m_filterplugin.h"
-#include "aggressiveoptimize.h"
+#if !defined(_WIN64)
+	#include "aggressiveoptimize.h"
+#endif
 
-typedef int(* MIRANDASERVICE)(WPARAM,LPARAM);
+typedef INT_PTR(* MIRANDASERVICE)(WPARAM,LPARAM);
 
 DWORD WINAPI FilterMail(HACCOUNT Account,DWORD AccountVer,HYAMNMAIL Mail,DWORD MailVer);//Function marks mail as spam when it is spam...
 DWORD WINAPI UnLoadFilter(LPVOID);

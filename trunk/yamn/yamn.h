@@ -7,18 +7,20 @@
 	#define _WIN32_WINNT 0x0501
 #endif
 
-#include "filter/simple/AggressiveOptimize.h"	
+#if !defined(_WIN64)
+	#include "filter/simple/AggressiveOptimize.h"
+#endif
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>
 #include <stdio.h>
-#include <direct.h>		//For _chdir()
+#include <direct.h>			//For _chdir()
 
 #define MIRANDA_VER 0x0600
 
 #include <commctrl.h>		//For hotkeys
 #include "newpluginapi.h"	//CallService,UnHookEvent
-#include "m_utils.h"			//window broadcasting
+#include "m_utils.h"		//window broadcasting
 #include "m_system.h"
 #include "m_skin.h"
 #include "m_langpack.h"
@@ -27,14 +29,14 @@
 #include "m_options.h"
 #include "m_database.h"		//database
 #include "m_contacts.h"		//contact
-#include "m_protocols.h"		//protocols
+#include "m_protocols.h"	//protocols
 #include "m_protomod.h"		//protocols module
 #include "m_protosvc.h"
-#include "include/m_uninstaller.h"				//PluginUninstaller structures
+#include "include/m_uninstaller.h"		//PluginUninstaller structures
 #include "include/m_toptoolbar.h"
-#include "include/m_icolib.h"
+#include "m_icolib.h"
 #include "include/m_kbdnotify.h"
-#include "include/m_popup.h"
+#include "m_popup.h"
 #include "include/m_updater.h"
 #include "m_account.h"	//Account structure and all needed structures to cooperate with YAMN
 #include "m_messages.h"	//Messages sent to YAMN windows
@@ -48,7 +50,7 @@
 #include "m_protoplugin.h"	//Protocol registration and so on
 #include "m_synchro.h"	//Synchronization
 #include "debug.h"
-#include "include/m_folders.h"
+#include <m_folders.h>
 
 
 //icons definitions
@@ -64,7 +66,7 @@ void HookEvents(void);
 void UnhookEvents(void);
 void RefreshContact(void);
 void ContactDoubleclicked(WPARAM wParam,LPARAM lParam);
-int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam);
+INT_PTR ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam);
 
 //From debug.cpp
 #undef YAMN_DEBUG
@@ -77,50 +79,50 @@ void UnInitDebug();
 //struct CExportedFunctions SynchroExported[];
 
 //From yamn.cpp
-int GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
-int GetVariablesSvc(WPARAM,LPARAM);
-int AddWndToYAMNWindowsSvc(WPARAM,LPARAM);
-int RemoveWndFromYAMNWindowsSvc(WPARAM,LPARAM);
+INT_PTR GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR GetVariablesSvc(WPARAM,LPARAM);
+//INT_PTR AddWndToYAMNWindowsSvc(WPARAM,LPARAM);
+//INT_PTR RemoveWndFromYAMNWindowsSvc(WPARAM,LPARAM);
 DWORD WINAPI YAMNHotKeyThread(LPVOID);
 void CALLBACK TimerProc(HWND,UINT,UINT,DWORD);
-int ForceCheckSvc(WPARAM,LPARAM);
+INT_PTR ForceCheckSvc(WPARAM,LPARAM);
 // int ExitProc(WPARAM,LPARAM);
 
 //From account.cpp
 //struct CExportedFunctions AccountExported[];
-int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
-int DeletePluginAccountSvc(WPARAM wParam,LPARAM lParam);
-int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
-int WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam);
-int AddAccountsFromFileASvc(WPARAM,LPARAM);
-int AddAccountsFromFileWSvc(WPARAM,LPARAM);
-int DeleteAccountSvc(WPARAM,LPARAM);
-int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
-int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR DeletePluginAccountSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
+INT_PTR WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR AddAccountsFromFileASvc(WPARAM,LPARAM);
+INT_PTR AddAccountsFromFileWSvc(WPARAM,LPARAM);
+INT_PTR DeleteAccountSvc(WPARAM,LPARAM);
+INT_PTR FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
 
 //From protoplugin.cpp
 //struct CExportedFunctions ProtoPluginExported[];
-int UnregisterProtoPlugins();
-int RegisterProtocolPluginSvc(WPARAM,LPARAM);
-int UnregisterProtocolPluginSvc(WPARAM,LPARAM);
-int GetFileNameWSvc(WPARAM,LPARAM);
-int GetFileNameASvc(WPARAM,LPARAM);
-int DeleteFileNameSvc(WPARAM,LPARAM);
+INT_PTR UnregisterProtoPlugins();
+INT_PTR RegisterProtocolPluginSvc(WPARAM,LPARAM);
+INT_PTR UnregisterProtocolPluginSvc(WPARAM,LPARAM);
+INT_PTR GetFileNameWSvc(WPARAM,LPARAM);
+INT_PTR GetFileNameASvc(WPARAM,LPARAM);
+INT_PTR DeleteFileNameSvc(WPARAM,LPARAM);
 
 //From filterplugin.cpp
 //struct CExportedFunctions FilterPluginExported[];
-int UnregisterFilterPlugins();
-int RegisterFilterPluginSvc(WPARAM,LPARAM);
-int UnregisterFilterPluginSvc(WPARAM,LPARAM);
-int FilterMailSvc(WPARAM,LPARAM);
+INT_PTR UnregisterFilterPlugins();
+INT_PTR RegisterFilterPluginSvc(WPARAM,LPARAM);
+INT_PTR UnregisterFilterPluginSvc(WPARAM,LPARAM);
+INT_PTR FilterMailSvc(WPARAM,LPARAM);
 
 //From mails.cpp (MIME)
 //struct CExportedFunctions MailExported[];
-int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
-int DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
-int LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
-int UnloadMailDataSvc(WPARAM wParam,LPARAM);
-int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR UnloadMailDataSvc(WPARAM wParam,LPARAM);
+INT_PTR SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 
 //From mime.cpp
 //void WINAPI ExtractHeaderFcn(char *,int,WORD,HYAMNMAIL);	//already in MailExported
@@ -142,10 +144,10 @@ int RegisterPOP3Plugin(WPARAM,LPARAM);
 int UninstallPOP3(PLUGINUNINSTALLPARAMS* ppup);			//to uninstall POP3 plugin with YAMN
 
 //From mailbrowser.cpp
-int RunMailBrowserSvc(WPARAM,LPARAM);
+INT_PTR RunMailBrowserSvc(WPARAM,LPARAM);
 
 //From badconnect.cpp
-int RunBadConnectionSvc(WPARAM,LPARAM);
+INT_PTR RunBadConnectionSvc(WPARAM,LPARAM);
 
 //From YAMNopts.cpp
 void WordToModAndVk(WORD,UINT *,UINT *);

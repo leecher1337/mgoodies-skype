@@ -1,24 +1,24 @@
 # Microsoft Developer Studio Project File - Name="simple" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** DO NOT EDIT **
+# ** NICHT BEARBEITEN **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 CFG=simple - Win32 Release
-!MESSAGE This is not a valid makefile. To build this project using NMAKE,
-!MESSAGE use the Export Makefile command and run
+!MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
+!MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
 !MESSAGE 
 !MESSAGE NMAKE /f "simple.mak".
 !MESSAGE 
-!MESSAGE You can specify a configuration when running NMAKE
-!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
+!MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
 !MESSAGE 
-!MESSAGE NMAKE /f "simple.mak" CFG="simple - Win32 Debug"
+!MESSAGE NMAKE /f "simple.mak" CFG="simple - Win32 Release"
 !MESSAGE 
-!MESSAGE Possible choices for configuration are:
+!MESSAGE Für die Konfiguration stehen zur Auswahl:
 !MESSAGE 
-!MESSAGE "simple - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "simple - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "simple - Win32 Release" (basierend auf  "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "simple - Win32 Debug" (basierend auf  "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /Ob0 /I "../../../../include" /I "../../../../include/msapi" /I "../../../../include_API" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -52,7 +52,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib /nologo /dll /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/simple.dll" /filealign:512
-# ADD LINK32 kernel32.lib user32.lib /nologo /dll /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/simple.dll" /filealign:512
+# ADD LINK32 kernel32.lib user32.lib /nologo /dll /pdb:"../../../../bin/Release/plugins/YAMN/simple.pdb" /debug /machine:I386 /out:"../../../../bin/Release/plugins/YAMN/simple.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "simple - Win32 Debug"
 
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
-# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../../../include" /I "../../../../include/msapi" /I "../../../../include_API" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
 # ADD BASE RSC /l 0x417 /d "_DEBUG"
 # ADD RSC /l 0x417 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -77,7 +77,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib /nologo /dll /debug /machine:I386 /out:"../../../../bin/Debug/plugins/YAMN-filter/simple.dll"
-# ADD LINK32 kernel32.lib user32.lib /nologo /dll /debug /machine:I386 /out:"../../../../bin/Debug/plugins/YAMN-filter/simple.dll"
+# ADD LINK32 kernel32.lib user32.lib /nologo /dll /pdb:"../../../../bin/Debug/plugins/YAMN/simple.pdb" /debug /machine:I386 /out:"../../../../bin/Debug/plugins/YAMN/simple.dll" /pdbtype:sept
 
 !ENDIF 
 

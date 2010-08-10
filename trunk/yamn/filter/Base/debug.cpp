@@ -64,8 +64,8 @@ void DebugLog(HANDLE File,const char *fmt,...)
 		str=(char *)realloc(str,strsize+=65536);
 	va_end(vararg);
 	EnterCriticalSection(FileAccessCS);
-	WriteFile(File,tids,strlen(tids),&Written,NULL);
-	WriteFile(File,str,strlen(str),&Written,NULL);
+	WriteFile(File,tids,(DWORD)strlen(tids),&Written,NULL);
+	WriteFile(File,str,(DWORD)strlen(str),&Written,NULL);
 	LeaveCriticalSection(FileAccessCS);
 	free(str);
 }

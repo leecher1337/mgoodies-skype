@@ -51,10 +51,10 @@ LPCRITICAL_SECTION AccountStatusCS;
 LPCRITICAL_SECTION FileWritingCS;
 
 // Creates new account, which has plugin specified structure
-int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
 
 // Deletes account from memory
-int DeletePluginAccountSvc(WPARAM wParam,LPARAM);
+INT_PTR DeletePluginAccountSvc(WPARAM wParam,LPARAM);
 
 // Initializes standard YAMN account parameters
 int InitAccount(HACCOUNT Which);
@@ -115,7 +115,7 @@ static DWORD ReadNotificationFromMemory(TCHAR **Parser,TCHAR *End,YAMN_NOTIFICAT
 DWORD ReadMessagesFromMemory(HACCOUNT Which,TCHAR **Parser,TCHAR *End);
 
 // Does all needed operations to read account
-static int PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *End);
+static INT_PTR PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *End);
 
 // Read one account from memory
 // Which- address of account
@@ -124,10 +124,10 @@ static int PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *E
 DWORD ReadAccountFromMemory(HACCOUNT Which,TCHAR **Parser,TCHAR *End);
 
 // Inserts accounts read from file to actual account queue
-int AddAccountsFromFileASvc(WPARAM wParam,LPARAM lParam);
+INT_PTR AddAccountsFromFileASvc(WPARAM wParam,LPARAM lParam);
 
 // Same as AddAccountsFromFileA, but filename is (WCHAR *) type- Unicode string
-int AddAccountsFromFileWSvc(WPARAM,LPARAM);
+INT_PTR AddAccountsFromFileWSvc(WPARAM,LPARAM);
 
 // Writes simple string to file
 // File- handle of open file for writing
@@ -145,25 +145,25 @@ DWORD WriteStringToFileW(HANDLE File,WCHAR *Source);
 DWORD WriteMessagesToFile(HANDLE File,HACCOUNT Which);
 
 // Does all needed operations to write account to file
-static int PerformAccountWriting(HYAMNPROTOPLUGIN Plugin,HANDLE File);
+static INT_PTR PerformAccountWriting(HYAMNPROTOPLUGIN Plugin,HANDLE File);
 
 // Writes accounts to file
 // Accounts are read from plugin's account queue
 // Function writes account data and calls WriteMessagesToFile to store account mails
-int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
+INT_PTR WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
 
 // Same as WriteAccountsToFileA, but filename is (WCHAR *) type- Unicode string
-int WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam);
 
 // Finds account by name and returns a pointer to it, or NULL when not found
 // we do not have to synchronize accounts for read access, because we never change name of account
 // (so if we want to change name of account we have to delete and create the new one)
-int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
 
 // Allocates a new account, and returns pointer to it
 // calling function should have write access (using AccountBrowserSO)
 // because new account is queues do account queue
-int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
 
 // Finds account for plugin
 //int FindPluginAccount(WPARAM wParam,LPARAM lParam);
@@ -171,7 +171,7 @@ int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
 // Removes requested account from queue
 // and deletes it in memory calling new thread function, that does it in the background
 // This is very easy and the most secure way for plugins to delete account
-int DeleteAccountSvc(WPARAM wParam,LPARAM);
+INT_PTR DeleteAccountSvc(WPARAM wParam,LPARAM);
 
 // This function is used as a thread function, that waits to signal for deleting account from memory
 // This signal is signaled in UsingAccount.Event (this signales that no thread will be use account in the future)
@@ -216,7 +216,7 @@ struct CExportedServices AccountExportedSvc[]=
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 	DWORD AccountVersion=(DWORD)lParam;
@@ -224,7 +224,7 @@ int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam)
 
 //test if we are going to initialize members of suitable structure (structures of plugin and YAMN must match)
 	if(AccountVersion!=YAMN_ACCOUNTVERSION)
-		return (int)NULL;
+		return NULL;
 
 	if(Plugin!=NULL)
 	{
@@ -246,12 +246,12 @@ int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam)
 //Init every members of structure, used by YAMN
 		InitAccount(NewAccount);
 
-		return (int)NewAccount;
+		return (INT_PTR)NewAccount;
 	}
-	return (int)NULL;
+	return NULL;
 }
 
-int DeletePluginAccountSvc(WPARAM wParam,LPARAM)
+INT_PTR DeletePluginAccountSvc(WPARAM wParam,LPARAM)
 {
 	HACCOUNT OldAccount=(HACCOUNT)wParam;
 
@@ -822,7 +822,7 @@ DWORD ReadAccountFromMemory(HACCOUNT Which,TCHAR **Parser,TCHAR *End)
 		
 }
 
-static int PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *End)
+static INT_PTR PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *End)
 {
 //Retrieve info for account from memory
 	TCHAR *Parser;
@@ -886,7 +886,7 @@ static int PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *E
 			DebugLog(SynchroFile,"AddAccountsFromFile:ActualAccountSO-write done\n");
 #endif
 			SWMRGDoneWriting(Plugin->AccountBrowserSO);
-			return Stat;
+			return (INT_PTR)Stat;
 		}
 		
 #ifdef DEBUG_SYNCHRO
@@ -921,27 +921,27 @@ static int PerformAccountReading(HYAMNPROTOPLUGIN Plugin,TCHAR *MemFile,TCHAR *E
 	return 0;
 }
 
-int AddAccountsFromFileASvc(WPARAM wParam,LPARAM lParam)
+INT_PTR AddAccountsFromFileASvc(WPARAM wParam,LPARAM lParam)
 //Add accounts from file to memory
 {
 	DWORD Stat;
 	TCHAR *MemFile,*End;
 
 	if(Stat=FileToMemoryA((char *)lParam,&MemFile,&End))
-		return Stat;
+		return (INT_PTR)Stat;
 
 	return PerformAccountReading((HYAMNPROTOPLUGIN)wParam,MemFile,End);
 
 }
 
-int AddAccountsFromFileWSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR AddAccountsFromFileWSvc(WPARAM wParam,LPARAM lParam)
 //Add accounts from file to memory
 {
 	DWORD Stat;
 	TCHAR *MemFile,*End;
 
 	if(Stat=FileToMemoryW((WCHAR *)lParam,&MemFile,&End))
-		return Stat;
+		return (INT_PTR)Stat;
 
 	return PerformAccountReading((HYAMNPROTOPLUGIN)wParam,MemFile,End);
 
@@ -952,7 +952,7 @@ DWORD WriteStringToFile(HANDLE File,TCHAR *Source)
 	DWORD Length,WrittenBytes;
 	TCHAR null=(TCHAR)0;
 
-	if((Source==NULL) || !(Length=_tcslen(Source)))
+	if((Source==NULL) || !(Length=(DWORD)_tcslen(Source)))
 	{
 		if(!WriteFile(File,&null,sizeof(TCHAR),&WrittenBytes,NULL))
 		{
@@ -974,7 +974,7 @@ DWORD WriteStringToFileW(HANDLE File,WCHAR *Source)
 	DWORD Length,WrittenBytes;
 	WCHAR null=(WCHAR)0;
 
-	if((Source==NULL) || !(Length=wcslen(Source)))
+	if((Source==NULL) || !(Length=(DWORD)wcslen(Source)))
 	{
 		if(!WriteFile(File,&null,sizeof(WCHAR),&WrittenBytes,NULL))
 		{
@@ -1020,7 +1020,7 @@ DWORD WriteMessagesToFile(HANDLE File,HACCOUNT Which)
 	return 0;
 }
 
-static int PerformAccountWriting(HYAMNPROTOPLUGIN Plugin,HANDLE File)
+static INT_PTR PerformAccountWriting(HYAMNPROTOPLUGIN Plugin,HANDLE File)
 {
 	DWORD WrittenBytes,Stat;
 	HACCOUNT ActualAccount;
@@ -1185,7 +1185,7 @@ static int PerformAccountWriting(HYAMNPROTOPLUGIN Plugin,HANDLE File)
 	return 0;
 }
 
-int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam)
+INT_PTR WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam)
 //Writes accounts to file
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
@@ -1204,12 +1204,12 @@ int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam)
 	return PerformAccountWriting(Plugin,File);
 }
 
-int WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam)
 //Writes accounts to file
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 	WCHAR *FileName=(WCHAR *)lParam;
-	int rv;
+	INT_PTR rv;
 
 	HANDLE File;
 
@@ -1227,7 +1227,7 @@ int WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam)
 	return rv;
 }
 
-int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR FindAccountByNameSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 	TCHAR *SearchedAccount=(TCHAR *)lParam;
@@ -1247,10 +1247,10 @@ int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam)
 	DebugLog(SynchroFile,"FindAccountByName:AccountBrowserSO-read done\n");
 #endif
 	SWMRGDoneReading(Plugin->AccountBrowserSO);
-	return (int)Finder; 
+	return (INT_PTR)Finder; 
 }
 
-int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 	HACCOUNT Finder;
@@ -1258,11 +1258,11 @@ int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam)
 	if(Plugin->FirstAccount==NULL)
 	{
 		Plugin->FirstAccount=(HACCOUNT)CallService(MS_YAMN_CREATEPLUGINACCOUNT,wParam,lParam);
-		return (int)Plugin->FirstAccount;
+		return (INT_PTR)Plugin->FirstAccount;
 	}
 	for(Finder=Plugin->FirstAccount;Finder->Next!=NULL;Finder=Finder->Next);
 	Finder->Next=(HACCOUNT)CallService(MS_YAMN_CREATEPLUGINACCOUNT,wParam,lParam);
-	return (int)Finder->Next;
+	return (INT_PTR)Finder->Next;
 }
 
 /*
@@ -1277,7 +1277,7 @@ int FindPluginAccount(WPARAM wParam,LPARAM lParam)
 	return (int)Finder;
 }
 */
-int DeleteAccountSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR DeleteAccountSvc(WPARAM wParam,LPARAM lParam)
 {
 //Deleting account works on these steps:
 //1. set signal that account should stop activity (set event)

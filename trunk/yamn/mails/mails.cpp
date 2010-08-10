@@ -16,19 +16,19 @@
 // Mail queue is ended with NULL- pointered mail (NULL handle)
 
 //Creates new mail for plugin (calling plugin's constructor, when plugin imported to YAMN)
-int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
 
 //Deletes mail for plugin (calling plugin's destructor, when plugin imported to YAMN)
-int DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
 
 //Loads mail data from standard storage to memory
-int LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
 
 //Deletes mail data from memory
-int UnloadMailDataSvc(WPARAM wParam,LPARAM);
+INT_PTR UnloadMailDataSvc(WPARAM wParam,LPARAM);
 
 //Saves mail data from memory to standard storage
-int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 
 //Appends second MIME mail queue to the first one
 //Only finds the end of first queue and its Next memember repoints to second one
@@ -117,7 +117,7 @@ struct CExportedServices MailExportedSvc[]=
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR CreateAccountMailSvc(WPARAM wParam,LPARAM lParam)
 {
 	HACCOUNT Account=(HACCOUNT)wParam;
 	DWORD MailVersion=(DWORD)lParam;
@@ -125,7 +125,7 @@ int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam)
 
 //test if we are going to initialize members of suitable structure (structures of plugin and YAMN must match)
 	if(MailVersion!=YAMN_MAILVERSION)
-		return (int)NULL;
+		return NULL;
 
 	if(Account->Plugin!=NULL)
 	{
@@ -144,12 +144,12 @@ int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam)
 			NewMail->MailData=NULL;
 		}
 //Init every members of structure, used by YAMN
-		return (int)NewMail;
+		return (INT_PTR)NewMail;
 	}
-	return (int)NULL;
+	return NULL;
 }
 
-int DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNPROTOPLUGIN Plugin=(HYAMNPROTOPLUGIN)wParam;
 	HYAMNMAIL OldMail=(HYAMNMAIL)lParam;
@@ -194,36 +194,36 @@ void WINAPI AppendQueueFcn(HYAMNMAIL first,HYAMNMAIL second)
 	Finder->Next=second;
 }
 
-int LoadMailDataSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR LoadMailDataSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNMAIL Mail=(HYAMNMAIL)wParam;
 	DWORD MailVersion=(DWORD)lParam;
 
 	if(MailVersion!=YAMN_MAILDATAVERSION)
-		return (int)NULL;
+		return NULL;
 
 //now we have all data to memory persisting, so no loading is needed
-	return (int)Mail->MailData;
+	return (INT_PTR)Mail->MailData;
 }
 
-int UnloadMailDataSvc(WPARAM wParam,LPARAM)
+INT_PTR UnloadMailDataSvc(WPARAM wParam,LPARAM)
 {
 	HYAMNMAIL Mail=(HYAMNMAIL)wParam;
 
 //now we should delete structure from memory, but it will be made in future YAMN version
-	return (int)1;
+	return 1;
 }
 
-int SaveMailDataSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR SaveMailDataSvc(WPARAM wParam,LPARAM lParam)
 {
 	HYAMNMAIL Mail=(HYAMNMAIL)wParam;
 	DWORD MailVersion=(DWORD)lParam;
 
 	if(MailVersion!=YAMN_MAILDATAVERSION)
-		return (int)-1;
+		return (INT_PTR)-1;
 
 //now we have all data to memory persisting, so no saving is needed
-	return (int)0;
+	return (INT_PTR)0;
 }
 
 void WINAPI SynchroMessagesFcn(HACCOUNT Account,HYAMNMAIL *OldQueue,HYAMNMAIL *RemovedOld,HYAMNMAIL *NewQueue,HYAMNMAIL *RemovedNew)

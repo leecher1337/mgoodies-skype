@@ -4,7 +4,9 @@
  *
  * (c) majvan 2002-2004
  */
-#include "filter/simple/AggressiveOptimize.h"
+#if !defined(_WIN64)
+	#include "filter/simple/AggressiveOptimize.h"
+#endif
 #include <windows.h>
 #include "debug.h"
 #include "m_yamn.h"
