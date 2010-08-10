@@ -35,21 +35,21 @@ extern HIMAGELIST CSImages;
 extern void __stdcall	SSL_DebugLog( const char *fmt, ... );
 
 extern char *ProtoName;
-extern int YAMN_STATUS;
+extern INT_PTR YAMN_STATUS;
 
 extern PYAMN_VARIABLES pYAMNVar;
 extern HYAMNPROTOPLUGIN POP3Plugin;
 
-static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
+static INT_PTR Service_GetCaps(WPARAM wParam, LPARAM lParam)
 {
 	if(wParam==PFLAGNUM_4)
 		return PF4_NOCUSTOMAUTH;
 	if(wParam==PFLAG_UNIQUEIDTEXT)
-        return (int) Translate("Nick");
+        return (INT_PTR) Translate("Nick");
 	if(wParam==PFLAG_MAXLENOFMESSAGE)
         return 400;
 	if(wParam==PFLAG_UNIQUEIDSETTING)
-        return (int) "Id";
+        return (INT_PTR) "Id";
 	if(wParam==PFLAGNUM_2)
 		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND;
 	if(wParam==PFLAGNUM_5)
@@ -60,16 +60,16 @@ static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static int Service_GetStatus(WPARAM wParam, LPARAM lParam)
+static INT_PTR Service_GetStatus(WPARAM wParam, LPARAM lParam)
 {
 	return YAMN_STATUS;	
 }
 
-static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
+static INT_PTR Service_SetStatus(WPARAM wParam,LPARAM lParam)
 {	
-	int newstatus = (wParam!=ID_STATUS_OFFLINE)?ID_STATUS_ONLINE:ID_STATUS_OFFLINE;
+	INT_PTR newstatus = (wParam!=ID_STATUS_OFFLINE)?ID_STATUS_ONLINE:ID_STATUS_OFFLINE;
 	if (newstatus != YAMN_STATUS){
-		int oldstatus = YAMN_STATUS;
+		INT_PTR oldstatus = YAMN_STATUS;
 		YAMN_STATUS=newstatus;
 		ProtoBroadcastAck(ProtoName,NULL,ACKTYPE_STATUS,ACKRESULT_SUCCESS,(HANDLE)oldstatus,newstatus);
 	}
@@ -77,22 +77,22 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 
 }
 
-static int Service_GetName(WPARAM wParam, LPARAM lParam)
+static INT_PTR Service_GetName(WPARAM wParam, LPARAM lParam)
 {
 	lstrcpyn((char *) lParam, ProtoName, wParam);;
 	return 0;
 }
 
-static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
+static INT_PTR Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
 	if ( LOWORD( wParam ) == PLI_PROTOCOL )
-		return (int)CopyIcon(hYamnIcons[0]); // noone cares about other than PLI_PROTOCOL
+		return (INT_PTR)CopyIcon(hYamnIcons[0]); // noone cares about other than PLI_PROTOCOL
 
-	return (int)(HICON)NULL;
+	return (INT_PTR)(HICON)NULL;
 
 }
  
-/*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
+/*static*/ INT_PTR ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
 	ContactDoubleclicked(((CLISTEVENT*)lParam)->lParam, lParam);
 	return 0;
@@ -104,7 +104,7 @@ static int Service_ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static int ContactApplication(WPARAM wParam, LPARAM lParam)
+static INT_PTR ContactApplication(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
 	char *szProto;
@@ -169,7 +169,7 @@ static int ContactApplication(WPARAM wParam, LPARAM lParam)
 }
 
 DWORD WINAPI SWMRGWaitToRead(PSWMRG pSWMRG, DWORD dwTimeout);
-static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
+static INT_PTR AccountMailCheck(WPARAM wParam, LPARAM lParam){
 	//This service will check/sincronize the account pointed by wParam
 	HACCOUNT ActualAccount = (HACCOUNT)wParam;
 	HANDLE ThreadRunningEV;
@@ -223,7 +223,7 @@ static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
 	return 0;
 }
 
-static int ContactMailCheck(WPARAM wParam, LPARAM lParam)
+static INT_PTR ContactMailCheck(WPARAM wParam, LPARAM lParam)
 {
 
 	DBVARIANT dbv;

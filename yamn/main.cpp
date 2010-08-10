@@ -40,7 +40,7 @@ char *ProtoName=YAMN_DBMODULE;
 char *szMirandaDir;
 char *szProfileDir;
 
-int YAMN_STATUS;
+INT_PTR YAMN_STATUS;
 
 BOOL UninstallPlugins;
 
@@ -167,7 +167,7 @@ static void GetProfileDirectory(char *szPath,int cbPath)
 {
 	szProfileDir=new char[MAX_PATH];
 	if (ServiceExists(MS_DB_GETPROFILEPATH)){
-		if (!CallService(MS_DB_GETPROFILEPATH,cbPath,(WPARAM)(UINT)szPath)) {
+		if (!CallService(MS_DB_GETPROFILEPATH,(WPARAM)cbPath,(LPARAM)szPath)) {
 			lstrcpy(szProfileDir,szPath);
 			return; //success
 		}
@@ -319,7 +319,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		//MessageBox(NULL,"Icolib present","test",0);
 		SKINICONDESC sid = {0};
 		HICON temp;
-		sid.cbSize = SKINICONDESC_SIZE_V2; 
+		sid.cbSize = SKINICONDESC_SIZE; 
 		sid.pszSection = "YAMN";
 		sid.pszDefaultFile = NULL;
 		for (int i=0; i<ICONSNUMBER; i++){
@@ -366,7 +366,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
-		update.cpbVersion = strlen((char *)update.pbVersion);
+		update.cpbVersion = (int)strlen((char *)update.pbVersion);
 		/*#ifdef YAMN_9x
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
@@ -383,8 +383,8 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 	    update.szBetaUpdateURL = szUrl;
 		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
 		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
-		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
-		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+		update.cpbVersionPrefix = (int)strlen((char *)update.pbVersionPrefix);
+		update.cpbBetaVersionPrefix = (int)strlen((char *)update.pbBetaVersionPrefix);
 
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
@@ -432,7 +432,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	//	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
 	char szProfileDir[MAX_PATH+1];
 	GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
-	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,(int)strlen(szProfileDir)+1);
 
 	
 	// Enumerate all the code pages available for the System Locale
@@ -487,7 +487,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CallService(MS_DB_GETPROFILENAME,(WPARAM)sizeof(pn),(LPARAM)&(*pn));	//not to pass entire array to fcn
 	if(NULL!=(fc=strrchr(pn,(int)'.')))
 		*fc=0;
-	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,pn,-1,ProfileName,strlen(pn)+1);
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,pn,-1,ProfileName,(int)strlen(pn)+1);
 
 	if(NULL==(AccountStatusCS=new CRITICAL_SECTION))
 		return 1;
@@ -666,7 +666,7 @@ void LoadPlugins()
 	char szPluginPath[MAX_PATH];
 	lstrcpy(szSearchPath,szMirandaDir);
 	lstrcat(szSearchPath,"\\Plugins\\YAMN\\*.dll");
-	typedef int (*LOADFILTERFCN)(MIRANDASERVICE GetYAMNFcn);
+	typedef INT_PTR (*LOADFILTERFCN)(MIRANDASERVICE GetYAMNFcn);
 
 	hDllPlugins=NULL;
 
@@ -677,7 +677,7 @@ void LoadPlugins()
 			char *dot=strrchr(fd.cFileName,'.');
 			if(dot)
 			{ // we have a dot
-				int len=strlen(fd.cFileName); // find the length of the string
+				int len=(int)strlen(fd.cFileName); // find the length of the string
 				char* end=fd.cFileName+len; // get a pointer to the NULL
 				int safe=(end-dot)-1;	// figure out how many chars after the dot are "safe", not including NULL
 		

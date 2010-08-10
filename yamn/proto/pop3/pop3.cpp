@@ -25,7 +25,9 @@
 
 #pragma warning( disable : 4290 )
 
-#include "../../filter/simple/AggressiveOptimize.h"
+#if !defined(_WIN64)
+	#include "../../filter/simple/AggressiveOptimize.h"
+#endif
 #include <windows.h>
 #include <stdio.h>
 #include "pop3.h"
@@ -256,8 +258,8 @@ char* CPop3Client::APOP(char* name, char* pw, char* timestamp)
 		throw POP3Error=(DWORD)EPOP3_APOP;
 	MD5Context ctx;
 	MD5Init(&ctx);
-	MD5Update(&ctx,(const unsigned char *)timestamp,strlen(timestamp));
-	MD5Update(&ctx,(const unsigned char *)pw,strlen(pw));
+	MD5Update(&ctx,(const unsigned char *)timestamp,(unsigned int)strlen(timestamp));
+	MD5Update(&ctx,(const unsigned char *)pw,(unsigned int)strlen(pw));
 	MD5Final(digest,&ctx);
 	hexdigest[0]='\0';
 	for(int i=0; i<16; i++) {

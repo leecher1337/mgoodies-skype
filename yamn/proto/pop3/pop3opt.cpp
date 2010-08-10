@@ -77,7 +77,7 @@ void WordToModAndVk(WORD w,UINT *mod,UINT *vk)
 }
 
 
-BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
 	{
@@ -149,7 +149,7 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 	return FALSE;
 }
 
-BOOL CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
 	{
@@ -174,7 +174,7 @@ BOOL CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 						id=SendMessage(hCombo,CB_GETITEMDATA,(WPARAM)index,(LPARAM)0);
 						EnterCriticalSection(PluginRegCS);
 						for(PParser=FirstProtoPlugin;PParser!=NULL;PParser=PParser->Next)
-							if(id==(int)PParser->Plugin)
+							if(id==(INT_PTR)PParser->Plugin)
 							{
 								SetDlgItemText(hDlg,IDC_STVER,PParser->Plugin->PluginInfo->Ver);
 								SetDlgItemText(hDlg,IDC_STDESC,PParser->Plugin->PluginInfo->Description == NULL ? "" : PParser->Plugin->PluginInfo->Description);
@@ -184,7 +184,7 @@ BOOL CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								break;
 							}
 						for(FParser=FirstFilterPlugin;FParser!=NULL;FParser=FParser->Next)
-							if(id==(int)FParser->Plugin)
+							if(id==(INT_PTR)FParser->Plugin)
 							{
 								SetDlgItemText(hDlg,IDC_STVER,FParser->Plugin->PluginInfo->Ver);
 								SetDlgItemText(hDlg,IDC_STDESC,FParser->Plugin->PluginInfo->Description == NULL ? "" : FParser->Plugin->PluginInfo->Description);
@@ -255,8 +255,8 @@ int YAMNOptInitSvc(WPARAM wParam,LPARAM lParam)
 	odp.cbSize=sizeof(odp);
 	odp.position=0x00000000;
 	odp.hInstance=YAMNVar.hInst;
-	odp.pszGroup=Translate("Plugins");
-	odp.pszTitle=Translate("YAMN");
+	odp.pszGroup=LPGEN("Plugins");
+	odp.pszTitle=LPGEN("YAMN");
 	odp.flags=ODPF_BOLDGROUPS;
 //insert YAMN options dialog
 	//odp.pszTemplate=MAKEINTRESOURCEA(IDD_OPTIONS);
@@ -552,7 +552,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read done\n");
 #endif
 		GetAccountStatus(ActualAccount,accstatus);
-		SetDlgItemTextA(hDlg,IDC_STSTATUS,accstatus);
+		SetDlgItemText(hDlg,IDC_STSTATUS,accstatus);
 		ReadDone(ActualAccount);
 	}				       
 	else			            //default
@@ -603,7 +603,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_AUTOBODY,BST_UNCHECKED);
 
-		SetDlgItemText(hDlg,IDC_STSTATUS,Translate("No account selected"));
+		SetDlgItemText(hDlg,IDC_STSTATUS,TranslateT("No account selected"));
 	}
 	return TRUE;
 }
@@ -729,7 +729,7 @@ BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
 }
 
 
-BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	BOOL Changed=FALSE;
 	static BOOL InList=FALSE;
@@ -767,7 +767,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)TranslateT("Default"));
 			for(i=1;i<CPLENSUPP;i++){
 				CPINFOEX info; GetCPInfoEx(CodePageNamesSupp[i].CP,0,&info);
-				int len = strlen(info.CodePageName+7);
+				size_t len = strlen(info.CodePageName+7);
 				info.CodePageName[len+6]=0;
 				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)info.CodePageName+7);
 			}
@@ -1032,7 +1032,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							BOOL CheckSSL, CheckABody, CheckNoTLS;
 							//BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,
 							BOOL CheckStart,CheckForce;
-							int Length,index;
+							size_t Length,index;
 							UINT Port,Interval;
 
 							if(GetDlgItemText(hDlg,IDC_COMBOACCOUNT,Text,sizeof(Text)/sizeof(TCHAR)))
@@ -1071,24 +1071,24 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								{
 									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
 									SetFocus(GetDlgItem(hDlg,IDC_EDITINTERVAL));
-								        break;
+									break;
 								}
-				        
+
 								GetDlgItemText(hDlg,IDC_EDITAPP,Text,sizeof(Text)/sizeof(TCHAR));
 								if(CheckApp && !(Length=_tcslen(Text)))
 								{
-									MessageBox(hDlg,Translate(_T("Please select application to run")),Translate(_T("Input error")),MB_OK);
+									MessageBox(hDlg,TranslateT("Please select application to run"),TranslateT("Input error"),MB_OK);
 									break;
 								}
-				        
+
 								GetDlgItemText(hDlg,IDC_COMBOACCOUNT,Text,sizeof(Text)/sizeof(TCHAR));
 								if(!(Length=_tcslen(Text)))
 									GetDlgItemText(hDlg,IDC_EDITNAME,Text,sizeof(Text)/sizeof(TCHAR));
 									if(!(Length=_tcslen(Text)))
 										break;
-				        
-								DlgSetItemText(hDlg,(WPARAM)IDC_STTIMELEFT,(LPARAM)Translate("Please wait while no account is in use."));
-				        
+
+								DlgSetItemText(hDlg,(WPARAM)IDC_STTIMELEFT,(LPARAM)TranslateT("Please wait while no account is in use."));
+
 								if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)Text)))
 								{
 									NewAcc=TRUE;
@@ -1291,7 +1291,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 	return FALSE;
 }
 
-BOOL CALLBACK DlgProcPOP3AccPopup(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcPOP3AccPopup(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	BOOL Changed=FALSE;
 	static BOOL InList=FALSE;

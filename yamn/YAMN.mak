@@ -37,7 +37,8 @@ INTDIR=.\Release\Win2in1
 OutDir=.\Release\Win2in1
 # End Custom Macros
 
-ALL : "..\..\bin\release\plugins\yamn.dll" "$(OUTDIR)\YAMN.bsc"
+ALL : "..\..\bin\release\plugins\yamn.dll"
+
 
 
 CLEAN :
@@ -166,7 +167,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \
@@ -226,8 +226,6 @@ CLEAN :
 	-@erase "$(INTDIR)\protoplugin.sbr"
 	-@erase "$(INTDIR)\services.obj"
 	-@erase "$(INTDIR)\services.sbr"
-	-@erase "$(INTDIR)\ssl.obj"
-	-@erase "$(INTDIR)\ssl.sbr"
 	-@erase "$(INTDIR)\synchro.obj"
 	-@erase "$(INTDIR)\synchro.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -294,7 +292,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\pop3.sbr" \
 	"$(INTDIR)\pop3comm.sbr" \
 	"$(INTDIR)\pop3opt.sbr" \
-	"$(INTDIR)\ssl.sbr" \
 	"$(INTDIR)\account.sbr" \
 	"$(INTDIR)\debug.sbr" \
 	"$(INTDIR)\filterplugin.sbr" \
@@ -322,7 +319,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \
@@ -363,7 +359,6 @@ CLEAN :
 	-@erase "$(INTDIR)\pop3opt.obj"
 	-@erase "$(INTDIR)\protoplugin.obj"
 	-@erase "$(INTDIR)\services.obj"
-	-@erase "$(INTDIR)\ssl.obj"
 	-@erase "$(INTDIR)\synchro.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\yamn.obj"
@@ -428,7 +423,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \
@@ -488,8 +482,6 @@ CLEAN :
 	-@erase "$(INTDIR)\protoplugin.sbr"
 	-@erase "$(INTDIR)\services.obj"
 	-@erase "$(INTDIR)\services.sbr"
-	-@erase "$(INTDIR)\ssl.obj"
-	-@erase "$(INTDIR)\ssl.sbr"
 	-@erase "$(INTDIR)\synchro.obj"
 	-@erase "$(INTDIR)\synchro.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -556,7 +548,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\pop3.sbr" \
 	"$(INTDIR)\pop3comm.sbr" \
 	"$(INTDIR)\pop3opt.sbr" \
-	"$(INTDIR)\ssl.sbr" \
 	"$(INTDIR)\account.sbr" \
 	"$(INTDIR)\debug.sbr" \
 	"$(INTDIR)\filterplugin.sbr" \
@@ -584,7 +575,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \
@@ -625,7 +615,6 @@ CLEAN :
 	-@erase "$(INTDIR)\pop3opt.obj"
 	-@erase "$(INTDIR)\protoplugin.obj"
 	-@erase "$(INTDIR)\services.obj"
-	-@erase "$(INTDIR)\ssl.obj"
 	-@erase "$(INTDIR)\synchro.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\yamn.obj"
@@ -690,7 +679,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \
@@ -750,8 +738,6 @@ CLEAN :
 	-@erase "$(INTDIR)\protoplugin.sbr"
 	-@erase "$(INTDIR)\services.obj"
 	-@erase "$(INTDIR)\services.sbr"
-	-@erase "$(INTDIR)\ssl.obj"
-	-@erase "$(INTDIR)\ssl.sbr"
 	-@erase "$(INTDIR)\synchro.obj"
 	-@erase "$(INTDIR)\synchro.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -818,7 +804,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\pop3.sbr" \
 	"$(INTDIR)\pop3comm.sbr" \
 	"$(INTDIR)\pop3opt.sbr" \
-	"$(INTDIR)\ssl.sbr" \
 	"$(INTDIR)\account.sbr" \
 	"$(INTDIR)\debug.sbr" \
 	"$(INTDIR)\filterplugin.sbr" \
@@ -846,7 +831,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\pop3.obj" \
 	"$(INTDIR)\pop3comm.obj" \
 	"$(INTDIR)\pop3opt.obj" \
-	"$(INTDIR)\ssl.obj" \
 	"$(INTDIR)\account.obj" \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\filterplugin.obj" \

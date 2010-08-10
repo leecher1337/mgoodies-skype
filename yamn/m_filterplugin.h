@@ -98,7 +98,7 @@ typedef struct CFilterPluginQueue
 //================================== FUNCTIONS DEFINITIONS ========================================
 //
 
-typedef int (WINAPI *YAMN_SETFILTERPLUGINFCNIMPORTFCN)(HYAMNFILTERPLUGIN Plugin,DWORD Importance,PYAMN_FILTERIMPORTFCN YAMNFilterFcn,DWORD YAMNFilterFcnVer);
+typedef INT_PTR (WINAPI *YAMN_SETFILTERPLUGINFCNIMPORTFCN)(HYAMNFILTERPLUGIN Plugin,DWORD Importance,PYAMN_FILTERIMPORTFCN YAMNFilterFcn,DWORD YAMNFilterFcnVer);
 
 //
 //================================== QUICK FUNCTION CALL DEFINITIONS ========================================

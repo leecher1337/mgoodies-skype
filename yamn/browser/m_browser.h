@@ -35,7 +35,7 @@ typedef struct BadConnectionParam
 #define YAMN_BADCONNECTIONVERSION	1
 	HANDLE ThreadRunningEV;
 	HACCOUNT account;
-	DWORD errcode;
+	UINT_PTR errcode;
 	void *Param;
 } YAMN_BADCONNECTIONPARAM,*PYAMN_BADCONNECTIONPARAM;
 

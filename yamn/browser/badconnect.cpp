@@ -10,7 +10,7 @@
 #include <m_skin.h>
 #include <m_langpack.h>
 #include <m_database.h>
-#include "../include/m_popup.h"
+#include <m_popup.h>
 #include "../main.h"
 #include "../m_protoplugin.h"
 #include "../m_account.h"
@@ -53,7 +53,7 @@ LRESULT CALLBACK DlgProcYAMNBadConnection(HWND hDlg,UINT msg,WPARAM wParam,LPARA
 //BadConnection thread function creates window for BadConnection message
 DWORD WINAPI BadConnection(LPVOID Param);
 
-int RunBadConnectionSvc(WPARAM wParam,LPARAM lParam);
+INT_PTR RunBadConnectionSvc(WPARAM wParam,LPARAM lParam);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -363,7 +363,7 @@ DWORD WINAPI BadConnection(LPVOID Param)
 }
 
 
-int RunBadConnectionSvc(WPARAM wParam,LPARAM lParam)
+INT_PTR RunBadConnectionSvc(WPARAM wParam,LPARAM lParam)
 {
 	DWORD tid;
 //an event for successfull copy parameters to which point a pointer in stack for new thread

@@ -8,9 +8,11 @@
 
 #ifdef YAMN_DEBUG
 
-#pragma comment(lib, "th32.lib")
+//#pragma comment(lib, "th32.lib")
 
-#define _WIN32_WINNT 0x0501 // WinXP only.
+#if !defined(_WIN32_WINNT)
+#define _WIN32_WINNT 0x0501 // WinXP only
+#endif
 #define VC_EXTRALEAN
 #include <windows.h>
 #include <tlhelp32.h>

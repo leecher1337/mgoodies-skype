@@ -8,7 +8,7 @@
 //
 
 #ifndef MIRANDASERVICE
-typedef int (*MIRANDASERVICE)(WPARAM,LPARAM);
+typedef INT_PTR (*MIRANDASERVICE)(WPARAM,LPARAM);
 #endif
 
 typedef struct CYAMNVariables
@@ -33,7 +33,7 @@ struct CExportedFunctions
 struct CExportedServices
 {
 	char* ID;
-	int (* Ptr)(WPARAM,LPARAM);
+	INT_PTR (* Ptr)(WPARAM,LPARAM);
 };
 
 //

@@ -13,7 +13,7 @@
 extern SWMRG *AccountBrowserSO;
 extern struct WndHandles *MessageWnd;
 
-extern int GetCharsetFromString(char *input,int size);
+extern int GetCharsetFromString(char *input,size_t size);
 extern void SendMsgToRecepients(struct WndHandles *FirstWin,UINT msg,WPARAM wParam,LPARAM lParam);
 extern void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode);
 extern DWORD WINAPI MailBrowser(LPVOID Param);
@@ -518,7 +518,7 @@ struct APartDataType
 
 void ParseAPart(APartDataType *data)
 {
-	int len = strlen(data->Src);
+	size_t len = strlen(data->Src);
 	try
 	{
 		char *finder=data->Src;
@@ -592,9 +592,9 @@ void ParseAPart(APartDataType *data)
 	}
 	catch(...)
 	{
-		MessageBox(NULL,"Translate header error","",0);
+		MessageBox(NULL,_T("Translate header error"),_T(""),0);
 	}
-	if (data->body) data->bodyLen = strlen(data->body);
+	if (data->body) data->bodyLen = (int)strlen(data->body);
 }
 
 //from decode.cpp
@@ -605,7 +605,7 @@ int ConvertStringToUnicode(char *stream,unsigned int cp,WCHAR **out);
 WCHAR *ParseMultipartBody(char *src, char *bond)
 {
 	char *srcback = _strdup(src);
-	int sizebond = strlen(bond);
+	size_t sizebond = strlen(bond);
 	int numparts = 1;
 	int i;
 	char *courbond = srcback;
@@ -619,7 +619,7 @@ WCHAR *ParseMultipartBody(char *src, char *bond)
 		partData[i].Src = courbond+sizebond;
 		while (ENDLINE(partData[i].Src)) partData[i].Src++;
 	}
-	int resultSize=0;
+	size_t resultSize=0;
 	for (i=0;i<numparts;i++){
 		ParseAPart(&partData[i]);
 		if (partData[i].body){
@@ -670,10 +670,10 @@ FailBackRaw:
 		resultSize += 100+4+3; //cr+nl+100+ 3*bullet
 	}
 	dest = new WCHAR[resultSize+1];
-	int destpos = 0;
+	size_t destpos = 0;
 	for (i=0;i<numparts;i++){
 		if (i){ // part before first boudary should not have headers
-			char infoline[104]; int linesize = 0;
+			char infoline[104]; size_t linesize = 0;
 			_snprintf(infoline,100,"%s %d",Translate("Part"),i);
 			linesize = strlen(infoline);
 			if (partData[i].TransEnc){
@@ -709,14 +709,14 @@ FailBackRaw:
 				dest[destpos] = dest[destpos+1] = dest[destpos+2] = 0x2022; // bullet;
 				destpos+=3;
 				ConvertStringToUnicode(infoline,CP_ACP,&temp);
-				int wsize = wcslen(temp);
+				size_t wsize = wcslen(temp);
 				wcscpy(&dest[destpos],temp);
 				destpos += wsize;
 				delete[] temp;
 			}
 		} // if (i)
 		if (partData[i].wBody){
-			int wsize = wcslen(partData[i].wBody);
+			size_t wsize = wcslen(partData[i].wBody);
 			wcscpy(&dest[destpos],partData[i].wBody);
 			destpos += wsize;
 			delete[] partData[i].wBody;
