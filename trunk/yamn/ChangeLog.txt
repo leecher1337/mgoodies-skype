@@ -1,6 +1,7 @@
 0.1.2.5
 =======
 * x64 support by Merlin
+* Resource patch by mataes (for translations)
 
 0.1.2.4
 =======

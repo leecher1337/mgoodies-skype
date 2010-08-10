@@ -296,9 +296,9 @@ BEGIN
     CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,145,118,29,12
     CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,145,134,29,12
     EDITTEXT        IDC_EDITFPOPS,23,121,20,12,ES_AUTOHSCROLL
-    LTEXT           "..s Popup duration",IDC_STATIC,43,67,65,8
-    LTEXT           "..s Popup duration",IDC_STATIC,45,176,65,8
-    LTEXT           "..s Popup duration",IDC_STATIC,45,122,60,8
+    LTEXT           "..s Popup duration",IDC_STATIC,45,67,70,8
+    LTEXT           "..s Popup duration",IDC_STATIC,45,176,70,8
+    LTEXT           "..s Popup duration",IDC_STATIC,45,122,70,8
     PUSHBUTTON      "Preview",IDC_PREVIEW,255,215,49,13
     LTEXT           "Background colour",IDC_STATIC,177,184,108,10
     LTEXT           "Text colour",IDC_STATIC,177,200,107,10
