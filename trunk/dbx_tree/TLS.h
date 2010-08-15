@@ -66,6 +66,7 @@ typename CThreadLocalStorage<TAdministrator, TData>::PListElem CThreadLocalStora
 template <typename TAdministrator, typename TData>
 CThreadLocalStorage<TAdministrator, TData>::CThreadLocalStorage()
 {
+	m_LockfreeList = NULL;
 	if (!_CanUseTLS)
 		m_LockfreeList = new lockfree::hash_map<DWORD, TData, DummyHash>();
 }
