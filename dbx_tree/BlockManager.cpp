@@ -141,8 +141,9 @@ void CBlockManager::ExecuteOptimize()
 			
 			if (m_BlockSync.Waiting() > 0)
 			{
+				unsigned int w = m_BlockSync.Waiting();
 				SYNC_ENDWRITE(m_BlockSync);
-				Sleep(m_BlockSync.Waiting() * 50 + 1);
+				Sleep(w * 64 + 1);
 				SYNC_BEGINWRITE(m_BlockSync);
 				//CacheFlush();
 				m_FileAccess.FlushJournal();
