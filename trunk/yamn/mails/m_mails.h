@@ -80,63 +80,63 @@ typedef struct CMailData	//this is plugin-independent
 
 	struct CMimeItem *TranslatedHeader;		//MIME items
 	struct CMimeItem *Additional;			//MIME items not read from server (custom, for filter plugins etc.)
-	char *Body;					//Message body
+	char *Body;								//Message body
 
 	CMailData(): CP(-1), Size(0), TranslatedHeader(NULL), Body(NULL){}
 } MAILDATA,*PMAILDATA;
 
 typedef struct CMimeMsgQueue
 {
-#define	YAMN_MAILVERSION	3
-	char *ID;					//The ID of mail. This ID identifies every mail in the account, so plugin should set it
+#define YAMN_MAILVERSION		3
+	char *ID;								//The ID of mail. This ID identifies every mail in the account, so plugin should set it
 
 	DWORD Number;
 
-#define YAMN_MSG_ANY		0xffffffff	//any mail
+#define YAMN_MSG_ANY			0xffffffff	//any mail
 
 //The difference between new and unseen: when new mail is found in account, it becomes unseen and new. But in the next check, if the same mail is found, it is not new.
 //However, when user was not near computer, he does not know about this mail- it is unseen. After user accepts, that he saw new mails, it becomes seen.
-#define YAMN_MSG_NEW		0x80000000	//this mail is new
-#define YAMN_MSG_UNSEEN		0x40000000	//this mail is mailbrowser unseen
-#define YAMN_MSG_DISPLAY	0x20000000	//this mail can be displayed in mailbrowser
-#define YAMN_MSG_POPUP		0x10000000	//this mail can be displayed in popup and can invoke a popup
-#define YAMN_MSG_SYSTRAY	0x08000000	//this mail can invoke systray icon
-#define	YAMN_MSG_BROWSER	0x04000000	//this mail can run mailbrowser
-#define	YAMN_MSG_DISPLAYC	0x02000000	//this mail is inserted to browser mail counter system (the "Account - xx new mails, yy total" phrase)
-#define	YAMN_MSG_POPUPC		0x01000000	//this mail is inserted to popup counter system (the "Account - xx new mails, yy total" phrase)
+#define YAMN_MSG_NEW			0x80000000	//this mail is new
+#define YAMN_MSG_UNSEEN			0x40000000	//this mail is mailbrowser unseen
+#define YAMN_MSG_DISPLAY		0x20000000	//this mail can be displayed in mailbrowser
+#define YAMN_MSG_POPUP			0x10000000	//this mail can be displayed in popup and can invoke a popup
+#define YAMN_MSG_SYSTRAY		0x08000000	//this mail can invoke systray icon
+#define	YAMN_MSG_BROWSER		0x04000000	//this mail can run mailbrowser
+#define	YAMN_MSG_DISPLAYC		0x02000000	//this mail is inserted to browser mail counter system (the "Account - xx new mails, yy total" phrase)
+#define	YAMN_MSG_POPUPC			0x01000000	//this mail is inserted to popup counter system (the "Account - xx new mails, yy total" phrase)
 
-#define YAMN_MSG_SOUND		0x00800000	//this mail can "play sound"
-#define YAMN_MSG_APP		0x00400000	//this mail can "launch application"
-#define	YAMN_MSG_NEVENT		0x00100000	//this mail can launch Miranda "new mail" event
+#define YAMN_MSG_SOUND			0x00800000	//this mail can "play sound"
+#define YAMN_MSG_APP			0x00400000	//this mail can "launch application"
+#define	YAMN_MSG_NEVENT			0x00100000	//this mail can launch Miranda "new mail" event
 
-#define	YAMN_MSG_VIRTUAL	0x00080000	//this mail is not real- does not exists
+#define	YAMN_MSG_VIRTUAL		0x00080000	//this mail is not real- does not exists
 
-#define YAMN_MSG_FILTERED	0x00040000	//this mail has been filtered
+#define YAMN_MSG_FILTERED		0x00040000	//this mail has been filtered
 
 #define YAMN_MSG_DELETETRASH	0x00020000	//this mail should be moved to the trash bin rather than really deleting from mailbox (this is only switch doing nothing, perhaps usefull for filter plugins)
-#define YAMN_MSG_DELETED	0x00010000	//this mail is already deleted from server (also must be set virtual flag)  (when doing synchronizations between 2 queues, YAMN then does not touch this mail)
-#define YAMN_MSG_MEMDELETE	0x00008000	//this mail will be deleted immidiatelly from memory (and disk) when deleted from server (some opposite of YAMN_MSG_DELETED)
-#define YAMN_MSG_USERDELETE	0x00004000	//this mail is about to delete from server (user deletes manually)
-#define YAMN_MSG_AUTODELETE	0x00002000	//this mail is about to delete from server (plugin marks it for deleting)
-#define YAMN_MSG_DELETEOK	0x00001000	//this mail is confirmed to delete (this flag must be set to delete this mail)
+#define YAMN_MSG_DELETED		0x00010000	//this mail is already deleted from server (also must be set virtual flag)  (when doing synchronizations between 2 queues, YAMN then does not touch this mail)
+#define YAMN_MSG_MEMDELETE		0x00008000	//this mail will be deleted immidiatelly from memory (and disk) when deleted from server (some opposite of YAMN_MSG_DELETED)
+#define YAMN_MSG_USERDELETE		0x00004000	//this mail is about to delete from server (user deletes manually)
+#define YAMN_MSG_AUTODELETE		0x00002000	//this mail is about to delete from server (plugin marks it for deleting)
+#define YAMN_MSG_DELETEOK		0x00001000	//this mail is confirmed to delete (this flag must be set to delete this mail)
 
 #define YAMN_MSG_BODYREQUESTED	0x00000800	//user requested (part of) the body. In POP3 it should be (TOP <nr> <lines>)
 #define YAMN_MSG_BODYRECEIVED	0x00000200	//(part of) the body.received;
-#define YAMN_MSG_STAYUNSEEN	0x00000400	//this mail stays unseen while user does not really see it
+#define YAMN_MSG_STAYUNSEEN		0x00000400	//this mail stays unseen while user does not really see it
 
-#define YAMN_MSG_DELETE		(YAMN_MSG_USERDELETE | YAMN_MSG_AUTODELETE)
+#define YAMN_MSG_DELETE			(YAMN_MSG_USERDELETE | YAMN_MSG_AUTODELETE)
 
-#define YAMN_MSG_NORMALNEW	(YAMN_MSG_NEW | YAMN_MSG_UNSEEN | YAMN_MSG_BROWSER | YAMN_MSG_DISPLAY | YAMN_MSG_DISPLAYC | YAMN_MSG_POPUP | YAMN_MSG_POPUPC | YAMN_MSG_SYSTRAY | YAMN_MSG_SOUND | YAMN_MSG_APP | YAMN_MSG_NEVENT | YAMN_MSG_MEMDELETE | YAMN_MSG_STAYUNSEEN)
+#define YAMN_MSG_NORMALNEW		(YAMN_MSG_NEW | YAMN_MSG_UNSEEN | YAMN_MSG_BROWSER | YAMN_MSG_DISPLAY | YAMN_MSG_DISPLAYC | YAMN_MSG_POPUP | YAMN_MSG_POPUPC | YAMN_MSG_SYSTRAY | YAMN_MSG_SOUND | YAMN_MSG_APP | YAMN_MSG_NEVENT | YAMN_MSG_MEMDELETE | YAMN_MSG_STAYUNSEEN)
 
 #define YAMN_MSG_FLAGSSET(maildata,flag)	((maildata & flag)==flag)
 
-#define YAMN_MSG_SPAML1		1		//spam level 1: notify, show in another color in mail browser
-#define YAMN_MSG_SPAML2		2		//spam level 2: do not notify, show in another color in mail browser
-#define YAMN_MSG_SPAML3		3		//spam level 3: delete, show in another color in mail browser that it was deleted, you do not need to set YAMN_MSG_AUTODELETE
-#define YAMN_MSG_SPAML4		4		//spam level 4: delete, do not show, you do not need to set YAMN_MSG_AUTODELETE
-#define YAMN_MSG_SPAMMASK	0x0000000F
+#define YAMN_MSG_SPAML1			1			//spam level 1: notify, show in another color in mail browser
+#define YAMN_MSG_SPAML2			2			//spam level 2: do not notify, show in another color in mail browser
+#define YAMN_MSG_SPAML3			3			//spam level 3: delete, show in another color in mail browser that it was deleted, you do not need to set YAMN_MSG_AUTODELETE
+#define YAMN_MSG_SPAML4			4			//spam level 4: delete, do not show, you do not need to set YAMN_MSG_AUTODELETE
+#define YAMN_MSG_SPAMMASK		0x0000000F
 
-#define YAMN_MSG_SPAML(maildata,level)	((maildata & YAMN_MSG_SPAMMASK)==level)
+#define YAMN_MSG_SPAML(maildata,level)		((maildata & YAMN_MSG_SPAMMASK)==level)
 	DWORD Flags;
 //Plugins can read mail data, but it can be NULL!!! So plugin should use Load and Save services to load or save data and Unload to release data from memory
 	PMAILDATA MailData;
@@ -151,6 +151,7 @@ typedef struct CMimeMsgQueue
 
 	struct CMimeMsgQueue *Next;
 } YAMNMAIL,*HYAMNMAIL;
+
 #define	LoadedMailData(x)	(x->MailData!=NULL)
 
 //

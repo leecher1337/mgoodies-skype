@@ -155,20 +155,18 @@ INT_PTR DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam)
 	HYAMNMAIL OldMail=(HYAMNMAIL)lParam;
 	struct CMimeItem *TH;
 
-	if(Plugin->MailFcn!=NULL)
-		if(Plugin->MailFcn->DeleteMailFcnPtr!=NULL)
-		{
-//Let plugin delete its own CMimeMsgQueue derived structure
+	if(Plugin->MailFcn!=NULL){
+		if(Plugin->MailFcn->DeleteMailFcnPtr!=NULL) {
+			//Let plugin delete its own CMimeMsgQueue derived structure
 			Plugin->MailFcn->DeleteMailFcnPtr(OldMail);
 			return 1;
 		}
-	if(OldMail->MailData!=NULL)
-	{
+	}
+	if(OldMail->MailData!=NULL) {
 		if(OldMail->MailData->Body!=NULL)
 			delete[] OldMail->MailData->Body;
 		if((TH=OldMail->MailData->TranslatedHeader)!=NULL)
-			for(;OldMail->MailData->TranslatedHeader!=NULL;)
-			{
+			for(;OldMail->MailData->TranslatedHeader!=NULL;) {
 				TH=TH->Next;
 				if(OldMail->MailData->TranslatedHeader->name!=NULL)
 					delete[] OldMail->MailData->TranslatedHeader->name;
@@ -234,16 +232,17 @@ void WINAPI SynchroMessagesFcn(HACCOUNT Account,HYAMNMAIL *OldQueue,HYAMNMAIL *R
 {
 	HYAMNMAIL Finder,FinderPrev;
 	HYAMNMAIL Parser,ParserPrev;
-	HYAMNMAIL RemovedOldParser=NULL,RemovedNewParser=NULL;
+	HYAMNMAIL RemovedOldParser =NULL;
+	HYAMNMAIL RemovedNewParser =NULL;
 	if(RemovedOld!=NULL) *RemovedOld=NULL;
 	if(RemovedNew!=NULL) *RemovedNew=NULL;
 
 	for(FinderPrev=NULL,Finder=*OldQueue;Finder!=NULL;)
 	{
-		if(Finder->Flags & YAMN_MSG_DELETED)	//if old queue contains deleted mail
+		if(Finder->Flags & YAMN_MSG_DELETED)			//if old queue contains deleted mail
 		{
 			FinderPrev=Finder;
-			Finder=Finder->Next;					//get next message in old queue for testing
+			Finder=Finder->Next;						//get next message in old queue for testing
 			continue;
 		}
 		for(ParserPrev=NULL,Parser=*NewQueue;Parser!=NULL;ParserPrev=Parser,Parser=Parser->Next)
@@ -254,10 +253,10 @@ void WINAPI SynchroMessagesFcn(HACCOUNT Account,HYAMNMAIL *OldQueue,HYAMNMAIL *R
 			if(Parser->ID==NULL)						//simply ignore the message, that has not filled its ID
 				continue;
 
-			if(0==strcmp(Parser->ID,Finder->ID))				//search for equal message in new queue
+			if(0==strcmp(Parser->ID,Finder->ID))		//search for equal message in new queue
 				break;
 		}
-		if(Parser!=NULL)							//found equal message in new queue
+		if(Parser!=NULL)								//found equal message in new queue
 		{
 			if(Parser==*NewQueue)
 				*NewQueue=(*NewQueue)->Next;
@@ -265,34 +264,34 @@ void WINAPI SynchroMessagesFcn(HACCOUNT Account,HYAMNMAIL *OldQueue,HYAMNMAIL *R
 				ParserPrev->Next=Parser->Next;
 			Finder->Number=Parser->Number;				//rewrite the number of current message in old queue
 
-			if(RemovedNew==NULL)					//delete from new queue
+			if(RemovedNew==NULL)						//delete from new queue
 				DeleteAccountMailSvc((WPARAM)Account->Plugin,(LPARAM)Parser);
-			else							//or move to RemovedNew
+			else										//or move to RemovedNew
 			{
-				if(RemovedNewParser==NULL)			//if it is first mail removed from NewQueue
-					*RemovedNew=Parser;			//set RemovedNew queue to point to first message in removed queue
+				if(RemovedNewParser==NULL)				//if it is first mail removed from NewQueue
+					*RemovedNew=Parser;					//set RemovedNew queue to point to first message in removed queue
 				else
 					RemovedNewParser->Next=Parser;		//else don't forget to show to next message in RemovedNew queue
-				RemovedNewParser=Parser;			//follow RemovedNew queue
+				RemovedNewParser=Parser;				//follow RemovedNew queue
 				RemovedNewParser->Next=NULL;
 			}
 			FinderPrev=Finder;
-			Finder=Finder->Next;					//get next message in old queue for testing
+			Finder=Finder->Next;						//get next message in old queue for testing
 		}
-		else								//a message was already deleted from mailbox
+		else											//a message was already deleted from mailbox
 		{
-			if(Finder==*OldQueue)					//if we are at the first item in OldQueue
+			if(Finder==*OldQueue)						//if we are at the first item in OldQueue
 			{
 				*OldQueue=(*OldQueue)->Next;			//set OldQueue to next item
-				if(RemovedOld==NULL)				//delete from old queue
+				if(RemovedOld==NULL)					//delete from old queue
 					DeleteAccountMailSvc((WPARAM)Account->Plugin,(LPARAM)Finder);
-				else						//or move to RemovedOld
+				else									//or move to RemovedOld
 				{
-					if(RemovedOldParser==NULL)		//if it is first mail removed from OldQueue
-						*RemovedOld=Finder;		//set RemovedOld queue to point to first message in removed queue
+					if(RemovedOldParser==NULL)			//if it is first mail removed from OldQueue
+						*RemovedOld=Finder;				//set RemovedOld queue to point to first message in removed queue
 					else
 						RemovedOldParser->Next=Finder;	//else don't forget to show to next message in RemovedNew queue
-					RemovedOldParser=Finder;		//follow RemovedOld queue
+					RemovedOldParser=Finder;			//follow RemovedOld queue
 					RemovedOldParser->Next=NULL;
 				}
 				Finder=*OldQueue;
@@ -300,15 +299,15 @@ void WINAPI SynchroMessagesFcn(HACCOUNT Account,HYAMNMAIL *OldQueue,HYAMNMAIL *R
 			else
 			{
 				FinderPrev->Next=Finder->Next;
-				if(RemovedOld==NULL)				//delete from old queue
+				if(RemovedOld==NULL)					//delete from old queue
 					DeleteAccountMailSvc((WPARAM)Account->Plugin,(LPARAM)Finder);
-				else						//or move to RemovedOld
+				else									//or move to RemovedOld
 				{
-					if(RemovedOldParser==NULL)		//if it is first mail removed from OldQueue
-						*RemovedOld=Finder;		//set RemovedOld queue to point to first message in removed queue
+					if(RemovedOldParser==NULL)			//if it is first mail removed from OldQueue
+						*RemovedOld=Finder;				//set RemovedOld queue to point to first message in removed queue
 					else
 						RemovedOldParser->Next=Finder;	//else don't forget to show to next message in RemovedNew queue
-					RemovedOldParser=Finder;		//follow RemovedOld queue
+					RemovedOldParser=Finder;			//follow RemovedOld queue
 					RemovedOldParser->Next=NULL;
 				}
 				Finder=FinderPrev->Next;

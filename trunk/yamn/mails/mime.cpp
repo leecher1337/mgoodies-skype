@@ -59,7 +59,7 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head);
 // items- translated header (see TranslateHeaderFcn)
 // CP- codepage used when no default found
 // head- header to be filled with values extracted from items, in unicode (wide char)
-void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
+void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head);
 
 //Deletes items in CShortHeader structure
 // head- structure whose items are deleted
@@ -94,7 +94,7 @@ void CopyToHeader(char *srcstart,char *srcend,char **dest,int mode)
 		srcstart++;
 		srcend--;
 	}
-       
+
 	if(srcstart>=srcend)
 		return;
 
@@ -448,6 +448,7 @@ void DeleteShortHeaderContent(struct CShortHeader *head)
 	if(head->To!=NULL) DeleteShortNames(head->To);
 	if(head->Cc!=NULL) DeleteShortNames(head->Cc);
 	if(head->Bcc!=NULL) DeleteShortNames(head->Bcc);
+	if(head->Body!=NULL) delete[] head->Body;
 }
 
 void DeleteHeaderContent(struct CHeader *head)
@@ -458,6 +459,7 @@ void DeleteHeaderContent(struct CHeader *head)
 	if(head->ReturnPathNick!=NULL) delete[] head->ReturnPathNick;
 	if(head->Subject!=NULL) delete[] head->Subject;
 	if(head->Date!=NULL) delete[] head->Date;
+	if(head->Body!=NULL) delete[] head->Body;
 	if(head->To!=NULL) DeleteNames(head->To);
 	if(head->Cc!=NULL) DeleteNames(head->Cc);
 	if(head->Bcc!=NULL) DeleteNames(head->Bcc);

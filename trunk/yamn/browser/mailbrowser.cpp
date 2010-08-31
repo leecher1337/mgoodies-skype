@@ -91,6 +91,7 @@ extern void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD 
 void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head);
 void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head); 
 void DeleteHeaderContent(struct CHeader *head);
+void DeleteShortHeaderContent(struct CShortHeader *head);
 char *ExtractFromContentType(char *ContentType,char *value);
 WCHAR *ParseMultipartBody(char *src, char *bond);
 //From account.cpp
@@ -464,19 +465,26 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 	if(mwui!=NULL)
 		mwui->UpdateMailsMessagesAccess=TRUE;
 
-	//Now we are going to check if extracting data from mail headers are needed. If popups will be displayed or mailbrowser window
-	if((((mwui!=NULL) && !(mwui->RunFirstTime)) && (((nnflags & YAMN_ACC_MSGP) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) || ((nflags & YAMN_ACC_MSGP) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC)))) ||		//if mail window was displayed before and flag YAMN_ACC_MSGP is set
-		((nnflags & YAMN_ACC_MSG) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||	//if needed to run mailbrowser when no unseen and no unseen mail found
-		((nflags & YAMN_ACC_MSG) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||	//if unseen mails found, we sure run mailbrowser
-		((nflags & YAMN_ACC_ICO) && (MN.Real.SysTrayUC+MN.Virtual.SysTrayUC)))		//if needed to run systray
-		RunMailBrowser=TRUE;
-	else
-		RunMailBrowser=FALSE;
+	//Now we are going to check if extracting data from mail headers are needed.
+	//If popups will be displayed or mailbrowser window
+	if	((((mwui!=NULL) && !(mwui->RunFirstTime)) &&
+		  (
+		   ((nnflags & YAMN_ACC_MSGP) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||
+		   ((nflags & YAMN_ACC_MSGP) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC))
+		  )
+		 ) ||		//if mail window was displayed before and flag YAMN_ACC_MSGP is set
+		 ((nnflags & YAMN_ACC_MSG) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||		//if needed to run mailbrowser when no unseen and no unseen mail found
+		 ((nflags & YAMN_ACC_MSG) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||		//if unseen mails found, we sure run mailbrowser
+		 ((nflags & YAMN_ACC_ICO) && (MN.Real.SysTrayUC+MN.Virtual.SysTrayUC))
+		)			//if needed to run systray
+			RunMailBrowser=TRUE;
+	else	RunMailBrowser=FALSE;
 
-	if(((nflags & YAMN_ACC_POP) && (ActualAccount->Flags & YAMN_ACC_POPN) && (MN.Real.PopUpNC+MN.Virtual.PopUpNC)))	//if some popups with mails are needed to show
-		RunPopUps=TRUE;
-	else
-		RunPopUps=FALSE;
+	if( (nflags & YAMN_ACC_POP) && 
+		(ActualAccount->Flags & YAMN_ACC_POPN) &&
+		(MN.Real.PopUpNC+MN.Virtual.PopUpNC) )		//if some popups with mails are needed to show
+			RunPopUps=TRUE;
+	else	RunPopUps=FALSE;
 
 	if(RunMailBrowser)
 		ChangeExistingMailStatus(GetDlgItem(hDlg,IDC_LISTMAILS),ActualAccount,&MN);
@@ -487,9 +495,9 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 	{
 		WCHAR *TitleStrW;
 		char *TitleStrA;
-
-		TitleStrA=new char[strlen(ActualAccount->Name)+strlen(Translate(MAILBROWSERTITLE))+10];	//+10 chars for numbers
-		TitleStrW=new WCHAR[strlen(ActualAccount->Name)+strlen(Translate(MAILBROWSERTITLE))+10];	//+10 chars for numbers
+		size_t len = strlen(ActualAccount->Name)+strlen(Translate(MAILBROWSERTITLE))+10;	//+10 chars for numbers
+		TitleStrA=new char[len];
+		TitleStrW=new WCHAR[len];
 
 		sprintf(TitleStrA,Translate(MAILBROWSERTITLE),ActualAccount->Name,MN.Real.DisplayUC+MN.Virtual.DisplayUC,MN.Real.Display+MN.Virtual.Display);
 		MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,TitleStrA,-1,TitleStrW,(int)strlen(TitleStrA)+1);
@@ -501,7 +509,9 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:Do mail actions\n");
 	#endif
+
 	DoMailActions(hDlg,ActualAccount,&MN,nflags,nnflags);
+
 	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:Do mail actions done\n");
 	#endif
@@ -563,7 +573,7 @@ void MimeDateToLocalizedDateTime(char *datein, WCHAR *dateout, int lendateout);
 int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWORD nflags)
 {
 	HYAMNMAIL msgq;
-	POPUPDATAEX NewMailPopUp;
+	POPUPDATAEX NewMailPopUp = {0};
 
 	WCHAR *FromStr;
 	WCHAR SizeStr[20];
@@ -685,12 +695,14 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			WideCharToMultiByte(CP_ACP,0,FromStr,-1,(char *)NewMailPopUp.lpzContactName,sizeof(NewMailPopUp.lpzContactName),NULL,NULL);
 			if(!WideCharToMultiByte(CP_ACP,0,UnicodeHeader.Subject,-1,(char *)NewMailPopUp.lpzText,sizeof(NewMailPopUp.lpzText),NULL,NULL))
 				NewMailPopUp.lpzText[0]=0;
-			YAMN_MAILSHOWPARAM *MailParam = (YAMN_MAILSHOWPARAM*)malloc(sizeof(YAMN_MAILSHOWPARAM));
-			MailParam->account = ActualAccount;
-			MailParam->mail = msgq;
-			MailParam->ThreadRunningEV = 0;
-			NewMailPopUp.PluginData=MailParam;
-			CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
+			PYAMN_MAILSHOWPARAM MailParam = (PYAMN_MAILSHOWPARAM)malloc(sizeof(YAMN_MAILSHOWPARAM));
+			if(MailParam) {
+				MailParam->account = ActualAccount;
+				MailParam->mail = msgq;
+				MailParam->ThreadRunningEV = 0;
+				NewMailPopUp.PluginData=MailParam;
+				CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
+			}
 		}
 
 		if((msgq->Flags & YAMN_MSG_UNSEEN) && (ActualAccount->NewMailN.Flags & YAMN_ACC_KBN))
@@ -754,9 +766,11 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		}
 	}
 
-	if((nflags & YAMN_ACC_POP) && !(ActualAccount->Flags & YAMN_ACC_POPN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
+	if((nflags & YAMN_ACC_POP) && 
+		!(ActualAccount->Flags & YAMN_ACC_POPN) && 
+		(MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
-		POPUPDATAEX NewMailPopUp;
+		POPUPDATAEX NewMailPopUp ={0};
 
 		NewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
 		NewMailPopUp.lchIcon=hYamnIcons[2];
@@ -772,17 +786,20 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
 	}
 
-	if((MN->Real.SysTrayUC+MN->Virtual.SysTrayUC==0) && (hDlg!=NULL))		//destroy tray icon if no new mail
+	//destroy tray icon if no new mail
+	if((MN->Real.SysTrayUC+MN->Virtual.SysTrayUC==0) && (hDlg!=NULL))
 	{
 		nid.hWnd=hDlg;
 		nid.uID=0;
 		Shell_NotifyIcon(NIM_DELETE,&nid);
 	}
-	if((nflags & YAMN_ACC_CONT) && (!(nflags & YAMN_ACC_CONTNOEVENT)) && (MN->Real.UnSeen + MN->Virtual.UnSeen==0)) {//and remove the event
+
+	//and remove the event
+	if((nflags & YAMN_ACC_CONT) && (!(nflags & YAMN_ACC_CONTNOEVENT)) && (MN->Real.UnSeen + MN->Virtual.UnSeen==0)) {
 		CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)ActualAccount->hContact);
 	}
 
-	if((MN->Real.BrowserUC+MN->Virtual.BrowserUC==0) && (hDlg!=NULL))		
+	if((MN->Real.BrowserUC+MN->Virtual.BrowserUC==0) && (hDlg!=NULL))
 	{
 		if(!IsWindowVisible(hDlg) && !(nflags & YAMN_ACC_MSG))
 			PostMessage(hDlg,WM_DESTROY,(WPARAM)0,(LPARAM)0);				//destroy window if no new mail and window is not visible
@@ -903,7 +920,8 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 	switch(msg)
 	{
 		case WM_COMMAND:
-			if((HIWORD(wParam)==STN_CLICKED) && (-1!=(PluginParam=CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam))))	//if clicked and it's new mail popup window
+			//if clicked and it's new mail popup window
+			if((HIWORD(wParam)==STN_CLICKED) && (-1!=(PluginParam=CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam))))
 			{
 				HANDLE hContact = 0;
 				HACCOUNT Account;
@@ -914,7 +932,7 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 					Account = MailParam->account;
 					if(NULL!=(MailParam->ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL))){
 						HANDLE NewThread;
-						if(NULL!=(NewThread=CreateThread(NULL,0,ShowEmailThread,(PVOID)MailParam,0,NULL)))
+						if(NULL!=(NewThread=CreateThread(NULL,0,ShowEmailThread,(LPVOID)MailParam,0,NULL)))
 						{
 							CloseHandle(NewThread);
 						}
@@ -1152,10 +1170,10 @@ ULONGLONG MimeDateToFileTime(char *datein){
 			int i = 0;
 			while (tmp[i]==' ')i++; if (day = strchr(&tmp[i],' ')){day[0]=0; day++;}
 		}
-		if (day) {while (day[0]==' ')  day++;if (month= strchr(day,  ' ')){month[0]=0; month++;}}
+		if (day)   {while (  day[0]==' ')  day++;if (month= strchr(day,  ' ')){month[0]=0; month++;}}
 		if (month) {while (month[0]==' ')month++;if (year = strchr(month,' ')){ year[0]=0; year++;}}
-		if (year) {while ( year[0]==' ') year++;if (time = strchr(year, ' ')){ time[0]=0; time++;}}
-		if (time) {while ( time[0]==' ') time++;if (shift= strchr(time, ' ')){shift[0]=0; shift++;shift[5]=0;}}
+		if (year)  {while ( year[0]==' ') year++;if (time = strchr(year, ' ')){ time[0]=0; time++;}}
+		if (time)  {while ( time[0]==' ') time++;if (shift= strchr(time, ' ')){shift[0]=0; shift++;shift[5]=0;}}
 
 		if (year){
 			st.wYear = atoi(year);
@@ -1246,70 +1264,61 @@ void MimeDateToLocalizedDateTime(char *datein, WCHAR *dateout, int lendateout){
 	FileTimeToLocalizedDateTime(ft,dateout,lendateout);
 }
 
-int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSort )
-{
+int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSort ) {
+	if(lParam1 == NULL || lParam2 == NULL)
+		return 0;
 
-	int					nResult;
-	HYAMNMAIL			email1;
-	HYAMNMAIL			email2;
+	int					nResult	= 0;
+	char				*str1;
+	char				*str2;
+	HYAMNMAIL			email1	= (HYAMNMAIL)lParam1;
+	HYAMNMAIL			email2	= (HYAMNMAIL)lParam2;
 	struct CShortHeader	Header1;
-	struct CShortHeader	Header2;	
-	char			*str1;
-	char			*str2;
-
-	email1 = (HYAMNMAIL)lParam1;
-	email2 = (HYAMNMAIL)lParam2;
-
+	struct CShortHeader	Header2;
 	ZeroMemory(&Header1,sizeof(Header1));
 	ZeroMemory(&Header2,sizeof(Header2));
 
-	if(lParam1 == NULL)
-		return 0;
-
-	if(lParam2 == NULL)
-		return 0;
-
-	nResult = 0;
-
-	try
-	{
-
+	try {
 		ExtractShortHeader(email1->MailData->TranslatedHeader,&Header1);
-		ExtractShortHeader(email2->MailData->TranslatedHeader,&Header2);	
+		ExtractShortHeader(email2->MailData->TranslatedHeader,&Header2);
 
 		switch((int)lParamSort)
 		{
-			case 0:
-				if(Header1.FromNick == NULL) str1 = Header1.From;
+			case 0:	//From
+				if(Header1.FromNick == NULL)
+					 str1 = Header1.From;
 				else str1 = Header1.FromNick;
 
-				if(Header2.FromNick == NULL) str2 = Header2.From;
+				if(Header2.FromNick == NULL)
+					 str2 = Header2.From;
 				else str2 = Header2.FromNick;
 
 				nResult = strcmp(str1, str2);
 
 				if(bFrom) nResult = -nResult;
 				break;
-			case 1:
-				if(Header1.Subject == NULL) str1 = " ";
+			case 1:	//Subject
+				if(Header1.Subject == NULL)
+					 str1 = " ";
 				else str1 = Header1.Subject;
 
-				if(Header2.Subject == NULL) str2 = " ";
+				if(Header2.Subject == NULL)
+					 str2 = " ";
 				else str2 = Header2.Subject;
 
 				nResult = strcmp(str1, str2);
 
 				if(bSub) nResult = -nResult;
 				break;
-			case 2:
-				if(email1->MailData->Size == email2->MailData->Size) nResult = 0;
-				if(email1->MailData->Size > email2->MailData->Size) nResult = 1;
-				if(email1->MailData->Size < email2->MailData->Size) nResult = -1;
+			case 2:	//Size
+				if(email1->MailData->Size == email2->MailData->Size)	nResult =  0;
+				if(email1->MailData->Size >  email2->MailData->Size)	nResult =  1;
+				if(email1->MailData->Size <  email2->MailData->Size)	nResult = -1;
 
 				if(bSize) nResult = -nResult;
 				break;
 
-			case 3:
+			case 3:	//Date
 				{
 				ULONGLONG ts1 = 0, ts2 = 0;
 				ts1 = MimeDateToFileTime(Header1.Date);
@@ -1336,6 +1345,10 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 	catch( ... )
 	{
 	}
+
+	//free mem
+	DeleteShortHeaderContent(&Header1);
+	DeleteShortHeaderContent(&Header2);
 	return nResult;
 
 } 
