@@ -22,17 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "MREWSync.h"
 #include <assert.h>
+#include "interlocked.h"
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	#include <stdio.h>
-#endif
-
-#ifdef _MSC_VER
-#include <intrin.h>
-
-#pragma intrinsic (_InterlockedCompareExchange64)
-#else
-#include "intrin_gcc.h"
 #endif
 
 
@@ -42,24 +35,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // +------------+---------------+---------------+------------+---------------+
 //     63..44         43..24          23..4            3             0
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#define isWriterBusy(Sentinel)    (Sentinel & 0x0000000000000008ULL)
-#define isWriterWaiting(Sentinel) (Sentinel & 0x0000000000fffff0ULL)
-#define isReaderWaiting(Sentinel) (Sentinel & 0x00000fffff000000ULL)
-#define isReaderBusy(Sentinel)    (Sentinel & 0xfffff00000000000ULL)
+#define isWriterBusy(Sentinel)    ((Sentinel) & 0x0000000000000008ui64)
+#define isWriterWaiting(Sentinel) ((Sentinel) & 0x0000000000fffff0ui64)
+#define isReaderWaiting(Sentinel) ((Sentinel) & 0x00000fffff000000ui64)
+#define isReaderBusy(Sentinel)    ((Sentinel) & 0xfffff00000000000ui64)
 
-#define countWriterWaiting(Sentinel) ((Sentinel & 0x0000000000fffff0ULL) >>  4)
-#define countReaderWaiting(Sentinel) ((Sentinel & 0x00000fffff000000ULL) >> 24)
-#define countReaderBusy(Sentinel)    ((Sentinel & 0xfffff00000000000ULL) >> 44)
+#define countWriterWaiting(Sentinel) (((Sentinel) & 0x0000000000fffff0ui64) >>  4)
+#define countReaderWaiting(Sentinel) (((Sentinel) & 0x00000fffff000000ui64) >> 24)
+#define countReaderBusy(Sentinel)    (((Sentinel) & 0xfffff00000000000ui64) >> 44)
 
-#define WriterBusy    (1ULL <<  3)
-#define WriterWaiting (1ULL <<  4)
-#define ReaderWaiting (1ULL << 24)
-#define ReaderBusy    (1ULL << 44)
+#define WriterBusy    (1ui64 <<  3)
+#define WriterWaiting (1ui64 <<  4)
+#define ReaderWaiting (1ui64 << 24)
+#define ReaderBusy    (1ui64 << 44)
 
-#define isUseOddReader(Sentinel) (Sentinel & 0x0000000000000001ULL)
-#define useOddReader             (1ULL)
-
-#define CAS(Destination, Exchange, Comperand) _InterlockedCompareExchange64(&(Destination), Exchange, Comperand)
+#define isUseOddReader(Sentinel) ((Sentinel) & 1)
+#define useOddReader             (1ui64)
 
 CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 : tls(),
@@ -110,7 +101,7 @@ void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 			else 
 				newvalue = old + ReaderBusy; // no writer in sight, just take lock
 		
-		} while (CAS(m_Sentinel, newvalue, old) != old);
+		} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 
 		if (isWriterBusy(old) || isWriterWaiting(old))
@@ -141,7 +132,7 @@ void CMultiReadExclusiveWriteSynchronizer::EndRead()
 			} else {
 				newvalue = old - ReaderBusy;
 			}
-		} while (CAS(m_Sentinel, newvalue, old) != old);
+		} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 		if ((countReaderBusy(old) == 1) && isWriterWaiting(old))
 		{
@@ -178,7 +169,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 				} else { // nobody is busy, we want the lock
 					newvalue = old + WriterBusy - ReaderBusy;
 				}
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 			if (countReaderBusy(old) > 1)
 			{
@@ -204,14 +195,14 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 				} else { // nobody is busy, we want the lock
 					newvalue = old + WriterBusy;
 				}
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 			if (isWriterBusy(old) || isReaderBusy(old) || isWriterWaiting(old))
 			{
 				WaitForSingleObject(m_WriteSignal, INFINITE); // someone woke me up... he had to take care of all state changes of the sentinel
 			}
 		}
-		res = (oldrevision == (_InterlockedIncrement(&m_Revision) - 1));
+		res = (oldrevision == (INC_32(m_Revision) - 1));
 
 		m_WriterID = id;
 	}
@@ -244,7 +235,7 @@ bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 			do {
 				old = m_Sentinel;
 				newvalue = (old ^ useOddReader) - WriterBusy + ReaderBusy; // single case... we are a waiting reader and we will keep control of the lock
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 			if (isUseOddReader(old)) // allow additional readers to pass
 				SetEvent(m_ReadSignal[1]);
@@ -264,7 +255,7 @@ bool CMultiReadExclusiveWriteSynchronizer::EndWrite()
 				} else { // nobody else is there... just close lock
 					newvalue = (old ^ useOddReader) - WriterBusy;
 				}
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 			if (isReaderBusy(old)) // release waiting readers
 			{
@@ -308,7 +299,7 @@ bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
 				} else { // nobody is busy, we want the lock
 					newvalue = old + WriterBusy - ReaderBusy;
 				}
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 
 		} else { // gain write lock
 			do {
@@ -325,9 +316,9 @@ bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite()
 				} else { // nobody is busy, we want the lock
 					newvalue = old + WriterBusy;
 				}
-			} while (CAS(m_Sentinel, newvalue, old) != old);
+			} while (CMPXCHG_64(m_Sentinel, newvalue, old) != old);
 		}
-		_InterlockedIncrement(&m_Revision);
+		INC_32(m_Revision);
 
 		m_WriterID = id;
 	}

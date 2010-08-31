@@ -42,7 +42,7 @@ class CLogger
 
 		virtual void Append(TLevel Level, const TCHAR * Message, ...);
 
-		virtual TLevel ShowMessage();
+		virtual TLevel ShowMessage(TLevel CanAsyncTill = logERROR);
 
 		static CLogger & Instance()
 			{	return _Instance; };
@@ -52,6 +52,7 @@ class CLogger
 		size_t m_Length;
 		TLevel m_Level;
 
+		static void MessageBoxAsync(void * MsgBoxParams);
 	private:
 		static CLogger _Instance;
 

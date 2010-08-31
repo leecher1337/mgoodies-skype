@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma intrinsic (_InterlockedCompareExchange64)
 #pragma intrinsic (_interlockedbittestandset)
 #else
-#include "intrin_gcc.h"
+#error unsupported
 #endif
 
 const uint32_t CBlockManager::cCacheFactor[16] = {557,709,797,977,1109,1249,1297,1657,2297,2309,2377,2417,3049,3229,3709,3761};

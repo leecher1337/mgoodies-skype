@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "Logger.h"
+#include <process.h>
 
 CLogger CLogger::_Instance;
 
@@ -46,7 +47,7 @@ void CLogger::Append(TLevel Level, const TCHAR * Message, ...)
 	tm timeinfo;
 	TCHAR timebuf[80];
 	localtime_s(&timeinfo, &rawtime);
-	size_t len = _tcsftime(timebuf, sizeof(timebuf) / sizeof(*timebuf), _T("\n[%c]\n"), &timeinfo);
+	size_t len = _tcsftime(timebuf, sizeof(timebuf) / sizeof(*timebuf), m_Length?_T("\n\n[%c]\n"):_T("[%c]\n"), &timeinfo);
 
 	TCHAR msgbuf[1024];
 	va_list va;
@@ -63,7 +64,7 @@ void CLogger::Append(TLevel Level, const TCHAR * Message, ...)
 	m_Messages.push_back(message);
 }
 
-CLogger::TLevel CLogger::ShowMessage()
+CLogger::TLevel CLogger::ShowMessage(TLevel CanAsyncTill)
 {
 	if (m_Messages.size() == 0)
 		return logNOTICE;
@@ -78,11 +79,36 @@ CLogger::TLevel CLogger::ShowMessage()
 	}
 	m_Messages.clear();
 
-	MessageBox(0, msg, _T(gInternalNameLong), MB_OK | (m_Level >= logERROR)?MB_ICONHAND:((m_Level == logWARNING)?MB_ICONWARNING:MB_ICONINFORMATION));
-	delete [] msg;
+	if (m_Level <= CanAsyncTill)
+	{
+		MSGBOXPARAMS * p = new MSGBOXPARAMS;
+		p->cbSize = sizeof(*p);
+		p->hwndOwner = 0;
+		p->hInstance = NULL;
+		p->lpszText = msg;
+		p->lpszCaption = _T(gInternalNameLong);
+		p->dwStyle = MB_OK | (m_Level >= logERROR)?MB_ICONHAND:((m_Level == logWARNING)?MB_ICONWARNING:MB_ICONINFORMATION);
+		p->lpszIcon = NULL;
+		p->dwContextHelpId = 0;
+		p->lpfnMsgBoxCallback = NULL;
+		p->dwLanguageId = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL);
+
+		_beginthread(&CLogger::MessageBoxAsync, 0, p);
+	} else {
+		MessageBox(0, msg, _T(gInternalNameLong), MB_OK | (m_Level >= logERROR)?MB_ICONHAND:((m_Level == logWARNING)?MB_ICONWARNING:MB_ICONINFORMATION));
+		delete [] msg;
+	}
 
 	TLevel tmp = m_Level;
 	m_Level = logNOTICE;
 	return tmp;
 }
 
+void CLogger::MessageBoxAsync(void * MsgBoxParams)
+{
+	MSGBOXPARAMS* p = reinterpret_cast<MSGBOXPARAMS*>(MsgBoxParams);
+	MessageBoxIndirect(p);
+	if (p->lpszText)	
+		delete [] p->lpszText;
+	delete p;
+}
