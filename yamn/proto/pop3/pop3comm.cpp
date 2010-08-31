@@ -15,6 +15,7 @@
 #include "../../yamn.h"
 #include "pop3.h"
 #include "pop3comm.h"		//all we need for POP3 account (POP3 account= YAMN account + some more POP3 specified members)
+#include <m_netlib.h>		//socket thorugh proxy functions
 
 #define ERRORSTR_MAXLEN	1024	//in wide-chars
 
@@ -37,8 +38,8 @@ extern PLUGININFO pluginInfo;
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-HANDLE hNetLib=NULL;
-PSCOUNTER CPOP3Account::AccountWriterSO;
+HANDLE hNetLib								= NULL;
+PSCOUNTER CPOP3Account::AccountWriterSO		= NULL;
 
 //Creates new CPOP3Account structure
 HACCOUNT WINAPI CreatePOP3Account(HYAMNPROTOPLUGIN Plugin,DWORD CAccountVersion);
@@ -112,10 +113,10 @@ void ExtractList(char *stream,int len,HYAMNMAIL queue);
 
 void ExtractMail(char *stream,int len,HYAMNMAIL queue);
 
-struct YAMNExportedFcns *pYAMNFcn;
-struct MailExportedFcns *pYAMNMailFcn;
+struct YAMNExportedFcns *pYAMNFcn				= NULL;
+struct MailExportedFcns *pYAMNMailFcn			= NULL;
 
-YAMN_PROTOIMPORTFCN POP3ProtocolFunctions=
+YAMN_PROTOIMPORTFCN POP3ProtocolFunctions =
 {
 	CreatePOP3Account,
 	DeletePOP3Account,
@@ -134,7 +135,7 @@ YAMN_PROTOIMPORTFCN POP3ProtocolFunctions=
 	UnLoadPOP3,
 };
 
-YAMN_MAILIMPORTFCN POP3MailFunctions=
+YAMN_MAILIMPORTFCN POP3MailFunctions =
 {
 	CreatePOP3Mail,
 	NULL,
@@ -142,10 +143,10 @@ YAMN_MAILIMPORTFCN POP3MailFunctions=
 	NULL,
 };
 
-PYAMN_VARIABLES pYAMNVar;
-HYAMNPROTOPLUGIN POP3Plugin;
+PYAMN_VARIABLES pYAMNVar			= NULL;
+HYAMNPROTOPLUGIN POP3Plugin			= NULL;
 
-YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
+YAMN_PROTOREGISTRATION POP3ProtocolRegistration =
 {
 	"POP3 protocol (internal)",
 	YAMN_VERSION_C,
@@ -155,7 +156,7 @@ YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 	"http://forums.miranda-im.org/showthread.php?t=3035",
 };
 
-WCHAR *FileName=NULL;
+WCHAR *FileName						= NULL;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -189,7 +190,6 @@ HACCOUNT WINAPI CreatePOP3Account(HYAMNPROTOPLUGIN Plugin,DWORD CAccountVersion)
 
 //Now it is needed to construct our POP3 account and return its handle
 	return (HACCOUNT)new struct CPOP3Account();
-//	return (HACCOUNT)new struct CPOP3Account();
 }
 
 void WINAPI DeletePOP3Account(HACCOUNT Which)
@@ -214,14 +214,11 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 
 	//We have to get pointers to YAMN exported functions: allocate structure and fill it
 	if(NULL==(pYAMNFcn=new struct YAMNExportedFcns))
-		return 0;
+		{UnLoadPOP3(0); return 0;}
 
 	//Register new pop3 user in netlib
 	if(NULL==(hNetLib=RegisterNLClient("YAMN-POP3")))
-	{
-		delete pYAMNFcn;
-		return 0;
-	}
+		{UnLoadPOP3(0); return 0;}
 
 	pYAMNFcn->SetProtocolPluginFcnImportFcn=(YAMN_SETPROTOCOLPLUGINFCNIMPORTFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_SETPROTOCOLPLUGINFCNIMPORTID,(LPARAM)0);
 	pYAMNFcn->WaitToWriteFcn=(YAMN_WAITTOWRITEFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_WAITTOWRITEID,(LPARAM)0);
@@ -235,10 +232,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	pYAMNFcn->GetStatusFcn=(YAMN_GETSTATUSFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_GETSTATUSID,(LPARAM)0);
 
 	if(NULL==(pYAMNMailFcn=new struct MailExportedFcns))
-	{
-		delete pYAMNFcn;
-		return 0;
-	}
+		{UnLoadPOP3(0); return 0;}
 
 	pYAMNMailFcn->SynchroMessagesFcn=(YAMN_SYNCHROMIMEMSGSFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_SYNCHROMIMEMSGSID,(LPARAM)0);
 	pYAMNMailFcn->TranslateHeaderFcn=(YAMN_TRANSLATEHEADERFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_TRANSLATEHEADERID,(LPARAM)0);
@@ -249,8 +243,10 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	pYAMNMailFcn->CreateNewDeleteQueueFcn=(YAMN_CREATENEWDELETEQUEUEFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_CREATENEWDELETEQUEUEID,(LPARAM)0);
 
 	//set static variable
-	if(CPOP3Account::AccountWriterSO==NULL)
-		CPOP3Account::AccountWriterSO=new SCOUNTER;
+	if(CPOP3Account::AccountWriterSO==NULL) {
+		if(NULL==(CPOP3Account::AccountWriterSO=new SCOUNTER))
+			{UnLoadPOP3(0); return 0;}
+	}
 
 	//First, we register this plugin
 	//it is quite impossible this function returns zero (failure) as YAMN and internal plugin structre versions are the same
@@ -266,6 +262,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	//Then, we read all mails for accounts.
 	//You must first register account, before using this function as YAMN must use CreatePOP3Account function to add new accounts
 	//But if CreatePOP3Account is not implemented (equals to NULL), YAMN creates account as YAMN's standard HACCOUNT
+	if(FileName) CallService(MS_YAMN_DELETEFILENAME,(WPARAM)FileName,(LPARAM)0);	//shoud not happen (only for secure)
 	FileName=(WCHAR *)CallService(MS_YAMN_GETFILENAMEA,(WPARAM)"pop3",(LPARAM)0);
 
 	switch(CallService(MS_YAMN_READACCOUNTSW,(WPARAM)POP3Plugin,(LPARAM)FileName))
@@ -384,9 +381,18 @@ int UninstallPOP3(PLUGINUNINSTALLPARAMS* ppup)		//Usually UninstallEx, but need 
 
 DWORD WINAPI UnLoadPOP3(void *)
 {
-	delete CPOP3Account::AccountWriterSO;	
-	delete pYAMNMailFcn;
-	delete pYAMNFcn;
+	//pYAMNVar is only a pointr, no need delete or free
+	if(hNetLib) {
+		Netlib_CloseHandle(hNetLib); hNetLib = NULL;}
+	if(CPOP3Account::AccountWriterSO) {
+		delete CPOP3Account::AccountWriterSO; CPOP3Account::AccountWriterSO = NULL;}
+	if(pYAMNMailFcn) {
+		delete pYAMNMailFcn; pYAMNMailFcn = NULL;}
+	if(pYAMNFcn) {
+		delete pYAMNFcn; pYAMNFcn = NULL;}
+	if(FileName) {
+		CallService(MS_YAMN_DELETEFILENAME,(WPARAM)FileName,(LPARAM)0); FileName = NULL;}
+
 	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UnLoadPOP3:done\n");
 	#endif
@@ -1285,8 +1291,9 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 								DeletedMail->Flags |= (YAMN_MSG_VIRTUAL | YAMN_MSG_DELETED);
 								DeletedMail->Flags &= ~(YAMN_MSG_NEW | YAMN_MSG_USERDELETE | YAMN_MSG_AUTODELETE);	//clear "new mail"
 							}
-							delete MsgQueuePtr->MailData;
-							delete MsgQueuePtr;
+							delete   MsgQueuePtr->MailData;
+							delete[] MsgQueuePtr->ID;
+							delete   MsgQueuePtr;
 						}
 						MsgQueuePtr=Temp;
 

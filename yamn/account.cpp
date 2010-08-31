@@ -317,12 +317,14 @@ void DeInitAccount(HACCOUNT Which)
 		delete[] Which->Server->Login;
 	if(Which->Server->Passwd!=NULL)
 		delete[] Which->Server->Passwd;
+	if(Which->Server!=NULL)
+		delete[] Which->Server;
 
 	SWMRGDelete(Which->AccountAccessSO);
 	delete Which->AccountAccessSO;
 	SWMRGDelete(Which->MessagesAccessSO);
 	delete Which->MessagesAccessSO;
-//	delete Which->UsingThreads;
+	delete Which->UsingThreads;
 	DeleteMessagesToEndFcn(Which,(HYAMNMAIL)Which->Mails);
 }
 
@@ -597,8 +599,9 @@ DWORD ReadMessagesFromMemory(HACCOUNT Which,TCHAR **Parser,TCHAR *End)
 			}
 			else
 			{
-				if(NULL==(ActualMail->Next=CreateAccountMail(Which)))
+				if(NULL==(ActualMail->Next=CreateAccountMail(Which))){
 					return EACC_ALLOC;
+				}
 				ActualMail=ActualMail->Next;
 			}
 			items=NULL;
@@ -608,7 +611,7 @@ DWORD ReadMessagesFromMemory(HACCOUNT Which,TCHAR **Parser,TCHAR *End)
 			if(Stat=ReadStringFromMemory(Parser,End,&ActualMail->ID))
 #endif
 				return Stat;
-			ActualMail->MailData=new MAILDATA;
+//			ActualMail->MailData=new MAILDATA;		 !!! mem leake !!! this is alloc by CreateAccountMail, no need for doubble alloc !!!!
 
 			ActualMail->MailData->Size=*(DWORD *)(*Parser);
 			(*Parser)+=sizeof(DWORD)/sizeof(TCHAR);

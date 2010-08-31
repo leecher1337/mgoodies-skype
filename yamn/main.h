@@ -55,6 +55,8 @@
 
 extern unsigned char optDateTime;
 
+void UnloadPlugins();
+
 //  Loading Icon and checking for icolib 
 void LoadIcons();
 extern int iconIndexes[];

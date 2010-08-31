@@ -33,12 +33,12 @@ extern LPCRITICAL_SECTION FileWritingCS;
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-WCHAR *ProfileName;		//e.g. "majvan"
-WCHAR *UserDirectory;		//e.g. "F:\WINNT\Profiles\UserXYZ"
-char *ProtoName=YAMN_DBMODULE;
+WCHAR	*ProfileName		= NULL;		//e.g. "majvan"
+WCHAR	*UserDirectory		= NULL;		//e.g. "F:\WINNT\Profiles\UserXYZ"
+char	*ProtoName			= YAMN_DBMODULE;
 //char *AltProtoName;
-char *szMirandaDir;
-char *szProfileDir;
+char	*szMirandaDir		= NULL;
+char	*szProfileDir		= NULL;
 
 INT_PTR YAMN_STATUS;
 
@@ -551,7 +551,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	HookEvents();
 
 	if (!bIcolibEmbededInCore)
-	SetDefaultProtocolIcons();
+		SetDefaultProtocolIcons();
 
 	LoadPlugins();
 
@@ -601,6 +601,12 @@ extern "C" int __declspec(dllexport) UninstallEx(PLUGINUNINSTALLPARAMS* ppup)
 			FreeLibrary(hDllPlugins[i]);
 			hDllPlugins[i]=NULL;				//for safety
 		}
+		iDllPlugins = 0;
+		if(hDllPlugins){
+			free((void *)hDllPlugins);
+			hDllPlugins = NULL;
+		}
+
 //		NotifyEventHooks(ME_YAMN_UNINSTALLPLUGINS,0,0);
 	}
 	UninstallPOP3(ppup);
@@ -644,17 +650,22 @@ extern "C" int __declspec(dllexport) Unload(void)
 	FreeVSApi();
 
 	DeleteCriticalSection(AccountStatusCS);
+	delete AccountStatusCS;
 	DeleteCriticalSection(FileWritingCS);
+	delete FileWritingCS;
 	DeleteCriticalSection(PluginRegCS);
 
-	delete AccountStatusCS;
 	delete PluginRegCS;
-
-	delete CodePageNamesSupp;
-
 	UnhookEvents();
 	DestroyServiceFunctions();
 
+	UnloadPlugins();
+
+	delete [] CodePageNamesSupp;
+	delete [] szMirandaDir;
+	delete [] UserDirectory;
+	delete [] szProfileDir;
+	delete [] ProfileName;
 	return 0;
 }
 
@@ -714,6 +725,20 @@ void LoadPlugins()
 			}
 		} while(FindNextFile(hFind,&fd));
 	FindClose(hFind);
+	}
+}
+
+void UnloadPlugins()
+{
+	for(int i=iDllPlugins-1;i>=0;i--) {
+		if(FreeLibrary(hDllPlugins[i])){
+			hDllPlugins[i]=NULL;				//for safety
+			iDllPlugins --;
+		}
+	}
+	if(hDllPlugins){
+		free((void *)hDllPlugins);
+		hDllPlugins = NULL;
 	}
 }
 
