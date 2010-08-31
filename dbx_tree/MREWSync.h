@@ -46,11 +46,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class CMultiReadExclusiveWriteSynchronizer
 {
 private:
-	volatile int64_t m_Sentinel;
+	volatile uint64_t m_Sentinel;
 	HANDLE m_ReadSignal[2];
 	HANDLE m_WriteSignal;
 
-	volatile long m_Revision;
+	volatile uint32_t m_Revision;
 	unsigned int m_WriterID;
 	unsigned int m_WriteRecursion;
 

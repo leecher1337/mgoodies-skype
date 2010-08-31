@@ -265,11 +265,29 @@ void CFileAccess::InitJournal()
 			CloseHandle(hjrnfilebackup);
 		}
 
-		CLogger::Instance().Append(CLogger::logWARNING,
-		                           _T("Journal \"%s\" found on start.\nBackup \"%s\"%s created.\nBackup \"%s\"%s created.\nYou may delete these files after successful start."), 
-		                           m_JournalFileName, 
-															 bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(""):_T(" could not be"),
-															 bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(""):_T(" could not be"));
+		TCHAR* path = bckname;
+		TCHAR* fn = _tcsrchr(m_JournalFileName, _T('\\'));
+		TCHAR* bfn = _tcsrchr(bckname, _T('\\'));
+		TCHAR* jrn = _tcsrchr(bckjrnname, _T('\\'));
+		if (bfn) // truncate path var
+			*bfn = 0;
+
+		if (hfilebackup || hjrnfilebackup)
+		{
+			CLogger::Instance().Append(CLogger::logWARNING,
+		                             _T("Journal \"%s\" was found on start.\nBackup \"%s\"%s created and backup \"%s\"%s created.\nYou may delete these file(s) after successful start from \"%s\"."),
+			                           fn?fn+1:m_JournalFileName, 
+			                           bfn?bfn+1:bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
+			                           jrn?jrn+1:bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
+			                           path);
+		} else {
+			CLogger::Instance().Append(CLogger::logWARNING,
+			                           _T("Journal \"%s\" was found on start.\nBackups \"%s\"and \"%s\" could not be created in \"%s\"."),
+			                           fn?fn+1:m_JournalFileName, 
+			                           bfn?bfn+1:bckname,
+			                           jrn?jrn+1:bckjrnname,
+			                           path);
+		}
 
 		delete [] bckname;
 		delete [] bckjrnname;
