@@ -935,15 +935,12 @@ void CBTree<TKey, SizeParam>::DeleteTree(TDeleteCallback * CallBack, uint32_t Pa
 		if ((node.Info & cIsLeafMask) == 0)
 		{
 			for (i = 0; i <= (node.Info & cKeyCountMask); i++)
-			{
 				s.push(node.Child[i]);
-				if (CallBack)
-					CallBack->emit(this, node.Key[i], Param);
-			}
-
-		} else if (CallBack)
+		
+		}
+		if (CallBack)
 		{
-			for (i = 0; i <= (node.Info & cKeyCountMask); i++)
+			for (i = 0; i < (node.Info & cKeyCountMask); i++)
 				CallBack->emit(this, node.Key[i], Param);
 		}
 
