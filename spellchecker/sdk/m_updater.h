@@ -63,6 +63,10 @@ __inline static char *CreateVersionStringPlugin(PLUGININFO *pluginInfo, char *bu
 	return CreateVersionString(pluginInfo->version, buf);
 }
 
+__inline static char *CreateVersionStringPluginEx(PLUGININFOEX *pluginInfo, char *buf) {
+	return CreateVersionString(pluginInfo->version, buf);
+}
+
 
 // register the 'easy' way - use this method if you have no beta URL and the plugin is on the miranda file listing
 // NOTE: the plugin version string on the file listing must be the string version of the version in pluginInfo (i.e. 0.0.0.1,
