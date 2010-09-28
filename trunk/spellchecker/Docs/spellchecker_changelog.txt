@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+  * Updated some header files
+  * Fixed a bug with translated hotkeys (Fixes issue 115)
+  - removed PLUGININFO support, since it is obsolete
+
 . 0.2.5.0
   * Removed space in frame names in options
   * Added notification if using SRMM (closes issue #92)

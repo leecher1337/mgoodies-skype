@@ -150,17 +150,8 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 	return TRUE;
 }
 
-
-extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
-{
-	pluginInfo.cbSize = sizeof(PLUGININFO);
-	return (PLUGININFO*) &pluginInfo;
-}
-
-
 extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 {
-	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
 }
 
@@ -238,7 +229,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPluginEx(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = (int)strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
@@ -247,17 +238,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
     // Folders plugin support
 	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
 	{
-		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Dictionaries", 
+		hDictionariesFolder = FoldersRegisterCustomPathT("Spell Checker", "Dictionaries", 
 					_T(MIRANDA_PATH) _T("\\Dictionaries"));
 
 		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
 
-		hCustomDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Custom Dictionaries", 
+		hCustomDictionariesFolder = FoldersRegisterCustomPathT("Spell Checker", "Custom Dictionaries", 
 					_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Dictionaries"));
 
 		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
 		
-		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT("Spell Checker", "Flags DLL", 
+		hFlagsDllFolder = FoldersRegisterCustomPathT("Spell Checker", "Flags DLL", 
 					_T(MIRANDA_PATH) _T("\\Icons"));
 
 		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
@@ -410,8 +401,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		HOTKEYDESC hkd = {0};
 		hkd.cbSize = sizeof(hkd);
 		hkd.pszName = Translate("Spell Checker/Toggle");
-		hkd.pszSection = Translate("Spell Checker");
-		hkd.pszDescription = Translate("Enable/disable spell checker");
+		hkd.pszSection = "Spell Checker";
+		hkd.pszDescription = "Enable/disable spell checker";
 		hkd.lParam = HOTKEY_ACTION_TOGGLE;
 		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM) &hkd);
 	}
