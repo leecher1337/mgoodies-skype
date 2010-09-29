@@ -2,8 +2,15 @@ My Details
 
 Changelog:
 
+. 0.0.2.5
+  + Use account name and ordering
+  * Better handling status messages
+  * Fix for jabber status names
+  * Bug fixes
+
 . 0.0.2.3
   * Moved background color to font service settings
+  + Better simple away support
 
 . 0.0.2.2
   * Fix for email count
