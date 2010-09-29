@@ -29,6 +29,7 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <vector>
 
+#define MIRANDA_VER 0x800
 #include <newpluginapi.h>
 #include <m_clist.h>
 #include <m_skin.h>
@@ -103,6 +104,30 @@ extern SkinDialog *dialog;
 
 #define PS_GETMYNICKNAMEMAXLENGTH "/GetMyNicknameMaxLength"
 
+#define WAYD_UNICODE 1        // return Unicode texts
+#if defined( _UNICODE )
+	#define WAYD_TCHAR WAYD_UNICODE
+#else
+	#define WAYD_TCHAR 0
+#endif
+
+// Get the max length that a WAYD message can have
+// wParam=(WPARAM)0
+// lParam=(LPARAM)0
+// Returns the max length
+#define PS_GET_MY_WAYD_MAXLENGTH "/GetMyWAYDMaxLength"
+
+// Get the WAYD message for the user
+// wParam=(WPARAM)WAYD_xxx
+// lParam=(LPARAM)0
+// Returns the text or NULL if there is none. Remember to mir_free the return value.
+#define PS_GET_MY_WAYD "/GetMyWAYD"
+
+// Sets the WAYD message for the user
+// wParam=(WPARAM)WAYD_xxx
+// lParam=(LPARAM)(WCHAR * or char *)The text to set
+// Returns 0 on success, nonzero on failure
+#define PS_SET_MY_WAYD "/SetMyWAYD"
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 

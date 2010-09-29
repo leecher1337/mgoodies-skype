@@ -27,60 +27,65 @@ Boston, MA 02111-1307, USA.
 class Protocol
 {
 	// Attributes ////////////
-protected:
-	bool valid;
-	bool can_set_nick;
-	bool can_have_avatar;
-	bool can_have_listening_to;
-	bool can_have_email_count;
-	int PF3;
+	std::string name;
+	
+	std::string description;
 
-	void lcopystr(TCHAR *dest, TCHAR *src, int maxlen);
-
-public:
-	// Name of protocol
-	char name[256];
-	char description[256];
-	TCHAR nickname[256];
-	TCHAR status_name[256];
-	TCHAR *custom_status_name;
-	TCHAR status_message[1024];
-	TCHAR *custom_status_message;
-	TCHAR listening_to[1024];
-	AVATARCACHEENTRY *ace;
-	TCHAR avatar_file[1024];
+	bool avatar_initialized;
+	std::string avatar_file;
 	HBITMAP avatar_bmp;
-	int status;
-	int custom_status;
+
+	bool status_message_initialized;
+	std::string status_message;
+
+	bool nickname_initialized;
+	std::string nickname;
+
+	bool locked_initialized;
 	bool locked;
+
+	bool emails_initialized;
 	int emails;
 
-	int avatar_max_width;
-	int avatar_max_height;
+	bool listening_to_initialized;
+	std::string listening_to;
 
-	bool data_changed;
+	bool status_initialized;
+	std::string status_name;
+	std::string custom_status_name_key;
+	std::string custom_status_message_key;
+	int status;
+	int custom_status;
 
-
-	// Methods ///////////////
-
+public:	
 	Protocol(const char *name);
 	~Protocol();
 
 	bool IsValid();
+	operator bool ();
 
-	int GetStatus();		// Copy to cache and return a copy
+	void UpdateAll();
+
+	const char * GetName();
+	const char * GetDescription();
+
+	const char * GetStatusName();
+	const char * GetCustomStatusNameKey();
+	const char * GetCustomStatusMessageKey();
+	int GetStatus();
+	int GetCustomStatus();
 	void SetStatus(int aStatus);
 
 	bool HasAvatar();
 	bool CanGetAvatar();
-	void GetAvatar();		// Copy to cache
+	const char * GetAvatarFile();
+	HBITMAP GetAvatarImage();
 
 	bool CanSetAvatar();
 	void SetAvatar(const TCHAR *file_name);
-	//void SetAvatar(const char *file_name, HBITMAP hBmp);
 
 	bool CanGetNick();
-	TCHAR * GetNick();			// Copy to cache and return a copy
+	const char * GetNick();
 	int GetNickMaxLength();
 	bool CanSetNick();
 	void SetNick(const TCHAR *nick);
@@ -88,32 +93,42 @@ public:
 	bool CanGetListeningTo();
 	bool CanSetListeningTo();
 	bool ListeningToEnabled();
-	TCHAR * GetListeningTo();	// Copy to cache and return a copy
+	const char * GetListeningTo();
 
 	bool CanGetStatusMsg();
 	bool CanGetStatusMsg(int aStatus);
-	TCHAR * GetStatusMsg();	// Copy to cache and return a copy
 	void GetStatusMsg(int aStatus, TCHAR *msg, size_t msg_size);
+	const char * GetStatusMsg();
+
 	bool CanSetStatusMsg();
 	bool CanSetStatusMsg(int aStatus);
 	void SetStatusMsg(const TCHAR *message);
 	void SetStatusMsg(int aStatus, const TCHAR *message);
 
-	bool GetLocked();
+	bool IsLocked();
 
 	bool CanGetEmailCount();
-	int GetEmailCount();		// Copy to cache
+	int GetEmailCount();
+
+	int Call(const char *service, WPARAM wParam = 0, LPARAM lParam = 0);
+	bool CanCall(const char *service);
+
+	std::string GetDBSettingString(const char *key, const char *def = "");
+
+private:
+	void UpdateStatus();
+	void UpdateAvatar();
+	void UpdateNick();
+	void UpdateListeningTo();
+	void UpdateStatusMsg();
+	void UpdateLocked();
+	void UpdateEmailCount();
 };
 
 
 
 class ProtocolArray
 {
-protected:
-	// Attributes ////////////
-	Protocol **buffer;
-	int buffer_len;
-
 public:
 	TCHAR default_nick[256];
 	TCHAR default_avatar_file[256];
@@ -121,16 +136,8 @@ public:
 
 	// Methods ///////////////
 
-	ProtocolArray(int max_size);
-	virtual ~ProtocolArray();
+	ProtocolArray();
 
-	int GetSize();
-
-	void Add(Protocol *p);
-	Protocol * Get(int i);
-	Protocol * Get(const char *name);
-
-	void GetAvatars();
 	bool CanSetAvatars();
 	void SetAvatars(const TCHAR *file);
 
@@ -141,11 +148,7 @@ public:
 	void SetStatusMsgs(const TCHAR *message);
 	void SetStatusMsgs(int status, const TCHAR *message);
 
-	void GetStatusMsgs();
-	void GetStatuses();
 	int GetGlobalStatus();
-
-	bool CanSetStatusMsgPerProtocol();
 
 	void GetDefaultNick();	// Copy to cache
 	void GetDefaultAvatar();	// Copy to cache
@@ -159,6 +162,15 @@ public:
 extern ProtocolArray *protocols;
 
 
+void SetCurrentProtocol(int index);
+Protocol * GetCurrentProtocol(bool createIfDontExist = true);
+int GetCurrentProtocolIndex();
+
+void GetProtocols(std::vector<Protocol> *result);
+int GetProtocolIndexByName(const char *moduleName);
+int GetNumProtocols();
+Protocol GetProtocolByIndex(int index);
+Protocol GetProtocolByName(const char *proto);
 
 void InitProtocolData();
 void DeInitProtocolData();

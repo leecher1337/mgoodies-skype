@@ -68,7 +68,7 @@ void LoadOptions()
 	DBWriteContactSettingWord(NULL,"MyDetails","RefreshStatusMessageTimer", opts.refresh_status_message_timer);
 
 	SetCycleTime();
-	RefreshFrameAndCalcRects();
+	RedrawFrame();
 }
 
 

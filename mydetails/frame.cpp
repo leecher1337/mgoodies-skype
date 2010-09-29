@@ -35,20 +35,14 @@ Boston, MA 02111-1307, USA.
 #define ID_RECALC_TIMER			1012
 #define ID_STATUSMESSAGE_TIMER	1013
 
-#define RECALC_TIME				1000
+#define RECALC_TIME				500
 
 #define IDC_HAND				MAKEINTRESOURCE(32649)
 
 
 // Messages
 #define MWM_REFRESH				(WM_USER+10)
-#define MWM_NICK_CHANGED		(WM_USER+11)
-#define MWM_STATUS_CHANGED		(WM_USER+12)
-#define MWM_STATUS_MSG_CHANGED	(WM_USER+13)
-#define MWM_AVATAR_CHANGED		(WM_USER+14)
-#define MWM_LISTENINGTO_CHANGED	(WM_USER+15)
-#define MWM_LOCK_CHANGED		(WM_USER+16)
-#define MWM_EMAIL_COUNT_CHANGED (WM_USER+17)
+#define MWM_REFRESH_DATA        (WM_USER+18)
 
 
 HWND hwnd_frame = NULL;
@@ -60,7 +54,7 @@ HANDLE hMenuShowHideFrame = 0;
 
 int CreateFrame();
 void FixMainMenu();
-void RefreshFrame();
+void UpdateFrameData();
 void RedrawFrame();
 
 
@@ -85,6 +79,7 @@ int AvatarChangedHook(WPARAM wParam, LPARAM lParam);
 int ProtoAckHook(WPARAM wParam, LPARAM lParam);
 int SmileyAddOptionsChangedHook(WPARAM wParam,LPARAM lParam);
 int ListeningtoEnableStateChangedHook(WPARAM wParam,LPARAM lParam);
+int AccListChanged(WPARAM wParam, LPARAM lParam);
 
 
 void ExternalRect(RECT &ret, const RECT r1, const RECT r2);
@@ -351,15 +346,13 @@ struct MyDetailsFrameData
 	IconAndItem listening_to;
 	IconAndItem email;
 
-	int protocol_number;
-
 	bool showing_menu;
 
 	bool tracking_exit;
 
-	bool get_status_messages;
-
-	MyDetailsFrameData() : protocol_number(0), showing_menu(false), get_status_messages(false), tracking_exit(false)
+	MyDetailsFrameData() 
+		: showing_menu(false)
+		, tracking_exit(false)
 	{
 		items.push_back(&proto);
 		items.push_back(&proto_cycle_next);
@@ -388,6 +381,7 @@ void InitFrames()
 	HookEvent(ME_PROTO_ACK, ProtoAckHook);
 	HookEvent(ME_SMILEYADD_OPTIONSCHANGED,SmileyAddOptionsChangedHook);
 	HookEvent(ME_LISTENINGTO_ENABLE_STATE_CHANGED,ListeningtoEnableStateChangedHook);
+	HookEvent(ME_PROTO_ACCLISTCHANGED, AccListChanged);
 }
 
 
@@ -404,7 +398,7 @@ void DeInitFrames()
 
 int SmileyAddOptionsChangedHook(WPARAM wParam,LPARAM lParam)
 {
-	RefreshFrame();
+	UpdateFrameData();
 	return 0;
 }
 
@@ -762,15 +756,13 @@ void Draw(HDC hdc, SkinTextFieldState &state, BOOL replace_smileys = FALSE, cons
 void Draw(HWND hwnd, HDC hdc_orig)
 {
 	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-	Protocol *proto = protocols->Get(data->protocol_number);
-
+	
+	Protocol *proto = GetCurrentProtocol();
 	if (proto == NULL)
 	{
 		EraseBackground(hwnd, hdc_orig);
 		return;
 	}
-
-	proto->data_changed = false;
 
 	if (ServiceExists(MS_CLIST_FRAMES_SETFRAMEOPTIONS) && frame_id != -1)
 	{
@@ -824,12 +816,12 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 	HICON hStatusIcon;
 	bool freeStatusIcon = false;
-	if (proto->custom_status != 0 && ProtoServiceExists(proto->name, PS_ICQ_GETCUSTOMSTATUSICON))
-		hStatusIcon = (HICON) CallProtoService(proto->name, PS_ICQ_GETCUSTOMSTATUSICON, proto->custom_status, LR_SHARED);
+	if (proto->GetCustomStatus() != 0 && proto->CanCall(PS_ICQ_GETCUSTOMSTATUSICON))
+		hStatusIcon = (HICON) proto->Call(PS_ICQ_GETCUSTOMSTATUSICON, proto->GetCustomStatus(), LR_SHARED);
 	else
-		hStatusIcon = LoadSkinnedProtoIcon(proto->name, proto->status);
+		hStatusIcon = LoadSkinnedProtoIcon(proto->GetName(), proto->GetStatus());
 
-	if (proto->locked)
+	if (proto->IsLocked())
 	{
 		HICON hLockOverlay = LoadSkinnedIcon(SKINICON_OTHER_STATUS_LOCKED);
 		if (hLockOverlay != NULL)
@@ -840,14 +832,14 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	}
 
 
-	HICON hListeningIcon = LoadIconEx("LISTENING_TO_ICON");
-	HICON hEmailIcon = LoadIconEx("MYDETAILS_EMAIL");
-	HICON hNextIcon = LoadIconEx("MYDETAILS_NEXT_PROTOCOL");
-	HICON hPrevIcon = LoadIconEx("MYDETAILS_PREV_PROTOCOL");
+	HICON hListeningIcon = IcoLib_LoadIcon("LISTENING_TO_ICON");
+	HICON hEmailIcon = IcoLib_LoadIcon("MYDETAILS_EMAIL");
+	HICON hNextIcon = IcoLib_LoadIcon("MYDETAILS_NEXT_PROTOCOL");
+	HICON hPrevIcon = IcoLib_LoadIcon("MYDETAILS_PREV_PROTOCOL");
 
 	{
 		dialog->setInfoBool("resize_frame", opts.resize_frame);
-		dialog->setInfoBool("protocol.locked", proto->locked);
+		dialog->setInfoBool("protocol.locked", proto->IsLocked());
 
 
 		if (opts.resize_frame)
@@ -858,10 +850,10 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 
 		SkinImageField avatar = dialog->getImageField("avatar");
-		if (proto->CanGetAvatar() && proto->avatar_bmp != NULL)
+		if (proto->CanGetAvatar() && proto->GetAvatarImage() != NULL)
 		{
 			avatar.setEnabled(TRUE);
-			avatar.setImage(proto->avatar_bmp);
+			avatar.setImage(proto->GetAvatarImage());
 		}
 		else
 		{
@@ -870,22 +862,22 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		}
 
 		SkinTextField nickname = dialog->getTextField("nickname");
-		nickname.setText(proto->nickname);
+		nickname.setText(proto->GetNick());
 
 		SkinTextField protocol = dialog->getTextField("protocol");
-		protocol.setText(proto->description);
+		protocol.setText(proto->GetDescription());
 
 		SkinIconField status_icon = dialog->getIconField("status_icon");
 		status_icon.setIcon(hStatusIcon);
 
 		SkinTextField status_name = dialog->getTextField("status_name");
-		status_name.setText(proto->status_name);
+		status_name.setText(proto->GetStatusName());
 
 		SkinTextField status_msg = dialog->getTextField("status_msg");
 		if (proto->CanGetStatusMsg()) 
 		{
 			status_msg.setEnabled(TRUE);
-			status_msg.setText(proto->status_message);
+			status_msg.setText(proto->GetStatusMsg());
 		}
 		else
 		{
@@ -895,12 +887,13 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 		SkinIconField listening_icon = dialog->getIconField("listening_icon");
 		SkinTextField listening = dialog->getTextField("listening");
-		if (proto->ListeningToEnabled() && proto->GetStatus() > ID_STATUS_OFFLINE && proto->listening_to[0] != 0) 
+		if (proto->ListeningToEnabled() && proto->GetStatus() > ID_STATUS_OFFLINE 
+				&& proto->GetListeningTo()[0] != 0) 
 		{
 			listening_icon.setEnabled(TRUE);
 			listening.setEnabled(TRUE);
 			listening_icon.setIcon(hListeningIcon);
-			listening.setText(proto->listening_to);
+			listening.setText(proto->GetListeningTo());
 		}
 		else
 		{
@@ -919,7 +912,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			email_icon.setIcon(hEmailIcon);
 
 			TCHAR tmp[64];
-			_sntprintf(tmp, MAX_REGS(tmp), _T("%d"), proto->emails);
+			_sntprintf(tmp, MAX_REGS(tmp), _T("%d"), proto->GetEmailCount());
 			email.setText(tmp);
 		}
 		else
@@ -980,7 +973,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 					| (opts.draw_text_rtl ? DT_RTLREADING : 0);
 
 	// Image
-	if (avatar.isVisible() && proto->CanGetAvatar() && proto->avatar_bmp != NULL)
+	if (avatar.isVisible() && proto->CanGetAvatar() && proto->GetAvatarImage() != NULL)
 	{
 		RECT rc = avatar.getInsideRect();
 		HRGN rgn = CreateRectRgnIndirect(&rc);
@@ -1017,7 +1010,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		adr.clrBorder =  opts.draw_avatar_border_color;
 		adr.radius = round_radius;
 		adr.alpha = 255;
-		adr.szProto = proto->name;
+		adr.szProto = (char *) proto->GetName();
 
 		CallService(MS_AV_DRAWAVATAR, 0, (LPARAM) &adr);
 
@@ -1027,7 +1020,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	}
 
 	// Nick
-	Draw(hdc, nickname, TRUE, proto->name);
+	Draw(hdc, nickname, TRUE, proto->GetName());
 
 	if (data->nick.draw && data->nick.mouseOver && proto->CanSetNick())
 		FrameRect(hdc, &nickname.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
@@ -1049,7 +1042,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	
 
 	// Away message
-	Draw(hdc, status_msg, TRUE, proto->name);
+	Draw(hdc, status_msg, TRUE, proto->GetName());
 
 	if (data->away_msg.draw && data->away_msg.mouseOver && proto->CanSetStatusMsg())
 		FrameRect(hdc, &status_msg.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
@@ -1084,10 +1077,10 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 	if (freeStatusIcon)
 		DestroyIcon(hStatusIcon);
-	ReleaseIconEx(hListeningIcon);
-	ReleaseIconEx(hEmailIcon);
-	ReleaseIconEx(hPrevIcon);
-	ReleaseIconEx(hNextIcon);
+	IcoLib_ReleaseIcon(hListeningIcon);
+	IcoLib_ReleaseIcon(hEmailIcon);
+	IcoLib_ReleaseIcon(hPrevIcon);
+	IcoLib_ReleaseIcon(hNextIcon);
 
 	if (opts.resize_frame && ServiceExists(MS_CLIST_FRAMES_SETFRAMEOPTIONS) && frame_id != -1)
 	{
@@ -1200,7 +1193,7 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 				mii.dwTypeData = (char *)malloc(sizeof(char) * mii.cch);
 				GetMenuItemInfo(menu, i, TRUE, &mii);
 
-				if (strcmp(mii.dwTypeData, proto->description) == 0)
+				if (strcmp(mii.dwTypeData, proto->GetDescription()) == 0)
 				{
 					submenu = GetSubMenu(menu, i);
 				}
@@ -1209,7 +1202,7 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 			}
 		}
 
-		if (submenu == NULL && protocols->GetSize() == 1)
+		if (submenu == NULL && GetNumProtocols() == 1)
 		{
 			submenu = menu;
 		}
@@ -1230,7 +1223,7 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 		submenu = GetSubMenu(menu, 0);
 		CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)submenu,0);
 
-		DWORD flags = CallProtoService(proto->name, PS_GETCAPS, PFLAGNUM_2,0);
+		DWORD flags = proto->Call(PS_GETCAPS, PFLAGNUM_2);
 		for ( int i = GetMenuItemCount(submenu) -1  ; i >= 0 ; i-- )
 		{
 			if (!(flags & statusModePf2List[i]))
@@ -1256,7 +1249,7 @@ void ShowListeningToMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto, P
 
 	// Add this proto to menu
 	char tmp[128];
-	mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->description);
+	mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->GetDescription());
 
 	MENUITEMINFO mii = {0};
 	mii.cbSize = sizeof(mii);
@@ -1294,7 +1287,7 @@ void ShowListeningToMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto, P
 	{
 		case 1:
 		{
-			CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->name, !proto->ListeningToEnabled());
+			CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->GetName(), !proto->ListeningToEnabled());
 			break;
 		}
 		case ID_LISTENINGTOPOPUP_SENDLISTENINGTO:
@@ -1316,16 +1309,10 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			MyDetailsFrameData *data = new MyDetailsFrameData();
 			SetWindowLong(hwnd, GWL_USERDATA, (LONG) data);
 
-			data->get_status_messages = false;
-			data->showing_menu = false;
-
-			data->protocol_number = DBGetContactSettingWord(NULL,"MyDetails","ProtocolNumber",0);
-			if (data->protocol_number >= protocols->GetSize())
-			{
-				data->protocol_number = 0;
-			}
+			SetCurrentProtocol(0);
 
 			SetCycleTime(hwnd);
+
 			SetStatusMessageRefreshTime(hwnd);
 
 			return TRUE;
@@ -1383,22 +1370,13 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			{
 				KillTimer(hwnd, ID_RECALC_TIMER);
 
-				if (data->get_status_messages)
-				{
-					SetStatusMessageRefreshTime(hwnd);
-					data->get_status_messages = false;
-
-					protocols->GetStatuses();
-					protocols->GetStatusMsgs();
-				}
-
-				RedrawFrame();
+				PostMessage(hwnd, MWM_REFRESH_DATA, 0, 0);
 			}
 			else if (wParam == ID_STATUSMESSAGE_TIMER)
 			{
 				SetStatusMessageRefreshTime(hwnd);
 
-				PostMessage(hwnd, MWM_STATUS_MSG_CHANGED, 0, 0);
+				PostMessage(hwnd, MWM_REFRESH_DATA, 0, 0);
 			}
 
 			return TRUE;
@@ -1407,7 +1385,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_LBUTTONUP:
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-			Protocol *proto = protocols->Get(data->protocol_number);
+			Protocol *proto = GetCurrentProtocol();
 			if (proto == NULL)
 				break;
 
@@ -1430,7 +1408,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				if (opts.global_on_avatar)
 					CallService(MS_MYDETAILS_SETMYAVATARUI, 0, 0);
 				else
-					CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->name);
+					CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->GetName());
 			}
 			// In nick?
 			else if (data->nick.hitTest(p) && proto->CanSetNick())
@@ -1438,7 +1416,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				if (opts.global_on_nickname)
 					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, 0);
 				else
-					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->name);
+					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->GetName());
 			}
 			// In status message?
 			else if (data->away_msg.hitTest(p) && proto->CanSetStatusMsg())
@@ -1446,7 +1424,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				if (opts.global_on_status_message)
 					CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, 0);
 				else
-					CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->name);
+					CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->GetName());
 			}
 			// In status?
 			else if (data->status.hitTest(p))
@@ -1472,17 +1450,25 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				HMENU menu = CreatePopupMenu();
 
-				for (int i = protocols->GetSize() - 1 ; i >= 0 ; i--)
+				std::vector<Protocol> protos;
+				GetProtocols(&protos);
+
+				int current = GetCurrentProtocolIndex();
+				
+				int protosSize = (int) protos.size();
+				for (int i = protosSize - 1 ; i >= 0 ; i--)
 				{
+					Protocol &proto = protos[i];
+
 					MENUITEMINFO mii = {0};
 					mii.cbSize = sizeof(mii);
 					mii.fMask = MIIM_ID | MIIM_TYPE;
 					mii.fType = MFT_STRING;
-					mii.dwTypeData = protocols->Get(i)->description;
-					mii.cch = strlen(protocols->Get(i)->description);
+					mii.dwTypeData = (char *) proto.GetDescription();
+					mii.cch = strlen(mii.dwTypeData);
 					mii.wID = i + 1;
 
-					if (i == data->protocol_number)
+					if (i == current)
 					{
 						mii.fMask |= MIIM_STATE;
 						mii.fState = MFS_DISABLED;
@@ -1496,7 +1482,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				DestroyMenu(menu);
 
 				if (ret != 0)
-					PluginCommand_ShowProtocol(NULL, (WPARAM) protocols->Get(ret-1)->name);
+					PluginCommand_ShowProtocol(NULL, (WPARAM) GetProtocolByIndex(ret - 1).GetName());
 
 				data->showing_menu = false;
 			}
@@ -1516,7 +1502,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_CONTEXTMENU:
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-			Protocol *proto = protocols->Get(data->protocol_number);
+			Protocol *proto = GetCurrentProtocol();
 			if (proto == NULL)
 				break;
 
@@ -1546,7 +1532,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				// Add this proto to menu
 				char tmp[128];
-				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Avatar for %s..."), proto->description);
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Avatar for %s..."), proto->GetDescription());
 
 				MENUITEMINFO mii = {0};
 				mii.cbSize = sizeof(mii);
@@ -1573,7 +1559,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				{
 					case 1:
 					{
-						CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case ID_AVATARPOPUP_SETMYAVATAR:
@@ -1592,7 +1578,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				// Add this proto to menu
 				char tmp[128];
-				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Nickname for %s..."), proto->description);
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Nickname for %s..."), proto->GetDescription());
 
 				MENUITEMINFO mii = {0};
 				mii.cbSize = sizeof(mii);
@@ -1619,7 +1605,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				{
 					case 1:
 					{
-						CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case ID_NICKPOPUP_SETMYNICKNAME:
@@ -1638,33 +1624,30 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				HMENU submenu = GetSubMenu(menu, 3);
 				CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)submenu,0);
 
-				if (protocols->CanSetStatusMsgPerProtocol())
+				// Add this proto to menu
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
+							 proto->GetDescription());
+
+				MENUITEMINFO mii = {0};
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_TYPE;
+				mii.fType = MFT_STRING;
+				mii.dwTypeData = tmp;
+				mii.cch = strlen(tmp);
+				mii.wID = 1;
+
+				if (!proto->CanSetStatusMsg())
 				{
-					// Add this proto to menu
-					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
-								 proto->description);
-
-					MENUITEMINFO mii = {0};
-					mii.cbSize = sizeof(mii);
-					mii.fMask = MIIM_ID | MIIM_TYPE;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = tmp;
-					mii.cch = strlen(tmp);
-					mii.wID = 1;
-
-					if (!proto->CanSetStatusMsg())
-					{
-						mii.fMask |= MIIM_STATE;
-						mii.fState = MFS_DISABLED;
-					}
-
-					InsertMenuItem(submenu, 0, TRUE, &mii);
+					mii.fMask |= MIIM_STATE;
+					mii.fState = MFS_DISABLED;
 				}
+
+				InsertMenuItem(submenu, 0, TRUE, &mii);
 				
 				{
 					// Add this to menu
 					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
-								 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->status, 0));
+								 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->GetStatus(), 0));
 
 					MENUITEMINFO mii = {0};
 					mii.cbSize = sizeof(mii);
@@ -1674,7 +1657,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					mii.cch = strlen(tmp);
 					mii.wID = 2;
 
-					if (proto->status == ID_STATUS_OFFLINE)
+					if (proto->GetStatus() == ID_STATUS_OFFLINE)
 					{
 						mii.fMask |= MIIM_STATE;
 						mii.fState = MFS_DISABLED;
@@ -1692,12 +1675,12 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				{
 					case 1:
 					{
-						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case 2:
 					{
-						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->status, 0);
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->GetStatus(), 0);
 						break;
 					}
 					case ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE:
@@ -1740,7 +1723,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				char tmp[128];
 				MENUITEMINFO mii = {0};
 
-				mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->description);
+				mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->GetDescription());
 
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
@@ -1760,7 +1743,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				// Add this to menu
 				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
-							 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->status, 0));
+							 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->GetStatus(), 0));
 
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
@@ -1770,7 +1753,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				mii.cch = strlen(tmp);
 				mii.wID = 4;
 
-				if (proto->status == ID_STATUS_OFFLINE)
+				if (proto->GetStatus() == ID_STATUS_OFFLINE)
 				{
 					mii.fMask |= MIIM_STATE;
 					mii.fState = MFS_DISABLED;
@@ -1778,29 +1761,26 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				InsertMenuItem(submenu, 0, TRUE, &mii);
 
-				if (protocols->CanSetStatusMsgPerProtocol())
+				// Add this proto to menu
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), proto->GetDescription());
+
+				ZeroMemory(&mii, sizeof(mii));
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_TYPE;
+				mii.fType = MFT_STRING;
+				mii.dwTypeData = tmp;
+				mii.cch = strlen(tmp);
+				mii.wID = 3;
+
+				if (!proto->CanSetStatusMsg())
 				{
-					// Add this proto to menu
-					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), proto->description);
-
-					ZeroMemory(&mii, sizeof(mii));
-					mii.cbSize = sizeof(mii);
-					mii.fMask = MIIM_ID | MIIM_TYPE;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = tmp;
-					mii.cch = strlen(tmp);
-					mii.wID = 3;
-
-					if (!proto->CanSetStatusMsg())
-					{
-						mii.fMask |= MIIM_STATE;
-						mii.fState = MFS_DISABLED;
-					}
-
-					InsertMenuItem(submenu, 0, TRUE, &mii);
+					mii.fMask |= MIIM_STATE;
+					mii.fState = MFS_DISABLED;
 				}
 
-				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Nickname for %s..."), proto->description);
+				InsertMenuItem(submenu, 0, TRUE, &mii);
+
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Nickname for %s..."), proto->GetDescription());
 
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
@@ -1818,7 +1798,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				InsertMenuItem(submenu, 0, TRUE, &mii);
 
-				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Avatar for %s..."), proto->description);
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Avatar for %s..."), proto->GetDescription());
 
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
@@ -1857,7 +1837,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				{
 					case 1:
 					{
-						CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYAVATARUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case ID_AVATARPOPUP_SETMYAVATAR:
@@ -1867,7 +1847,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					}
 					case 2:
 					{
-						CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case ID_NICKPOPUP_SETMYNICKNAME:
@@ -1877,12 +1857,12 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					}
 					case 3:
 					{
-						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->name);
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->GetName());
 						break;
 					}
 					case 4:
 					{
-						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->status, 0);
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->GetStatus(), 0);
 						break;
 					}
 					case ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE:
@@ -1892,7 +1872,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					}
 					case 5:
 					{
-						CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->name, !proto->ListeningToEnabled());
+						CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->GetName(), !proto->ListeningToEnabled());
 						break;
 					}
 					case ID_CONTEXTPOPUP_ENABLELISTENINGTO:
@@ -1952,7 +1932,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_MOUSEMOVE:
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-			Protocol *proto = protocols->Get(data->protocol_number);
+			Protocol *proto = GetCurrentProtocol();
 			if (proto == NULL)
 				break;
 
@@ -2024,95 +2004,18 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 		case MWM_REFRESH:
 		{
-			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-
 			KillTimer(hwnd, ID_RECALC_TIMER);
 			SetTimer(hwnd, ID_RECALC_TIMER, RECALC_TIME, NULL);
 			break;
 		}
 
-		case MWM_AVATAR_CHANGED:
+		case MWM_REFRESH_DATA:
 		{
-			Protocol *proto = protocols->Get((const char *) wParam);
-
-			if (proto != NULL)
+			Protocol *proto = GetCurrentProtocol(false);
+			if (proto)
 			{
-				proto->GetAvatar();
-				RefreshFrame();
-			}
-
-			break;
-		}
-
-		case MWM_NICK_CHANGED:
-		{
-			Protocol *proto = protocols->Get((const char *) wParam);
-
-			if (proto != NULL)
-			{
-				proto->GetNick();
-				RefreshFrame();
-			}
-
-			break;
-		}
-
-		case MWM_STATUS_CHANGED:
-		{
-			Protocol *proto = protocols->Get((const char *) wParam);
-
-			if (proto != NULL)
-			{
-				proto->GetStatus();
-				proto->GetStatusMsg();
-				proto->GetNick();
-
-				RefreshFrame();
-			}
-
-			break;
-		}
-
-		case MWM_STATUS_MSG_CHANGED:
-		{
-			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-			data->get_status_messages = true;
-
-			RefreshFrame();
-			break;
-		}
-
-		case MWM_LISTENINGTO_CHANGED:
-		{
-			if (wParam != NULL)
-			{
-				Protocol *proto = protocols->Get((const char *) wParam);
-				if (proto != NULL)
-					proto->GetListeningTo();
-			}
-
-			RefreshFrameAndCalcRects();
-			break;
-		}
-
-		case MWM_LOCK_CHANGED:
-		{
-			Protocol *proto = protocols->Get((const char *) wParam);
-			if (proto != NULL)
-			{
-				proto->GetLocked();
-				RefreshFrameAndCalcRects();
-			}
-			break;
-		}
-
-		case MWM_EMAIL_COUNT_CHANGED:
-		{
-			Protocol *proto = protocols->Get((const char *) wParam);
-			if (proto != NULL)
-			{
-				proto->GetEmailCount();
-				RefreshFrameAndCalcRects();
+				proto->UpdateAll();
+				RedrawFrame();
 			}
 			break;
 		}
@@ -2208,28 +2111,17 @@ void FixMainMenu()
 
 void RedrawFrame() 
 {
-//	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd_frame, GWL_USERDATA);
-//	if (data != NULL) 
-//	{
-
-		if(frame_id == -1) 
-		{
-			InvalidateRect(hwnd_container, NULL, TRUE);
-		}
-		else
-		{
-			CallService(MS_CLIST_FRAMES_UPDATEFRAME, (WPARAM)frame_id, (LPARAM)FU_TBREDRAW | FU_FMREDRAW);
-		}
-//	}
+	if(frame_id == -1) 
+	{
+		InvalidateRect(hwnd_container, NULL, TRUE);
+	}
+	else
+	{
+		CallService(MS_CLIST_FRAMES_UPDATEFRAME, (WPARAM)frame_id, (LPARAM)FU_TBREDRAW | FU_FMREDRAW);
+	}
 }
 
-void RefreshFrameAndCalcRects() 
-{
-	if (hwnd_frame != NULL)
-		PostMessage(hwnd_frame, MWM_REFRESH, 0, 0);
-}
-
-void RefreshFrame() 
+void UpdateFrameData() 
 {
 	if (hwnd_frame != NULL)
 		PostMessage(hwnd_frame, MWM_REFRESH, 0, 0);
@@ -2273,7 +2165,7 @@ void SetStatusMessageRefreshTime(HWND hwnd)
 {
 	KillTimer(hwnd, ID_STATUSMESSAGE_TIMER);
 
-	opts.refresh_status_message_timer = DBGetContactSettingWord(NULL,"MyDetails","RefreshStatusMessageTimer",12);
+	opts.refresh_status_message_timer = DBGetContactSettingWord(NULL, "MyDetails", "RefreshStatusMessageTimer",5);
 	if (opts.refresh_status_message_timer > 0)
 	{
 		SetTimer(hwnd, ID_STATUSMESSAGE_TIMER, opts.refresh_status_message_timer * 1000, NULL);
@@ -2285,15 +2177,7 @@ int PluginCommand_ShowNextProtocol(WPARAM wParam,LPARAM lParam)
 	if (hwnd_frame == NULL)
 		return -1;
 
-	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd_frame, GWL_USERDATA);
-
-	data->protocol_number ++;
-	if (data->protocol_number >= protocols->GetSize())
-	{
-		data->protocol_number = 0;
-	}
-
-	DBWriteContactSettingWord(NULL,"MyDetails","ProtocolNumber",data->protocol_number);
+	SetCurrentProtocol(GetCurrentProtocolIndex() + 1);
 
 	SetCycleTime();
 
@@ -2307,15 +2191,7 @@ int PluginCommand_ShowPreviousProtocol(WPARAM wParam,LPARAM lParam)
 	if (hwnd_frame == NULL)
 		return -1;
 
-	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd_frame, GWL_USERDATA);
-
-	data->protocol_number --;
-	if (data->protocol_number < 0)
-	{
-		data->protocol_number = protocols->GetSize() - 1;
-	}
-
-	DBWriteContactSettingWord(NULL,"MyDetails","ProtocolNumber",data->protocol_number);
+	SetCurrentProtocol(GetCurrentProtocolIndex() - 1);
 
 	SetCycleTime();
 
@@ -2327,30 +2203,18 @@ int PluginCommand_ShowPreviousProtocol(WPARAM wParam,LPARAM lParam)
 int PluginCommand_ShowProtocol(WPARAM wParam,LPARAM lParam)
 {
 	char * proto = (char *)lParam;
-	int proto_num = -1;
 
 	if (proto == NULL)
 		return -1;
 
-	for(int i = 0 ; i < protocols->GetSize() ; i++)
-	{
-		if (stricmp(protocols->Get(i)->name, proto) == 0)
-		{
-			proto_num = i;
-			break;
-		}
-	}
-
+	int proto_num = GetProtocolIndexByName(proto);
 	if (proto_num == -1)
 		return -2;
 
 	if (hwnd_frame == NULL)
 		return -3;
 
-	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd_frame, GWL_USERDATA);
-
-	data->protocol_number = proto_num;
-	DBWriteContactSettingWord(NULL,"MyDetails","ProtocolNumber",data->protocol_number);
+	SetCurrentProtocol(proto_num);
 
 	SetCycleTime();
 
@@ -2366,47 +2230,49 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam)
 
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 
-	if ((HANDLE)wParam == NULL)
+	if (wParam != NULL)
+		return 0;
+	
+	if (strstr(cws->szModule,"Away"))
 	{
-		Protocol *proto = protocols->Get((const char *) cws->szModule);
+		// Status message changed
+		UpdateFrameData();
+		return 0;
+	}
+	
+	Protocol *proto = GetCurrentProtocol(false);
+	if (proto == NULL || strcmp(proto->GetName(), cws->szModule) != 0)
+		return 0;
 
-		if (!strcmp(cws->szSetting,"Status") 
-				|| ( proto != NULL && proto->custom_status != 0 
-					 && proto->custom_status_name != NULL 
-					 && !strcmp(cws->szSetting, proto->custom_status_name) )
-				|| ( proto != NULL && proto->custom_status != 0 
-					 && proto->custom_status_message != NULL 
-					 && !strcmp(cws->szSetting, proto->custom_status_message) ))
-		{
-			// Status changed
-			if (proto != NULL)
-				PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
-		}
-		else if(!strcmp(cws->szSetting,"MyHandle")
-				|| !strcmp(cws->szSetting,"UIN") 
-				|| !strcmp(cws->szSetting,"Nick") 
-				|| !strcmp(cws->szSetting,"FirstName") 
-				|| !strcmp(cws->szSetting,"e-mail") 
-				|| !strcmp(cws->szSetting,"LastName") 
-				|| !strcmp(cws->szSetting,"JID"))
-		{
-			// Name changed
-			if (proto != NULL)
-				PostMessage(hwnd_frame, MWM_NICK_CHANGED, (WPARAM) proto->name, 0);
-		}
-		else if (strstr(cws->szModule,"Away"))
-		{
-			// Status message changed
-			PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, 0, 0);
-		}
-		else if (proto != NULL && strcmp(cws->szSetting,"ListeningTo") == 0)
-		{
-			PostMessage(hwnd_frame, MWM_LISTENINGTO_CHANGED, (WPARAM) proto->name, 0);
-		}
-		else if (proto != NULL && strcmp(cws->szSetting,"LockMainStatus") == 0)
-		{
-			PostMessage(hwnd_frame, MWM_LOCK_CHANGED, (WPARAM) proto->name, 0);
-		}
+	if (!strcmp(cws->szSetting,"Status")
+			|| !strcmp(cws->szSetting,"StatusMood")
+			|| !strcmp(cws->szSetting,"XStatusName")
+			|| !strcmp(cws->szSetting,"XStatusMsg")
+			|| !strcmp(cws->szSetting,"XStatusId")
+			|| ( proto->GetCustomStatus() != 0 && !strcmp(cws->szSetting, proto->GetCustomStatusNameKey()) )
+			|| ( proto->GetCustomStatus() != 0 && !strcmp(cws->szSetting, proto->GetCustomStatusMessageKey()) ))
+	{
+		// Status changed
+		UpdateFrameData();
+	}
+	else if(!strcmp(cws->szSetting,"MyHandle")
+			|| !strcmp(cws->szSetting,"UIN") 
+			|| !strcmp(cws->szSetting,"Nick") 
+			|| !strcmp(cws->szSetting,"FirstName") 
+			|| !strcmp(cws->szSetting,"e-mail") 
+			|| !strcmp(cws->szSetting,"LastName") 
+			|| !strcmp(cws->szSetting,"JID"))
+	{
+		// Name changed
+		UpdateFrameData();
+	}
+	else if (strcmp(cws->szSetting,"ListeningTo") == 0)
+	{
+		UpdateFrameData();
+	}
+	else if (strcmp(cws->szSetting,"LockMainStatus") == 0)
+	{
+		UpdateFrameData();
 	}
 
 	return 0;
@@ -2417,10 +2283,11 @@ int AvatarChangedHook(WPARAM wParam, LPARAM lParam)
 	if (hwnd_frame == NULL)
 		return 0;
 
-	Protocol *proto = protocols->Get((const char *) wParam);
+	Protocol *proto = GetCurrentProtocol(false);
+	if (proto == NULL || strcmp(proto->GetName(), (const char *) wParam) != 0)
+		return 0;
 
-	if (proto != NULL)
-		PostMessage(hwnd_frame, MWM_AVATAR_CHANGED, (WPARAM) proto->name, 0);
+	UpdateFrameData();
 
 	return 0;
 }
@@ -2430,28 +2297,25 @@ int ProtoAckHook(WPARAM wParam, LPARAM lParam)
 	if (hwnd_frame == NULL)
 		return 0;
 
-	ACKDATA *ack = (ACKDATA*)lParam;
+	ACKDATA *ack = (ACKDATA*) lParam;
+	if (ack->hContact != NULL)
+		return 0;
+
+	Protocol *proto = GetCurrentProtocol(false);
+	if (proto == NULL || strcmp(proto->GetName(), ack->szModule) != 0)
+		return 0;
 
 	if (ack->type == ACKTYPE_STATUS) 
 	{
-		Protocol *proto = protocols->Get((const char *) ack->szModule);
-
-		if (proto != NULL)
-			PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
+		UpdateFrameData();
 	}
 	else if (ack->type == ACKTYPE_AWAYMSG)
 	{
-		Protocol *proto = protocols->Get((const char *) ack->szModule);
-
-		if (proto != NULL)
-			PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, (WPARAM) proto->name, 0);
+		UpdateFrameData();
 	}
 	else if (ack->type == ACKTYPE_EMAIL)
 	{
-		Protocol *proto = protocols->Get((const char *) ack->szModule);
-
-		if (proto != NULL)
-			PostMessage(hwnd_frame, MWM_EMAIL_COUNT_CHANGED, (WPARAM) proto->name, 0);
+		UpdateFrameData();
 	}
 
 	return 0;
@@ -2462,8 +2326,20 @@ int ListeningtoEnableStateChangedHook(WPARAM wParam,LPARAM lParam)
 	if (hwnd_frame == NULL)
 		return 0;
 
-	if (wParam == NULL || protocols->Get((const char *) wParam) != NULL)
-		PostMessage(hwnd_frame, MWM_LISTENINGTO_CHANGED, wParam, 0);
+	Protocol *proto = GetCurrentProtocol(false);
+	if (proto == NULL || strcmp(proto->GetName(), (const char *) wParam) != 0)
+		return 0;
+
+	UpdateFrameData();
+
+	return 0;
+}
+
+int AccListChanged(WPARAM wParam, LPARAM lParam)
+{
+	SetCurrentProtocol(0);
+
+	RedrawFrame();
 
 	return 0;
 }
