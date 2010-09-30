@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.
 #include "frame.h"
 #include "wingdi.h"
 #include "winuser.h"
+#include <m_skin_eng.h>
 
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
@@ -402,6 +403,8 @@ int SmileyAddOptionsChangedHook(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+int SkinEngineDrawCallback(HWND hWnd, HDC hDC, RECT * rcPaint, HRGN rgn, DWORD dFlags, void * CallBackData);
+
 int CreateFrame() 
 {
 	WNDCLASS wndclass;
@@ -426,15 +429,20 @@ int CreateFrame()
 		CLISTFrame Frame = {0};
 		
 		Frame.cbSize = sizeof(Frame);
-		Frame.name = Translate("My Details");
-		Frame.cbSize = sizeof(CLISTFrame);
+		Frame.name = "My Details";
+		Frame.TBname = Translate("My Details");
 		Frame.hWnd = hwnd_frame;
 		Frame.align = alTop;
-		Frame.Flags = F_VISIBLE | F_SHOWTB | F_SHOWTBTIP | F_NOBORDER;
+		Frame.Flags = F_VISIBLE | F_SHOWTB | F_SHOWTBTIP | F_NOBORDER | F_NO_SUBCONTAINER;
 		Frame.height = 100;
 
 		frame_id = CallService(MS_CLIST_FRAMES_ADDFRAME, (WPARAM)&Frame, 0);
 
+		if (ServiceExists(MS_SKINENG_REGISTERPAINTSUB)) 
+		{
+			CallService(MS_BACKGROUNDCONFIG_REGISTER,(WPARAM)"My Details Background/MyDetails", 0);
+			CallService(MS_SKINENG_REGISTERPAINTSUB, (WPARAM) Frame.hWnd, (LPARAM) SkinEngineDrawCallback);
+		}
 		
 		if (DBGetContactSettingByte(NULL, "MyDetails", "ForceHideFrame", 0))
 		{
@@ -646,14 +654,39 @@ HBITMAP CreateBitmap32(int cx, int cy)
     return DirectBitmap;
 }
 
- void EraseBackground(HWND hwnd, HDC hdc)
+
+BOOL UseLayeredMode()
+{
+	return isLayeredEnabled() && !FrameIsFloating();
+}
+
+
+void EraseBackground(HWND hwnd, HDC hdc)
 {
 	RECT r;
 	GetClientRect(hwnd, &r);
 
-	HBRUSH hB = CreateSolidBrush(opts.bkg_color);
-	FillRect(hdc, &r, hB);
-	DeleteObject(hB);
+	if (isSkinEngineEnabled())
+	{
+		if (FrameIsFloating())
+		{
+			HBRUSH hB = CreateSolidBrush(opts.bkg_color);
+			FillRect(hdc, &r, hB);
+			DeleteObject(hB);
+		}
+		else
+		{
+			SkinDrawWindowBack(hwnd, hdc, &r, "Main,ID=Background");
+		}
+
+		SkinDrawGlyph(hdc, &r, &r,"MyDetails,ID=Background");
+	}
+	else
+	{
+		HBRUSH hB = CreateSolidBrush(opts.bkg_color);
+		FillRect(hdc, &r, hB);
+		DeleteObject(hB);
+	}
 }
 
 static int Width(const RECT &rc)
@@ -692,7 +725,7 @@ void Draw(HDC hdc, SkinIconFieldState &state)
 
 	rc = state.getInsideRect(true);
 
-	DrawIconEx(hdc, rc.left, rc.top, state.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
+	skin_DrawIconEx(hdc, rc.left, rc.top, state.getIcon(), Width(rc), Height(rc), 0, NULL, DI_NORMAL);
 
 	SelectClipRgn(hdc, NULL);
 	DeleteObject(rgn);
@@ -742,7 +775,9 @@ void Draw(HDC hdc, SkinTextFieldState &state, BOOL replace_smileys = FALSE, cons
 			opts.use_contact_list_smileys ? "clist" : protocol, NULL);
 	}
 	else
-		DrawText(hdc, state.getText(), -1, &rc, uFormat);
+	{
+		skin_DrawText(hdc, state.getText(), -1, &rc, uFormat);
+	}
 
 
 	SelectObject(hdc, oldFont);
@@ -753,10 +788,27 @@ void Draw(HDC hdc, SkinTextFieldState &state, BOOL replace_smileys = FALSE, cons
 }
 
 
+void DrawMouseOver(HDC hdc, RECT *lprc, const char *place)
+{
+	if (isSkinEngineEnabled())
+	{
+		SkinDrawGlyph(hdc, lprc, lprc, "MyDetails,ID=MouseOver");
+
+		char glyph[1024];
+		mir_snprintf(glyph, MAX_REGS(glyph), "MyDetails,ID=MouseOver%s", place);
+		SkinDrawGlyph(hdc, lprc, lprc, glyph);
+	}
+	else
+	{
+		FrameRect(hdc, lprc, (HBRUSH) GetStockObject(GRAY_BRUSH));
+	}
+}
+
+
 void Draw(HWND hwnd, HDC hdc_orig)
 {
-	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
-	
+	MyDetailsFrameData *data = (MyDetailsFrameData *) GetWindowLong(hwnd, GWL_USERDATA);
+
 	Protocol *proto = GetCurrentProtocol();
 	if (proto == NULL)
 	{
@@ -804,9 +856,20 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	RECT r_full;
 	GetClientRect(hwnd, &r_full);
 
-	HDC hdc = CreateCompatibleDC(hdc_orig);
-	HBITMAP hBmp = CreateBitmap32(Width(r_full), Height(r_full));
-	SelectObject(hdc, hBmp);
+	HDC hdc;
+	HBITMAP hBmp;
+	BOOL useLayeredMode = UseLayeredMode();
+	if (useLayeredMode)
+	{
+		hdc = hdc_orig;
+		hBmp = NULL;
+	}
+	else
+	{
+		hdc = CreateCompatibleDC(hdc_orig);
+		hBmp = CreateBitmap32(Width(r_full), Height(r_full));
+		SelectObject(hdc, hBmp);
+	}
 
 	int old_bk_mode = SetBkMode(hdc, TRANSPARENT);
 	HFONT old_font = (HFONT) GetCurrentObject(hdc, OBJ_FONT);
@@ -1007,6 +1070,10 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		adr.dwFlags = AVDRQ_OWNPIC | AVDRQ_HIDEBORDERONTRANSPARENCY | 
 			(opts.draw_avatar_border ? AVDRQ_DRAWBORDER : 0 ) |
 			(opts.draw_avatar_round_corner ? AVDRQ_ROUNDEDCORNER : 0 );
+
+		if (useLayeredMode)
+			adr.dwFlags |= AVDRQ_AERO;
+
 		adr.clrBorder =  opts.draw_avatar_border_color;
 		adr.radius = round_radius;
 		adr.alpha = 255;
@@ -1020,40 +1087,40 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	}
 
 	// Nick
-	Draw(hdc, nickname, TRUE, proto->GetName());
-
 	if (data->nick.draw && data->nick.mouseOver && proto->CanSetNick())
-		FrameRect(hdc, &nickname.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
+		DrawMouseOver(hdc, &nickname.getRect(), "Nick");
+
+	Draw(hdc, nickname, TRUE, proto->GetName());
 
 
 	// Protocol
-	Draw(hdc, protocol);
-
 	if (data->proto.draw && data->proto.mouseOver)
-		FrameRect(hdc, &protocol.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
+		DrawMouseOver(hdc, &protocol.getRect(), "Proto");
+	
+	Draw(hdc, protocol);
 	
 
 	// Status
+	if (data->status.draw && data->status.mouseOver)
+		DrawMouseOver(hdc, &data->status.rc, "Status");
+	
 	Draw(hdc, status_icon);
 	Draw(hdc, status_name);
 
-	if (data->status.draw && data->status.mouseOver)
-		FrameRect(hdc, &data->status.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
-	
 
 	// Away message
+	if (data->away_msg.draw && data->away_msg.mouseOver && proto->CanSetStatusMsg())
+		DrawMouseOver(hdc, &status_msg.getRect(), "StatusMsg");
+	
 	Draw(hdc, status_msg, TRUE, proto->GetName());
 
-	if (data->away_msg.draw && data->away_msg.mouseOver && proto->CanSetStatusMsg())
-		FrameRect(hdc, &status_msg.getRect(), (HBRUSH) GetStockObject(GRAY_BRUSH));
-	
 
 	// Listening to
 	Draw(hdc, listening_icon);
 	Draw(hdc, listening);
 	
 	if (data->listening_to.draw && data->listening_to.mouseOver && protocols->CanSetListeningTo())
-		FrameRect(hdc, &data->listening_to.rc, (HBRUSH) GetStockObject(GRAY_BRUSH));
+		DrawMouseOver(hdc, &data->listening_to.rc, "Listening");
 	
 
 	// Unread email count
@@ -1069,11 +1136,13 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	SetTextColor(hdc, old_color);
 	SetBkMode(hdc, old_bk_mode);
 
-	BitBlt(hdc_orig, r_full.left, r_full.top, r_full.right - r_full.left, 
+	if (!useLayeredMode)
+	{
+		BitBlt(hdc_orig, r_full.left, r_full.top, r_full.right - r_full.left, 
 			r_full.bottom - r_full.top, hdc, r_full.left, r_full.top, SRCCOPY);
-	DeleteDC(hdc);
-	DeleteObject(hBmp);
-
+		DeleteDC(hdc);
+		DeleteObject(hBmp);
+	}
 
 	if (freeStatusIcon)
 		DestroyIcon(hStatusIcon);
@@ -1130,6 +1199,12 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			}
 		}
 	}
+}
+
+int SkinEngineDrawCallback(HWND hWnd, HDC hDC, RECT * rcPaint, HRGN rgn, DWORD dFlags, void * CallBackData)
+{
+	Draw(hWnd, hDC);
+	return 0;
 }
 
 bool InsideRect(const POINT &p, const RECT &r)
@@ -1309,7 +1384,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			MyDetailsFrameData *data = new MyDetailsFrameData();
 			SetWindowLong(hwnd, GWL_USERDATA, (LONG) data);
 
-			SetCurrentProtocol(0);
+			SetCurrentProtocol(DBGetContactSettingWord(NULL, "MyDetails", "ProtocolNumber", 0));
 
 			SetCycleTime(hwnd);
 
@@ -1318,32 +1393,42 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			return TRUE;
 		}
 
-		/*
+
 		case WM_ERASEBKGND:
 		{
 			//EraseBackground(hwnd, (HDC)wParam); 
-			Draw(hwnd, (HDC)wParam); 
+			//Draw(hwnd, (HDC)wParam); 
 			return TRUE;
 		}
-		*/
 
+		/*
 		case WM_PRINTCLIENT:
 		{
 			Draw(hwnd, (HDC)wParam);
 			return TRUE;
 		}
+		*/
 
 		case WM_PAINT:
 		{
-			RECT r;
+			OutputDebugString("WM_PAINT\n");
 
-			if(GetUpdateRect(hwnd, &r, FALSE)) 
+			if (UseLayeredMode())
 			{
-				PAINTSTRUCT ps;
-
-				HDC hdc = BeginPaint(hwnd, &ps);
-				Draw(hwnd, hdc);
-				EndPaint(hwnd, &ps);
+				CallService(MS_SKINENG_INVALIDATEFRAMEIMAGE, (WPARAM) hwnd, 0);
+				ValidateRect(hwnd, NULL);
+			}
+			else
+			{
+				RECT r;
+				if(GetUpdateRect(hwnd, &r, FALSE)) 
+				{
+					PAINTSTRUCT ps;
+					
+					HDC hdc = BeginPaint(hwnd, &ps);
+					Draw(hwnd, hdc);
+					EndPaint(hwnd, &ps);
+				}
 			}
 			
 			return TRUE;
@@ -2111,7 +2196,7 @@ void FixMainMenu()
 
 void RedrawFrame() 
 {
-	if(frame_id == -1) 
+	if (frame_id == -1) 
 	{
 		InvalidateRect(hwnd_container, NULL, TRUE);
 	}

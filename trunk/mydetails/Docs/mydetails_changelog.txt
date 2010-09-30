@@ -2,6 +2,12 @@ My Details
 
 Changelog:
 
+. 0.0.2.6
+  + Added support for clist modern skin engine
+  * Fix for last shown protocol
+  + Added skins.dll to zip
+  * Updated updater to use googlecode
+
 . 0.0.2.5
   + Use account name and ordering
   * Better handling status messages
