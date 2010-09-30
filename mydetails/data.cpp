@@ -122,6 +122,8 @@ void SetCurrentProtocol(int index)
 	int protosSize = GetNumProtocols();
 	if (protosSize > 0)
 		current.index = (index % protosSize + protosSize) % protosSize;
+
+	DBWriteContactSettingWord(NULL, "MyDetails", "ProtocolNumber", current.index);
 }
 
 Protocol * GetCurrentProtocol(bool createIfDontExist)

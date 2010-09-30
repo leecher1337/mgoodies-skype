@@ -24,7 +24,15 @@ copy ..\Docs\%name%_version.txt
 mkdir Plugins
 cd Plugins
 copy ..\..\..\..\bin\release\Plugins\%name%.dll
+copy ..\..\..\..\bin\release\Plugins\skins.dll
 cd ..
+mkdir Skins
+cd Skins
+mkdir Default
+cd Default
+copy ..\..\..\data\Skins\Default\*.msk
+cd..
+cd..
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -61,7 +69,7 @@ cd ..
 cd ..
 copy ..\Release\%name%.pdb
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs Skins
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\mydetails src\utils
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
 

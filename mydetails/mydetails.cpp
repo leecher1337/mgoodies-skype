@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,2,5),
+	PLUGIN_MAKE_VERSION(0,0,2,6),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci, Drugwash",
 	"",
@@ -367,11 +367,11 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.org/miranda/mydetails_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.org/miranda/mydetails_changelog.txt";
+		upd.szBetaVersionURL = "http://svn.berlios.de/svnroot/repos/mgoodies/trunk/mydetails/Docs/mydetails_version.txt";
+		upd.szBetaChangelogURL = "http://svn.berlios.de/svnroot/repos/mgoodies/trunk/mydetails/Docs/mydetails_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"My Details ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/mydetails.zip";
+		upd.szBetaUpdateURL = "http://pescuma.googlecode.com/files/mydetails.%VERSION%.zip";
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);

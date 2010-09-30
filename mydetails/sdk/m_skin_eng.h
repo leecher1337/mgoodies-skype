@@ -411,37 +411,25 @@ int __inline mod_DrawIconEx_helper(HDC hdc,int xLeft,int yTop,HICON hIcon,int cx
   return CallService(MS_SKINENG_DRAWICONEXFIX,(WPARAM)&p,0);
 }
 
-inline static int SkinDrawIconEx(HDC hdc,int xLeft,int yTop,HICON hIcon,int cxWidth,int cyWidth, UINT istepIfAniCur, HBRUSH hbrFlickerFreeDraw, UINT diFlags)
-{
-	if (!isLayeredEnabled())
-		return DrawIconEx(hdc, xLeft, yTop, hIcon, cxWidth, cyWidth, istepIfAniCur, hbrFlickerFreeDraw, diFlags);
-	return mod_DrawIconEx_helper(hdc, xLeft, yTop, hIcon, cxWidth, cyWidth, istepIfAniCur, hbrFlickerFreeDraw, diFlags);
-}
 
 
 
-#define DT_FORCENATIVERENDER   0x10000000
+//  Register of plugin's user
+//
+//  wParam = (WPARAM)szSetting - string that describes a user
+//           format: Category/ModuleName,
+//           eg: "Contact list background/CLUI",
+//               "Status bar background/StatusBar"
+//  lParam = (LPARAM)dwFlags
+//
+#define MS_BACKGROUNDCONFIG_REGISTER "ModernBkgrCfg/Register"
 
-inline static BOOL SkinDrawText(HDC hdc, LPCTSTR lpString, int nCount, RECT * lpRect, UINT format)
-{
-	if (format&DT_CALCRECT) 
-		return DrawText(hdc,lpString,nCount,lpRect,format);
-	
-	if (format&DT_FORCENATIVERENDER || !isSkinEngineEnabled())
-		return DrawText(hdc,lpString,nCount,lpRect,format&~DT_FORCENATIVERENDER);
+//
+//  Notification about changed background
+//  wParam = ModuleName
+//  lParam = 0
+#define ME_BACKGROUNDCONFIG_CHANGED "ModernBkgrCfg/Changed"
 
-	if (format&DT_RTLREADING) 
-		SetTextAlign(hdc, TA_RTLREADING);
 
-	int size = MultiByteToWideChar(CP_ACP, 0, lpString, -1, NULL, 0);
-	WCHAR * tmp = (WCHAR *) malloc(size * sizeof(WCHAR));
-	MultiByteToWideChar(CP_ACP, 0, lpString, -1, tmp, size);
-
-	AlphaText(hdc,lpString,nCount,lpRect,format,GetTextColor(hdc));
-
-	free(tmp);
-
-	return 0;
-}
 
 #endif
