@@ -292,7 +292,7 @@ struct IconAndItem : public SimpleItem
 	virtual void update(HWND hwnd, SkinIconFieldState *icon, SkinTextFieldState *item)
 	{
 		drawIcon = icon->isVisible();
-		drawItem = icon->isVisible();
+		drawItem = item->isVisible();
 		alignRight = ( item->getHorizontalAlign() == SKN_HALIGN_RIGHT );
 
 		draw = drawIcon || drawItem;
@@ -1095,7 +1095,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 	// Protocol
 	if (data->proto.draw && data->proto.mouseOver)
-		DrawMouseOver(hdc, &protocol.getRect(), "Proto");
+		DrawMouseOver(hdc, &data->proto.rc, "Proto");
 	
 	Draw(hdc, protocol);
 	
@@ -1110,7 +1110,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 
 	// Away message
 	if (data->away_msg.draw && data->away_msg.mouseOver && proto->CanSetStatusMsg())
-		DrawMouseOver(hdc, &status_msg.getRect(), "StatusMsg");
+		DrawMouseOver(hdc, &data->away_msg.rc, "StatusMsg");
 	
 	Draw(hdc, status_msg, TRUE, proto->GetName());
 
@@ -1411,8 +1411,6 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 		case WM_PAINT:
 		{
-			OutputDebugString("WM_PAINT\n");
-
 			if (UseLayeredMode())
 			{
 				CallService(MS_SKINENG_INVALIDATEFRAMEIMAGE, (WPARAM) hwnd, 0);
