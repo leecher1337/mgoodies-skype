@@ -26,27 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "TLS.h"
 #include "stdint.h"
 
-//#define MREW_DO_DEBUG_LOGGING 1
-
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	#define SYNC_BEGINREAD(sync)     sync.BeginRead (__FILE__, __LINE__, __FUNCTION__)
-	#define SYNC_ENDREAD(sync)       sync.EndRead   (__FILE__, __LINE__, __FUNCTION__)
-	#define SYNC_BEGINWRITE(sync)    sync.BeginWrite(__FILE__, __LINE__, __FUNCTION__)
-	#define SYNC_TRYBEGINWRITE(sync) sync.TryBeginWrite(__FILE__, __LINE__, __FUNCTION__)
-	#define SYNC_ENDWRITE(sync)      sync.EndWrite  (__FILE__, __LINE__, __FUNCTION__)
-#else
-	#define SYNC_BEGINREAD(sync)     sync.BeginRead ()
-	#define SYNC_ENDREAD(sync)       sync.EndRead   ()
-	#define SYNC_BEGINWRITE(sync)    sync.BeginWrite()
-	#define SYNC_TRYBEGINWRITE(sync) sync.TryBeginWrite()
-	#define SYNC_ENDWRITE(sync)      sync.EndWrite  ()
-#endif
-
-
 class CMultiReadExclusiveWriteSynchronizer
 {
 private:
-	volatile uint64_t m_Sentinel;
+	uint64_t volatile m_Sentinel;
 	HANDLE m_ReadSignal[2];
 	HANDLE m_WriteSignal;
 
@@ -56,22 +39,10 @@ private:
 
 	CThreadLocalStorage<CMultiReadExclusiveWriteSynchronizer, unsigned> tls;
 
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	HANDLE m_Log;
-	void  DoLog(char * Desc, char * File, int Line, char * Function);
-#endif
-
 public:
 	CMultiReadExclusiveWriteSynchronizer();
 	virtual ~CMultiReadExclusiveWriteSynchronizer();
 
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	void BeginRead    (char * File, int Line, char * Function);
-	void EndRead      (char * File, int Line, char * Function);
-	bool BeginWrite   (char * File, int Line, char * Function);
-	bool TryBeginWrite(char * File, int Line, char * Function);
-	void EndWrite     (char * File, int Line, char * Function);
-#endif
 	void BeginRead();
 	void EndRead();
 	bool BeginWrite();

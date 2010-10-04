@@ -181,7 +181,3 @@ uint32_t Hash(const void * Data, uint32_t Length)
   HASHfinal(a,b,c);
   return c;
 }
-
-#undef rot
-#undef HASHmix
-#undef HASHfinal

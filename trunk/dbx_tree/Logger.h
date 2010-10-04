@@ -26,6 +26,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include "Interface.h"
 
+#define WIDEN2(x) L ## x
+#define WIDEN(x) WIDEN2(x)
+#define __WFILE__ WIDEN(__FILE__)
+#define __WFUNCTION__ WIDEN(__FUNCTION__)
+
+#ifdef UNICODE
+	#define LOG(Level, Message, ...) CLogger::Instance().Append(__WFILE__, __WFUNCTION__, __LINE__, 0, CLogger:: ## Level, Message, __VA_ARGS__)
+	#define LOGSYS(Level, Message, ...) CLogger::Instance().Append(__WFILE__, __WFUNCTION__, __LINE__, GetLastError(), CLogger:: ## Level, Message, __VA_ARGS__)
+#else
+	#define LOG(Level, Message, ...) CLogger::Instance().Append(__FILE__, __FUNCTION__, __LINE__, 0, CLogger:: ## Level, Message, __VA_ARGS__)
+	#define LOGSYS(Level, Message, ...) CLogger::Instance().Append(__FILE__, __FUNCTION__, __LINE__, GetLastError(), CLogger:: ## Level, Message, __VA_ARGS__)
+#endif
+
+#define CHECK(Assertion, Level, Message, ...) if (!(Assertion)) LOG(Level, Message, __VA_ARGS__)
+#define CHECKSYS(Assertion, Level, Message, ...) if (!(Assertion)) LOGSYS(Level, Message, __VA_ARGS__)
+
 class CLogger
 {
 	public:
@@ -38,15 +54,16 @@ class CLogger
 		};
 
 		CLogger();
-		virtual ~CLogger();
-
-		virtual void Append(TLevel Level, const TCHAR * Message, ...);
-
-		virtual TLevel ShowMessage(TLevel CanAsyncTill = logERROR);
+		~CLogger();
+		
+		void Append(const TCHAR * File, const TCHAR * Function, const int Line, DWORD SysState, TLevel Level, const TCHAR * Message, ...);
+		TLevel ShowMessage(TLevel CanAsyncTill = logERROR);
 
 		static CLogger & Instance()
 			{	return _Instance; };
 
+		TLevel Level()
+			{	return m_Level; };
 	protected:
 		std::vector<TCHAR *> m_Messages;
 		size_t m_Length;

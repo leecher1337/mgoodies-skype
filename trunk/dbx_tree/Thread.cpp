@@ -21,23 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "Thread.h"
-
-
-#ifdef _MSC_VER
-#include <intrin.h>
-
-#pragma intrinsic (_InterlockedExchange)
-#else
-#include "intrin_gcc.h"
-#endif
-
+#include "intrinsics.h"
 
 unsigned int __stdcall ThreadDistributor(void* Param)
 {
 	CThread * thread = static_cast<CThread *>(Param);
 	DWORD result = thread->Wrapper();
 	_endthreadex(result);
-	return result;
+	return result; // to make the compiler happy
 }
 
 CThread::CThread(bool CreateSuspended)
@@ -82,16 +73,16 @@ DWORD CThread::Wrapper()
 void CThread::Resume()
 {
 	if (ResumeThread(m_Handle) == 1)
-		_InterlockedExchange(&m_Suspended, 0);
+		XCHG_32(m_Suspended, 0);
 }
 void CThread::Suspend()
 {
 	SuspendThread(m_Handle);
-	_InterlockedExchange(&m_Suspended, 1);
+	XCHG_32(m_Suspended, 1);
 }
 void CThread::Terminate()
 {
-	_InterlockedExchange(&m_Terminated, 1);
+	XCHG_32(m_Terminated, 1);
 }
 DWORD CThread::WaitFor()
 {
@@ -106,11 +97,11 @@ DWORD CThread::WaitFor()
 
 void CThread::FreeOnTerminate(bool Terminate)
 {
-	_InterlockedExchange(&m_FreeOnTerminate, Terminate);
+	XCHG_32(m_FreeOnTerminate, Terminate);
 }
 void CThread::ReturnValue(DWORD Value)
 {
-	_InterlockedExchange(&m_ReturnValue, Value);
+	XCHG_32(m_ReturnValue, Value);
 }
 
 void CThread::Priority(TPriority NewPriority)

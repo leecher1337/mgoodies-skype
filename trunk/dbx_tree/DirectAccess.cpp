@@ -21,12 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "DirectAccess.h"
+#include "Logger.h"
 
 CDirectAccess::CDirectAccess(const TCHAR* FileName)
 : CFileAccess(FileName)
 {
 	m_File = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
-	assertThrow(m_File != INVALID_HANDLE_VALUE, _T("CreateFile failed"));
+	CHECKSYS(m_File != INVALID_HANDLE_VALUE,
+		logCRITICAL, _T("CreateFile failed"));
 
 	m_MinAllocGranularity = 0x00001000;  // 4kb   to avoid heavy fragmentation
 	m_AllocGranularity    = 0x00008000;  // 32kb
@@ -54,60 +56,63 @@ CDirectAccess::~CDirectAccess()
 	}
 }
 
-uint32_t CDirectAccess::mRead(void* Buf, uint32_t Source, uint32_t Size)
+uint32_t CDirectAccess::_Read(void* Buf, uint32_t Source, uint32_t Size)
 {
 	DWORD read = 0;
 
-	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Source, NULL, FILE_BEGIN),
-		          _T("Cannot set file position"));
+	CHECKSYS(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Source, NULL, FILE_BEGIN),
+		logERROR, _T("SetFilePointer failed"));
 
-	assertThrow(ReadFile(m_File, Buf, Size, &read, NULL), _T("Cannot read"));
+	CHECKSYS(ReadFile(m_File, Buf, Size, &read, NULL),
+		logERROR, _T("ReadFile failed"));
 
 	return read;
 }
-uint32_t CDirectAccess::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
+uint32_t CDirectAccess::_Write(void* Buf, uint32_t Dest, uint32_t Size)
 {
 	DWORD written = 0;
 
-	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Dest, NULL, FILE_BEGIN),
-		          _T("Cannot set file position"));
+	CHECKSYS(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Dest, NULL, FILE_BEGIN),
+		logERROR, _T("SetFilePointer failed"));
 
-	assertThrow(WriteFile(m_File, Buf, Size, &written, NULL),
-		          _T("Cannot write"));
+	CHECKSYS(WriteFile(m_File, Buf, Size, &written, NULL),
+		logERROR, _T("WriteFile failed"));
 
 	return written;
 }
 
-uint32_t CDirectAccess::mSetSize(uint32_t Size)
+uint32_t CDirectAccess::_SetSize(uint32_t Size)
 {
-	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Size, NULL, FILE_BEGIN),
-		          _T("Cannot set file position"));
+	CHECKSYS(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Size, NULL, FILE_BEGIN),
+		logERROR, _T("SetFilePointer failed"));
 
-	assertThrow(SetEndOfFile(m_File), _T("Cannot set end of file"));
+	CHECKSYS(SetEndOfFile(m_File),
+		logERROR, _T("SetEndOfFile failed"));
 
 	return Size;		
 }
 
-void CDirectAccess::mInvalidate(uint32_t Dest, uint32_t Size)
+void CDirectAccess::_Invalidate(uint32_t Dest, uint32_t Size)
 {
 	DWORD written;
 	uint8_t buf[4096];
 	memset(buf, 0, sizeof(buf));
 
-	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Dest, NULL, FILE_BEGIN),
-		          _T("Cannot set file position"));
+	CHECKSYS(INVALID_SET_FILE_POINTER != SetFilePointer(m_File, Dest, NULL, FILE_BEGIN),
+		logERROR, _T("SetFilePointer failed"));
 
 	while (Size > sizeof(buf))
 	{
 		Size -= sizeof(buf);
-		assertThrow(WriteFile(m_File, buf, sizeof(buf), &written, NULL),
-			          _T("Cannot write"));
+		CHECKSYS(WriteFile(m_File, buf, sizeof(buf), &written, NULL),
+			logERROR, _T("WriteFile failed"));
 	}
-	assertThrow(WriteFile(m_File, buf, Size, &written, NULL),
-		          _T("Cannot write"));
+	CHECKSYS(WriteFile(m_File, buf, Size, &written, NULL),
+		logERROR, _T("WriteFile failed"));
 }
 
-void CDirectAccess::mFlush()
+void CDirectAccess::_Flush()
 {
-	FlushFileBuffers(m_File);
+	CHECKSYS(FlushFileBuffers(m_File),
+		logERROR, _T("FlushFileBuffers failed"));
 }

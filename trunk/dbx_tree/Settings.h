@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MREWSync.h"
 #include "sigslot.h"
 #include "IterationHeap.h"
-#include "EncryptionManager.h"
 #include <queue>
 #include "lockfree_hashmap.h"
 
@@ -107,19 +106,27 @@ class CSettingsTree : public CFileBTree<TSettingKey, 8>
 protected:
 	TDBTEntityHandle m_Entity;
 	CSettings & m_Owner;
-	CEncryptionManager & m_EncryptionManager;
 public:
-	CSettingsTree(
-		CSettings & Owner,
-		CBlockManager & BlockManager,
-		CEncryptionManager & EncryptionManager,
-		TNodeRef RootNode,
-		TDBTEntityHandle Entity
-		);
-	~CSettingsTree();
+	CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity)
+		:	CFileBTree<TSettingKey, 8>(BlockManager, RootNode, cSettingNodeSignature),
+			m_Owner(Owner),
+			m_Entity(Entity)
+		{
 
-	TDBTEntityHandle getEntity();
-	void setEntity(TDBTEntityHandle NewEntity);
+		};
+	~CSettingsTree()
+		{
+
+		};
+
+	TDBTEntityHandle Entity()
+		{
+			return m_Entity;
+		};
+	void Entity(TDBTEntityHandle NewEntity)
+		{
+			m_Entity = NewEntity;
+		};
 
 	TDBTSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length);
 	bool _DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
@@ -140,16 +147,18 @@ public:
 	CSettings(
 		CBlockManager & BlockManagerSet,
 		CBlockManager & BlockManagerPri,
-		CEncryptionManager & EncryptionManagerSet,
-		CEncryptionManager & EncryptionManagerPri,
 		CSettingsTree::TNodeRef SettingsRoot,
 		CEntities & Entities
 		);
 	virtual ~CSettings();
 
-	TOnRootChanged & sigRootChanged();
 
-	bool _ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBTSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
+	TOnRootChanged & sigRootChanged()
+		{
+			return m_sigRootChanged;
+		};
+
+	bool _ReadSettingName(CBlockManager & BlockManager, TDBTSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
 	void _EnsureModuleExists(char * Module);
 
 	// compatibility:
@@ -179,8 +188,6 @@ private:
 
 	CBlockManager & m_BlockManagerSet;
 	CBlockManager & m_BlockManagerPri;
-	CEncryptionManager & m_EncryptionManagerSet;
-	CEncryptionManager & m_EncryptionManagerPri;
 
 	CEntities & m_Entities;
 

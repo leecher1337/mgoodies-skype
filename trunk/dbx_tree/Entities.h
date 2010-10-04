@@ -183,13 +183,31 @@ public:
 	typedef sigslot::signal3<CEntities *, TDBTEntityHandle, TDBTEntityHandle> TOnInternalMergeSettings;
 	typedef sigslot::signal3<CEntities *, TDBTEntityHandle, TDBTEntityHandle> TOnInternalTransferEvents;
 
-	TOnEntityDelete &           sigEntityDelete();
-	TOnInternalDeleteEvents &   _sigDeleteEvents();
-	TOnInternalDeleteSettings & _sigDeleteSettings();
-	TOnInternalMergeSettings &  _sigMergeSettings();
-	TOnInternalTransferEvents & _sigTransferEvents();
+	CVirtuals::TOnRootChanged & sigVirtualRootChanged()
+		{
+			return m_Virtuals.sigRootChanged();
+		};
 
-	CVirtuals::TOnRootChanged & sigVirtualRootChanged();
+	TOnEntityDelete & sigEntityDelete()
+		{
+			return m_sigEntityDelete;
+		};
+	TOnInternalDeleteEvents & _sigDeleteEvents()
+		{
+			return m_sigInternalDeleteEvents;
+		};
+	TOnInternalDeleteSettings & _sigDeleteSettings()
+		{
+			return m_sigInternalDeleteSettings;
+		};
+	TOnInternalMergeSettings & _sigMergeSettings()
+		{
+			return m_sigInternalMergeSettings;
+		};
+	TOnInternalTransferEvents & _sigTransferEvents()
+		{
+			return m_sigInternalTransferEvents;
+		};
 
 	//internal helpers:
 	/*CSettingsTree::TNodeRef*/
@@ -202,13 +220,20 @@ public:
 	bool _getFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t & hEvent, uint32_t & Timestamp);
 	bool _setFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t hEvent, uint32_t Timestamp);
 
-	CVirtuals & _getVirtuals();
+	CVirtuals & _getVirtuals()
+		{
+			return m_Virtuals;
+		};
 
 	//compatibility:
 	TDBTEntityHandle compFirstContact();
 	TDBTEntityHandle compNextContact(TDBTEntityHandle hEntity);
 	//Services:
-	TDBTEntityHandle getRootEntity();
+	TDBTEntityHandle CEntities::getRootEntity()
+		{
+			return m_RootEntity;
+		};
+
 	TDBTEntityHandle getParent(TDBTEntityHandle hEntity);
 	TDBTEntityHandle setParent(TDBTEntityHandle hEntity, TDBTEntityHandle hParent);
 	uint32_t getChildCount(TDBTEntityHandle hEntity);
@@ -223,10 +248,18 @@ public:
 	unsigned int IterationClose(TDBTEntityIterationHandle Iteration);
 
 	TDBTEntityHandle VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEntityHandle hParent);
-	TDBTEntityHandle VirtualGetParent(TDBTEntityHandle hVirtual);
-	TDBTEntityHandle VirtualGetFirst(TDBTEntityHandle hRealEntity);
-	TDBTEntityHandle VirtualGetNext(TDBTEntityHandle hVirtual);
-
+	TDBTEntityHandle VirtualGetParent(TDBTEntityHandle hVirtual)
+		{
+			return m_Virtuals.getParent(hVirtual);
+		};
+	TDBTEntityHandle VirtualGetFirst(TDBTEntityHandle hRealEntity)
+		{
+			return m_Virtuals.getFirst(hRealEntity);
+		};
+	TDBTEntityHandle VirtualGetNext(TDBTEntityHandle hVirtual)
+		{
+			return m_Virtuals.getNext(hVirtual);
+		};
 private:
 
 protected:
@@ -245,9 +278,9 @@ protected:
 		std::deque<TEntityIterationItem> * parents;
 		std::deque<TEntityIterationItem> * accounts;
 		#ifdef _MSC_VER
-        stdext::hash_set<TDBTEntityHandle> * returned;
-        #else
-		__gnu_cxx::hash_set<TDBTEntityHandle> * returned;
+			stdext::hash_set<TDBTEntityHandle> * returned;
+		#else
+			__gnu_cxx::hash_set<TDBTEntityHandle> * returned;
 		#endif
 	} TEntityIteration, *PEntityIteration;
 

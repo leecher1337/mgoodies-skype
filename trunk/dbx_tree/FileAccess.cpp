@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "Logger.h"
 
+const uint8_t CFileAccess::cJournalSignature[20] = "Miranda IM Journal!";
 
 CFileAccess::CFileAccess(const TCHAR* FileName)
 {
@@ -40,6 +41,7 @@ CFileAccess::CFileAccess(const TCHAR* FileName)
 	m_ReadOnly = false;
 	m_LastSize = 0;
 	m_Size = 0;
+	m_UseJournal = false;
 
 	m_LastAllocTime = _time32(NULL);
 }
@@ -53,36 +55,55 @@ CFileAccess::~CFileAccess()
 	delete [] m_JournalFileName;
 }
 
-bool CFileAccess::AppendJournal(void* Buf, uint32_t DestAddr, uint32_t Size)
+uint32_t CFileAccess::Size(uint32_t NewSize)
 {
-	DWORD written;
-	uint32_t data[3] = {'writ', DestAddr, Size};
-	WriteFile(m_Journal, &data, sizeof(data), &written, NULL);
-	WriteFile(m_Journal, Buf, Size, &written, NULL);
-
-	return true;
-}
-
-void CFileAccess::CompleteTransaction()
-{
-	if (m_Size != m_LastSize)
+	m_Size = NewSize;
+	if (!m_UseJournal)
 	{
-		m_sigFileSizeChanged.emit(this, m_Size);
-		m_LastSize = m_Size;
+		NewSize = (NewSize + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
+
+		if (NewSize == 0)
+			NewSize = m_AllocGranularity;
+
+		if (NewSize != m_AllocSize)
+		{
+			m_AllocSize = _SetSize(NewSize);
+
+			// adapt Alloc Granularity
+			uint32_t t = _time32(NULL);
+			uint32_t d = t - m_LastAllocTime;
+			m_LastAllocTime = t;
+
+			if (d < 30) // increase alloc stepping
+			{
+				if (m_AllocGranularity < m_MaxAllocGranularity)
+					m_AllocGranularity = m_AllocGranularity << 1;
+			} else if (d > 120) // decrease alloc stepping
+			{
+				if (m_AllocGranularity > m_MinAllocGranularity)
+					m_AllocGranularity = m_AllocGranularity >> 1;
+			}
+		}
 	}
+	return NewSize;
 }
-void CFileAccess::CloseTransaction()
+
+
+void CFileAccess::CleanJournal()
 {
-	TJournalEntry e = {'fini', 0, m_Size};
+	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
+	SetEndOfFile(m_Journal);
+
+	SetFilePointer(m_Journal, cJournalSizeReserve, NULL, FILE_BEGIN);
+	SetEndOfFile(m_Journal);
+
+	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
 	DWORD written;
-	WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
-//	FlushFileBuffers(m_Journal);
+	WriteFile(m_Journal, cJournalSignature, sizeof(cJournalSignature), &written, NULL);
 }
 
-void CFileAccess::FlushJournal()
+void CFileAccess::ProcessJournal()
 {
-	FlushFileBuffers(m_Journal);
-
 	uint32_t filesize = GetFileSize(m_Journal, NULL) - sizeof(cJournalSignature);
 	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
 
@@ -92,10 +113,11 @@ void CFileAccess::FlushJournal()
 	if (!ReadFile(m_Journal, buf, filesize, &read, NULL) || (read != filesize))
 	{
 		free(buf);
-		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Couldn't flush the journal because ReadFile failed!"));
+		LOGSYS(logCRITICAL, _T("Couldn't flush the journal because ReadFile failed!"));
 		return;
 	}
 
+	m_UseJournal = false;
 	std::vector<TJournalEntry*> currentops;
 
 	while (filesize >= sizeof(TJournalEntry))
@@ -104,30 +126,7 @@ void CFileAccess::FlushJournal()
 		{
 			case 'fini': 
 			{
-				e->Size = (e->Size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
-
-				if (e->Size == 0)
-					e->Size = m_AllocGranularity;
-
-				if (e->Size != m_AllocSize)
-				{
-					m_AllocSize = mSetSize(e->Size);
-
-					// adapt Alloc Granularity
-					uint32_t t = _time32(NULL);
-					uint32_t d = t - m_LastAllocTime;
-					m_LastAllocTime = t;
-
-					if (d < 30) // increase alloc stepping
-					{
-						if (m_AllocGranularity < m_MaxAllocGranularity)
-							m_AllocGranularity = m_AllocGranularity << 1;
-					} else if (d > 120) // decrease alloc stepping
-					{
-						if (m_AllocGranularity > m_MinAllocGranularity)
-							m_AllocGranularity = m_AllocGranularity >> 1;
-					}
-				}
+				Size(e->Size);
 
 				std::vector<TJournalEntry*>::iterator i = currentops.begin();
 				while (i != currentops.end())
@@ -138,20 +137,20 @@ void CFileAccess::FlushJournal()
 						{
 							if ((*i)->Address + (*i)->Size <= m_AllocSize)
 							{
-								mWrite(*i + 1, (*i)->Address, (*i)->Size);
+								_Write(*i + 1, (*i)->Address, (*i)->Size);
 							} else if ((*i)->Address < m_AllocSize) 
 							{
-								mWrite(*i + 1, (*i)->Address, m_AllocSize - (*i)->Address);
+								_Write(*i + 1, (*i)->Address, m_AllocSize - (*i)->Address);
 							}
 						} break;
 						case 'inva':
 						{
 							if ((*i)->Address + (*i)->Size <= m_AllocSize)
 							{
-								mInvalidate((*i)->Address, (*i)->Size);
+								_Invalidate((*i)->Address, (*i)->Size);
 							} else if ((*i)->Address < m_AllocSize) 
 							{
-								mInvalidate((*i)->Address, m_AllocSize - (*i)->Address);
+								_Invalidate((*i)->Address, m_AllocSize - (*i)->Address);
 							}
 						} break;
 					}
@@ -187,17 +186,18 @@ void CFileAccess::FlushJournal()
 			default:
 			{
 				filesize = 0;
-				CLogger::Instance().Append(CLogger::logWARNING, _T("Your database journal wasn't completely written to disk."));
+				if (currentops.size())
+					LOG(logWARNING, _T("Your database journal wasn't completely written to disk."));
 			} break;
 		}
 	}
 
-	mFlush();
+	_Flush();
 
-	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
-	SetEndOfFile(m_Journal);
+	CleanJournal();
 
 	free(buf);
+	m_UseJournal = true;
 }
 
 void CFileAccess::InitJournal()
@@ -205,7 +205,7 @@ void CFileAccess::InitJournal()
 	m_Journal = CreateFile(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
 	if (m_Journal == INVALID_HANDLE_VALUE)
 	{
-		CLogger::Instance().Append(CLogger::logCRITICAL, _T("CreateFile failed on Journal %s"), m_JournalFileName);
+		LOGSYS(logCRITICAL, _T("CreateFile failed on Journal %s"), m_JournalFileName);
 		return;
 	}
 
@@ -229,14 +229,14 @@ void CFileAccess::InitJournal()
 			while (i + sizeof(buf) <= m_AllocSize)
 			{
 				DWORD w;
-				mRead(buf, i, sizeof(buf));
+				_Read(buf, i, sizeof(buf));
 				i += sizeof(buf);
 				WriteFile(hfilebackup, buf, sizeof(buf), &w, NULL);
 			}
 			if (i < m_AllocSize)
 			{
 				DWORD w;
-				mRead(buf, i, m_AllocSize - i);
+				_Read(buf, i, m_AllocSize - i);
 				WriteFile(hfilebackup, buf, m_AllocSize - i, &w, NULL);
 			}
 
@@ -246,7 +246,7 @@ void CFileAccess::InitJournal()
 		HANDLE hjrnfilebackup = CreateFile(bckjrnname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (hjrnfilebackup)
 		{
-			size_t i = 0;
+			uint32_t i = 0;
 
 			uint32_t filesize = GetFileSize(m_Journal, NULL);
 			while (i + sizeof(buf) <= filesize)
@@ -274,43 +274,26 @@ void CFileAccess::InitJournal()
 
 		if (hfilebackup || hjrnfilebackup)
 		{
-			CLogger::Instance().Append(CLogger::logWARNING,
-		                             _T("Journal \"%s\" was found on start.\nBackup \"%s\"%s created and backup \"%s\"%s created.\nYou may delete these file(s) after successful start from \"%s\"."),
-			                           fn?fn+1:m_JournalFileName, 
-			                           bfn?bfn+1:bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
-			                           jrn?jrn+1:bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
-			                           path);
-		} else {
-			CLogger::Instance().Append(CLogger::logWARNING,
-			                           _T("Journal \"%s\" was found on start.\nBackups \"%s\"and \"%s\" could not be created in \"%s\"."),
-			                           fn?fn+1:m_JournalFileName, 
-			                           bfn?bfn+1:bckname,
-			                           jrn?jrn+1:bckjrnname,
-			                           path);
+			LOG(logWARNING,
+		      _T("Journal \"%s\" was found on start.\nBackup \"%s\"%s created and backup \"%s\"%s created.\nYou may delete these file(s) after successful start from \"%s\"."),
+			    fn?fn+1:m_JournalFileName, 
+			    bfn?bfn+1:bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
+			    jrn?jrn+1:bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
+			    path);
+			} else {
+			LOG(logWARNING,
+					_T("Journal \"%s\" was found on start.\nBackups \"%s\"and \"%s\" could not be created in \"%s\"."),
+					fn?fn+1:m_JournalFileName, 
+					bfn?bfn+1:bckname,
+					jrn?jrn+1:bckjrnname,
+					path);
 		}
 
 		delete [] bckname;
 		delete [] bckjrnname;
 
-		FlushJournal();
+		ProcessJournal();
 	}
 
-	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
-	SetEndOfFile(m_Journal);
-	DWORD written;
-	WriteFile(m_Journal, cJournalSignature, sizeof(cJournalSignature), &written, NULL);
-}
-
-void CFileAccess::Invalidate(uint32_t Dest, uint32_t Size)
-{
-	DWORD written;
-	TJournalEntry e = {'inva', Dest, Size};
-	WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
-}
-
-uint32_t CFileAccess::Size(uint32_t Size)
-{
-	m_Size = Size;
-
-	return Size;
+	CleanJournal();
 }

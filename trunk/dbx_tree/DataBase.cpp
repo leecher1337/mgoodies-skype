@@ -151,6 +151,7 @@ int CDataBase::CheckDB()
 
 int CDataBase::LoadFile(TDBFileType Index)
 {
+	TGenericFileHeader h;
 	m_EncryptionManager[Index] = new CEncryptionManager;
 
 	if (CMappedMemory::InitMMAP())
@@ -158,38 +159,41 @@ int CDataBase::LoadFile(TDBFileType Index)
 	else
 		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);
 
-	m_FileAccess[Index]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
-	m_EncryptionManager[Index]->InitEncryption(m_Header[Index].Gen.FileEncryption);
+	m_FileAccess[Index]->Read(&h, 0, sizeof(h));
+	m_EncryptionManager[Index]->InitEncryption(h.Gen.FileEncryption);
 
-	m_FileAccess[Index]->Size(m_Header[Index].Gen.FileSize);
+	m_FileAccess[Index]->Size(h.Gen.FileSize);
 	m_FileAccess[Index]->sigFileSizeChanged().connect(this, &CDataBase::onFileSizeChanged);
 
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
-	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
+	
+	CBlockManager::WriteTransaction trans(*m_BlockManager[Index]); // don't fire size event until header is loaded
+
+	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(h), cHeaderBlockSignature, h.Gen.FileSize);
 
 	if (m_HeaderBlock[Index] == 0)
 	{
-		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block not found! File damaged: \"%s\""), m_FileName[Index]);
+		LOG(logCRITICAL, _T("Header Block not found! File damaged: \"%s\""), m_FileName[Index]);
 		return -1;
 	}
 
-	TGenericFileHeader buf;
-	void* pbuf = &buf;
-	uint32_t size = sizeof(buf);
-	uint32_t sig = cHeaderBlockSignature;
-	if (!m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig))
+	uint32_t size = sizeof(h);
+	uint32_t sig = -1;
+	m_Header[Index] = m_BlockManager[Index]->ReadBlock<TGenericFileHeader>(0, size, sig);
+
+	sig = cHeaderBlockSignature;
+	TGenericFileHeader * buf = m_BlockManager[Index]->ReadBlock<TGenericFileHeader>(m_HeaderBlock[Index], size, sig);
+	if (!buf)
 	{
-		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block cannot be read! File damaged: \"%s\""), m_FileName[Index]);
+		LOG(logCRITICAL, _T("Header Block cannot be read! File damaged: \"%s\""), m_FileName[Index]);
 		return -1;
 	}
 
-	m_EncryptionManager[Index]->Decrypt(pbuf, size, ET_DATA, cHeaderBlockSignature, 0);
+	buf->Gen.Obscure = 0;
 
-	buf.Gen.Obscure = 0;
-
-	if (memcmp(&m_Header[Index], pbuf, size))
+	if (memcmp(m_Header[Index], buf, size))
 	{
-		CLogger::Instance().Append(CLogger::logCRITICAL, _T("Header Block in \"%s\" damaged!"), m_FileName[Index]);
+		LOG(logCRITICAL, _T("Header Block in \"%s\" damaged!"), m_FileName[Index]);
 		return -1;
 	}
 
@@ -221,24 +225,22 @@ int CDataBase::OpenDB()
 		return -1;
 
 	m_Entities = new CEntities(*m_BlockManager[DBFilePrivate],
-													 m_Header[DBFilePrivate].Pri.RootEntity,
-													 m_Header[DBFilePrivate].Pri.Entities,
-													 m_Header[DBFilePrivate].Pri.Virtuals);
+													 m_Header[DBFilePrivate]->Pri.RootEntity,
+													 m_Header[DBFilePrivate]->Pri.Entities,
+													 m_Header[DBFilePrivate]->Pri.Virtuals);
 
 	m_Entities->sigRootChanged().connect(this, &CDataBase::onEntitiesRootChanged);
 	m_Entities->sigVirtualRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
 
-	if (m_Entities->getRootEntity() != m_Header[DBFilePrivate].Pri.RootEntity)
+	if (m_Entities->getRootEntity() != m_Header[DBFilePrivate]->Pri.RootEntity)
 	{
-		m_Header[DBFilePrivate].Pri.RootEntity = m_Entities->getRootEntity();
+		m_Header[DBFilePrivate]->Pri.RootEntity = m_Entities->getRootEntity();
 		ReWriteHeader(DBFilePrivate);
 	}
 
 	m_Settings = new CSettings(*m_BlockManager[DBFileSetting],
 		                         *m_BlockManager[DBFilePrivate],
-														 *m_EncryptionManager[DBFileSetting],
-														 *m_EncryptionManager[DBFilePrivate],
-														 m_Header[DBFileSetting].Set.Settings,
+														  m_Header[DBFileSetting]->Set.Settings,
 														 *m_Entities);
 
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
@@ -266,65 +268,67 @@ bool CDataBase::PrivateFileExists()
 
 bool CDataBase::CreateNewFile(TDBFileType File)
 {
-	try {
-		TGenericFileHeader h;
-		memset(&h, 0, sizeof(h));
-		memcpy(&h.Gen.Signature, &cFileSignature[File], sizeof(h.Gen.Signature));
-		h.Gen.Version = cDBVersion;
+	CEncryptionManager enc;
+	CDirectAccess fa(m_FileName[File]);
+	fa.Size(sizeof(TGenericFileHeader));
+	CBlockManager bm(fa, enc);
+	bm.ScanFile(sizeof(TGenericFileHeader), 0, sizeof(TGenericFileHeader));
 
-		CEncryptionManager enc;
-		CDirectAccess fa(m_FileName[File]);
-		fa.Size(sizeof(h));
-		CBlockManager bm(fa, enc);
-		bm.ScanFile(sizeof(h), 0, sizeof(h));
-		uint32_t block = bm.CreateBlock(sizeof(h), cHeaderBlockSignature);
+	CBlockManager::WriteTransaction trans(bm);
 
-		h.Gen.FileSize = fa.Size();
-		bm.WriteBlock(block, &h, sizeof(h), cHeaderBlockSignature);
-		fa.Write(&h, 0, sizeof(h));
-	}
-	catch (CException e)
-	{
-		return false;
-	}
+	uint32_t block;
+	TGenericFileHeader * buf = bm.CreateBlock<TGenericFileHeader>(block, cHeaderBlockSignature);
+	uint32_t size = 0;
+	uint32_t sig = -1;
+	TGenericFileHeader * h = bm.ReadBlock<TGenericFileHeader>(0, size, sig);
+
+	memset(h, 0, sizeof(TGenericFileHeader));
+	memcpy(&h->Gen.Signature, &cFileSignature[File], sizeof(h->Gen.Signature));
+	h->Gen.Version = cDBVersion;
+	h->Gen.FileSize = fa.Size();
+
+	memcpy(buf, h, sizeof(TGenericFileHeader));
+	bm.UpdateBlock(block, 0);
+	bm.UpdateBlock(0, -1);
+	
 	return true;
 }
 
-void CDataBase::ReWriteHeader(TDBFileType Index)
+inline void CDataBase::ReWriteHeader(TDBFileType Index)
 {
-	TGenericFileHeader h = m_Header[Index];
-
-	h.Gen.Obscure = GetTickCount();
-	m_EncryptionManager[Index]->Encrypt(&h, sizeof(h), ET_DATA, cHeaderBlockSignature, 0);
-	m_BlockManager[Index]->WriteBlock(m_HeaderBlock[Index], &h, sizeof(h), cHeaderBlockSignature);
-
-	m_FileAccess[Index]->Write(&m_Header[Index], 0, sizeof(m_Header[Index]));
+	m_BlockManager[Index]->UpdateBlock(0, -1);
+	uint32_t size = 0, sig = 0;
+	TGenericFileHeader * h = m_BlockManager[Index]->ReadBlock<TGenericFileHeader>(m_HeaderBlock[Index], size, sig);
+	
+	*h = *m_Header[Index];
+	h->Gen.Obscure = GetTickCount();
+	m_BlockManager[Index]->UpdateBlock(m_HeaderBlock[Index], 0);
 }
 
 
 void CDataBase::onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot)
 {
-	m_Header[DBFileSetting].Set.Settings = NewRoot;
+	m_Header[DBFileSetting]->Set.Settings = NewRoot;
 	ReWriteHeader(DBFileSetting);
 }
 void CDataBase::onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot)
 {
-	m_Header[DBFilePrivate].Pri.Virtuals = NewRoot;
+	m_Header[DBFilePrivate]->Pri.Virtuals = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
 void CDataBase::onEntitiesRootChanged(void* Entities, CEntities::TNodeRef NewRoot)
 {
-	m_Header[DBFilePrivate].Pri.Entities = NewRoot;
+	m_Header[DBFilePrivate]->Pri.Entities = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
 void CDataBase::onFileSizeChanged(CFileAccess * File, uint32_t Size)
 {
 	if (File == m_FileAccess[DBFileSetting])
 	{
-		m_Header[DBFileSetting].Gen.FileSize = Size;
+		m_Header[DBFileSetting]->Gen.FileSize = Size;
 		ReWriteHeader(DBFileSetting);
 	} else {
-		m_Header[DBFilePrivate].Gen.FileSize = Size;
+		m_Header[DBFilePrivate]->Gen.FileSize = Size;
 		ReWriteHeader(DBFilePrivate);
 	}
 }
@@ -337,7 +341,7 @@ int CDataBase::getProfileName(int BufferSize, char * Buffer)
 	else
 		slash = m_FileName[DBFileSetting];
 
-	int l = _tcslen(slash);
+	size_t l = _tcslen(slash);
 	if (BufferSize < l + 1)
 		return -1;
 	

@@ -110,11 +110,21 @@ private:
 	TDBTEntityHandle m_Entity;
 
 public:
-	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity);
-	~CEventsTree();
+	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity)
+		:	CFileBTree<TEventKey, 16>::CFileBTree(BlockManager, RootNode, cEventNodeSignature),
+			m_Entity(Entity)
+		{	};
+	~CEventsTree()
+		{	};
 
-	TDBTEntityHandle getEntity();
-	void setEntity(TDBTEntityHandle NewEntity);
+	TDBTEntityHandle Entity()
+		{
+			return m_Entity;
+		};
+	void Entity(TDBTEntityHandle NewEntity)
+		{
+			m_Entity = NewEntity;
+		};
 };
 
 /**
@@ -127,11 +137,22 @@ private:
 	TDBTEntityHandle m_Entity;
 
 public:
-	CVirtualEventsTree(TDBTEntityHandle Entity);
-	~CVirtualEventsTree();
+	CVirtualEventsTree(TDBTEntityHandle Entity)
+		:	CBTree<TEventKey, 16>::CBTree(0),
+			m_Entity(Entity)
+		{	};
 
-	TDBTEntityHandle getEntity();
-	void setEntity(TDBTEntityHandle NewEntity);
+	~CVirtualEventsTree()
+		{	};
+
+	TDBTEntityHandle Entity()
+		{
+			return m_Entity;
+		};
+	void Entity(TDBTEntityHandle NewEntity)
+		{
+			m_Entity = NewEntity;
+		};
 };
 
 

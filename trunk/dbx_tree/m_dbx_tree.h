@@ -167,7 +167,7 @@ typedef
 /**
 	\brief Handle of an Entity-Iteration
 **/
-typedef uint32_t TDBTEntityIterationHandle;
+typedef uintptr_t TDBTEntityIterationHandle;
 /**
 	\brief initialize an iteration of Entities
 	\param wParam = PDBTEntityIterFilter, NULL to iterate all Entities (breadthfirst, all but root)
@@ -468,7 +468,7 @@ typedef
 /**
 	\brief Handle of a Setting-Iteration
 **/
-typedef uint32_t TDBTSettingIterationHandle;
+typedef uintptr_t TDBTSettingIterationHandle;
 /**
 	\brief initialize an iteration of settings
 	\param wParam = PDBTSettingIterFilter
@@ -652,7 +652,7 @@ typedef
 /**
 	\brief Handle of a Event-Iteration
 **/
-typedef uint32_t TDBTEventIterationHandle;
+typedef uintptr_t TDBTEventIterationHandle;
 /**
 	\brief initialize an iteration of events
 	\param wParam = PDBTEventIterFilter

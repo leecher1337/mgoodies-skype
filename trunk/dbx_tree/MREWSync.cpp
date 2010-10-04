@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "MREWSync.h"
 #include <assert.h>
-#include "interlocked.h"
+#include "intrinsics.h"
 
 #if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
 	#include <stdio.h>
@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 : tls(),
-	m_Sentinel(0LL)
+	m_Sentinel(0)
 {
 	m_ReadSignal[0] = CreateEvent(NULL, TRUE, FALSE, NULL);
 	m_ReadSignal[1] = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -62,12 +62,6 @@ CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 	m_WriterID = 0;
 	m_WriteRecursion = 0;
 	m_Revision = 0;
-
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	char fn[MAX_PATH];
-	sprintf_s(fn, "dbx_treeSync%08x.log", this);
-	m_Log = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
-#endif
 }
 
 CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void)
@@ -76,9 +70,6 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 	CloseHandle(m_WriteSignal);
 	CloseHandle(m_ReadSignal[0]);
 	CloseHandle(m_ReadSignal[1]);
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-	CloseHandle(m_Log);
-#endif
 }
 
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
@@ -337,44 +328,3 @@ unsigned int CMultiReadExclusiveWriteSynchronizer::Waiting()
 		return static_cast<unsigned int>(countReaderWaiting(old) + countWriterWaiting(old));
 	}
 };
-
-#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
-
-void CMultiReadExclusiveWriteSynchronizer::BeginRead (char * File, int Line, char * Function)
-{
-	//DoLog("BeginRead ", File, Line, Function);
-	BeginRead();
-}
-void CMultiReadExclusiveWriteSynchronizer::EndRead   (char * File, int Line, char * Function)
-{
-	//DoLog("EndRead   ", File, Line, Function);
-	EndRead();
-}
-bool CMultiReadExclusiveWriteSynchronizer::BeginWrite(char * File, int Line, char * Function)
-{
-	bool res = BeginWrite();
-	DoLog("BeginWrite", File, Line, Function);
-	return res;
-}
-bool CMultiReadExclusiveWriteSynchronizer::TryBeginWrite(char * File, int Line, char * Function)
-{
-	bool res = TryBeginWrite();
-	DoLog("TryBeginWrite", File, Line, Function);
-	return res;
-}
-void CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
-{
-	DoLog("EndWrite  ", File, Line, Function);
-	EndWrite();
-}
-
-
-void CMultiReadExclusiveWriteSynchronizer::DoLog(char * Desc, char * File, int Line, char * Function)
-{
-	char buf [1024];
-	int l = sprintf_s(buf, "%08x %08x - %s from \"%s\" %d (%s)\n", this, GetCurrentThreadId(), Desc, File, Line, Function);
-	DWORD read = 0;
-
-	WriteFile(m_Log, buf, l, &read, NULL);
-}
-#endif

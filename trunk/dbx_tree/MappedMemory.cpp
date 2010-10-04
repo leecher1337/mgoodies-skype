@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "MappedMemory.h"
+#include "Logger.h"
 
 typedef BOOL (WINAPI *TUnmapViewOfFile)(LPCVOID);
 typedef BOOL (WINAPI *TFlushViewOfFile)(LPCVOID, SIZE_T);
@@ -36,21 +37,14 @@ TMapViewOfFile myMapViewOfFile = NULL;
 bool CMappedMemory::InitMMAP()
 {
 	if (!myKernelLib)
-	{
-		myKernelLib = LoadLibraryA("kernel32.dll");
-	}
+		myKernelLib = GetModuleHandleA("kernel32.dll"); // is always loaded
+	
 	if (myKernelLib)
 	{
 		myUnmapViewOfFile = (TUnmapViewOfFile) GetProcAddress(myKernelLib, "UnmapViewOfFile");
 		myFlushViewOfFile = (TFlushViewOfFile) GetProcAddress(myKernelLib, "FlushViewOfFile");
 		myCreateFileMappingA = (TCreateFileMappingA) GetProcAddress(myKernelLib, "CreateFileMappingA");
 		myMapViewOfFile = (TMapViewOfFile) GetProcAddress(myKernelLib, "MapViewOfFile");
-
-		if (!(myUnmapViewOfFile && myFlushViewOfFile && myCreateFileMappingA && myMapViewOfFile))
-		{
-			FreeLibrary(myKernelLib);
-			myKernelLib = NULL;
-		}
 	}
 
 	return myUnmapViewOfFile && myFlushViewOfFile && myCreateFileMappingA && myMapViewOfFile;
@@ -71,7 +65,8 @@ CMappedMemory::CMappedMemory(const TCHAR* FileName)
 	m_MaxAllocGranularity = m_AllocGranularity << 4;      // usually 1mb for fast increasing
 
 	m_DirectFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
-	assertThrow(m_DirectFile != INVALID_HANDLE_VALUE, _T("CreateFile failed"));
+	if (m_DirectFile == INVALID_HANDLE_VALUE)
+		LOGSYS(logCRITICAL, _T("CreateFile failed"));
 
 	uint32_t size = GetFileSize(m_DirectFile, NULL);
 	size = (size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
@@ -79,7 +74,7 @@ CMappedMemory::CMappedMemory(const TCHAR* FileName)
 	if (size == 0)
 		size = m_AllocGranularity;
 
-	mSetSize(size);
+	_SetSize(size);
 	m_AllocSize = size;
 
 	InitJournal();
@@ -106,18 +101,18 @@ CMappedMemory::~CMappedMemory()
 }
 
 
-uint32_t CMappedMemory::mRead(void* Buf, uint32_t Source, uint32_t Size)
+uint32_t CMappedMemory::_Read(void* Buf, uint32_t Source, uint32_t Size)
 {
 	memcpy(Buf, m_Base + Source, Size);
 	return Size;
 }
-uint32_t CMappedMemory::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
+uint32_t CMappedMemory::_Write(void* Buf, uint32_t Dest, uint32_t Size)
 {
 	memcpy(m_Base + Dest, Buf, Size);
 	return Size;
 }
 
-uint32_t CMappedMemory::mSetSize(uint32_t Size)
+uint32_t CMappedMemory::_SetSize(uint32_t Size)
 {
 	if (m_Base)
 	{
@@ -130,27 +125,42 @@ uint32_t CMappedMemory::mSetSize(uint32_t Size)
 	m_Base = NULL;
 	m_FileMapping = NULL;
 
-	assertThrow(INVALID_SET_FILE_POINTER != SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN),
-		          _T("Cannot set file position"));
+	if (INVALID_SET_FILE_POINTER == SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN))
+	{
+		LOGSYS(logERROR, _T("SetFilePointer failed"));
+		return 0;
+	}
 
-	assertThrow(SetEndOfFile(m_DirectFile), _T("Cannot set end of file"));
+	if (!SetEndOfFile(m_DirectFile))
+	{
+		LOGSYS(logERROR, _T("Cannot set end of file"));
+		return 0;
+	}
 
 	m_FileMapping = myCreateFileMappingA(m_DirectFile, NULL, PAGE_READWRITE, 0, Size, NULL);
 
-	assertThrow(m_FileMapping, _T("CreateFileMapping failed"));
+	if (!m_FileMapping)
+	{
+		LOGSYS(logERROR, _T("CreateFileMapping failed"));
+		return 0;
+	}
 
 	m_Base = (uint8_t*) myMapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	assertThrow(m_Base, _T("MapViewOfFile failed"));
+	if (!m_Base)
+	{
+		LOGSYS(logERROR, _T("MapViewOfFile failed"));
+		return 0;
+	}
 
 	return Size;
 }
 
-void CMappedMemory::mInvalidate(uint32_t Dest, uint32_t Size)
+void CMappedMemory::_Invalidate(uint32_t Dest, uint32_t Size)
 {
 	memset(m_Base + Dest, 0, Size);
 }
 
-void CMappedMemory::mFlush()
+void CMappedMemory::_Flush()
 {
 	myFlushViewOfFile(m_Base, NULL);
 	FlushFileBuffers(m_DirectFile);

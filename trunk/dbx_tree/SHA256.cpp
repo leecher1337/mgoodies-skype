@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) || !defined(_M_IX86)
 #define NO_ASM
 #endif
 #define SHA_LOOPUNROLL
