@@ -25,45 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "savestrings_gcc.h"
 #endif
 
-CEventsTree::CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity)
-:	CFileBTree<TEventKey, 16>::CFileBTree(BlockManager, RootNode, cEventNodeSignature)
-{
-	m_Entity = Entity;
-}
-CEventsTree::~CEventsTree()
-{
-
-}
-
-TDBTEntityHandle CEventsTree::getEntity()
-{
-	return m_Entity;
-}
-void CEventsTree::setEntity(TDBTEntityHandle NewEntity)
-{
-	m_Entity = NewEntity;
-}
-
-CVirtualEventsTree::CVirtualEventsTree(TDBTEntityHandle Entity)
-:	CBTree<TEventKey, 16>::CBTree(0)
-{
-	m_Entity = Entity;
-}
-CVirtualEventsTree::~CVirtualEventsTree()
-{
-
-}
-
-TDBTEntityHandle CVirtualEventsTree::getEntity()
-{
-	return m_Entity;
-}
-void CVirtualEventsTree::setEntity(TDBTEntityHandle NewEntity)
-{
-	m_Entity = NewEntity;
-}
-
-
 
 CEventsTypeManager::CEventsTypeManager(CEntities & Entities, CSettings & Settings)
 :	m_Entities(Entities),
@@ -86,7 +47,7 @@ CEventsTypeManager::~CEventsTypeManager()
 
 uint32_t CEventsTypeManager::MakeGlobalID(char* Module, uint32_t EventType)
 {
-	unsigned int l = strlen(Module);
+	uint32_t l = static_cast<uint32_t>(strlen(Module));
 	void * buf = malloc(l + sizeof(uint32_t));
 	memcpy(buf, Module, l);
 	memcpy(((char*)buf) + l, &EventType, sizeof(uint32_t));
@@ -191,7 +152,7 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType)
 		sprintf_s(n, "$EventTypes/%08x/ModuleName", res);
 		d.Flags = 0;
 		s.Type = DBT_ST_ANSI;
-		s.Value.Length = strlen(Module) + 1;
+		s.Value.Length = static_cast<uint32_t>(strlen(Module) + 1);
 		s.Value.pAnsi = Module;
 		m_Settings.WriteSetting(s);
 
@@ -232,7 +193,7 @@ CEvents::~CEvents()
 
 void CEvents::onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot)
 {
-	m_Entities._setEventsRoot(((CEventsTree*)EventsTree)->getEntity(), NewRoot);
+	m_Entities._setEventsRoot(reinterpret_cast<CEventsTree*>(EventsTree)->Entity(), NewRoot);
 }
 
 void CEvents::onDeleteEventCallback(void * Tree, const TEventKey & Key, uint32_t Param)
@@ -284,7 +245,13 @@ void CEvents::onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TD
 		while (i)
 		{
 			uint32_t sig = cEventSignature;
-			m_BlockManager.WritePartCheck(i->Event, &Dest, offsetof(TEvent, Entity), sizeof(Dest), sig);
+			uint32_t size = 0;
+			TEvent * tmp = m_BlockManager.ReadBlock<TEvent>(i->Event, size, sig);
+			if (tmp)
+			{
+				tmp->Entity = Dest;
+				m_BlockManager.UpdateBlock(i->Event);
+			}
 			++i;
 		}
 	}
@@ -294,9 +261,15 @@ void CEvents::onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TD
 
 		CEventsTree::iterator i = record->RealTree->LowerBound(key);
 		while (i)
-		{			
+		{
 			uint32_t sig = cEventSignature;
-			m_BlockManager.WritePartCheck(i->Event, &Dest, offsetof(TEvent, Entity), sizeof(Dest), sig);			
+			uint32_t size = 0;
+			TEvent * tmp = m_BlockManager.ReadBlock<TEvent>(i->Event, size, sig);
+			if (tmp)
+			{
+				tmp->Entity = Dest;
+				m_BlockManager.UpdateBlock(i->Event);
+			}		
 			++i;
 		}
 
@@ -307,8 +280,8 @@ void CEvents::onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TD
 		m_Entities._setFirstUnreadEvent(Dest, key.Event, key.TimeStamp);
 	}
 
-	record->VirtualTree->setEntity(Dest);
-	record->RealTree->setEntity(Dest);
+	record->VirtualTree->Entity(Dest);
+	record->RealTree->Entity(Dest);
 	m_EntityEventsMap.erase(Source);
 	m_EntityEventsMap.insert(std::make_pair(Dest, record));
 }
@@ -348,38 +321,48 @@ inline uint32_t CEvents::adjustVirtualEventCount(PEntityEventsRecord Record, int
 
 inline bool CEvents::MarkEventsTree(TEventBase::iterator Iterator, TDBTEventHandle FirstUnread)
 {
-	uint32_t sig = cEventSignature;
+	uint32_t sig, size;
 	bool b = true;
-	uint32_t flags;
 	bool res = false;
 	while (Iterator && b)
 	{
-		if (m_BlockManager.ReadPart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+		sig = cEventSignature;
+		size = 0;
+		TEvent * event = m_BlockManager.ReadBlock<TEvent>(Iterator->Event, size, sig);
+		if (event)
 		{
 			if (Iterator->Event == FirstUnread) 
 				res = true;
 
-			if ((flags & DBT_EF_READ) == 0)
+			if ((event->Flags & DBT_EF_READ) == 0)
 			{
-				flags = flags | DBT_EF_READ;
-				m_BlockManager.WritePart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags));
+				event->Flags |= DBT_EF_READ;
+				m_BlockManager.UpdateBlock(Iterator->Event);
 				--Iterator;
 			} else {
 				b = false;
 			}
+		} else {
+			--Iterator;
 		}
 	}
 	return res;
 }
 inline void CEvents::FindNextUnreadEvent(TEventBase::iterator & Iterator)
 {
-	uint32_t sig = cEventSignature;
-	uint32_t flags = DBT_EF_READ;
-	while (Iterator && (flags & DBT_EF_READ))
+	uint32_t sig, size;
+	while (Iterator)
 	{
-		if (m_BlockManager.ReadPart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) &&
-			  ((flags & DBT_EF_READ) != 0))
-		{			
+		sig = cEventSignature;
+		size = 0;
+		TEvent * event = m_BlockManager.ReadBlock<TEvent>(Iterator->Event, size, sig);
+		if (event)
+		{
+			if (event->Flags & DBT_EF_READ)
+				++Iterator;
+			else
+				return;
+		} else {
 			++Iterator;
 		}
 	}
@@ -388,78 +371,61 @@ inline void CEvents::FindNextUnreadEvent(TEventBase::iterator & Iterator)
 unsigned int CEvents::GetBlobSize(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	uint32_t s;
+	uint32_t size = 0;
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadPart(hEvent, &s, offsetof(TEvent, DataLength), sizeof(s), sig))
-		s = DBT_INVALIDPARAM;
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
+	if (!event)
+		return DBT_INVALIDPARAM;
 
-	m_BlockManager.TransactionEndRead();
-
-	return s;
+	return event->DataLength;
 }
+
 unsigned int CEvents::Get(TDBTEventHandle hEvent, TDBTEvent & Event)
 {
 	uint32_t sig = cEventSignature;
 	uint32_t size = 0;
-	void * buf = NULL;
-
-	m_BlockManager.TransactionBeginRead();
-
-	if (!m_BlockManager.ReadBlock(hEvent, buf, size, sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+	
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
+	if (!event)
 		return DBT_INVALIDPARAM;
-	}
 
-	TEvent * ev = (TEvent*)buf;
-	uint8_t * blob = (uint8_t *)(ev + 1);
+	uint8_t * blob = reinterpret_cast<uint8_t *>(event + 1);
 
-	if (!m_Types.GetType(ev->Type, Event.ModuleName, Event.EventType))
+	if (!m_Types.GetType(event->Type, Event.ModuleName, Event.EventType))
 	{
-		Event.EventType = ev->Type;
+		Event.EventType = event->Type;
 		Event.ModuleName = "???";
 	}
 
-	// encryption
-	if (m_EncryptionManager.IsEncrypted(hEvent, ET_DATA))
-	{
-		uint32_t size = ev->DataLength;
-		m_EncryptionManager.AlignSize(hEvent, ET_DATA, size);
-		m_EncryptionManager.Decrypt(blob, size, ET_DATA, hEvent, 0);
-	}
-
-	m_BlockManager.TransactionEndRead();  // we leave here. we cannot leave earlier due to encryption change thread
-
-	Event.Flags = ev->Flags;
+	Event.Flags = event->Flags;
 	if (m_BlockManager.IsForcedVirtual(hEvent))
 		Event.Flags |= DBT_EF_VIRTUAL;
 
-	Event.Timestamp = ev->TimeStamp;
+	Event.Timestamp = event->TimeStamp;
 
-	if (Event.cbBlob < ev->DataLength)
-		Event.pBlob = (uint8_t*) mir_realloc(Event.pBlob, ev->DataLength);
+	if (Event.cbBlob < event->DataLength)
+		Event.pBlob = (uint8_t*) mir_realloc(Event.pBlob, event->DataLength);
 
-	memcpy(Event.pBlob, ev + 1, ev->DataLength);
-	Event.cbBlob = ev->DataLength;
+	memcpy(Event.pBlob, blob, event->DataLength);
+	Event.cbBlob = event->DataLength;
 
-	free(buf);
 	return 0;
 }
 
 unsigned int CEvents::GetCount(TDBTEntityHandle hEntity)
 {
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
 	uint32_t res = m_Entities._getEventCount(hEntity);
 	PEntityEventsRecord record = getEntityRecord(hEntity);
 
 	if ((res == DBT_INVALIDPARAM) || !record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
-	}
+	
 	res = res + record->VirtualCount; // access to Virtual Count need sync, too
-	m_BlockManager.TransactionEndRead();
 
 	return res;
 }
@@ -467,23 +433,21 @@ unsigned int CEvents::GetCount(TDBTEntityHandle hEntity)
 unsigned int CEvents::Delete(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
+	uint32_t size = 0;
 	TEventKey key = {0, hEvent};
-	TDBTEntityHandle entity;
 
-	m_BlockManager.TransactionBeginWrite();
-	if (!m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) || 
-			!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig))
-	{
-		m_BlockManager.TransactionEndWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
+
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
+	if (!event)
 		return DBT_INVALIDPARAM;
-	}
 
-	PEntityEventsRecord record = getEntityRecord(entity);
+	key.TimeStamp = event->TimeStamp;
+
+	PEntityEventsRecord record = getEntityRecord(event->Entity);
 	if (!record)
-	{
-		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;	
-	}
+	
 	if (m_BlockManager.IsForcedVirtual(hEvent))
 	{
 		if (record->VirtualTree->Delete(key))
@@ -506,32 +470,33 @@ unsigned int CEvents::Delete(TDBTEventHandle hEvent)
 	} else { // real event
 		if (record->RealTree->Delete(key))
 		{
-			m_Entities._adjustEventCount(entity, -1);
+			m_Entities._adjustEventCount(event->Entity, -1);
 			TEventKey unreadkey;
-			m_Entities._getFirstUnreadEvent(entity, unreadkey.Event, unreadkey.TimeStamp);
+			m_Entities._getFirstUnreadEvent(event->Entity, unreadkey.Event, unreadkey.TimeStamp);
 			if (unreadkey.Event == hEvent)
 			{
 				CEventsTree::iterator it = record->VirtualTree->LowerBound(key);
 				FindNextUnreadEvent(it);
 				if (it)
 				{
-					m_Entities._setFirstUnreadEvent(entity, it->Event, it->TimeStamp);
+					m_Entities._setFirstUnreadEvent(event->Entity, it->Event, it->TimeStamp);
 				} else {
-					m_Entities._setFirstUnreadEvent(entity, 0, 0);
+					m_Entities._setFirstUnreadEvent(event->Entity, 0, 0);
 				}
 			}
 		}
 	}
 	m_BlockManager.DeleteBlock(hEvent);
 
-	m_BlockManager.TransactionEndWrite();
 	return 0;
 }
+
 TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 {
 	TDBTEventHandle res = 0;
+	TEvent * event;
 
-	m_BlockManager.TransactionBeginWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
 
 	uint32_t eflags = m_Entities.getFlags(hEntity);
 	PEntityEventsRecord record = getEntityRecord(hEntity);
@@ -540,71 +505,38 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 		 ((eflags & (DBT_NF_IsGroup | DBT_NF_IsRoot)) == DBT_NF_IsGroup) ||  // forbid events in groups. but allow root to have system history
 		 !record)
 	{
-		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
 	}
 
 	if (eflags & DBT_NF_IsVirtual)
-	{
 		hEntity = m_Entities.VirtualGetParent(hEntity);
-	}
-
+	
 	uint8_t *blobdata = Event.pBlob;
 	bool bloballocated = false;
-	uint32_t cryptsize = m_EncryptionManager.AlignSize(0, ET_DATA, Event.cbBlob);
 
 	if (Event.Flags & DBT_EF_VIRTUAL)
 	{
-		res = m_BlockManager.CreateBlockVirtual(sizeof(TEvent) + cryptsize, cEventSignature);
+		event = m_BlockManager.CreateBlockVirtual<TEvent>(res, cEventSignature, sizeof(TEvent) + Event.cbBlob);
 	} else {
-		res = m_BlockManager.CreateBlock(sizeof(TEvent) + cryptsize, cEventSignature);
+		event = m_BlockManager.CreateBlock<TEvent>(res, cEventSignature, sizeof(TEvent) + Event.cbBlob);
 	}
 
-	if (res == 0)
-	{
-		m_BlockManager.TransactionEndWrite();
+	if (!event)
 		return DBT_INVALIDPARAM;
-	}
 
-	// encryption
-	if (m_EncryptionManager.IsEncrypted(res, ET_DATA))
-	{
-		uint32_t realsize = m_EncryptionManager.AlignSize(res, ET_DATA, Event.cbBlob);
-		if (realsize != cryptsize)
-			m_BlockManager.ResizeBlock(res, realsize, false);
-
-		blobdata = NULL;
-		bloballocated = true;
-		blobdata = (uint8_t*) malloc(realsize);
-		memset(blobdata, 0, realsize);
-		memcpy(blobdata, Event.pBlob, Event.cbBlob);
-
-		m_EncryptionManager.Encrypt(blobdata, realsize, ET_DATA, res, 0);
-		cryptsize = realsize;
-	} else {
-		if (Event.cbBlob != cryptsize)
-			m_BlockManager.ResizeBlock(res, Event.cbBlob, false);
-
-		cryptsize = Event.cbBlob;
-	}
-
-	TEvent ev = {0,0,0,0,0,0,0,0,0,0,0,0,0};
 	TEventKey key = {0,0};
 
-	ev.TimeStamp = Event.Timestamp;
-	ev.Flags = Event.Flags & ~DBT_EF_VIRTUAL;
-	ev.Type = m_Types.EnsureIDExists(Event.ModuleName, Event.EventType);
-	ev.DataLength = Event.cbBlob;
-	ev.Entity = hEntity;
+	event->TimeStamp = Event.Timestamp;
+	event->Flags = Event.Flags & ~DBT_EF_VIRTUAL;
+	event->Type = m_Types.EnsureIDExists(Event.ModuleName, Event.EventType);
+	event->DataLength = Event.cbBlob;
+	event->Entity = hEntity;
 
-	key.TimeStamp = ev.TimeStamp;
+	key.TimeStamp = event->TimeStamp;
 	key.Event = res;
+	memcpy(event + 1, Event.pBlob, Event.cbBlob);
 
-	m_BlockManager.WritePart(res, &ev, 0, sizeof(ev));
-	m_BlockManager.WritePart(res, blobdata, sizeof(ev), cryptsize);
-
-	if (bloballocated)
-		free(blobdata);
+	m_BlockManager.UpdateBlock(res);
 
 	if (Event.Flags & DBT_EF_VIRTUAL)
 	{
@@ -628,53 +560,43 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 			}
 		}
 	}
-
-	m_BlockManager.TransactionEndWrite();
-
+	
 	return res;
 }
 unsigned int CEvents::MarkRead(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	TEventKey key = {0,hEvent};
-	uint32_t flags;
-	uint32_t entity;
+	uint32_t size = 0;
+	TEventKey key = {0, hEvent};
+	
+	CBlockManager::WriteTransaction trans(m_BlockManager);
 
-	m_BlockManager.TransactionBeginWrite();
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-			!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
-			!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig))
-	{
-		m_BlockManager.TransactionEndWrite();
+	if (!event)
 		return DBT_INVALIDPARAM;
-	}
 
-	if (flags & DBT_EF_READ)
-	{
-		m_BlockManager.TransactionEndWrite();
-		return flags;
-	}
+	key.TimeStamp = event->TimeStamp;
 
-	PEntityEventsRecord record = getEntityRecord(entity);
-	if (record == NULL)
-	{
-		m_BlockManager.TransactionEndWrite();
+	if (event->Flags & DBT_EF_READ)
+		return event->Flags;
+	
+	PEntityEventsRecord record = getEntityRecord(event->Entity);
+	if (!record)
 		return DBT_INVALIDPARAM;
-	}
-
+	
 	CEventsTree::iterator it = record->RealTree->UpperBound(key);
 	CVirtualEventsTree::iterator vi = record->VirtualTree->UpperBound(key);
 
-	m_Entities._getFirstUnreadEvent(entity, key.Event, key.TimeStamp);
+	m_Entities._getFirstUnreadEvent(event->Entity, key.Event, key.TimeStamp);
 	if (MarkEventsTree(it, key.Event))
 	{
 		FindNextUnreadEvent(++it);
 		if (it)
 		{
-			m_Entities._setFirstUnreadEvent(entity, it->Event, it->TimeStamp);
+			m_Entities._setFirstUnreadEvent(event->Entity, it->Event, it->TimeStamp);
 		} else {
-			m_Entities._setFirstUnreadEvent(entity, 0, 0);
+			m_Entities._setFirstUnreadEvent(event->Entity, 0, 0);
 		}
 	}
 	if (MarkEventsTree(vi, record->FirstVirtualUnread.Event))
@@ -689,85 +611,62 @@ unsigned int CEvents::MarkRead(TDBTEventHandle hEvent)
 		}
 	}
 
-	m_BlockManager.TransactionEndWrite();
-
-	return flags | DBT_EF_READ;
+	return event->Flags | DBT_EF_READ;
 }
 unsigned int CEvents::WriteToDisk(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	TEventKey key;
-	void * buf = NULL;
 	uint32_t size = 0;
-
+	TEventKey key;
 	key.Event = hEvent;
 
-	m_BlockManager.TransactionBeginWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
 
 	if (!m_BlockManager.IsForcedVirtual(hEvent))
-	{
-		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
-	}
 	
-	if (!m_BlockManager.ReadBlock(hEvent, buf, size, sig) ||
-		  (size < sizeof(TEvent)))
-	{
-		m_BlockManager.TransactionEndWrite();
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
+	if (!event || (size < sizeof(TEvent)))
 		return DBT_INVALIDPARAM;
-	}
 
-	PEntityEventsRecord record = getEntityRecord(((TEvent*)buf)->Entity);
+	PEntityEventsRecord record = getEntityRecord(event->Entity);
 	if (!record)
-	{
-		free(buf);
-		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;			
-	}
 
-	key.TimeStamp = ((TEvent*)buf)->TimeStamp;
+	key.TimeStamp = event->TimeStamp;
 	key.Event = hEvent;
 
 	if (record->VirtualTree->Delete(key))
 		adjustVirtualEventCount(record, -1);
 
 	if (record->RealTree->Insert(key))
-		m_Entities._adjustEventCount(((TEvent*)buf)->Entity, +1);
+		m_Entities._adjustEventCount(event->Entity, +1);
 	m_BlockManager.WriteBlockToDisk(hEvent);
 	
-	m_BlockManager.TransactionEndWrite();
-
 	return 0;
 }
 
 TDBTEntityHandle CEvents::getEntity(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	TDBTEntityHandle res = 0;
+	uint32_t size = 0;
 
-	m_BlockManager.TransactionBeginRead();
-
-	if (!m_BlockManager.ReadPart(hEvent, &res, offsetof(TEvent, Entity), sizeof(res), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
+	if (!event)
 		return DBT_INVALIDPARAM;
-	}
 
-	m_BlockManager.TransactionEndRead();
-	return res;
+	return event->Entity;
 }
 
 TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 {
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
 	PEntityEventsRecord record = getEntityRecord(Filter.hEntity);
 
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return DBT_INVALIDPARAM;
-	}
 
 	std::queue<TEventBase * > q;
 	q.push(record->RealTree);
@@ -797,7 +696,7 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 		m_Entities.IterationClose(citer);
 	}
 
-	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
+	for (unsigned j = 0; j < Filter.ExtraCount; ++j)
 	{
 		record = getEntityRecord(Filter.ExtraEntities[j]);
 		if (record)
@@ -840,16 +739,15 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 		delete iter;
 		iter = (PEventIteration)DBT_INVALIDPARAM;
 	}
-
-	m_BlockManager.TransactionEndRead();
-
-	return (TDBTEventIterationHandle)iter;
+	
+	return reinterpret_cast<TDBTEventIterationHandle>(iter);
 }
+
 TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 {
-	m_BlockManager.TransactionBeginRead();
+	PEventIteration iter = reinterpret_cast<PEventIteration>(Iteration);
 
-	PEventIteration iter = (PEventIteration) Iteration;
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
 	TDBTEventHandle res = 0;
 	TEventBase::iterator it = iter->Heap->Top();
@@ -876,18 +774,15 @@ TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 		}
 	}
 
-	m_BlockManager.TransactionEndRead();
-
 	return res;
 }
+
 unsigned int CEvents::IterationClose(TDBTEventIterationHandle Iteration)
 {
-	PEventIteration iter = (PEventIteration) Iteration;
+	PEventIteration iter = reinterpret_cast<PEventIteration>(Iteration);
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 	delete iter->Heap;
-	m_BlockManager.TransactionEndRead();
-
 	delete iter;
 	return 0;
 }
@@ -895,17 +790,14 @@ unsigned int CEvents::IterationClose(TDBTEventIterationHandle Iteration)
 
 TDBTEventHandle CEvents::compFirstEvent(TDBTEntityHandle hEntity)
 {
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
 	TDBTEventHandle res = 0;
 
 	PEntityEventsRecord record = getEntityRecord(hEntity);
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
-
+	
 	TEventKey key = {0,0};
 	CEventsTree::iterator i = record->RealTree->LowerBound(key);
 	CVirtualEventsTree::iterator vi = record->VirtualTree->LowerBound(key);
@@ -925,23 +817,18 @@ TDBTEventHandle CEvents::compFirstEvent(TDBTEntityHandle hEntity)
 	{
 		res = vi->Event;
 	}
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return res;
 }
 TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 {
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
 	TDBTEventHandle res = 0;
 	
 	PEntityEventsRecord record = getEntityRecord(hEntity);
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
 
 	TEventKey key;
 	m_Entities._getFirstUnreadEvent(hEntity, key.Event, key.TimeStamp);
@@ -957,23 +844,17 @@ TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 	{
 		res = record->FirstVirtualUnread.Event;
 	}
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return res;
 }
 TDBTEventHandle CEvents::compLastEvent(TDBTEntityHandle hEntity)
 {
-	m_BlockManager.TransactionBeginRead();
-
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 	TDBTEventHandle res = 0;
 
 	PEntityEventsRecord record = getEntityRecord(hEntity);
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
 
 	TEventKey key = {0xffffffff, 0xffffffff};
 
@@ -995,47 +876,39 @@ TDBTEventHandle CEvents::compLastEvent(TDBTEntityHandle hEntity)
 	{
 		res = vi->Event;
 	}
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return res;
 }
 TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
+	uint32_t size = 0;
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	TDBTEntityHandle entity;
-	TEventKey key = {0, hEvent};
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	if (!event)
 		return 0;
-	}
 
-	PEntityEventsRecord record = getEntityRecord(entity);
+	TEventKey key = {event->TimeStamp, hEvent};
+
+	PEntityEventsRecord record = getEntityRecord(event->Entity);
 
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
 	
 	if (key.Event == 0xffffffff)
 	{
 		if (key.TimeStamp == 0xffffffff)
-		{			
-			m_BlockManager.TransactionEndRead();
+		{
 			return 0;
 		} else {
 			++key.TimeStamp;
 		}
 	} else {
 		++key.Event;
-	}	
+	}
 
 	CEventsTree::iterator i = record->RealTree->LowerBound(key);
 	CVirtualEventsTree::iterator vi = record->VirtualTree->LowerBound(key);
@@ -1057,38 +930,30 @@ TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 		res = vi->Event;
 	}
 
-	m_BlockManager.TransactionEndRead();
-
 	return res;
 }
 TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
+	uint32_t size = 0;
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	TDBTEntityHandle entity;
-	TEventKey key = {0, hEvent};
+	TEvent * event = m_BlockManager.ReadBlock<TEvent>(hEvent, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	if (!event)
 		return 0;
-	}
 
-	PEntityEventsRecord record = getEntityRecord(entity);
+	TEventKey key = {event->TimeStamp, hEvent};
+
+	PEntityEventsRecord record = getEntityRecord(event->Entity);
 	if (!record)
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
 
 	if (key.Event == 0)
 	{
 		if (key.TimeStamp == 0)
 		{
-			m_BlockManager.TransactionEndRead();
 			return 0;
 		} else {
 			--key.TimeStamp;
@@ -1116,8 +981,6 @@ TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 	{
 		res = vi->Event;
 	}
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return res;
 }

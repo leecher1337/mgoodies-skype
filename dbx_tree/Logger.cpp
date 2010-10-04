@@ -38,7 +38,7 @@ CLogger::~CLogger()
 		delete [] *it;
 }
 
-void CLogger::Append(TLevel Level, const TCHAR * Message, ...)
+void CLogger::Append(const TCHAR * File, const TCHAR * Function, const int Line, DWORD SysState, TLevel Level, const TCHAR * Message, ...)
 {
 	if (m_Level < Level)
 		m_Level = Level;
@@ -47,20 +47,30 @@ void CLogger::Append(TLevel Level, const TCHAR * Message, ...)
 	tm timeinfo;
 	TCHAR timebuf[80];
 	localtime_s(&timeinfo, &rawtime);
-	size_t len = _tcsftime(timebuf, sizeof(timebuf) / sizeof(*timebuf), m_Length?_T("\n\n[%c]\n"):_T("[%c]\n"), &timeinfo);
+	size_t len = _tcsftime(timebuf, sizeof(timebuf) / sizeof(*timebuf), _T("%c"), &timeinfo);
 
-	TCHAR msgbuf[1024];
+	TCHAR msgbuf[4096];
 	va_list va;
 	va_start(va, Message);
-	len += _vstprintf_s(msgbuf, Message, va) + 1;
+	len += _vstprintf_s(msgbuf, Message, va);
 	va_end(va);
 
-	TCHAR * message = new TCHAR[len];
-	_tcscpy_s(message, len, timebuf);
-	_tcscat_s(message, len, msgbuf);
+	TCHAR * message;
+	if (SysState)
+	{
+		TCHAR syserror[2048];
+		len += FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, SysState, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), syserror, 2048, NULL);
+		
+		len += /*_tcslen(File) + 10 +*/ _tcslen(Function) + 32 + 12 + 1;
 
-	m_Length += len;
+		message = new TCHAR[len];
+		m_Length += _stprintf_s(message, len, _T("[%s - %s]\n%s\n\nSystem Error Code: %d\n%s\n\n"), timebuf, /*File, Line, */ Function, msgbuf, SysState, syserror) + 1;
+	} else {
+		len += /*_tcslen(File) + 10 +*/ _tcslen(Function) + 12 + 1;
 
+		message = new TCHAR[len];
+		m_Length += _stprintf_s(message, len, _T("[%s - %s]\n%s\n\n"), timebuf, /*File, Line, */Function, msgbuf) + 1;
+	}
 	m_Messages.push_back(message);
 }
 

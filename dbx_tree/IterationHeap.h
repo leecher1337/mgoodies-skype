@@ -40,7 +40,7 @@ public:
 protected:
 	typedef struct THeapElement {
 		TType * Elem;
-		unsigned int Index;
+		size_t Index;
 	} THeapElement, * PHeapElement;
 
 	std::vector <PHeapElement> m_Heap;
@@ -105,8 +105,8 @@ bool CIterationHeap<TType>::Insert(TType & Item)
 	
 	m_Heap.push_back(NULL);
 
-	unsigned int way = m_Heap.capacity() >> 2;	
-	unsigned int index = 0;	
+	size_t way = m_Heap.capacity() >> 2;	
+	size_t index = 0;	
 	PHeapElement ins = new THeapElement;
 	ins->Elem = &Item;
 	ins->Index = m_Heap.size();
@@ -150,9 +150,9 @@ void CIterationHeap<TType>::Pop()
 	else
 		--(*m_Heap[0]->Elem);
 
-	unsigned int index = 0;
+	size_t index = 0;
 	PHeapElement ins = m_Heap[0];
-	unsigned int big = 1;
+	size_t big = 1;
 
 	while ((big > 0) && (index < (m_Heap.size() >> 1)))
 	{

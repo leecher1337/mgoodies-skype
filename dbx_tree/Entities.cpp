@@ -37,8 +37,9 @@ TDBTEntityHandle CVirtuals::_DeleteRealEntity(TDBTEntityHandle hRealEntity)
 {
 	TDBTEntityHandle result;
 	TVirtualKey key;
-	TEntity Entity;
+	TEntity * entity;
 	bool copies = false;
+	uint32_t size = sizeof(TEntity);
 	uint32_t sig = cEntitySignature;
 
 	key.RealEntity = hRealEntity;
@@ -52,24 +53,30 @@ TDBTEntityHandle CVirtuals::_DeleteRealEntity(TDBTEntityHandle hRealEntity)
 	while ((i) && (i->RealEntity == hRealEntity))
 	{
 		key = *i;
-		Delete(*i);
+		Delete(key);
 
 		key.RealEntity = result;
 		Insert(key);
 
-		Entity.VParent = result;
-		m_BlockManager.WritePart(key.Virtual, &Entity.VParent, offsetof(TEntity, VParent), sizeof(TDBTEntityHandle));
+		entity = m_BlockManager.ReadBlock<TEntity>(key.Virtual, size, sig);
+		if (entity)
+		{
+			entity->VParent = result;
+			m_BlockManager.UpdateBlock(key.Virtual);
 
-		copies = true;
+			copies = true;
+		} // TODO log
 	}
 
-	m_BlockManager.ReadPart(result, &Entity.Flags, offsetof(TEntity, Flags), sizeof(uint32_t), sig);
-	Entity.Flags = Entity.Flags & ~(DBT_NF_HasVirtuals | DBT_NF_IsVirtual);
-	if (copies)
-		Entity.Flags |= DBT_NF_HasVirtuals;
+	entity = m_BlockManager.ReadBlock<TEntity>(result, size, sig);
+	if (entity)
+	{
+		entity->Flags = entity->Flags & ~(DBT_NF_HasVirtuals | DBT_NF_IsVirtual);
+		if (copies)
+			entity->Flags |= DBT_NF_HasVirtuals;
 
-	m_BlockManager.WritePart(result, &Entity.Flags, offsetof(TEntity, Flags), sizeof(uint32_t));
-
+		m_BlockManager.UpdateBlock(result);
+	} // TODO log
 	return result;
 }
 
@@ -93,37 +100,29 @@ void CVirtuals::_DeleteVirtual(TDBTEntityHandle hRealEntity, TDBTEntityHandle hV
 }
 TDBTEntityHandle CVirtuals::getParent(TDBTEntityHandle hVirtual)
 {
-	TEntity Entity;
-	void* p = &Entity;
-	uint32_t size = sizeof(Entity);
+	TEntity * entity;
+	uint32_t size = sizeof(TEntity);
 	uint32_t sig = cEntitySignature;
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
-	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
-	{
-		m_BlockManager.TransactionEndRead();
-		return DBT_INVALIDPARAM;
-	}
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	m_BlockManager.TransactionEndRead();
-	return Entity.VParent;
+	entity = m_BlockManager.ReadBlock<TEntity>(hVirtual, size, sig);
+	if (!entity || ((entity->Flags & DBT_NF_IsVirtual) == 0))
+		return DBT_INVALIDPARAM;
+
+	return entity->VParent;
 }
 TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
 {
-	TEntity Entity;
-	void* p = &Entity;
-	uint32_t size = sizeof(Entity);
+	TEntity * entity;
+	uint32_t size = sizeof(TEntity);
 	uint32_t sig = cEntitySignature;
 
-	m_BlockManager.TransactionBeginRead();
-	
-	if (!m_BlockManager.ReadBlock(hRealEntity, p, size, sig) ||
-	   ((Entity.Flags & DBT_NF_HasVirtuals) == 0))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
+	entity = m_BlockManager.ReadBlock<TEntity>(hRealEntity, size, sig);
+	if (!entity || ((entity->Flags & DBT_NF_HasVirtuals) == 0))
 		return DBT_INVALIDPARAM;
-	}
 
 	TVirtualKey key;
 	key.RealEntity = hRealEntity;
@@ -131,44 +130,36 @@ TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
 
 	iterator i = LowerBound(key);
 
-	if ((i) && (i->RealEntity == hRealEntity))
+	if (i && (i->RealEntity == hRealEntity))
 		key.Virtual = i->Virtual;
 	else
 		key.Virtual = 0;
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return key.Virtual;
 }
 TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 {
-	TEntity Entity;
-	void* p = &Entity;
-	uint32_t size = sizeof(Entity);
+	TEntity * entity;
+	uint32_t size = sizeof(TEntity);
 	uint32_t sig = cEntitySignature;
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
-	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
-	{
-		m_BlockManager.TransactionEndRead();
+	entity = m_BlockManager.ReadBlock<TEntity>(hVirtual, size, sig);
+	if (!entity || ((entity->Flags & DBT_NF_IsVirtual) == 0))
 		return DBT_INVALIDPARAM;
-	}
 
 	TVirtualKey key;
-	key.RealEntity = Entity.VParent;
+	key.RealEntity = entity->VParent;
 	key.Virtual = hVirtual + 1;
 
 	iterator i = LowerBound(key);
 
-	if ((i) && (i->RealEntity == Entity.VParent))
+	if ((i) && (i->RealEntity == entity->VParent))
 		key.Virtual = i->Virtual;
 	else
 		key.Virtual = 0;
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return key.Virtual;
 }
 
@@ -203,12 +194,14 @@ CEntities::~CEntities()
 
 TDBTEntityHandle CEntities::_CreateRootEntity()
 {
-	TEntity Entity = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	TEntity * entity;
 	TEntityKey key = {0,0,0};
 
-	Entity.Flags = DBT_NF_IsGroup | DBT_NF_IsRoot;
-	key.Entity = m_BlockManager.CreateBlock(sizeof(Entity), cEntitySignature);
-	m_BlockManager.WriteBlock(key.Entity, &Entity, sizeof(Entity), cEntitySignature);
+	CBlockManager::WriteTransaction trans(m_BlockManager);
+
+	entity = m_BlockManager.CreateBlock<TEntity>(key.Entity, cEntitySignature);
+	entity->Flags = DBT_NF_IsGroup | DBT_NF_IsRoot;
+	m_BlockManager.UpdateBlock(key.Entity);
 	Insert(key);
 	return key.Entity;
 }
@@ -216,68 +209,48 @@ TDBTEntityHandle CEntities::_CreateRootEntity()
 void CEntities::_InternalTransferContacts(TDBTEntityHandle OldAccount, TDBTEntityHandle NewAccount)
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	TDBTEntityHandle acc;
 	TEntityKey key = {0,0,0};
 	iterator i = LowerBound(key);
 
 	while (i)
 	{
 		sig = cEntitySignature;
-		if (m_BlockManager.ReadPart(i->Entity, &acc, offsetof(TEntity, Account), sizeof(acc), sig) &&
-			  (acc == OldAccount))
+		TEntity * entity = m_BlockManager.ReadBlock<TEntity>(i->Entity, size, sig);
+		if (entity && (entity->Account == OldAccount))
 		{
-			m_BlockManager.WritePart(i->Entity, &NewAccount, offsetof(TEntity, Account), sizeof(NewAccount));
+			entity->Account = NewAccount;
+			m_BlockManager.UpdateBlock(i->Entity);
 		}
 
 		++i;
 	}
 }
 
-CVirtuals::TOnRootChanged & CEntities::sigVirtualRootChanged()
-{
-	return m_Virtuals.sigRootChanged();
-}
-
-CEntities::TOnEntityDelete &          CEntities::sigEntityDelete()
-{
-	return m_sigEntityDelete;
-}
-CEntities::TOnInternalDeleteEvents &   CEntities::_sigDeleteEvents()
-{
-	return m_sigInternalDeleteEvents;
-}
-CEntities::TOnInternalDeleteSettings & CEntities::_sigDeleteSettings()
-{
-	return m_sigInternalDeleteSettings;
-}
-CEntities::TOnInternalMergeSettings &  CEntities::_sigMergeSettings()
-{
-	return m_sigInternalMergeSettings;
-}
-CEntities::TOnInternalTransferEvents & CEntities::_sigTransferEvents()
-{
-	return m_sigInternalTransferEvents;
-}
-
-
 uint32_t CEntities::_getSettingsRoot(TDBTEntityHandle hEntity)
 {
 	/*CSettingsTree::TNodeRef*/
-	uint32_t set;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEntity, &set, offsetof(TEntity, Settings), sizeof(set), sig))
+	if (!entity)
 		return DBT_INVALIDPARAM;
 
-	return set;
+	return entity->Settings;
 }
 bool CEntities::_setSettingsRoot(TDBTEntityHandle hEntity, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot)
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.WritePartCheck(hEntity, &NewRoot, offsetof(TEntity, Settings), sizeof(NewRoot), sig))
+	if (!entity)
 		return false;
+
+	entity->Settings = NewRoot;
+	m_BlockManager.UpdateBlock(hEntity);
 
 	return true;
 }
@@ -285,154 +258,145 @@ bool CEntities::_setSettingsRoot(TDBTEntityHandle hEntity, /*CSettingsTree::TNod
 uint32_t CEntities::_getEventsRoot(TDBTEntityHandle hEntity)
 {
 	/*CEventsTree::TNodeRef*/
-	uint32_t ev;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEntity, &ev, offsetof(TEntity, Events), sizeof(ev), sig))
+	if (!entity)
 		return DBT_INVALIDPARAM;
 
-	return ev;
+	return entity->Events;
 }
 bool CEntities::_setEventsRoot(TDBTEntityHandle hEntity, /*CEventsTree::TNodeRef*/ uint32_t NewRoot)
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.WritePartCheck(hEntity, &NewRoot, offsetof(TEntity, Events), sizeof(NewRoot), sig))
+	if (!entity)
 		return false;
+	entity->Events = NewRoot;
+	m_BlockManager.UpdateBlock(hEntity);
 
 	return true;
 }
 
 uint32_t CEntities::_getEventCount(TDBTEntityHandle hEntity)
 {
-	uint32_t res = 0;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.ReadPart(hEntity, &res, offsetof(TEntity, EventCount), sizeof(res), sig))
+	if (!entity)
 		return DBT_INVALIDPARAM;
 
-	return res;
+	return entity->EventCount;
 }
 
 uint32_t CEntities::_adjustEventCount(TDBTEntityHandle hEntity, int32_t Adjust)
 {
 	uint32_t sig = cEntitySignature;
-	uint32_t c;
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (m_BlockManager.ReadPart(hEntity, &c, offsetof(TEntity, EventCount), sizeof(c), sig))
+	if (!entity)
+		return DBT_INVALIDPARAM;
+
+	if (((Adjust < 0) && ((uint32_t)(-Adjust) <= entity->EventCount)) ||
+			((Adjust > 0) && ((0xffffffff - entity->EventCount) > (uint32_t)Adjust)))
 	{
-		if (((Adjust < 0) && ((uint32_t)(-Adjust) <= c)) ||
-			  ((Adjust > 0) && ((0xffffffff - c) > (uint32_t)Adjust)))
-		{
-			c += Adjust;
-			m_BlockManager.WritePart(hEntity, &c, offsetof(TEntity, EventCount), sizeof(c));
-		}
+		entity->EventCount += Adjust;
+		m_BlockManager.UpdateBlock(hEntity);
 	}
-
-	return c;
+	
+	return entity->EventCount;
 }
 
 bool CEntities::_getFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t & hEvent, uint32_t & Timestamp)
 {
 	uint32_t sig = cEntitySignature;
-	uint32_t e[2];
-
-	if (!m_BlockManager.ReadPart(hEntity, &e, offsetof(TEntity, FirstUnreadEventTimestamp), sizeof(e), sig))
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	
+	if (!entity)
 		return false;
-
-	Timestamp = e[0];
-	hEvent = e[1];
+	
+	Timestamp = entity->FirstUnreadEventTimestamp;
+	hEvent = entity->FirstUnreadEventHandle;
 	return true;
 }
 bool CEntities::_setFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t hEvent, uint32_t Timestamp)
 {
 	uint32_t sig = cEntitySignature;
-	uint32_t e[2] = {Timestamp, hEvent};
+	uint32_t size = sizeof(TEntity);
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
 
-	if (!m_BlockManager.WritePartCheck(hEntity, &e, offsetof(TEntity, FirstUnreadEventTimestamp), sizeof(e), sig))
+	if (!entity)
 		return false;
+	entity->FirstUnreadEventTimestamp = Timestamp;
+	entity->FirstUnreadEventHandle = hEvent;
+	m_BlockManager.UpdateBlock(hEntity);
 
 	return true;
-}
-CVirtuals & CEntities::_getVirtuals()
-{
-	return m_Virtuals;
-}
-
-TDBTEntityHandle CEntities::getRootEntity()
-{
-	return m_RootEntity;
 }
 
 TDBTEntityHandle CEntities::getParent(TDBTEntityHandle hEntity)
 {
-	TDBTEntityHandle par;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadPart(hEntity, &par, offsetof(TEntity, ParentEntity), sizeof(par), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	if (!entity)
 		return DBT_INVALIDPARAM;
-	}
-
-	m_BlockManager.TransactionEndRead();
-	return par;
+	
+	return entity->ParentEntity;
 }
 TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle hParent)
 {
-	TEntity Entity;
-	void* pEntity = &Entity;
+	TEntity *entity, *newparent, *oldparent;
 	uint32_t size = sizeof(TEntity);
 	uint32_t sig = cEntitySignature;
-	uint16_t cn, co;
-	uint32_t fn, fo;
-	uint16_t l;
 
-	m_BlockManager.TransactionBeginWrite();
-	if (!m_BlockManager.ReadBlock(hEntity, pEntity, size, sig) ||
-		  !m_BlockManager.ReadPart(hParent, &cn, offsetof(TEntity,ChildCount), sizeof(cn), sig) ||
-			!m_BlockManager.ReadPart(Entity.ParentEntity, &co, offsetof(TEntity, ChildCount), sizeof(co), sig) ||
-			!m_BlockManager.ReadPart(hParent, &l, offsetof(TEntity, Level), sizeof(l), sig))
-	{
-		m_BlockManager.TransactionEndWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
+
+	entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	newparent = m_BlockManager.ReadBlock<TEntity>(hParent, size, sig);
+	if (!entity || !newparent)
 		return DBT_INVALIDPARAM;
-	}
+
+	oldparent = m_BlockManager.ReadBlock<TEntity>(entity->ParentEntity, size, sig);
+	if (!oldparent)
+		return DBT_INVALIDPARAM;
 
 	// update parents
-	--co;
-	++cn;
+	if (--oldparent->ChildCount == 0)
+		oldparent->Flags &= ~DBT_NF_HasChildren;
+	
+	if (++newparent->ChildCount == 1)
+		newparent->Flags |= DBT_NF_HasChildren;
 
-	m_BlockManager.WritePart(Entity.ParentEntity, &co, offsetof(TEntity, ChildCount),sizeof(co));
-	if (co == 0)
-	{
-		m_BlockManager.ReadPart(Entity.ParentEntity, &fo, offsetof(TEntity, Flags), sizeof(fo), sig);
-		fo = fo & ~DBT_NF_HasChildren;
-		m_BlockManager.WritePart(Entity.ParentEntity, &fo, offsetof(TEntity, Flags), sizeof(fo));
-	}
 
-	m_BlockManager.WritePart(hParent, &cn, offsetof(TEntity, ChildCount), sizeof(cn));
-	if (cn == 1)
-	{
-		m_BlockManager.ReadPart(hParent, &fn, offsetof(TEntity, Flags), sizeof(fn), sig);
-		fn = fn | DBT_NF_HasChildren;
-		m_BlockManager.WritePart(hParent, &fn, offsetof(TEntity, Flags), sizeof(fn));
-	}
+	m_BlockManager.UpdateBlock(entity->ParentEntity);
+	m_BlockManager.UpdateBlock(hParent);
 
 	// update rest
 
 	TEntityKey key;
-	int dif = l - Entity.Level + 1;
+	int dif = newparent->Level - entity->Level + 1;
 
 	if (dif == 0) // no level difference, update only moved Entity
 	{
 		key.Entity = hEntity;
-		key.Level = Entity.Level;
-		key.Parent = Entity.ParentEntity;
+		key.Level = entity->Level;
+		key.Parent = entity->ParentEntity;
 		Delete(key);
 		key.Parent = hParent;
 		Insert(key);
-		m_BlockManager.WritePart(hEntity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
+
+		entity->ParentEntity = hParent;
+		m_BlockManager.UpdateBlock(hEntity);
 
 	} else {
 		TDBTEntityIterFilter filter = {0,0,0,0};
@@ -445,205 +409,200 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 
 		while ((key.Entity != 0) && (key.Entity != DBT_INVALIDPARAM))
 		{
-			if (m_BlockManager.ReadPart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent), sig) &&
-					m_BlockManager.ReadPart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level), sig))
-			{
-				Delete(key);
+			size = sizeof(TEntity);
+			sig = cEntitySignature;
+			TEntity * child = m_BlockManager.ReadBlock<TEntity>(key.Entity, size, sig);
 
+			if (child)
+			{
+				key.Level = child->Level;
+				key.Parent = child->ParentEntity;
+				Delete(key);
+				
 				if (key.Entity == hEntity)
 				{
 					key.Parent = hParent;
-					m_BlockManager.WritePart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
+					entity->ParentEntity = hParent;
 				}
-
-				key.Level = key.Level + dif;
-				m_BlockManager.WritePart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level));
+				
+				child->Level += dif;
+				key.Level += dif;
+				m_BlockManager.UpdateBlock(key.Entity);
 
 				Insert(key);
-			}
+			} // TODO log
 			key.Entity = IterationNext(iter);
 		}
 
 		IterationClose(iter);
 	}
 
-	m_BlockManager.TransactionEndWrite();
-
 	/// TODO raise event
 
-	return Entity.ParentEntity;
+	return entity->ParentEntity;
 }
 
 uint32_t CEntities::getChildCount(TDBTEntityHandle hEntity)
 {
-	uint32_t c;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadPart(hEntity, &c, offsetof(TEntity, ChildCount), sizeof(c), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	if (!entity)
 		return DBT_INVALIDPARAM;
-	}
 
-	m_BlockManager.TransactionEndRead();
-	return c;
+	return entity->ChildCount;
 }
 
 uint32_t CEntities::getFlags(TDBTEntityHandle hEntity)
 {
-	uint32_t f;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadPart(hEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	if (!entity)
 		return DBT_INVALIDPARAM;
-	}
 
-	m_BlockManager.TransactionEndRead();
-	return f;
+	return entity->Flags;
 }
 
 uint32_t CEntities::getAccount(TDBTEntityHandle hEntity)
 {
-	uint32_t f, a;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
-	if (!m_BlockManager.ReadPart(hEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
-		  !m_BlockManager.ReadPart(hEntity, &a, offsetof(TEntity, Account), sizeof(a), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+	if (!entity)
 		return DBT_INVALIDPARAM;
-	}
 
-	if (f & DBT_NF_IsVirtual)
-		a = getAccount(a); // we can do this, because VParent and Account occupies the same memory
-	else if (f & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot))
-		a = 0;
+	if (entity->Flags & DBT_NF_IsVirtual)
+		return getAccount(entity->VParent);
+	else if (entity->Flags & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot))
+		return 0;
 
-	m_BlockManager.TransactionEndRead();
-	return f;
+	return entity->Flags;
 }
 
 TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 {
-	TEntity en = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}, parent;
-	void* pparent = &parent;
-	uint32_t size = sizeof(en);
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TDBTEntityHandle haccount = 0;
 
-	m_BlockManager.TransactionBeginWrite();
-	if (!m_BlockManager.ReadBlock(Entity.hParentEntity, pparent, size, sig))
-	{
-		m_BlockManager.TransactionEndWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
+
+	TEntity * parent = m_BlockManager.ReadBlock<TEntity>(Entity.hParentEntity, size, sig);
+	
+	if (!parent)
 		return DBT_INVALIDPARAM;
-	}
 
 	// check account specification
 	if ((Entity.fFlags == 0) && (Entity.hAccountEntity != m_RootEntity)) // TODO disable root account thing, after conversion
 	{
-		uint32_t f = 0;
-		if (!m_BlockManager.ReadPart(Entity.hAccountEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
-			  !(f & DBT_NF_IsAccount))
-		{
-			m_BlockManager.TransactionEndWrite();
+		TEntity * account = m_BlockManager.ReadBlock<TEntity>(Entity.hAccountEntity, size, sig);
+		if (!account || !(account->Flags & DBT_NF_IsAccount))
 			return DBT_INVALIDPARAM;
-		}
-
-		if (f & DBT_NF_IsVirtual)
+		
+		if (account->Flags & DBT_NF_IsVirtual)
 		{
-			en.Account = VirtualGetParent(Entity.hAccountEntity);
+			haccount = VirtualGetParent(Entity.hAccountEntity);
 		} else {
-			en.Account = Entity.hAccountEntity;
+			haccount = Entity.hAccountEntity;
 		}
 	}
 
-	TDBTEntityHandle hEntity = m_BlockManager.CreateBlock(sizeof(TEntity), cEntitySignature);
+	TDBTEntityHandle hentity;
+	TEntity * entityblock = m_BlockManager.CreateBlock<TEntity>(hentity, cEntitySignature);
+	if (!entityblock)
+		return DBT_INVALIDPARAM;
+
 	TEntityKey key;
 
-	en.Level = parent.Level + 1;
-	en.ParentEntity = Entity.hParentEntity;
-	en.Flags = Entity.fFlags;
+	entityblock->Level = parent->Level + 1;
+	entityblock->ParentEntity = Entity.hParentEntity;
+	entityblock->Flags = Entity.fFlags;
+	entityblock->Account = haccount;
 
-	m_BlockManager.WriteBlock(hEntity, &en, sizeof(TEntity), cEntitySignature);
+	m_BlockManager.UpdateBlock(hentity);
 
-	key.Level = en.Level;
-	key.Parent = en.ParentEntity;
-	key.Entity = hEntity;
+	key.Level = entityblock->Level;
+	key.Parent = entityblock->ParentEntity;
+	key.Entity = hentity;
 
 	Insert(key);
 
-	if (parent.ChildCount == 0)
-	{
-		parent.Flags = parent.Flags | DBT_NF_HasChildren;
-		m_BlockManager.WritePart(Entity.hParentEntity, &parent.Flags, offsetof(TEntity, Flags), sizeof(uint32_t));
-	}
-	++parent.ChildCount;
-	m_BlockManager.WritePart(Entity.hParentEntity, &parent.ChildCount, offsetof(TEntity, ChildCount), sizeof(uint16_t));
+	if (parent->ChildCount == 0)
+		parent->Flags = parent->Flags | DBT_NF_HasChildren;
+	
+	++parent->ChildCount;
+	m_BlockManager.UpdateBlock(Entity.hParentEntity);
 
-	m_BlockManager.TransactionEndWrite();
-	return hEntity;
+	return hentity;
 }
 
 unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 {
-	TEntity Entity;
-	void* pEntity = &Entity;
-	uint32_t size = sizeof(Entity);
 	uint32_t sig = cEntitySignature;
-	uint16_t parentcc;
-	uint32_t parentf;
+	uint32_t size = sizeof(TEntity);
+	TDBTEntityHandle haccount = 0;
 
-	TEntityKey key;
+	CBlockManager::WriteTransaction trans(m_BlockManager);
 
-	m_BlockManager.TransactionBeginWrite();
-	if (!m_BlockManager.ReadBlock(hEntity, pEntity, size, sig) ||
-		  !m_BlockManager.ReadPart(Entity.ParentEntity, &parentcc, offsetof(TEntity, ChildCount), sizeof(parentcc), sig) ||
-			!m_BlockManager.ReadPart(Entity.ParentEntity, &parentf, offsetof(TEntity, Flags), sizeof(parentf), sig))
-	{
-		m_BlockManager.TransactionEndWrite();
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+
+	if (!entity)
 		return DBT_INVALIDPARAM;
-	}
+
+	TEntity * parent = m_BlockManager.ReadBlock<TEntity>(entity->ParentEntity, size, sig);
+	if (!parent)
+		return DBT_INVALIDPARAM;
 
 	m_sigEntityDelete.emit(this, hEntity);
 
-	if (Entity.Flags & DBT_NF_HasVirtuals)
+	if (entity->Flags & DBT_NF_HasVirtuals)
 	{
 		// move virtuals and make one of them real
 		TDBTEntityHandle newreal = m_Virtuals._DeleteRealEntity(hEntity);
 
-		m_BlockManager.WritePartCheck(newreal, &Entity.EventCount, offsetof(TEntity, EventCount), sizeof(uint32_t), sig);
-		m_BlockManager.WritePart(newreal, &Entity.Events, offsetof(TEntity, Events), sizeof(uint32_t));
-
-		m_sigInternalTransferEvents.emit(this, hEntity, newreal);
-		m_sigInternalMergeSettings.emit(this, hEntity, newreal);
-
-		if (Entity.Flags & DBT_NF_IsAccount)
+		TEntity * realblock = m_BlockManager.ReadBlock<TEntity>(newreal, size, sig);
+		if (realblock)
 		{
-			_InternalTransferContacts(hEntity, newreal);
-		}
+			realblock->EventCount = entity->EventCount;
+			realblock->Events = entity->Events;
+
+			m_BlockManager.UpdateBlock(newreal);
+
+			m_sigInternalTransferEvents.emit(this, hEntity, newreal);
+			m_sigInternalMergeSettings.emit(this, hEntity, newreal);
+
+			if (entity->Flags & DBT_NF_IsAccount)
+				_InternalTransferContacts(hEntity, newreal);
+		} // TODO log
 	} else {
 		m_sigInternalDeleteEvents.emit(this, hEntity);
 		m_sigInternalDeleteSettings.emit(this, hEntity);
 
-		if ((Entity.Flags & DBT_NF_IsAccount) && !(Entity.Flags & DBT_NF_IsVirtual))
-		{
+		if ((entity->Flags & DBT_NF_IsAccount) && !(entity->Flags & DBT_NF_IsVirtual))
 			_InternalTransferContacts(hEntity, m_RootEntity);
-		}
+		
 	}
 
-	key.Level = Entity.Level;
-	key.Parent = Entity.ParentEntity;
+	TEntityKey key;
+	key.Level = entity->Level;
+	key.Parent = entity->ParentEntity;
 	key.Entity = hEntity;
 	Delete(key);
 
-	if (Entity.Flags & DBT_NF_HasChildren) // keep the children
+	if (entity->Flags & DBT_NF_HasChildren) // keep the children
 	{
-		parentf = parentf | DBT_NF_HasChildren;
-		parentcc += Entity.ChildCount;
+		parent->Flags |= DBT_NF_HasChildren;
+		parent->ChildCount += entity->ChildCount;
 
 		TDBTEntityIterFilter filter = {0,0,0,0};
 		filter.cbSize = sizeof(filter);
@@ -657,19 +616,24 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 
 			while ((key.Entity != 0) && (key.Entity != DBT_INVALIDPARAM))
 			{
-				if (m_BlockManager.ReadPart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent), sig) &&
-					m_BlockManager.ReadPart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level), sig))
+				size = sizeof(TEntity);
+				sig = cEntitySignature;
+				TEntity * child = m_BlockManager.ReadBlock<TEntity>(key.Entity, size, sig);
+				if (child)
 				{
+					key.Parent = child->ParentEntity;
+					key.Level = child->Level;
 					Delete(key);
 
 					if (key.Parent == hEntity)
 					{
-						key.Parent = Entity.ParentEntity;
-						m_BlockManager.WritePart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
+						key.Parent = entity->ParentEntity;
+						child->ParentEntity = entity->ParentEntity;
 					}
-
+					
 					key.Level--;
-					m_BlockManager.WritePart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level));
+					m_BlockManager.UpdateBlock(key.Entity);
+
 					Insert(key);
 
 				}
@@ -680,16 +644,13 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 		}
 	}
 
-	m_BlockManager.DeleteBlock(hEntity); // we need this block to start iteration, delete it here
-	--parentcc;
+	if (--parent->ChildCount == 0)
+		parent->Flags = parent->Flags & (~DBT_NF_HasChildren);
 
-	if (parentcc == 0)
-		Entity.Flags = Entity.Flags & (~DBT_NF_HasChildren);
+	m_BlockManager.UpdateBlock(entity->ParentEntity);
 
-	m_BlockManager.WritePartCheck(Entity.ParentEntity, &parentcc, offsetof(TEntity, ChildCount), sizeof(parentcc), sig);
-	m_BlockManager.WritePart(Entity.ParentEntity, &parentf, offsetof(TEntity, Flags), sizeof(parentf));
+	m_BlockManager.DeleteBlock(hEntity); // we needed this block, delete it now
 
-	m_BlockManager.TransactionEndWrite();
 	return 0;
 }
 
@@ -697,18 +658,16 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 
 TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & Filter, TDBTEntityHandle hParent)
 {
-	uint16_t l;
-	uint32_t f;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TDBTEntityHandle haccount = 0;
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	if (!m_BlockManager.ReadPart(hParent, &l, offsetof(TEntity, Level), sizeof(l), sig) ||
-	    !m_BlockManager.ReadPart(hParent, &f, offsetof(TEntity, Flags), sizeof(f), sig))
-	{
-		m_BlockManager.TransactionEndRead();
+	TEntity * parent = m_BlockManager.ReadBlock<TEntity>(hParent, size, sig);
+
+	if (!parent)
 		return DBT_INVALIDPARAM;
-	}
 
 	PEntityIteration iter = new TEntityIteration;
 	iter->filter = Filter;
@@ -716,32 +675,31 @@ TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & 
 	iter->parents = new std::deque<TEntityIterationItem>;
 	iter->accounts = new std::deque<TEntityIterationItem>;
 	#ifdef _MSC_VER
-    iter->returned = new stdext::hash_set<TDBTEntityHandle>;
-    #else
-	iter->returned = new __gnu_cxx::hash_set<TDBTEntityHandle>;
-    #endif
+		iter->returned = new stdext::hash_set<TDBTEntityHandle>;
+	#else
+		iter->returned = new __gnu_cxx::hash_set<TDBTEntityHandle>;
+	#endif
 	iter->returned->insert(hParent);
 
 	TEntityIterationItem it;
-	it.Flags = f;
+	it.Flags = parent->Flags;
 	it.Handle = hParent;
-	it.Level = l;
+	it.Level = parent->Level;
 	it.Options = Filter.Options & 0x000000ff;
 	it.LookupDepth = 0;
 
 	iter->q->push_back(it);
-
-	m_BlockManager.TransactionEndRead();
 
 	return (TDBTEntityIterationHandle)iter;
 }
 TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
-	PEntityIteration iter = (PEntityIteration)Iteration;
+	PEntityIteration iter = reinterpret_cast<PEntityIteration>(Iteration);
 	TEntityIterationItem item;
 	TDBTEntityHandle result = 0;
 
@@ -760,8 +718,8 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 	}
 
 	if (iter->q->empty() &&
-		  (iter->filter.Options & DBT_NIFO_GF_USEROOT) &&
-			(iter->returned->find(m_RootEntity) == iter->returned->end()))
+		(iter->filter.Options & DBT_NIFO_GF_USEROOT) &&
+		(iter->returned->find(m_RootEntity) == iter->returned->end()))
 	{
 		item.Handle = m_RootEntity;
 		item.Level = 0;
@@ -775,11 +733,8 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 	}
 
 	if (iter->q->empty())
-	{
-		m_BlockManager.TransactionEndRead();
 		return 0;
-	}
-
+	
 	do {
 		item = iter->q->front();
 		iter->q->pop_front();
@@ -789,7 +744,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 
 		// children
 		if ((item.Flags & DBT_NF_HasChildren) &&
-		  	(item.Options & DBT_NIFO_OSC_AC))
+			(item.Options & DBT_NIFO_OSC_AC))
 		{
 			TEntityKey key;
 			key.Parent = item.Handle;
@@ -808,12 +763,18 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 				{
 					newitem.Handle = c->Entity;
 
-					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
-						  (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down Entities...
+					if (iter->returned->find(newitem.Handle) == iter->returned->end())
 					{
-						iter->q->push_front(newitem);
-						iter->returned->insert(newitem.Handle);
+						TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(newitem.Handle, size, sig);
+						if (tmp)
+						{
+							newitem.Flags = tmp->Flags;
+						  if (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0)) // if we want only groups, we don't need to trace down Entities...
+							{
+								iter->q->push_front(newitem);
+								iter->returned->insert(newitem.Handle);
+							}
+						}
 					}
 
 					--c;
@@ -826,12 +787,18 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 				{
 					newitem.Handle = c->Entity;
 
-					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
-						  (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down Entities...
+					if (iter->returned->find(newitem.Handle) == iter->returned->end())
 					{
-						iter->q->push_back(newitem);
-						iter->returned->insert(newitem.Handle);
+						TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(newitem.Handle, size, sig);
+						if (tmp)
+						{
+							newitem.Flags = tmp->Flags;
+							if (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0)) // if we want only groups, we don't need to trace down Entities...
+							{
+								iter->q->push_back(newitem);
+								iter->returned->insert(newitem.Handle);
+							}
+						}
 					}
 
 					++c;
@@ -845,48 +812,57 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 		{
 			newitem.Handle = getParent(item.Handle);
 			if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-				  (newitem.Handle != DBT_INVALIDPARAM) &&
-				  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig))
+				(newitem.Handle != DBT_INVALIDPARAM))
 			{
-				newitem.Level = item.Level - 1;
-				newitem.LookupDepth = item.LookupDepth;
-				newitem.Options = (iter->filter.Options / DBT_NIFO_OP_AC * DBT_NIFO_OSC_AC) & (DBT_NIFO_OSC_AC | DBT_NIFO_OSC_AP | DBT_NIFO_OSC_AO | DBT_NIFO_OSC_AOC | DBT_NIFO_OSC_AOP);
-
-				if ((newitem.Flags & iter->filter.fDontHasFlags & DBT_NF_IsGroup) == 0) // if we don't want groups, stop it
+				TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(newitem.Handle, size, sig);
+				if (tmp)
 				{
-					iter->parents->push_back(newitem);
-					iter->returned->insert(newitem.Handle);
+					newitem.Level = item.Level - 1;
+					newitem.LookupDepth = item.LookupDepth;
+					newitem.Options = (iter->filter.Options / DBT_NIFO_OP_AC * DBT_NIFO_OSC_AC) & (DBT_NIFO_OSC_AC | DBT_NIFO_OSC_AP | DBT_NIFO_OSC_AO | DBT_NIFO_OSC_AOC | DBT_NIFO_OSC_AOP);
+					newitem.Flags = tmp->Flags;
+
+					if ((newitem.Flags & iter->filter.fDontHasFlags & DBT_NF_IsGroup) == 0) // if we don't want groups, stop it
+					{
+						iter->parents->push_back(newitem);
+						iter->returned->insert(newitem.Handle);
+					}
 				}
 			}
 		}
 
 		// virtual lookup, original Entity is the next one
 		if ((item.Flags & DBT_NF_IsVirtual) &&
-			  (item.Options & DBT_NIFO_OSC_AO) &&
-				(((iter->filter.Options >> 28) >= item.LookupDepth) || ((iter->filter.Options >> 28) == 0)))
+			(item.Options & DBT_NIFO_OSC_AO) &&
+			(((iter->filter.Options >> 28) >= item.LookupDepth) || ((iter->filter.Options >> 28) == 0)))
 		{
 			newitem.Handle = VirtualGetParent(item.Handle);
-
+			
 			if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-				  (newitem.Handle != DBT_INVALIDPARAM) &&
-				   m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
-           m_BlockManager.ReadPart(newitem.Handle, &newitem.Level, offsetof(TEntity, Level), sizeof(newitem.Level), sig))
+				  (newitem.Handle != DBT_INVALIDPARAM))
 			{
-				newitem.Options  = 0;
-				if ((item.Options & DBT_NIFO_OSC_AOC) == DBT_NIFO_OSC_AOC)
-					newitem.Options |= DBT_NIFO_OSC_AC;
-				if ((item.Options & DBT_NIFO_OSC_AOP) == DBT_NIFO_OSC_AOP)
-					newitem.Options |= DBT_NIFO_OSC_AP;
+				TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(newitem.Handle, size, sig);
+				if (tmp)				   
+				{
+					newitem.Level = tmp->Level;
+					newitem.Options = 0;
+					newitem.Flags = tmp->Flags;
 
-				newitem.LookupDepth = item.LookupDepth + 1;
+					if ((item.Options & DBT_NIFO_OSC_AOC) == DBT_NIFO_OSC_AOC)
+						newitem.Options |= DBT_NIFO_OSC_AC;
+					if ((item.Options & DBT_NIFO_OSC_AOP) == DBT_NIFO_OSC_AOP)
+						newitem.Options |= DBT_NIFO_OSC_AP;
 
-				iter->q->push_front(newitem);
-				iter->returned->insert(newitem.Handle);
+					newitem.LookupDepth = item.LookupDepth + 1;
+
+					iter->q->push_front(newitem);
+					iter->returned->insert(newitem.Handle);
+				}
 			}
 		}
 
 		if (((iter->filter.fHasFlags & item.Flags) == iter->filter.fHasFlags) &&
-		    ((iter->filter.fDontHasFlags & item.Flags) == 0))
+			((iter->filter.fDontHasFlags & item.Flags) == 0))
 		{
 			result = item.Handle;
 
@@ -908,14 +884,18 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 						acc = 0;
 					acci++;
 				}
-				if ((acc != 0) &&
-				    m_BlockManager.ReadPart(acc, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
-            m_BlockManager.ReadPart(acc, &newitem.Level, offsetof(TEntity, Level), sizeof(newitem.Level), sig))
+				if (acc != 0)
 				{
-					newitem.Options = 0;
-					newitem.LookupDepth = 0;
-					newitem.Handle = acc;
-					iter->accounts->push_back(newitem);
+					TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(acc, size, sig);
+					if (tmp)
+					{
+						newitem.Options = 0;
+						newitem.LookupDepth = 0;
+						newitem.Handle = acc;
+						newitem.Flags = tmp->Flags;
+						newitem.Level = tmp->Level;
+						iter->accounts->push_back(newitem);
+					}
 				}
 			}
 		}
@@ -924,16 +904,12 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 
 	if (result == 0)
 		result = IterationNext(Iteration);
-
-	m_BlockManager.TransactionEndRead();
-
+	
 	return result;
 }
 unsigned int CEntities::IterationClose(TDBTEntityIterationHandle Iteration)
 {
-//	m_BlockManager.TransactionBeginRead(); // no sync needed
-
-	PEntityIteration iter = (PEntityIteration) Iteration;
+	PEntityIteration iter = reinterpret_cast<PEntityIteration>(Iteration);
 
 	delete iter->q;
 	delete iter->parents;
@@ -941,126 +917,116 @@ unsigned int CEntities::IterationClose(TDBTEntityIterationHandle Iteration)
 	delete iter->returned;
 	delete iter;
 
-//	m_BlockManager.TransactionEndRead();
 	return 0;
 }
 
 
-
 TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEntityHandle hParent)
 {
-	uint32_t f;
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
+	TDBTEntityHandle haccount = 0;
 
-	m_BlockManager.TransactionBeginWrite();
+	CBlockManager::WriteTransaction trans(m_BlockManager);
 
-	if (!m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
-		  (f & (DBT_NF_IsGroup | DBT_NF_IsRoot)))
-	{
-		m_BlockManager.TransactionEndWrite();
+	TEntity * realentity = m_BlockManager.ReadBlock<TEntity>(hRealEntity, size, sig);
+
+	if (!realentity || (realentity->Flags & (DBT_NF_IsGroup | DBT_NF_IsRoot)))
 		return DBT_INVALIDPARAM;
-	}
-
+	
 	TDBTEntity entity = {0,0,0,0};
 	entity.hParentEntity = hParent;
-	entity.fFlags = DBT_NF_IsVirtual | (f & DBT_NF_IsAccount);
+	entity.fFlags = DBT_NF_IsVirtual | (realentity->Flags & DBT_NF_IsAccount);
 	entity.hAccountEntity = 0;
 
 	TDBTEntityHandle result = CreateEntity(entity);
 	if (result == DBT_INVALIDPARAM)
-	{
-		m_BlockManager.TransactionEndWrite();
 		return DBT_INVALIDPARAM;
+
+	TEntity * entityblock = m_BlockManager.ReadBlock<TEntity>(result, size, sig);
+	if (!entityblock)
+		return DBT_INVALIDPARAM;
+
+	if (realentity->Flags & DBT_NF_IsVirtual)
+	{
+		hRealEntity = realentity->VParent;
+		realentity = m_BlockManager.ReadBlock<TEntity>(hRealEntity, size, sig);
+
+		if (!realentity)
+			return DBT_INVALIDPARAM;
 	}
 
-	if (f & DBT_NF_IsVirtual)
-	{
-		m_BlockManager.ReadPart(hRealEntity, &hRealEntity, offsetof(TEntity, VParent), sizeof(hRealEntity), sig);
-		m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig);
-	}
+	entityblock->VParent = hRealEntity;
+	m_BlockManager.UpdateBlock(result);
 
-	m_BlockManager.WritePart(result, &hRealEntity, offsetof(TEntity, VParent), sizeof(hRealEntity));
-
-	if ((f & DBT_NF_HasVirtuals) == 0)
+	if ((realentity->Flags & DBT_NF_HasVirtuals) == 0)
 	{
-		f |= DBT_NF_HasVirtuals;
-		m_BlockManager.WritePart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f));
+		realentity->Flags |= DBT_NF_HasVirtuals;
+		m_BlockManager.UpdateBlock(hRealEntity);
 	}
 
 	m_Virtuals._InsertVirtual(hRealEntity, result);
-
-	m_BlockManager.TransactionEndWrite();
 	return result;
-}
-
-TDBTEntityHandle CEntities::VirtualGetParent(TDBTEntityHandle hVirtual)
-{
-	return m_Virtuals.getParent(hVirtual);
-}
-TDBTEntityHandle CEntities::VirtualGetFirst(TDBTEntityHandle hRealEntity)
-{
-	return m_Virtuals.getFirst(hRealEntity);
-}
-TDBTEntityHandle CEntities::VirtualGetNext(TDBTEntityHandle hVirtual)
-{
-	return m_Virtuals.getNext(hVirtual);
 }
 
 
 TDBTEntityHandle CEntities::compFirstContact()
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
+	
 	TEntityKey key = {0,0,0};
 	iterator i = LowerBound(key);
 	TDBTEntityHandle res = 0;
 
 	while (i && (res == 0))
 	{
-		uint32_t f = 0;
-		if (m_BlockManager.ReadPart(i->Entity, &f, offsetof(TEntity, Flags), sizeof(f), sig))
+		TEntity * tmp = m_BlockManager.ReadBlock<TEntity>(i->Entity, size, sig);
+		if (tmp)
 		{
-			if ((f & DBT_NFM_SpecialEntity) == 0)
+			if ((tmp->Flags & DBT_NFM_SpecialEntity) == 0)
 				res = i->Entity;
 		}
 		if (res == 0)
 			++i;
 	}
-	m_BlockManager.TransactionEndRead();
 
 	return res;
 }
 TDBTEntityHandle CEntities::compNextContact(TDBTEntityHandle hEntity)
 {
 	uint32_t sig = cEntitySignature;
+	uint32_t size = sizeof(TEntity);
 
-	m_BlockManager.TransactionBeginRead();
+	CBlockManager::ReadTransaction trans(m_BlockManager);
 
 	TEntityKey key;
 	key.Entity = hEntity;
 	TDBTEntityHandle res = 0;
 
-	if (m_BlockManager.ReadPart(hEntity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level), sig) &&
-			m_BlockManager.ReadPart(hEntity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent), sig))
+	TEntity * entity = m_BlockManager.ReadBlock<TEntity>(hEntity, size, sig);
+
+	if (entity)
 	{
+		key.Level = entity->Level;
+		key.Parent = entity->ParentEntity;
 		key.Entity++;
 		iterator i = LowerBound(key);
 
 		while (i && (res == 0))
 		{
-			uint32_t f = 0;
-			if (m_BlockManager.ReadPart(i->Entity, &f, offsetof(TEntity, Flags), sizeof(f), sig))
+			entity = m_BlockManager.ReadBlock<TEntity>(i->Entity, size, sig);
+			if (entity)
 			{
-				if ((f & DBT_NFM_SpecialEntity) == 0)
+				if ((entity->Flags & DBT_NFM_SpecialEntity) == 0)
 					res = i->Entity;
 			}
 			if (res == 0)
 				++i;
 		}
 	}
-
-	m_BlockManager.TransactionEndRead();
 
 	return res;
 }

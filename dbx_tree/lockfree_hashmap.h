@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <utility>
 #include "Hash.h"
-#include "interlocked.h"
+#include "intrinsics.h"
 
 #define NodePointer(listitem) ((PListItem)(((uintptr_t)(listitem)) & ~1))
 #define NodeMark(listitem)    ((bool)     (((uintptr_t)(listitem)) & 1))
@@ -164,8 +164,16 @@ namespace lockfree
 			{
 				m_GC = GC;
 				m_Item = Item;
+
 				while (m_Item && (!(m_Item->Hash & 1) || NodeMark(m_Item->Next)))
 					m_Item = NodePointer(m_Item->Next);
+
+				if (!m_Item && (m_GC != -1))
+				{
+					m_Owner->delRef(m_GC);
+					m_GC = -1;
+				}
+
 			};
 		public:
 			iterator(const iterator & Other)
@@ -217,9 +225,19 @@ namespace lockfree
 			{
 				m_Owner = Other.m_Owner;
 				m_Item = Other.m_Item;
-				m_GC = -1;
-				if (Other.m_GC != -1)
-					m_GC = m_Owner->addRef(Other.m_GC);
+
+				if (Other.m_GC != m_GC)
+				{
+					if (m_GC != -1)
+						m_Owner->delRef(m_GC);
+
+					m_GC = Other.m_GC;
+
+					if (Other.m_GC != -1)
+						m_GC = m_Owner->addRef(Other.m_GC);
+
+				}
+				
 				return *this;
 			};
 
@@ -253,9 +271,7 @@ namespace lockfree
 
 		iterator begin()
 		{
-			iterator res(this, getBucket(0), addRef());
-			++res;
-			return res;
+			return iterator(this, getBucket(0), addRef());
 		};
 
 		iterator end()
@@ -305,7 +321,7 @@ namespace lockfree
 				}
 			}
 		}
-		while ((uint64_t)CMPXCHG_64(m_GarbageCollector.Sentinel, newvalue, old) != old);
+		while (CMPXCHG_64(m_GarbageCollector.Sentinel, newvalue, old) != old);
 
 		return res;
 	};
@@ -342,7 +358,7 @@ namespace lockfree
 				}
 
 			}
-		} while ((uint64_t)CMPXCHG_64(m_GarbageCollector.Sentinel, newvalue, old) != old);
+		} while (CMPXCHG_64(m_GarbageCollector.Sentinel, newvalue, old) != old);
 
 		purge = NodePointer(purge);
 		while (purge)
@@ -698,7 +714,6 @@ tryagain:
 	size_t hash_map<TKey, TData, FHash>::erase(const TKey & Key)
 	{
 		int gc = addRef();
-		int count = 0;
 		uint32_t hash = FHash(&Key, sizeof(TKey)) | 1;
 		uint32_t mask = getMask(HashTableSize(m_HashTableData));
 		uint32_t bucket = hash & mask;

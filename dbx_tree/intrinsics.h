@@ -145,6 +145,83 @@ inline bool BTR_64(int64_t volatile & Dest, uint8_t Offset)
 	return !!_interlockedbittestandreset64((__int64 volatile*)&Dest, Offset);
 }
 
+
+inline uint32_t OR_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedOr((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t OR_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedOr((long volatile*)&Value, (long)Operator);
+}
+
+inline uint64_t OR_64(uint64_t volatile & Value, uint64_t Operator)
+{
+	return (uint64_t)_InterlockedOr64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+inline int64_t OR_64(int64_t volatile & Value, int64_t Operator)
+{
+	return (int64_t)_InterlockedOr64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+inline uint32_t AND_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedAnd((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t AND_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedAnd((long volatile*)&Value, (long)Operator);
+}
+
+inline uint64_t AND_64(uint64_t volatile & Value, uint64_t Operator)
+{
+	return (uint64_t)_InterlockedAnd64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+inline int64_t AND_64(int64_t volatile & Value, int64_t Operator)
+{
+	return (int64_t)_InterlockedAnd64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+
+inline uint32_t XOR_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedXor((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t XOR_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedXor((long volatile*)&Value, (long)Operator);
+}
+inline uint64_t XOR_64(uint64_t volatile & Value, uint64_t Operator)
+{
+	return (uint64_t)_InterlockedXor64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+inline int64_t XOR_64(int64_t volatile & Value, int64_t Operator)
+{
+	return (int64_t)_InterlockedXor64((__int64 volatile*)&Value, (__int64)Operator);
+}
+
+
+inline uint32_t BSWAP_32(uint32_t Value)
+{
+	return _byteswap_ulong(Value);
+}
+
+inline uint32_t ROL_32(uint32_t Value, uint8_t Shift)
+{
+	return _rotl(Value, Shift);
+}
+
+inline uint32_t ROR_32(uint32_t Value, uint8_t Shift)
+{
+	return _rotr(Value, Shift);
+}
+
 #elif defined(_M_IX86)
 
 inline uint32_t XCHG_32(uint32_t volatile & Dest, uint32_t Exchange)
@@ -269,6 +346,53 @@ inline bool BTR_64(int64_t volatile & Dest, uint8_t Offset)
 	else
 		return !!_interlockedbittestandreset(((long volatile*)&Dest) + 1, Offset - 32);
 }
+
+inline uint32_t OR_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedOr((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t OR_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedOr((long volatile*)&Value, (long)Operator);
+}
+
+inline uint32_t AND_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedAnd((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t AND_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedAnd((long volatile*)&Value, (long)Operator);
+}
+
+inline uint32_t XOR_32(uint32_t volatile & Value, uint32_t Operator)
+{
+	return (uint32_t)_InterlockedXor((long volatile*)&Value, (long)Operator);
+}
+
+inline int32_t XOR_32(int32_t volatile & Value, int32_t Operator)
+{
+	return (int32_t)_InterlockedXor((long volatile*)&Value, (long)Operator);
+}
+
+
+inline uint32_t BSWAP_32(uint32_t Value)
+{
+	return _byteswap_ulong(Value);
+}
+
+inline uint32_t ROL_32(uint32_t Value, uint8_t Shift)
+{
+	return _rotl(Value, Shift);
+}
+inline uint32_t ROR_32(uint32_t Value, uint8_t Shift)
+{
+	return _rotr(Value, Shift);
+}
+
+
 
 #else
 

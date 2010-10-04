@@ -24,25 +24,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 HANDLE gServices[40] = {0};
 
-int DBEntityGetRoot(WPARAM wParam, LPARAM lParam)
+INT_PTR DBEntityGetRoot(WPARAM wParam, LPARAM lParam)
 {
 	return gDataBase->getEntities().getRootEntity();
 }
-int DBEntityChildCount(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEntityChildCount(WPARAM hEntity, LPARAM lParam)
 {
 	if (hEntity == 0)
 		hEntity = gDataBase->getEntities().getRootEntity();
 
 	return gDataBase->getEntities().getChildCount(hEntity);
 }
-int DBEntityGetParent(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEntityGetParent(WPARAM hEntity, LPARAM lParam)
 {
 	if (hEntity == 0)
 		hEntity = gDataBase->getEntities().getRootEntity();
 
 	return gDataBase->getEntities().getParent(hEntity);
 }
-int DBEntityMove(WPARAM hEntity, LPARAM hParent)
+INT_PTR DBEntityMove(WPARAM hEntity, LPARAM hParent)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
@@ -52,72 +52,72 @@ int DBEntityMove(WPARAM hEntity, LPARAM hParent)
 
 	return gDataBase->getEntities().setParent(hEntity, hParent);
 }
-int DBEntityGetFlags(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEntityGetFlags(WPARAM hEntity, LPARAM lParam)
 {
 	if (hEntity == 0)
 		hEntity = gDataBase->getEntities().getRootEntity();
 
 	return gDataBase->getEntities().getFlags(hEntity);
 }
-int DBEntityIterInit(WPARAM pFilter, LPARAM hParent)
+INT_PTR DBEntityIterInit(WPARAM pFilter, LPARAM hParent)
 {
 	TDBTEntityIterFilter fil = {0,0,0,0};
 	if (pFilter == NULL)
 	{
-		pFilter = (WPARAM)&fil;
+		pFilter = reinterpret_cast<WPARAM>(&fil);
 		fil.cbSize = sizeof(fil);
 	}
 
-	if (((PDBTEntityIterFilter)pFilter)->cbSize != sizeof(TDBTEntityIterFilter))
+	if (reinterpret_cast<PDBTEntityIterFilter>(pFilter)->cbSize != sizeof(TDBTEntityIterFilter))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTEntityIterFilter)pFilter)->fDontHasFlags & ((PDBTEntityIterFilter)pFilter)->fHasFlags)
+	if (reinterpret_cast<PDBTEntityIterFilter>(pFilter)->fDontHasFlags & ((PDBTEntityIterFilter)pFilter)->fHasFlags)
 		return DBT_INVALIDPARAM;
 
 	if (hParent == 0)
 		hParent = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getEntities().IterationInit(*(PDBTEntityIterFilter)pFilter, hParent);
+	return gDataBase->getEntities().IterationInit(*reinterpret_cast<PDBTEntityIterFilter>(pFilter), hParent);
 }
-int DBEntityIterNext(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBEntityIterNext(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
 
 	return gDataBase->getEntities().IterationNext(hIteration);
 }
-int DBEntityIterClose(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBEntityIterClose(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
 
 	return gDataBase->getEntities().IterationClose(hIteration);
 }
-int DBEntityDelete(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEntityDelete(WPARAM hEntity, LPARAM lParam)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getEntities().DeleteEntity(hEntity);
 }
-int DBEntityCreate(WPARAM pEntity, LPARAM lParam)
+INT_PTR DBEntityCreate(WPARAM pEntity, LPARAM lParam)
 {
-	if (((PDBTEntity)pEntity)->bcSize != sizeof(TDBTEntity))
+	if (reinterpret_cast<PDBTEntity>(pEntity)->bcSize != sizeof(TDBTEntity))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTEntity)pEntity)->hParentEntity == 0)
-		((PDBTEntity)pEntity)->hParentEntity = gDataBase->getEntities().getRootEntity();
+	if (reinterpret_cast<PDBTEntity>(pEntity)->hParentEntity == 0)
+		reinterpret_cast<PDBTEntity>(pEntity)->hParentEntity = gDataBase->getEntities().getRootEntity();
 
-	((PDBTEntity)pEntity)->fFlags = ((PDBTEntity)pEntity)->fFlags & ~(DBT_NF_IsRoot | DBT_NF_HasChildren | DBT_NF_IsVirtual | DBT_NF_HasVirtuals); // forbidden flags...
-	return gDataBase->getEntities().CreateEntity(*((PDBTEntity)pEntity));
+	reinterpret_cast<PDBTEntity>(pEntity)->fFlags = reinterpret_cast<PDBTEntity>(pEntity)->fFlags & ~(DBT_NF_IsRoot | DBT_NF_HasChildren | DBT_NF_IsVirtual | DBT_NF_HasVirtuals); // forbidden flags...
+	return gDataBase->getEntities().CreateEntity(*reinterpret_cast<PDBTEntity>(pEntity));
 }
 
-int DBEntityGetAccount(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEntityGetAccount(WPARAM hEntity, LPARAM lParam)
 {
 	return gDataBase->getEntities().getAccount(hEntity);
 }
 
-int DBVirtualEntityCreate(WPARAM hEntity, LPARAM hParent)
+INT_PTR DBVirtualEntityCreate(WPARAM hEntity, LPARAM hParent)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
@@ -127,21 +127,21 @@ int DBVirtualEntityCreate(WPARAM hEntity, LPARAM hParent)
 
 	return gDataBase->getEntities().VirtualCreate(hEntity, hParent);
 }
-int DBVirtualEntityGetParent(WPARAM hVirtualEntity, LPARAM lParam)
+INT_PTR DBVirtualEntityGetParent(WPARAM hVirtualEntity, LPARAM lParam)
 {
 	if ((hVirtualEntity == 0) || (hVirtualEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getEntities().VirtualGetParent(hVirtualEntity);
 }
-int DBVirtualEntityGetFirst(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBVirtualEntityGetFirst(WPARAM hEntity, LPARAM lParam)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getEntities().VirtualGetFirst(hEntity);
 }
-int DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam)
+INT_PTR DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam)
 {
 	if ((hVirtualEntity == 0) || (hVirtualEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
@@ -150,130 +150,130 @@ int DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam)
 }
 
 
-int DBSettingFind(WPARAM pSettingDescriptor, LPARAM lParam)
+INT_PTR DBSettingFind(WPARAM pSettingDescriptor, LPARAM lParam)
 {
 	if (pSettingDescriptor == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSettingDescriptor)pSettingDescriptor)->cbSize != sizeof(TDBTSettingDescriptor))
+	if (reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor)->cbSize != sizeof(TDBTSettingDescriptor))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSettingDescriptor)pSettingDescriptor)->pszSettingName == NULL)
+	if (reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor)->pszSettingName == NULL)
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().FindSetting(*((PDBTSettingDescriptor)pSettingDescriptor));
+	return gDataBase->getSettings().FindSetting(*reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor));
 }
-int DBSettingDelete(WPARAM pSettingDescriptor, LPARAM lParam)
+INT_PTR DBSettingDelete(WPARAM pSettingDescriptor, LPARAM lParam)
 {
 	if (pSettingDescriptor == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSettingDescriptor)pSettingDescriptor)->cbSize != sizeof(TDBTSettingDescriptor))
+	if (reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor)->cbSize != sizeof(TDBTSettingDescriptor))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSettingDescriptor)pSettingDescriptor)->pszSettingName == NULL)
+	if (reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor)->pszSettingName == NULL)
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().DeleteSetting(*((PDBTSettingDescriptor)pSettingDescriptor));
+	return gDataBase->getSettings().DeleteSetting(*reinterpret_cast<PDBTSettingDescriptor>(pSettingDescriptor));
 }
-int DBSettingDeleteHandle(WPARAM hSetting, LPARAM lParam)
+INT_PTR DBSettingDeleteHandle(WPARAM hSetting, LPARAM lParam)
 {
 	if (hSetting == 0)
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getSettings().DeleteSetting(hSetting);
 }
-int DBSettingWrite(WPARAM pSetting, LPARAM lParam)
+INT_PTR DBSettingWrite(WPARAM pSetting, LPARAM lParam)
 {
 	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->cbSize != sizeof(TDBTSetting))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor == NULL)
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor->pszSettingName == NULL)
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor->pszSettingName == NULL)
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTSetting)pSetting)->Type & DBT_STF_VariableLength) && (((PDBTSetting)pSetting)->Value.pBlob == NULL))
+	if ((reinterpret_cast<PDBTSetting>(pSetting)->Type & DBT_STF_VariableLength) && (reinterpret_cast<PDBTSetting>(pSetting)->Value.pBlob == NULL))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().WriteSetting(*((PDBTSetting)pSetting));
+	return gDataBase->getSettings().WriteSetting(*reinterpret_cast<PDBTSetting>(pSetting));
 }
-int DBSettingWriteHandle(WPARAM pSetting, LPARAM hSetting)
+INT_PTR DBSettingWriteHandle(WPARAM pSetting, LPARAM hSetting)
 {
 	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->cbSize != sizeof(TDBTSetting))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().WriteSetting(*((PDBTSetting)pSetting), hSetting);
+	return gDataBase->getSettings().WriteSetting(*reinterpret_cast<PDBTSetting>(pSetting), hSetting);
 }
-int DBSettingRead(WPARAM pSetting, LPARAM lParam)
+INT_PTR DBSettingRead(WPARAM pSetting, LPARAM lParam)
 {
 	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->cbSize != sizeof(TDBTSetting))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor == NULL)
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->Descriptor->pszSettingName == NULL)
+	if (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor->pszSettingName == NULL)
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().ReadSetting(*((PDBTSetting)pSetting));
+	return gDataBase->getSettings().ReadSetting(*reinterpret_cast<PDBTSetting>(pSetting));
 }
-int DBSettingReadHandle(WPARAM pSetting, LPARAM hSetting)
+INT_PTR DBSettingReadHandle(WPARAM pSetting, LPARAM hSetting)
 {
 	if ((pSetting == NULL) || (hSetting == 0))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
+	if (reinterpret_cast<PDBTSetting>(pSetting)->cbSize != sizeof(TDBTSetting))
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTSetting)pSetting)->Descriptor != NULL) && (((PDBTSetting)pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor)))
+	if ((reinterpret_cast<PDBTSetting>(pSetting)->Descriptor != NULL) && (reinterpret_cast<PDBTSetting>(pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor)))
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getSettings().ReadSetting(*((PDBTSetting)pSetting), hSetting);
 }
-int DBSettingIterInit(WPARAM pFilter, LPARAM lParam)
+INT_PTR DBSettingIterInit(WPARAM pFilter, LPARAM lParam)
 {
 	if (pFilter == NULL)
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTSettingIterFilter)pFilter)->cbSize != sizeof(TDBTSettingIterFilter))
+	if (reinterpret_cast<PDBTSettingIterFilter>(pFilter)->cbSize != sizeof(TDBTSettingIterFilter))
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTSettingIterFilter)pFilter)->Descriptor != NULL) && (((PDBTSettingIterFilter)pFilter)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor)))
+	if ((reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Descriptor != NULL) && (reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor)))
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTSettingIterFilter)pFilter)->Setting != NULL) && (((PDBTSettingIterFilter)pFilter)->Setting->cbSize != sizeof(TDBTSetting)))
+	if ((reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Setting != NULL) && (reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Setting->cbSize != sizeof(TDBTSetting)))
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTSettingIterFilter)pFilter)->Setting != NULL) && (((PDBTSettingIterFilter)pFilter)->Setting->Descriptor != NULL) && (((PDBTSettingIterFilter)pFilter)->Setting->Descriptor->cbSize != sizeof(TDBTSettingIterFilter)))
+	if ((reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Setting != NULL) && (reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Setting->Descriptor != NULL) && (reinterpret_cast<PDBTSettingIterFilter>(pFilter)->Setting->Descriptor->cbSize != sizeof(TDBTSettingIterFilter)))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getSettings().IterationInit(*((PDBTSettingIterFilter)pFilter));
+	return gDataBase->getSettings().IterationInit(*reinterpret_cast<PDBTSettingIterFilter>(pFilter));
 }
-int DBSettingIterNext(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBSettingIterNext(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
 
 	return gDataBase->getSettings().IterationNext(hIteration);
 }
-int DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
@@ -281,64 +281,64 @@ int DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
 	return gDataBase->getSettings().IterationClose(hIteration);
 }
 
-int DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam)
+INT_PTR DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().GetBlobSize(hEvent);
 }
 
-int DBEventGet(WPARAM hEvent, LPARAM pEvent)
+INT_PTR DBEventGet(WPARAM hEvent, LPARAM pEvent)
 {
-	if ((pEvent == NULL) || (((PDBTEvent)pEvent)->cbSize != sizeof(TDBTEvent)))
+	if ((pEvent == NULL) || (reinterpret_cast<PDBTEvent>(pEvent)->cbSize != sizeof(TDBTEvent)))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getEvents().Get(hEvent, *((PDBTEvent)pEvent));
+	return gDataBase->getEvents().Get(hEvent, *reinterpret_cast<PDBTEvent>(pEvent));
 }
 
-int DBEventGetCount(WPARAM hEntity, LPARAM lParam)
+INT_PTR DBEventGetCount(WPARAM hEntity, LPARAM lParam)
 {
 	return gDataBase->getEvents().GetCount(hEntity);
 }
 
-int DBEventDelete(WPARAM hEvent, LPARAM lParam)
+INT_PTR DBEventDelete(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().Delete(hEvent);
 }
 
-int DBEventAdd(WPARAM hEntity, LPARAM pEvent)
+INT_PTR DBEventAdd(WPARAM hEntity, LPARAM pEvent)
 {
-	if ((pEvent == NULL) || (((PDBTEvent)pEvent)->cbSize != sizeof(TDBTEvent)) || (((PDBTEvent)pEvent)->pBlob == NULL) || (((PDBTEvent)pEvent)->cbBlob == 0))
+	if ((pEvent == NULL) || (reinterpret_cast<PDBTEvent>(pEvent)->cbSize != sizeof(TDBTEvent)) || (reinterpret_cast<PDBTEvent>(pEvent)->pBlob == NULL) || (reinterpret_cast<PDBTEvent>(pEvent)->cbBlob == 0))
 		return DBT_INVALIDPARAM;
 
 	return gDataBase->getEvents().Add(hEntity, *((PDBTEvent)pEvent));
 }
 
-int DBEventMarkRead(WPARAM hEvent, LPARAM lParam)
+INT_PTR DBEventMarkRead(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().MarkRead(hEvent);
 }
 
-int DBEventWriteToDisk(WPARAM hEvent, LPARAM lParam)
+INT_PTR DBEventWriteToDisk(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().WriteToDisk(hEvent);
 }
 
-int DBEventGetEntity(WPARAM hEvent, LPARAM lParam)
+INT_PTR DBEventGetEntity(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().getEntity(hEvent);
 }
 
-int DBEventIterInit(WPARAM pFilter, LPARAM lParam)
+INT_PTR DBEventIterInit(WPARAM pFilter, LPARAM lParam)
 {
-	if ((pFilter == NULL) || (((PDBTEventIterFilter)pFilter)->cbSize != sizeof(TDBTEventIterFilter)))
+	if ((pFilter == NULL) || (reinterpret_cast<PDBTEventIterFilter>(pFilter)->cbSize != sizeof(TDBTEventIterFilter)))
 		return DBT_INVALIDPARAM;
 
-	if ((((PDBTEventIterFilter)pFilter)->Event != NULL) && (((PDBTEventIterFilter)pFilter)->Event->cbSize != sizeof(TDBTEvent)))
+	if ((reinterpret_cast<PDBTEventIterFilter>(pFilter)->Event != NULL) && (reinterpret_cast<PDBTEventIterFilter>(pFilter)->Event->cbSize != sizeof(TDBTEvent)))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getEvents().IterationInit(*((PDBTEventIterFilter)pFilter));
+	return gDataBase->getEvents().IterationInit(*reinterpret_cast<PDBTEventIterFilter>(pFilter));
 }
 
-int DBEventIterNext(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBEventIterNext(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
@@ -346,7 +346,7 @@ int DBEventIterNext(WPARAM hIteration, LPARAM lParam)
 	return gDataBase->getEvents().IterationNext(hIteration);
 }
 
-int DBEventIterClose(WPARAM hIteration, LPARAM lParam)
+INT_PTR DBEventIterClose(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;

@@ -25,15 +25,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <process.h>
 #include <windows.h>
 #include "sigslot.h"
+#include "stdint.h"
 
 class CThread
 {
 private:
-	long         m_Terminated;
-	long         m_FreeOnTerminate;
-	long         m_Finished;
-	long         m_Suspended;
-	long         m_ReturnValue;
+	uint32_t volatile m_Terminated;
+	uint32_t volatile m_FreeOnTerminate;
+	uint32_t volatile m_Finished;
+	uint32_t volatile m_Suspended;
+	uint32_t volatile m_ReturnValue;
 protected:
 	HANDLE       m_Handle;
 	unsigned int m_ThreadID;

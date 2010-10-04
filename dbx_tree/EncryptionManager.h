@@ -39,19 +39,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <windows.h>
 
-typedef enum TEncryptionType {
-	ET_NONE = 0,
-	ET_BLOCK = 1,
-	ET_DATA = 2,
-	ET_MASK = 3
-} TEncryptionType;
-
 static const uint32_t cEncryptionChangingFlag = 0x80000000;
 
 #pragma pack(push, 1)
 
 typedef struct TFileEncryption {
-	uint32_t AccessType;
 	uint32_t CipherID;
 	uint32_t CipherOldID;
 	uint32_t ConversionProcess;
@@ -64,7 +56,6 @@ typedef struct TFileEncryption {
 
 typedef struct TEncryption {
 	uint32_t CipherID;
-	TEncryptionType Type;
 	wchar_t * Password;
 } TEncryption, *PEncryption;
 
@@ -89,11 +80,11 @@ public:
 
 	bool InitEncryption(TFileEncryption & Enc);
 
-	bool AlignData(uint32_t ID, TEncryptionType Type, uint32_t & Start, uint32_t & End);
-	uint32_t AlignSize(uint32_t ID, TEncryptionType Type, uint32_t Size);
-	bool IsEncrypted(uint32_t ID, TEncryptionType Type);
-	void Encrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte);
-	void Decrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte);
+	bool AlignData(uint32_t ID, uint32_t & Start, uint32_t & End);
+	uint32_t AlignSize(uint32_t ID, uint32_t Size);
+	bool IsEncrypted(uint32_t ID);
+	void Encrypt(void* Data, uint32_t DataLength, uint32_t ID, uint32_t StartByte);
+	void Decrypt(void* Data, uint32_t DataLength, uint32_t ID, uint32_t StartByte);
 
 	bool CanChangeCipher();
 	bool ChangeCipher(TEncryption & Encryption);
@@ -107,9 +98,8 @@ private:
 		COUNT = 2
 	} TUsedCiphers;
 
-	struct 
+	struct
 	{
-		TEncryptionType Type;
 		CCipher * Cipher;
 		HMODULE CipherDLL;
 	} m_Ciphers[COUNT];

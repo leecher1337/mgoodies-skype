@@ -85,8 +85,6 @@ CEncryptionManager::CEncryptionManager()
 {
 	m_Ciphers[CURRENT].Cipher = NULL;
 	m_Ciphers[OLD].Cipher = NULL;
-	m_Ciphers[CURRENT].Type = ET_NONE;
-	m_Ciphers[OLD].Type = ET_NONE;
 	m_Changing = false;
 	m_ChangingProcess = 0;
 
@@ -121,13 +119,10 @@ CEncryptionManager::~CEncryptionManager()
 
 bool CEncryptionManager::InitEncryption(TFileEncryption & Enc)
 {
-	m_Ciphers[CURRENT].Type = (TEncryptionType)(Enc.AccessType & ET_MASK);
-
-	if (Enc.AccessType & cEncryptionChangingFlag)
+	if (Enc.ConversionProcess)
 	{
 		m_Changing = true;
 		m_ChangingProcess = Enc.ConversionProcess;
-		m_Ciphers[OLD].Type = (TEncryptionType)((Enc.AccessType >> 8) & ET_MASK);
 	}
 
 	for (int c = (int)CURRENT; c < (int)COUNT; c++)
@@ -160,9 +155,9 @@ bool CEncryptionManager::InitEncryption(TFileEncryption & Enc)
 	return true;
 }
 
-bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t & Start, uint32_t & End)
+bool CEncryptionManager::AlignData(uint32_t ID, uint32_t & Start, uint32_t & End)
 {
-	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
+	if (m_Ciphers[CURRENT].Cipher && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		if (m_Ciphers[CURRENT].Cipher->IsStreamCipher())
 		{
@@ -175,7 +170,7 @@ bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t &
 		}
 
 		return true;
-	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (ID >= m_ChangingProcess))
 	{
 		if (m_Ciphers[OLD].Cipher->IsStreamCipher())
 		{
@@ -192,14 +187,14 @@ bool CEncryptionManager::AlignData(uint32_t ID, TEncryptionType Type, uint32_t &
 
 	return false;
 }
-uint32_t CEncryptionManager::AlignSize(uint32_t ID, TEncryptionType Type, uint32_t Size)
+uint32_t CEncryptionManager::AlignSize(uint32_t ID, uint32_t Size)
 {
-	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
+	if (m_Ciphers[CURRENT].Cipher && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		if (Size % m_Ciphers[CURRENT].Cipher->BlockSizeBytes())
 			return Size - Size % m_Ciphers[CURRENT].Cipher->BlockSizeBytes() + m_Ciphers[CURRENT].Cipher->BlockSizeBytes();
 
-	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (ID >= m_ChangingProcess))
 	{
 		if (Size % m_Ciphers[OLD].Cipher->BlockSizeBytes())
 			return Size - Size % m_Ciphers[OLD].Cipher->BlockSizeBytes() + m_Ciphers[OLD].Cipher->BlockSizeBytes();
@@ -209,28 +204,28 @@ uint32_t CEncryptionManager::AlignSize(uint32_t ID, TEncryptionType Type, uint32
 	return Size;
 }
 
-bool CEncryptionManager::IsEncrypted(uint32_t ID, TEncryptionType Type)
+bool CEncryptionManager::IsEncrypted(uint32_t ID)
 {
-	return (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess))) ||
-	       (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess));
+	return (m_Ciphers[CURRENT].Cipher && (!m_Changing || (ID < m_ChangingProcess))) ||
+	       (m_Ciphers[OLD].Cipher && m_Changing && (ID >= m_ChangingProcess));
 }
 
-void CEncryptionManager::Encrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte)
+void CEncryptionManager::Encrypt(void* Data, uint32_t DataLength, uint32_t ID, uint32_t StartByte)
 {
-	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
+	if (m_Ciphers[CURRENT].Cipher && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		m_Ciphers[CURRENT].Cipher->Encrypt(Data, DataLength, ID, StartByte);
-	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (ID >= m_ChangingProcess))
 	{
 		m_Ciphers[OLD].Cipher->Encrypt(Data, DataLength, ID, StartByte);
 	}
 }
-void CEncryptionManager::Decrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte)
+void CEncryptionManager::Decrypt(void* Data, uint32_t DataLength, uint32_t ID, uint32_t StartByte)
 {
-	if (m_Ciphers[CURRENT].Cipher && (Type == m_Ciphers[CURRENT].Type) && (!m_Changing || (ID < m_ChangingProcess)))
+	if (m_Ciphers[CURRENT].Cipher && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		m_Ciphers[CURRENT].Cipher->Decrypt(Data, DataLength, ID, StartByte);
-	} else if (m_Ciphers[OLD].Cipher && m_Changing && (Type == m_Ciphers[OLD].Type) && (ID >= m_ChangingProcess))
+	} else if (m_Ciphers[OLD].Cipher && m_Changing && (ID >= m_ChangingProcess))
 	{
 		m_Ciphers[OLD].Cipher->Decrypt(Data, DataLength, ID, StartByte);
 	}

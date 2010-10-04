@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "stdint.h"
 #endif
 #include "MREWSync.h"
-#include "Exception.h"
 
 #include "Events.h"
 #include "Settings.h"
@@ -61,9 +60,10 @@ typedef struct TSettingsHeader {
 	uint32_t Version;               /// internal DB version cDataBaseVersion
 	uint32_t Obscure;
 	TFileEncryption FileEncryption; /// Encryption Method
+	uint32_t FileStructureBlock;    /// Offset of CBlockManager master block
 	uint32_t FileSize;              /// Offset to the last used byte + 1		
 	uint32_t Settings;              /// Offset to the SettingsBTree RootNode	
-	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 4*sizeof(uint32_t)]; /// reserved storage
+	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 5*sizeof(uint32_t)]; /// reserved storage
 } TSettingsHeader;
 
 typedef struct TPrivateHeader {
@@ -71,11 +71,12 @@ typedef struct TPrivateHeader {
 	uint32_t Version;               /// internal DB version cDataBaseVersion
 	uint32_t Obscure;
 	TFileEncryption FileEncryption; /// Encryption Method
+	uint32_t FileStructureBlock;    /// Offset of CBlockManager master block
 	uint32_t FileSize;              /// Offset to the last used byte + 1
 	uint32_t RootEntity;            /// Offset to the Root CList Entity
 	uint32_t Entities;              /// Offset to the EntityBTree RootNode
 	uint32_t Virtuals;              /// Offset to the VirtualsBTree RootNode
-	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 6*sizeof(uint32_t)]; /// reserved storage
+	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 7*sizeof(uint32_t)]; /// reserved storage
 } TPrivateHeader;
 
 
@@ -85,8 +86,9 @@ typedef union TGenericFileHeader {
 		uint32_t Version;               /// internal DB version cDataBaseVersion
 		uint32_t Obscure;
 		TFileEncryption FileEncryption; /// Encryption Method
+		uint32_t FileStructureBlock;    /// Offset of CBlockManager master block
 		uint32_t FileSize;              /// Offset to the last used byte + 1	
-		uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 3*sizeof(uint32_t)]; /// reserved storage
+		uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 4*sizeof(uint32_t)]; /// reserved storage
 	} Gen;
 	TSettingsHeader Set;
 	TPrivateHeader Pri;
@@ -103,7 +105,7 @@ private:
 
 	CBlockManager *m_BlockManager[DBFileMax];
 	CFileAccess *m_FileAccess[DBFileMax];
-	TGenericFileHeader m_Header[DBFileMax];
+	TGenericFileHeader * m_Header[DBFileMax];
 	CEncryptionManager *m_EncryptionManager[DBFileMax];
 
 	uint32_t m_HeaderBlock[DBFileMax];
