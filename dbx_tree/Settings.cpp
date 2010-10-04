@@ -692,7 +692,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 			case DBT_ST_INT: case DBT_ST_DWORD:
 				setting->Value.Int = Setting.Value.Int; break;
 			default:
-				setting->Value = Setting.Value; break;
+				setting->Value.QWord = Setting.Value.QWord; break;
 		}
 	}
 	
@@ -784,7 +784,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 				} break;
 			}
 		} else {
-			Setting.Value = setting->Value;
+			Setting.Value.QWord = setting->Value.QWord;
 		}
 	} else {
 		switch (setting->Type)

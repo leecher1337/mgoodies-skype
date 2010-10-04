@@ -84,7 +84,15 @@ typedef struct TSetting {
 	uint16_t   Type;           /// setting type
 	uint16_t   NameLength;     /// settingname length
 	union {
-		TDBTSettingValue Value;  /// if type is fixed length, the data is stored rigth here
+		union {
+			bool Bool;
+			int8_t  Char;  uint8_t  Byte;
+			int16_t Short; uint16_t Word;
+			uint32_t Int;   uint32_t DWord;
+			int64_t Int64; uint64_t QWord;
+			float Float;
+			double Double;
+		} Value;  /// if type is fixed length, the data is stored right here
 
 		struct {
 			uint32_t BlobLength;   /// if type is variable length this describes the length of the data in bytes
