@@ -18,13 +18,19 @@ Boston, MA 02111-1307, USA.
 */
 
 
+#define MIRANDA_VER 0x0700
 #include "mir_smileys.h"
 #include "mir_memory.h"
+#include "utf8_helpers.h"
 
 #include <richedit.h>
 #include <m_smileyadd.h>
 #include <newpluginapi.h>
 #include <m_langpack.h>
+#include <m_clui.h>
+#include <m_database.h>
+#include <commctrl.h>
+#include <m_skin_eng.h>
 #include <tchar.h>
 
 
@@ -100,6 +106,39 @@ void Smileys_FreeParse(SmileysParseInfo parseInfo)
 	}
 }
 
+int skin_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT uFormat)
+{
+	if ((uFormat & DT_CALCRECT) == 0 && ServiceExists(MS_SKINENG_ALPHATEXTOUT))
+	{
+		COLORREF color = SetTextColor(hDC, 0);
+		SetTextColor(hDC, color);
+
+		if (mir_is_unicode())
+		{
+			return AlphaText(hDC, (char *) (const WCHAR *) CharToWchar(lpString), nCount, lpRect, uFormat, color);
+		}
+		else
+		{
+			return AlphaText(hDC, lpString, nCount, lpRect, uFormat, color);
+		}
+	}
+	else
+	{
+		return DrawText(hDC, lpString, nCount, lpRect, uFormat);
+	}
+}
+
+int skin_DrawIconEx(HDC hdc, int xLeft, int yTop, HICON hIcon, int cxWidth, int cyWidth,
+					UINT istepIfAniCur, HBRUSH hbrFlickerFreeDraw, UINT diFlags)
+{
+	if (ServiceExists(MS_SKINENG_DRAWICONEXFIX))
+		return mod_DrawIconEx_helper(hdc, xLeft, yTop, hIcon, cxWidth, cyWidth, istepIfAniCur, hbrFlickerFreeDraw, diFlags);
+	else
+		return DrawIconEx(hdc, xLeft, yTop, hIcon, cxWidth, cyWidth, istepIfAniCur, hbrFlickerFreeDraw, diFlags);
+}
+
+
+
 // Similar to DrawText win32 api function
 // Pass uFormat | DT_CALCRECT to calc rectangle to be returned by lpRect
 // parseInfo is optional (pass NULL and it will be calculated and deleted inside function
@@ -149,7 +188,7 @@ int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT u
 		// Draw
 		if (info->pieces == NULL)
 		{
-			ret = DrawText(hDC, lpString, nCount, lpRect, uFormat);
+			ret = skin_DrawText(hDC, lpString, nCount, lpRect, uFormat);
 		}
 		else
 		{
@@ -269,7 +308,7 @@ void DrawTextSmiley(HDC hdcMem, RECT free_rc, const char *szText, int len, Sorte
 		i = 0;
 
 	// Get real height of the line
-	text_height = DrawText(hdcMem, "A", 1, &tmp_rc, DT_CALCRECT | uTextFormat);
+	text_height = skin_DrawText(hdcMem, "A", 1, &tmp_rc, DT_CALCRECT | uTextFormat);
 	if (uTextFormat & DT_RESIZE_SMILEYS)
 		row_height = text_height;
 	else
@@ -278,7 +317,7 @@ void DrawTextSmiley(HDC hdcMem, RECT free_rc, const char *szText, int len, Sorte
 	// Just draw ellipsis
 	if (free_rc.right <= free_rc.left)
 	{
-		DrawText(hdcMem, "...", 3, &free_rc, uTextFormat & ~DT_END_ELLIPSIS);
+		skin_DrawText(hdcMem, "...", 3, &free_rc, uTextFormat & ~DT_END_ELLIPSIS);
 	}
 	else
 	{
@@ -299,13 +338,13 @@ void DrawTextSmiley(HDC hdcMem, RECT free_rc, const char *szText, int len, Sorte
 
 				tmp_rc = text_rc;
 				tmp_rc.right += 50;
-				DrawText(hdcMem, &szText[piece->start_pos], min(len, piece->len), &tmp_rc, DT_CALCRECT | (uTextFormat & ~DT_END_ELLIPSIS));
+				skin_DrawText(hdcMem, &szText[piece->start_pos], min(len, piece->len), &tmp_rc, DT_CALCRECT | (uTextFormat & ~DT_END_ELLIPSIS));
 				pos_x += tmp_rc.right - tmp_rc.left;
 
 				if (uTextFormat & DT_RTLREADING)
 					text_rc.left = max(text_rc.left, text_rc.right - (tmp_rc.right - tmp_rc.left));
 
-				DrawText(hdcMem, &szText[piece->start_pos], min(len, piece->len), &text_rc, uTextFormat);
+				skin_DrawText(hdcMem, &szText[piece->start_pos], min(len, piece->len), &text_rc, uTextFormat);
 				len -= piece->len;
 			}
 			else
@@ -336,13 +375,13 @@ void DrawTextSmiley(HDC hdcMem, RECT free_rc, const char *szText, int len, Sorte
 					{
 						text_rc.top += (row_height - (LONG)(piece->smiley_height * factor)) >> 1;
 
-						DrawIconEx(hdcMem, text_rc.left, text_rc.top, piece->smiley, 
+						skin_DrawIconEx(hdcMem, text_rc.left, text_rc.top, piece->smiley, 
 							(LONG)(piece->smiley_width * factor), (LONG)(piece->smiley_height * factor), 0, NULL, DI_NORMAL); 
 					}
 					else
 					{
 						text_rc.top += (row_height - text_height) >> 1;
-						DrawText(hdcMem, "...", 3, &text_rc, uTextFormat);
+						skin_DrawText(hdcMem, "...", 3, &text_rc, uTextFormat);
 					}
 
 					pos_x += (LONG)(piece->smiley_width * factor);
