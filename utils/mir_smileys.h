@@ -61,5 +61,9 @@ int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT u
 // int Smileys_DrawTextW(HDC hDC, LPCWSTR lpString, int nCount, LPRECT lpRect, UINT uFormat, const char *protocol, SmileysParseInfo parseInfo);
 
 
+int skin_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT uFormat);
+int skin_DrawIconEx(HDC hdc, int xLeft, int yTop, HICON hIcon, int cxWidth, int cyWidth, UINT istepIfAniCur, HBRUSH hbrFlickerFreeDraw, UINT diFlags);
+
+
 
 #endif // __MIR_SMILEYS_H__
