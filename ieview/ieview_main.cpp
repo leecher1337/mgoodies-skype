@@ -91,9 +91,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	Utils::hookEvent_Ex(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	Utils::hookEvent_Ex(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	Utils::createServiceFunction_Ex(MS_IEVIEW_WINDOW, HandleIEWindow);
-	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, HandleIEEvent);
-	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, HandleIENavigate);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_WINDOW, (MIRANDASERVICE)HandleIEWindow);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, (MIRANDASERVICE)HandleIEEvent);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT,(MIRANDASERVICE) HandleIENavigate);
 	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
 	return 0;
 }

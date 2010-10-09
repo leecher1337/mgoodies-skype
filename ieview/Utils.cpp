@@ -41,8 +41,8 @@ const wchar_t *Utils::getBaseDir() {
 
 wchar_t* Utils::toAbsolute(wchar_t* relative) {
 	const wchar_t* bdir = getBaseDir();
-	long len = wcslen(bdir);
-	long tlen = len + wcslen(relative);
+	long len = (int)wcslen(bdir);
+	long tlen = len + (int)wcslen(relative);
 	wchar_t* result = new wchar_t[tlen + 1];
 	if(result){
 		wcscpy(result,bdir);
@@ -70,7 +70,7 @@ void Utils::appendText(char **str, int *sizeAlloced, const char *fmt, ...) {
 		len = 0;
 	}
 	else {
-		len = strlen(*str);
+		len = (int)strlen(*str);
 		size = *sizeAlloced - len;
 	}
 
@@ -166,7 +166,7 @@ wchar_t *Utils::dupString(const wchar_t *a, int l) {
 
 wchar_t *Utils::convertToWCS(const char *a) {
 	if (a!=NULL) {
-		int len = strlen(a)+1;
+		int len = (int)strlen(a)+1;
 		wchar_t *b = new wchar_t[len];
 		MultiByteToWideChar(CP_ACP, 0, a, len, b, len);
 		return b;
@@ -176,7 +176,7 @@ wchar_t *Utils::convertToWCS(const char *a) {
 
 wchar_t *Utils::convertToWCS(const char *a, int cp) {
 	if (a!=NULL) {
-		int len = strlen(a)+1;
+		int len = (int)strlen(a)+1;
 		wchar_t *b = new wchar_t[len];
 		MultiByteToWideChar(cp, 0, a, len, b, len);
 		return b;
@@ -186,7 +186,7 @@ wchar_t *Utils::convertToWCS(const char *a, int cp) {
 
 char *Utils::convertToString(const wchar_t *a) {
 	if (a!=NULL) {
-		int len = wcslen(a)+1;
+		int len = (int)wcslen(a)+1;
 		char *b = new char[len];
 		WideCharToMultiByte(CP_ACP, 0, a, len, b, len, NULL, FALSE);
 		return b;
@@ -197,7 +197,7 @@ char *Utils::convertToString(const wchar_t *a) {
 
 char *Utils::convertToString(const wchar_t *a, int cp) {
 	if (a!=NULL) {
-		int len = wcslen(a)+1;
+		int len = (int)wcslen(a)+1;
 		char *b = new char[len];
 		WideCharToMultiByte(cp, 0, a, len, b, len, NULL, FALSE);
 		return b;
@@ -309,7 +309,7 @@ char *Utils::escapeString(const char *a) {
 	if (a == NULL) {
 		return NULL;
 	}
-	len = strlen(a);
+	len = (int)strlen(a);
 	for (i = l = 0; i < len; i++, l++) {
 		if (a[i] == '\\' || a[i] == '\n' || a[i] == '\r' || a[i] == '\"'
 			|| a[i] == '\'' || a[i] == '\b' || a[i] == '\t' || a[i] == '\f') {
