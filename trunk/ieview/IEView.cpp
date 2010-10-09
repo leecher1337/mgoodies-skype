@@ -91,8 +91,8 @@ static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARA
    	if (view!=NULL) {
 		WNDPROC oldWndProc = view->getDocWndProc();
     	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
-			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
-			view->setServerWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure));
+			SetWindowLong(hwnd, GWLP_WNDPROC, (LONG) oldWndProc);
+			view->setServerWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWLP_WNDPROC, (LONG) IEViewServerWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
@@ -104,8 +104,8 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
    	if (view!=NULL) {
 		WNDPROC oldWndProc = view->getMainWndProc();
     	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
-			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
-			view->setDocWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure));
+			SetWindowLong(hwnd, GWLP_WNDPROC, (LONG) oldWndProc);
+			view->setDocWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWLP_WNDPROC, (LONG) IEViewDocWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
@@ -177,7 +177,7 @@ void IEViewSink::TitleChange(BSTR text) {}
 void IEViewSink::PropertyChange(BSTR text) {}
 void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, VARIANT* targetFrameName,
 								VARIANT* postData, VARIANT* headers, VARIANT_BOOL* cancel) {
-   	int i = wcslen(url->bstrVal);
+   	int i = (int)wcslen(url->bstrVal);
    	char *tTemp = new char[i+1];
    	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
 #ifndef GECKO
@@ -309,9 +309,9 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
       		pCPContainer->Release();
    		}
 #ifndef GECKO
-		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
+		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWLP_WNDPROC, (LONG) IEViewWindowProcedure));
 #else
-//		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) MozillaWindowProcedure));
+//		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWLP_WNDPROC, (LONG) MozillaWindowProcedure));
 #endif
     }
     EnterCriticalSection(&mutex);
@@ -872,7 +872,7 @@ void IEView::write(const wchar_t *text) {
 }
 
 void IEView::write(const char *text) {
-	int textLen = strlen(text) + 1;
+	int textLen = (int)strlen(text) + 1;
 	wchar_t *wcsTemp = new wchar_t[textLen];
 	MultiByteToWideChar(CP_UTF8, 0, text, -1, wcsTemp, textLen);
 	write(wcsTemp);
@@ -893,7 +893,7 @@ void IEView::writef(const char *fmt, ...) {
 }
 
 void IEView::navigate(const char *url) {
-	int textLen = strlen(url) + 1;
+	int textLen = (int)strlen(url) + 1;
 	WCHAR *tTemp = new WCHAR[textLen];
 	MultiByteToWideChar(CP_ACP, 0, url, -1, tTemp, textLen);
 	pWebBrowser->Navigate(tTemp, NULL, NULL, NULL, NULL);
@@ -1171,7 +1171,7 @@ bool IEView::mouseClick(POINT pt) {
 				&& !(GetKeyState(VK_MENU) & 0x8000)) {
 					SendMessage(GetParent(hwnd), WM_COMMAND, IDCANCEL, 0);
 				}
-  			    int i = wcslen(url);
+  			    int i = (int)wcslen(url);
   			    char *tTemp = new char[i+1];
   			    WideCharToMultiByte(CP_ACP, 0, url, -1, tTemp, i+1, NULL, NULL);
 		    	CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
