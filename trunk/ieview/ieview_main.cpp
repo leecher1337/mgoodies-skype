@@ -1,7 +1,7 @@
 /*
 
 IEView Plugin for Miranda IM
-Copyright (C) 2005-2008  Piotr Piastucki
+Copyright (C) 2005-2010  Piotr Piastucki
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -34,11 +34,11 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,2,0,0),
-	"IE Based Chat Log (1.2.0.0 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,3,0,0),
+	"IE Based Chat Log (1.3.0.0 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
-	"(c) 2005-2009 Piotr Piastucki, Francois Mean",
+	"(c) 2005-2010 Piotr Piastucki, Francois Mean",
 	"http://developer.berlios.de/projects/mgoodies",
 	UNICODE_AWARE,
 	0,
@@ -53,7 +53,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvRese
 
 extern "C" __declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 7, 0, 40)) {
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 9, 0, 0)) {
 		return NULL;
 	}
 	return &pluginInfoEx;
