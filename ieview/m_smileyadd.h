@@ -1,6 +1,6 @@
 /*
 Miranda SmileyAdd Plugin
-Copyright (C) 2005-2008 Boris Krasnovskiy
+Copyright (C) 2005-2010 Boris Krasnovskiy
 Copyright (C) 2003-2004 Rein-Peter de Boer
 
 This program is free software; you can redistribute it and/or
