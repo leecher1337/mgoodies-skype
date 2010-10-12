@@ -1692,12 +1692,6 @@ void Options::saveProtocolSettings() {
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isSRMMEnable());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getSRMMMode());
-		if (proto->getSRMMMode()) {
-			MessageBoxA(NULL, dbsName, "Setting true", MB_OK);
-		} else {
-			MessageBoxA(NULL, dbsName, "Setting false", MB_OK);
-		}
-
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);
 		DBWriteContactSettingDword(NULL, ieviewModuleName, dbsName, proto->getSRMMFlags());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_BACKGROUND);
