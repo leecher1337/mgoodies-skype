@@ -34,7 +34,7 @@ const wchar_t *Utils::getBaseDir() {
 	long tlen = CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)"miranda32.exe", (LPARAM)temp);
 	if (tlen) {
 		temp[tlen - 13]=0;
-		MultiByteToWideChar(CP_ACP, 0, temp, strlen(temp), base_dir, MAX_PATH);
+		MultiByteToWideChar(CP_ACP, 0, temp, (int)strlen(temp), base_dir, MAX_PATH);
 	}
 	return base_dir;
 }
@@ -104,7 +104,7 @@ void Utils::appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...)
 		len = 0;
 	}
 	else {
-		len = wcslen(*str);
+		len = (int)wcslen(*str);
 		size = *sizeAlloced - sizeof(wchar_t) * len;
 	}
 
