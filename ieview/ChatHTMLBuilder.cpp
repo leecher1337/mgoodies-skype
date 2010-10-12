@@ -86,10 +86,10 @@ void ChatHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
 char *ChatHTMLBuilder::timestampToString(time_t time)
 {
     static char szResult[512];
-	static TCHAR str[80];
+	static char str[80];
 	char *pszStamp = "[%H:%M]";
 	//InitSetting( &g_Settings.pszTimeStamp, "HeaderTime", _T("[%H:%M]"));
-	_tcsftime(str, 79, pszStamp, localtime(&time));
+	strftime(str, 79, pszStamp, localtime(&time));
 	Utils::UTF8Encode(str, szResult, 500);
 	return szResult;
 }
