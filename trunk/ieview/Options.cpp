@@ -656,7 +656,8 @@ static INT_PTR CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
 								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
 						break;
-					case TVN_SELCHANGED:
+					case TVN_SELCHANGEDA:
+					case TVN_SELCHANGEDW:
 						{
 							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveSRMMProtoSettings(hwndDlg, srmmCurrentProtoItem);
@@ -791,7 +792,8 @@ static INT_PTR CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
 								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
 						break;
-					case TVN_SELCHANGED:
+					case TVN_SELCHANGEDA:
+					case TVN_SELCHANGEDW:
 						{
 							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveHistoryProtoSettings(hwndDlg, historyCurrentProtoItem);
@@ -927,7 +929,8 @@ static INT_PTR CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARA
 								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
 								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
 						break;
-					case TVN_SELCHANGED:
+					case TVN_SELCHANGEDA:
+					case TVN_SELCHANGEDW:
 						{
 							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveChatProtoSettings(hwndDlg, chatCurrentProtoItem);
@@ -1689,6 +1692,12 @@ void Options::saveProtocolSettings() {
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isSRMMEnable());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getSRMMMode());
+		if (proto->getSRMMMode()) {
+			MessageBoxA(NULL, dbsName, "Setting true", MB_OK);
+		} else {
+			MessageBoxA(NULL, dbsName, "Setting false", MB_OK);
+		}
+
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);
 		DBWriteContactSettingDword(NULL, ieviewModuleName, dbsName, proto->getSRMMFlags());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_BACKGROUND);
