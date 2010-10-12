@@ -133,7 +133,7 @@ static int countNoWhitespace(const wchar_t *str) {
 }
 
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text) {
-	return tokenizeBBCodes(text, wcslen(text));
+	return tokenizeBBCodes(text, (int)wcslen(text));
 }
 
 TextToken* TextToken::tokenizeMath(const wchar_t *text) {
@@ -148,11 +148,11 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 			char* mthDelEnd   =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_ENDDELIMITER, 0);
 			if (mthDelStart!=NULL) {
 				mathTagName[0] = Utils::convertToWCS(mthDelStart);
-				mathTagLen[0] = wcslen(mathTagName[0]);
+				mathTagLen[0] = (int)wcslen(mathTagName[0]);
 			}
 			if (mthDelEnd!=NULL) {
 				mathTagName[1] = Utils::convertToWCS(mthDelEnd);
-				mathTagLen[1] = wcslen(mathTagName[1]);
+				mathTagLen[1] = (int)wcslen(mathTagName[1]);
 			}
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelStart);
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelEnd);
@@ -160,7 +160,7 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
        	mathModInitialized = true;
 	}
     int textLen = 0;
-    int l = wcslen(text);
+    int l = (int)wcslen(text);
     for (i=0; i<=l;) {
         bool mathFound = false;
 		int k = 0, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
@@ -377,7 +377,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
     int textLen = 0;
-    int l = wcslen(text);
+    int l = (int)wcslen(text);
     for (int i=0; i<=l;) {
 		int newTokenType, newTokenSize;
 		int urlLen = Utils::detectURL(text+i);
@@ -430,7 +430,7 @@ TextToken* TextToken::tokenizeSmileys(HANDLE hContact, const char *proto, const 
     TextToken *firstToken = NULL, *lastToken = NULL;
     SMADD_BATCHPARSE2 sp;
     SMADD_BATCHPARSERES *spRes;
-    int l = wcslen(text);
+    int l = (int)wcslen(text);
 	if (!Options::isSmileyAdd()) {
  		return new TextToken(TEXT, text, l);
 	}
@@ -485,7 +485,7 @@ TextToken* TextToken::tokenizeSmileys(HANDLE hContact, const char *proto, const 
 TextToken* TextToken::tokenizeChatFormatting(const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
     int textLen = 0;
-    int l = wcslen(text);
+    int l = (int)wcslen(text);
     wchar_t* tokenBuffer = new wchar_t[l + 1];
     for (int i=0; i<=l;) {
 		int newTokenType = TEXT;
