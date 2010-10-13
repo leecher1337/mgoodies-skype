@@ -306,7 +306,7 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 	if (szNameStr != NULL) {
    	    return Utils::convertToWCS(szNameStr);
 	}
-    return Utils::convertToWCS(TranslateT("(Unknown Contact)"));
+    return Utils::dupString(TranslateT("(Unknown Contact)"));
 }
 
 char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
@@ -402,23 +402,30 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			}
 		} else if (dbei.eventType == EVENTTYPE_FILE) {
 			//blob is: sequenceid(DWORD),filename(ASCIIZ),description(ASCIIZ)
-			char *ptr =((char *)dbei.pBlob) + sizeof(DWORD);
-			eventData->pszTextW = Utils::convertToWCS(ptr, newEvent.codepage);
-			eventData->pszText2W = Utils::convertToWCS(ptr + strlen(ptr) + 1, newEvent.codepage);
+			char* filename = ((char *)dbei.pBlob) + sizeof(DWORD);
+			char* descr = filename + lstrlenA(filename) + 1;
+			TCHAR *tStr = DbGetEventStringT(&dbei, filename);
+			eventData->ptszText = Utils::dupString(tStr);
+			mir_free(tStr);
+			if (*descr != '\0') {
+				tStr = DbGetEventStringT(&dbei, descr);
+				eventData->ptszText2 = Utils::dupString(tStr);
+				mir_free(tStr);
+			}
 			eventData->iType = IEED_EVENT_FILE;
 		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
 		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-			char txtAuth[500];
-			strcpy(txtAuth, Translate(" requested authorisation"));
-			eventData->pszTextW = Utils::convertToWCS(txtAuth, newEvent.codepage);
-			eventData->pszNickW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->ptszText = Utils::dupString(TranslateT(" requested authorisation"));
+			TCHAR *tStr = DbGetEventStringT(&dbei, (char *)dbei.pBlob + 8);
+			eventData->ptszNick = Utils::dupString(tStr);
+			mir_free(tStr);
 			eventData->iType = IEED_EVENT_SYSTEM;
 		} else if (dbei.eventType == EVENTTYPE_ADDED) {
 			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-			char txtAdd[500];
-			strcpy(txtAdd, Translate(" was added."));
-			eventData->pszTextW = Utils::convertToWCS(txtAdd, newEvent.codepage);
-			eventData->pszNickW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->ptszText = Utils::dupString(TranslateT(" was added."));
+			TCHAR *tStr = DbGetEventStringT(&dbei, (char *)dbei.pBlob + 8);
+			eventData->ptszNick = Utils::dupString(tStr);
+			mir_free(tStr);
 			eventData->iType = IEED_EVENT_SYSTEM;
 		}
 		free(dbei.pBlob);
