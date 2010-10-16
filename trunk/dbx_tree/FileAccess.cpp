@@ -33,32 +33,34 @@ const uint8_t CFileAccess::cJournalSignature[20] = "Miranda IM Journal!";
 CFileAccess::CFileAccess(const TCHAR* FileName)
 {
 	m_FileName = new TCHAR[_tcslen(FileName) + 1];
-	m_JournalFileName = new TCHAR[_tcslen(FileName) + 5];
+	m_Journal.FileName = new TCHAR[_tcslen(FileName) + 5];
 	_tcscpy_s(m_FileName, _tcslen(FileName) + 1, FileName);
-	_tcscpy_s(m_JournalFileName, _tcslen(FileName) + 5, FileName);
-	_tcscat_s(m_JournalFileName, _tcslen(FileName) + 5, _T(".jrn"));
+	_tcscpy_s(m_Journal.FileName, _tcslen(FileName) + 5, FileName);
+	_tcscat_s(m_Journal.FileName, _tcslen(FileName) + 5, _T(".jrn"));
 
 	m_ReadOnly = false;
 	m_LastSize = 0;
 	m_Size = 0;
-	m_UseJournal = false;
+	m_Journal.Use = false;
+	m_Journal.hFile = 0;
+	m_Journal.BufUse = 0;
 
 	m_LastAllocTime = _time32(NULL);
 }
 
 CFileAccess::~CFileAccess()
 {
-	CloseHandle(m_Journal);
-	DeleteFile(m_JournalFileName);
+	CloseHandle(m_Journal.hFile);
+	DeleteFile(m_Journal.FileName);
 
 	delete [] m_FileName;
-	delete [] m_JournalFileName;
+	delete [] m_Journal.FileName;
 }
 
 uint32_t CFileAccess::Size(uint32_t NewSize)
 {
 	m_Size = NewSize;
-	if (!m_UseJournal)
+	if (!m_Journal.Use)
 	{
 		NewSize = (NewSize + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
 
@@ -91,33 +93,29 @@ uint32_t CFileAccess::Size(uint32_t NewSize)
 
 void CFileAccess::CleanJournal()
 {
-	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
-	SetEndOfFile(m_Journal);
+	SetFilePointer(m_Journal.hFile, 0, NULL, FILE_BEGIN);
+	SetEndOfFile(m_Journal.hFile);
 
-	SetFilePointer(m_Journal, cJournalSizeReserve, NULL, FILE_BEGIN);
-	SetEndOfFile(m_Journal);
-
-	SetFilePointer(m_Journal, 0, NULL, FILE_BEGIN);
 	DWORD written;
-	WriteFile(m_Journal, cJournalSignature, sizeof(cJournalSignature), &written, NULL);
+	WriteFile(m_Journal.hFile, cJournalSignature, sizeof(cJournalSignature), &written, NULL);
 }
 
 void CFileAccess::ProcessJournal()
 {
-	uint32_t filesize = GetFileSize(m_Journal, NULL) - sizeof(cJournalSignature);
-	SetFilePointer(m_Journal, sizeof(cJournalSignature), NULL, FILE_BEGIN);
+	uint32_t filesize = GetFileSize(m_Journal.hFile, NULL) - sizeof(cJournalSignature);
+	SetFilePointer(m_Journal.hFile, sizeof(cJournalSignature), NULL, FILE_BEGIN);
 
 	uint8_t* buf = (uint8_t*)malloc(filesize);
 	TJournalEntry* e = (TJournalEntry*)buf;
 	DWORD read = 0;
-	if (!ReadFile(m_Journal, buf, filesize, &read, NULL) || (read != filesize))
+	if (!ReadFile(m_Journal.hFile, buf, filesize, &read, NULL) || (read != filesize))
 	{
 		free(buf);
 		LOGSYS(logCRITICAL, _T("Couldn't flush the journal because ReadFile failed!"));
 		return;
 	}
 
-	m_UseJournal = false;
+	m_Journal.Use = false;
 	std::vector<TJournalEntry*> currentops;
 
 	while (filesize >= sizeof(TJournalEntry))
@@ -197,29 +195,29 @@ void CFileAccess::ProcessJournal()
 	CleanJournal();
 
 	free(buf);
-	m_UseJournal = true;
+	m_Journal.Use = true;
 }
 
 void CFileAccess::InitJournal()
 {
-	m_Journal = CreateFile(m_JournalFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
-	if (m_Journal == INVALID_HANDLE_VALUE)
+	m_Journal.hFile = CreateFile(m_Journal.FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+	if (m_Journal.hFile == INVALID_HANDLE_VALUE)
 	{
-		LOGSYS(logCRITICAL, _T("CreateFile failed on Journal %s"), m_JournalFileName);
+		LOGSYS(logCRITICAL, _T("CreateFile failed on Journal %s"), m_Journal.FileName);
 		return;
 	}
 
 	uint8_t h[sizeof(cJournalSignature)];
 	DWORD read;
-	if (ReadFile(m_Journal, &h, sizeof(h), &read, NULL) && (read == sizeof(h)) && (0 == memcmp(h, cJournalSignature, sizeof(h))))
+	if (ReadFile(m_Journal.hFile, &h, sizeof(h), &read, NULL) && (read == sizeof(h)) && (0 == memcmp(h, cJournalSignature, sizeof(h))))
 	{
 		TCHAR * bckname = new TCHAR[_tcslen(m_FileName) + 12];
 		_tcscpy_s(bckname, _tcslen(m_FileName) + 12, m_FileName);
 		_tcscat_s(bckname, _tcslen(m_FileName) + 12, _T(".autobackup"));
 
-		TCHAR * bckjrnname = new TCHAR[_tcslen(m_JournalFileName) + 12];
-		_tcscpy_s(bckjrnname, _tcslen(m_JournalFileName) + 12, m_JournalFileName);
-		_tcscat_s(bckjrnname, _tcslen(m_JournalFileName) + 12, _T(".autobackup"));
+		TCHAR * bckjrnname = new TCHAR[_tcslen(m_Journal.FileName) + 12];
+		_tcscpy_s(bckjrnname, _tcslen(m_Journal.FileName) + 12, m_Journal.FileName);
+		_tcscat_s(bckjrnname, _tcslen(m_Journal.FileName) + 12, _T(".autobackup"));
 
 		char buf[4096];
 		HANDLE hfilebackup = CreateFile(bckname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
@@ -248,25 +246,25 @@ void CFileAccess::InitJournal()
 		{
 			uint32_t i = 0;
 
-			uint32_t filesize = GetFileSize(m_Journal, NULL);
+			uint32_t filesize = GetFileSize(m_Journal.hFile, NULL);
 			while (i + sizeof(buf) <= filesize)
 			{
 				DWORD w, r;
-				ReadFile(m_Journal, buf, sizeof(buf), &r, NULL);
+				ReadFile(m_Journal.hFile, buf, sizeof(buf), &r, NULL);
 				i += sizeof(buf);
 				WriteFile(hjrnfilebackup, buf, sizeof(buf), &w, NULL);
 			}
 			if (i < filesize)
 			{
 				DWORD w, r;
-				ReadFile(m_Journal, buf, filesize - i, &r, NULL);
+				ReadFile(m_Journal.hFile, buf, filesize - i, &r, NULL);
 				WriteFile(hjrnfilebackup, buf, filesize - i, &w, NULL);
 			}
 			CloseHandle(hjrnfilebackup);
 		}
 
 		TCHAR* path = bckname;
-		TCHAR* fn = _tcsrchr(m_JournalFileName, _T('\\'));
+		TCHAR* fn = _tcsrchr(m_Journal.FileName, _T('\\'));
 		TCHAR* bfn = _tcsrchr(bckname, _T('\\'));
 		TCHAR* jrn = _tcsrchr(bckjrnname, _T('\\'));
 		if (bfn) // truncate path var
@@ -276,14 +274,14 @@ void CFileAccess::InitJournal()
 		{
 			LOG(logWARNING,
 		      _T("Journal \"%s\" was found on start.\nBackup \"%s\"%s created and backup \"%s\"%s created.\nYou may delete these file(s) after successful start from \"%s\"."),
-			    fn?fn+1:m_JournalFileName, 
+			    fn?fn+1:m_Journal.FileName, 
 			    bfn?bfn+1:bckname, (hfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
 			    jrn?jrn+1:bckjrnname, (hjrnfilebackup!=INVALID_HANDLE_VALUE)?_T(" was successfully"):_T(" could not be"),
 			    path);
 			} else {
 			LOG(logWARNING,
 					_T("Journal \"%s\" was found on start.\nBackups \"%s\"and \"%s\" could not be created in \"%s\"."),
-					fn?fn+1:m_JournalFileName, 
+					fn?fn+1:m_Journal.FileName, 
 					bfn?bfn+1:bckname,
 					jrn?jrn+1:bckjrnname,
 					path);

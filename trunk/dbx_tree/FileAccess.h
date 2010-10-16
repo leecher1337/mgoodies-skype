@@ -44,12 +44,25 @@ public:
 
 	bool Write(void* Buf, uint32_t Dest, uint32_t Size)
 		{
-			if (m_UseJournal)
+			if (m_Journal.Use)
 			{
 				DWORD written;
-				uint32_t data[3] = {'writ', Dest, Size};
-				WriteFile(m_Journal, &data, sizeof(data), &written, NULL);
-				WriteFile(m_Journal, Buf, Size, &written, NULL);
+
+				TJournalEntry * data = reinterpret_cast<TJournalEntry*>(m_Journal.Buffer + m_Journal.BufUse);
+				data->Signature = 'writ';
+				data->Address = Dest;
+				data->Size = Size;
+				m_Journal.BufUse += 12;
+				if (Size + m_Journal.BufUse < sizeof(m_Journal.Buffer) - 12) // one journal header has always to fit in
+				{
+					memcpy(m_Journal.Buffer + m_Journal.BufUse, Buf, Size);
+					m_Journal.BufUse += Size;
+				} else {
+					WriteFile(m_Journal.hFile, m_Journal.Buffer, m_Journal.BufUse, &written, NULL);
+					WriteFile(m_Journal.hFile, Buf, Size, &written, NULL);
+
+					m_Journal.BufUse = 0;
+				}
 			} else {
 				_Write(Buf, Dest, Size);
 			}
@@ -59,11 +72,20 @@ public:
 
 	void Invalidate(uint32_t Dest, uint32_t Size)
 		{
-			if (m_UseJournal)
+			if (m_Journal.Use)
 			{
 				DWORD written;
-				TJournalEntry e = {'inva', Dest, Size};
-				WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
+
+				TJournalEntry * data = reinterpret_cast<TJournalEntry*>(m_Journal.Buffer + m_Journal.BufUse);
+				data->Signature = 'inva';
+				data->Address = Dest;
+				data->Size = Size;
+				m_Journal.BufUse += 12;
+				if (m_Journal.BufUse > sizeof(m_Journal.Buffer) - 12)
+				{
+					WriteFile(m_Journal.hFile, m_Journal.Buffer, m_Journal.BufUse, &written, NULL);
+					m_Journal.BufUse = 0;
+				}
 			} else {
 				_Invalidate(Dest, Size);
 			}
@@ -71,9 +93,15 @@ public:
 
 	void Flush()
 		{
-			if (m_UseJournal)
+			if (m_Journal.Use)
 			{
-				FlushFileBuffers(m_Journal);
+				if (m_Journal.BufUse)
+				{
+					DWORD written;
+					WriteFile(m_Journal.hFile, m_Journal.Buffer, m_Journal.BufUse, &written, NULL);
+					m_Journal.BufUse = 0;
+				}
+				FlushFileBuffers(m_Journal.hFile);
 			} else {
 				_Flush();
 			}
@@ -81,7 +109,7 @@ public:
 
 	void UseJournal(bool UseIt)
 		{
-			m_UseJournal = UseIt;
+			m_Journal.Use = UseIt;
 		};
 
 	void CompleteTransaction()
@@ -94,11 +122,17 @@ public:
 		};
 	void CloseTransaction()
 		{
-			if (m_UseJournal)
+			if (m_Journal.Use)
 			{
-				TJournalEntry e = {'fini', 0, m_Size};
 				DWORD written;
-				WriteFile(m_Journal, &e, sizeof(e), &written, NULL);
+
+				TJournalEntry * data = reinterpret_cast<TJournalEntry*>(m_Journal.Buffer + m_Journal.BufUse);
+				data->Signature = 'fini';
+				data->Address = 0;
+				data->Size = m_Size;
+				
+				WriteFile(m_Journal.hFile, m_Journal.Buffer, m_Journal.BufUse + 12, &written, NULL);
+				m_Journal.BufUse = 0;
 			}
 		};
 
@@ -119,11 +153,15 @@ public:
 
 protected:
 	TCHAR* m_FileName;
-	TCHAR* m_JournalFileName;
-	HANDLE m_Journal;
+	struct {
+		bool Use;
+		TCHAR* FileName;
+		HANDLE hFile;
 
-	bool   m_UseJournal;
-	
+		uint8_t Buffer[4096];
+		uint32_t BufUse;
+	} m_Journal;
+
 	uint32_t m_Size;
 	uint32_t m_AllocSize;
 	uint32_t m_AllocGranularity;

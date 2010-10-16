@@ -79,7 +79,7 @@ CDataBase::~CDataBase()
 	m_Settings = NULL;
 	m_Events   = NULL;
 
-	for (int i = 0; i < DBFileMax; ++i)
+	for (int i = DBFileMax - 1; i >= 0; --i)
 	{
 		if (m_BlockManager[i])      delete m_BlockManager[i];
 		if (m_FileAccess[i])        delete m_FileAccess[i];
@@ -341,7 +341,7 @@ int CDataBase::getProfileName(int BufferSize, char * Buffer)
 	else
 		slash = m_FileName[DBFileSetting];
 
-	size_t l = _tcslen(slash);
+	int l = static_cast<int>(_tcslen(slash));
 	if (BufferSize < l + 1)
 		return -1;
 	

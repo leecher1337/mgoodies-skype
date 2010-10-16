@@ -107,7 +107,7 @@ protected:
 		uint32_t LastUse : 30;
 	} TCacheEntry;
 	
-	TCacheEntry m_Cache[cCacheBuddyCount];
+	TCacheEntry * m_Cache[cCacheBuddyCount];
 
 	struct {
 		uint32_t volatile Size;
