@@ -51,16 +51,7 @@ CBlockManager::CBlockManager(
 	m_SaveMode = true;
 	m_ReadOnly = m_FileAccess.ReadOnly();
 
-	for (uint32_t i = 0; i < cCacheBuddyCount; ++i)
-	{
-		m_Cache[i].Next = &m_Cache[i + 1];
-		m_Cache[i].Cache = NULL;
-		m_Cache[i].Pending = NULL;
-		m_Cache[i].Idx = ROR_32(i, cCacheBuddyBits);
-		m_Cache[i].Forced = false;
-		m_Cache[i].LastUse = 0;
-	}
-	m_Cache[cCacheBuddyCount - 1].Next = NULL;
+	memset(m_Cache, 0, sizeof(m_Cache));
 }
 
 CBlockManager::~CBlockManager()
@@ -81,19 +72,16 @@ CBlockManager::~CBlockManager()
 
 	_PendingFlush(true);
 	
-	TCacheEntry * i = m_Cache;
-	while (i)
+	for (uint32_t buddy = 0; buddy < cCacheBuddyCount; buddy++)
 	{
-		if (i->Cache)
+		TCacheEntry * i = m_Cache[buddy];
+		while (i)
+		{
 			free(i->Cache);
 
-		if (ROL_32(i->Idx, cCacheBuddyBits)  & cCacheBuddyCheck)
-		{
 			TCacheEntry * tmp = i;
 			i = i->Next;
 			free(tmp);
-		} else {
-			i = i->Next;
 		}
 	}
 }
@@ -375,63 +363,48 @@ inline CBlockManager::TCacheEntry * CBlockManager::_CacheInsert(uint32_t Idx, TB
 	TCacheEntry * res;
 	uint32_t myidx = ROR_32(Idx, cCacheBuddyBits);
 	
-	if (Idx & cCacheBuddyCheck) // has some bits set.. isn't a buddy
-	{
-		res = (TCacheEntry *)malloc(sizeof(TCacheEntry));
-		res->Cache = Cache;
-		res->Pending = NULL;
-		res->Idx = myidx;
-		res->Forced = Virtual;
+	res = (TCacheEntry *)malloc(sizeof(TCacheEntry));
+	res->Cache = Cache;
+	res->Pending = NULL;
+	res->Idx = myidx;
+	res->Forced = Virtual;
 		
-		TCacheEntry * buddy = &m_Cache[Idx % cCacheBuddyCount];
-		TCacheEntry * last = buddy;
-		TCacheEntry * i;
-		do {
-			i = last->Next;
-			
-			while (i && (i->Idx < myidx))
-			{
-				last = i;
-				i = i->Next;
-			}
-			
-			if (i && (i->Idx == myidx))
-			{
-				free(res);
-				free(Cache);
+	TCacheEntry * volatile * last = &m_Cache[Idx % cCacheBuddyCount];
+	TCacheEntry * i;
+	do {
+		i = *last;
 
-				i->LastUse = time(NULL) >> 2;
-				return i;
-			}
-
-			res->Next = i;
-		} while (i != CMPXCHG_Ptr<TCacheEntry>(last->Next, res, i) );
-
-		res->LastUse = time(NULL) >> 2;
-
-		m_BlockTable[Idx].InCache = true;
-		if (!Virtual)
-			XADD_32(m_CacheInfo.Growth, res->Cache->Size);
-
-	} else {
-		res = &m_Cache[Idx % cCacheBuddyCount];
-		if (CMPXCHG_Ptr<TBlockHeadOcc>(res->Cache, Cache, NULL))
+		while (i && (i->Idx < myidx))
 		{
-			free(Cache);
-		} else {
-			m_BlockTable[Idx].InCache = true;
-			if (!Virtual && Idx) // don't do that for the header (Idx == 0) and don't count virtual blocks
-				XADD_32(m_CacheInfo.Growth, res->Cache->Size);
+			last = &i->Next;
+			i = i->Next;
 		}
-		res->LastUse = time(NULL) >> 2;
-	}
+			
+		if (i && (i->Idx == myidx))
+		{
+			free(res);
+			free(Cache);
+
+			i->LastUse = time(NULL) >> 2;
+			return i;
+		}
+
+		res->Next = i;
+
+	} while (i != CMPXCHG_Ptr(*last, res, i) );
+
+	res->LastUse = time(NULL) >> 2;
+
+	m_BlockTable[Idx].InCache = true;
+	if (!Virtual)
+		XADD_32(m_CacheInfo.Growth, res->Cache->Size);
 
 	return res;
 }
 
 inline CBlockManager::TCacheEntry * CBlockManager::_CacheFind(uint32_t Idx)
 {
-	TCacheEntry * i = &m_Cache[Idx % cCacheBuddyCount];
+	TCacheEntry * i = m_Cache[Idx % cCacheBuddyCount];
 	uint32_t myidx = ROR_32(Idx, cCacheBuddyBits);
 	while (i && (i->Idx < myidx))
 		i = i->Next;
@@ -444,35 +417,27 @@ inline CBlockManager::TCacheEntry * CBlockManager::_CacheFind(uint32_t Idx)
 
 inline void CBlockManager::_CacheErase(uint32_t Idx)
 {
-	TCacheEntry * i = &m_Cache[Idx % cCacheBuddyCount];
+	TCacheEntry * i = m_Cache[Idx % cCacheBuddyCount];
+	TCacheEntry * volatile * l = &m_Cache[Idx % cCacheBuddyCount];
+
 	uint32_t myidx = ROR_32(Idx, cCacheBuddyBits);
-	if (Idx & cCacheBuddyCheck)
+
+	while (i->Idx < myidx)
 	{
-		TCacheEntry * l = i;
+		l = &i->Next;
 		i = i->Next;
-		while (i->Idx < myidx)
-		{
-			l = i;
-			i = i->Next;
-		}
-		l->Next = i->Next;
-		
-		if (i->Cache)
-			free(i->Cache);
-		free(i);
-	} else {
-		if (i->Cache)
-			free(i->Cache);
-		i->Cache = NULL;
 	}
+	*l = i->Next;
+		
+	if (i->Cache)
+		free(i->Cache);
+	free(i);
 }
 
 inline void CBlockManager::_CachePurge()
 {
 	_PendingFlush(true);
-	TCacheEntry * i = m_Cache[0].Next; // ignore the very first entry (the header with Idx == 0)
-	TCacheEntry * l = &m_Cache[0];
-
+	
 	uint32_t ts = time(NULL);
 	if (m_CacheInfo.Size + m_CacheInfo.Growth > cCachePurgeSize) {
 		ts = ts - (ts - m_CacheInfo.LastPurge) * cCachePurgeSize / (m_CacheInfo.Size + 2 * m_CacheInfo.Growth);
@@ -490,32 +455,29 @@ inline void CBlockManager::_CachePurge()
 	m_CacheInfo.Growth = 0;
 	m_CacheInfo.LastPurge = time(NULL);
 
-	while (i)
+	for (uint32_t buddy = 0; buddy < cCacheBuddyCount; buddy++)
 	{
-		if (!(i->Forced || i->KeepInCache)
-			&& (i->Cache) // ignore static buddy items if they are not used
-			&& ((i->LastUse << 2) < ts))
+		TCacheEntry * i = m_Cache[buddy];
+		TCacheEntry * volatile * l = &m_Cache[buddy];
+	
+		while (i)
 		{
-			uint32_t idx = ROL_32(i->Idx, cCacheBuddyBits);
-			m_CacheInfo.Size -= i->Cache->Size;
-			m_BlockTable[idx].InCache = false;
-			free(i->Cache);
-			i->Cache = NULL;
-
-			if (idx & cCacheBuddyCheck)
+			if (!i->Forced && !i->KeepInCache && i->Idx && ((i->LastUse << 2) < ts))
 			{
-				l->Next = i->Next;
+				uint32_t idx = ROL_32(i->Idx, cCacheBuddyBits);
+				m_CacheInfo.Size -= i->Cache->Size;
+				m_BlockTable[idx].InCache = false;
+				free(i->Cache);
+
+				*l = i->Next;
 				TCacheEntry * tmp = i;
 				i = i->Next;
 				free(tmp);
+				
 			} else {
-				l = i;
+				l = &i->Next;
 				i = i->Next;
 			}
-
-		} else {
-			l = i;
-			i = i->Next;
 		}
 	}
 }
@@ -949,7 +911,7 @@ void * CBlockManager::_ReadBlock(uint32_t BlockID, uint32_t & Size, uint32_t & S
 	if ((BlockID == 0) && (Signature == -1))
 	{
 		Size = m_FirstBlockStart;
-		return m_Cache[0].Cache;
+		return m_Cache[0]->Cache;
 	}
 	
 	if (!_InitOperation(BlockID, addr, ce))
@@ -980,7 +942,7 @@ bool CBlockManager::UpdateBlock(uint32_t BlockID, uint32_t Signature)
 	if ((BlockID == 0) && (Signature == -1)) 
 	{
 		if (!m_ReadOnly)
-			_PendingAdd(0, 0, m_FirstBlockStart, &m_Cache[0]);
+			_PendingAdd(0, 0, m_FirstBlockStart, m_Cache[0]);
 		
 		return true;
 	}
