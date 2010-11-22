@@ -226,7 +226,7 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 // TODO: Add the following BBCodes: code
 #define BB_TAG_NUM 10
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg", L"url", L"code"};
+	static const wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg", L"url", L"code"};
 	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4, 3, 4};
 	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0, 1, 0};
 	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG, BB_URL, BB_CODE};
