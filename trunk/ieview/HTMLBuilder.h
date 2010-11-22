@@ -69,7 +69,6 @@ protected:
 	virtual int getLastEventType();
 	virtual void setLastEventType(int);
 	virtual bool isSameDate(time_t time1, time_t time2);
-	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
 	virtual ProtocolSettings *getSRMMProtocolSettings(const char *protocolName);
 	virtual ProtocolSettings *getSRMMProtocolSettings(HANDLE hContact);

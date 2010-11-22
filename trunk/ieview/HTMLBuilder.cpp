@@ -46,18 +46,6 @@ HTMLBuilder::~HTMLBuilder() {
 	}
 }
 
-bool HTMLBuilder::isUnicodeMIM() {
-	if (!(mimFlags & MIM_CHECKED)) {
-		char str[512];
-		mimFlags = MIM_CHECKED;
-		CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM)500, (LPARAM)(char*)str);
-		if(strstr(str, "Unicode")) {
-			mimFlags |= MIM_UNICODE;
-		}
-	}
-	return (mimFlags & MIM_UNICODE) != 0;
-}
-
 bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags, bool isSent) {
 	TextToken *token = NULL, *token2;
 	switch (level) {
@@ -268,24 +256,17 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
     ci.szProto = (char *)szProto;
-	ci.dwFlag = CNF_DISPLAY;
-	if(isUnicodeMIM()) {
-		ci.dwFlag |= CNF_UNICODE;
-    }
+	ci.dwFlag = CNF_DISPLAY | CNF_UNICODE;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
-				if(isUnicodeMIM()) {
-					if(!wcscmp((wchar_t *)ci.pszVal, TranslateW(L"'(Unknown Contact)'"))) {
-						ci.dwFlag &= ~CNF_UNICODE;
-						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        	    szName = Utils::convertToWCS((char *)ci.pszVal);
-						}
-					} else {
-		        	    szName = Utils::dupString((wchar_t *)ci.pszVal);
+				if(!wcscmp((wchar_t *)ci.pszVal, TranslateW(L"'(Unknown Contact)'"))) {
+					ci.dwFlag &= ~CNF_UNICODE;
+					if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+			        	szName = Utils::convertToWCS((char *)ci.pszVal);
 					}
 				} else {
-	        	    szName = Utils::convertToWCS((char *)ci.pszVal);
+		        	szName = Utils::dupString((wchar_t *)ci.pszVal);
 				}
 				miranda_sys_free(ci.pszVal);
 			}
