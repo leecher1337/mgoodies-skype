@@ -220,7 +220,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	ci.cbSize = sizeof(ci);
 	ci.hContact = event->hContact;
 	ci.szProto = szProto;
-	ci.dwFlag = CNF_NICK;
+	ci.dwFlag = CNF_NICK | CNF_TCHAR;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
@@ -228,7 +228,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	ci.cbSize = sizeof(ci);
 	ci.hContact = NULL;
 	ci.szProto = szProto;
-	ci.dwFlag = CNF_NICK;
+	ci.dwFlag = CNF_NICK | CNF_TCHAR;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
@@ -396,7 +396,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	ci.cbSize = sizeof(ci);
 	ci.hContact = event->hContact;
 	ci.szProto = szProto;
-	ci.dwFlag = CNF_NICK;
+	ci.dwFlag = CNF_NICK | CNF_TCHAR;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
@@ -404,7 +404,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	ci.cbSize = sizeof(ci);
 	ci.hContact = NULL;
 	ci.szProto = szProto;
-	ci.dwFlag = CNF_NICK;
+	ci.dwFlag = CNF_NICK | CNF_TCHAR;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
