@@ -220,7 +220,7 @@ void CFileAccess::InitJournal()
 		_tcscat_s(bckjrnname, _tcslen(m_Journal.FileName) + 12, _T(".autobackup"));
 
 		char buf[4096];
-		HANDLE hfilebackup = CreateFile(bckname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		HANDLE hfilebackup = CreateFile(bckname, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (hfilebackup)
 		{
 			uint32_t i = 0;
@@ -241,12 +241,14 @@ void CFileAccess::InitJournal()
 			CloseHandle(hfilebackup);
 		}
 
-		HANDLE hjrnfilebackup = CreateFile(bckjrnname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
+		HANDLE hjrnfilebackup = CreateFile(bckjrnname, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
 		if (hjrnfilebackup)
 		{
 			uint32_t i = 0;
 
 			uint32_t filesize = GetFileSize(m_Journal.hFile, NULL);
+			SetFilePointer(m_Journal.hFile, 0, NULL, FILE_BEGIN);
+
 			while (i + sizeof(buf) <= filesize)
 			{
 				DWORD w, r;
@@ -262,7 +264,7 @@ void CFileAccess::InitJournal()
 			}
 			CloseHandle(hjrnfilebackup);
 		}
-
+		
 		TCHAR* path = bckname;
 		TCHAR* fn = _tcsrchr(m_Journal.FileName, _T('\\'));
 		TCHAR* bfn = _tcsrchr(bckname, _T('\\'));
@@ -289,7 +291,7 @@ void CFileAccess::InitJournal()
 
 		delete [] bckname;
 		delete [] bckjrnname;
-
+		
 		ProcessJournal();
 	}
 

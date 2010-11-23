@@ -38,7 +38,7 @@ class CBlockManager
 protected:
 	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
 
-	static const uint32_t cJournalFlushBytes = CFileAccess::cJournalSizeReserve - 2048; // flush before reserved journal-space is exhausted
+	static const uint32_t cJournalFlushBytes = (1 << 20) - 2048; // flush before reserved journal-space is exhausted
 	static const uint32_t cJournalFlushTimeout = 300; // journal flush every 5 minutes
 
 	static const uint32_t cCacheBuddyBits  = 10;
@@ -193,17 +193,6 @@ protected:
 
 	void TransactionEndRead()
 		{
-			if ((m_CacheInfo.LastPurge + cCacheMaximumTimeout < time(NULL))
-				|| ((m_CacheInfo.Size + m_CacheInfo.Growth > cCachePurgeSize) 
-				&& (m_CacheInfo.Growth > cCacheMinimumGrowthForPurge)
-				&& (m_CacheInfo.LastPurge + cCacheMinimumTimeout < time(NULL))))
-			{
-				if (m_BlockSync.TryBeginWrite())
-				{
-					_CachePurge();
-					m_BlockSync.EndWrite();
-				}
-			}
 			m_BlockSync.EndRead();
 		};
 

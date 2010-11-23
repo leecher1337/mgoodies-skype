@@ -59,7 +59,7 @@ CFileBTree<TKey, SizeParam>::CFileBTree(CBlockManager & BlockManager, typename C
 template <typename TKey, uint16_t SizeParam>
 CFileBTree<TKey, SizeParam>::~CFileBTree()
 {
-
+	CBTree<TKey, SizeParam>::m_DestroyTree = false;
 }
 
 
