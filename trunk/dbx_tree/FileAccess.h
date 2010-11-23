@@ -31,7 +31,6 @@ class CFileAccess
 {
 public:
 	static const uint8_t cJournalSignature[20];
-	static const uint32_t cJournalSizeReserve = 1 << 20; // 1MB
 
 	CFileAccess(const TCHAR* FileName);
 	virtual ~CFileAccess();
