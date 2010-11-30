@@ -226,8 +226,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		}
 		Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 		if (dwData & IEEDD_GC_SHOW_ICON) {
-			Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/> ",
-						workingDir, iconFile);
+			Utils::appendIcon(&output, &outputSize, iconFile);
 		}
 		if (dwData & IEEDD_GC_SHOW_TIME) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",

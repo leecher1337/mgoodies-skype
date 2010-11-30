@@ -358,8 +358,7 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 				} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
 					iconFile = "status.gif";
 				}
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/>",
-								workingDir, iconFile);
+				Utils::appendIcon(&output, &outputSize, iconFile);
 			}
 			if ((dwFlags & MWF_LOG_SWAPNICK) && (dwFlags & MWF_LOG_SHOWNICK) && isGroupBreak && (eventData->iType != IEED_EVENT_STATUSCHANGE)) {
 				const char *className = "";
