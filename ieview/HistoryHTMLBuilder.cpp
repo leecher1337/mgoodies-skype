@@ -265,8 +265,7 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divMessageOut" : "divMessageIn");
 			}
 			if (dwFlags & SMF_LOG_SHOWICONS && iconFile != NULL) {
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/> ",
-								workingDir, iconFile);
+				Utils::appendIcon(&output, &outputSize, iconFile);
 			} else {
 				Utils::appendText(&output, &outputSize, " ");
 			}

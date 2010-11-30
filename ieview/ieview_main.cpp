@@ -27,15 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 char *ieviewModuleName;
 HINSTANCE hInstance;
 PLUGINLINK *pluginLink;
-TCHAR *workingDir;
+char *workingDirUtf8;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
 
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,3,0,1),
-	"IE Based Chat Log (1.3.0.1 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,3,0,2),
+	"IE Based Chat Log (1.3.0.2 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2010 Piotr Piastucki, Francois Mean",
@@ -72,9 +72,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	char *p, *q;
 
 	int wdsize = GetCurrentDirectory(0, NULL);
-	workingDir = new TCHAR[wdsize];
+	TCHAR *workingDir = new TCHAR[wdsize];
 	GetCurrentDirectory(wdsize, workingDir);
 	Utils::convertPath(workingDir);
+	workingDirUtf8 = Utils::UTF8Encode(workingDir);
+	delete workingDir;
 
 	GetModuleFileNameA(hInstance, text, sizeof(text));
 	p = strrchr(text, '\\');
@@ -117,7 +119,7 @@ extern "C" int __declspec(dllexport) Unload(void)
 	Utils::destroyServices_Ex();
 	DestroyHookableEvent(hHookOptionsChanged);
 	IEView::release();
-	delete workingDir;
+	delete workingDirUtf8;
 	free( ieviewModuleName );
 	return 0;
 }
