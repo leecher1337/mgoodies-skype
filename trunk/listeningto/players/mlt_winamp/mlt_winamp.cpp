@@ -39,6 +39,8 @@ winampGeneralPurposePlugin plugin = {
 	init,
 	config, 
 	quit,
+	0,									// handle to Winamp main window, loaded by winamp when this dll is loaded
+	0									// hinstance to this dll, loaded by winamp when this dll is loaded
 }; 
 
 
@@ -121,9 +123,8 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD fdwReason, LPVOID lpvRe
 	return TRUE;
 }
 
-
 // Winamp interface function
-extern "C" winampGeneralPurposePlugin * winampGetGeneralPurposePlugin() 
+extern "C" __declspec(dllexport) winampGeneralPurposePlugin * winampGetGeneralPurposePlugin() 
 {
 	KillTimer(hMsgWnd, 0);
 
@@ -138,7 +139,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 	{
 		class_name[sizeof(class_name)-1] = '\0';
 
-		if (strcmpi(MIRANDA_WINDOWCLASS, class_name) == 0) 
+		if (_strcmpi(MIRANDA_WINDOWCLASS, class_name) == 0) 
 		{
 			COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lParam;
 			SendMessage(hwnd, WM_COPYDATA, (WPARAM) plugin.hwndParent, (LPARAM) cds);
@@ -445,6 +446,10 @@ void quit()
 
 	if (oldWndProc != NULL)
 		SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG) oldWndProc);
+
+	if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+		SendData(L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+
 } 
 
 

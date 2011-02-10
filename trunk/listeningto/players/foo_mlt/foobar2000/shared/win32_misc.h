@@ -98,7 +98,7 @@ public:
 	//! Returns true when signaled, false on timeout
 	static bool g_wait_for(HANDLE p_event,double p_timeout_seconds) {
 		SetLastError(NO_ERROR);
-		DWORD status = WaitForSingleObject(p_event,g_calculate_wait_time(p_timeout_seconds));
+ 		DWORD status = WaitForSingleObject(p_event,g_calculate_wait_time(p_timeout_seconds));
 		switch(status) {
 		case WAIT_FAILED:
 			throw exception_win32(GetLastError());
@@ -184,11 +184,70 @@ private:
 
 class SelectObjectScope {
 public:
-	SelectObjectScope(HDC p_dc,HGDIOBJ p_obj) : m_dc(p_dc), m_obj(SelectObject(p_dc,p_obj)) {}
-	~SelectObjectScope() {SelectObject(m_dc,m_obj);}
+	SelectObjectScope(HDC p_dc,HGDIOBJ p_obj) throw() : m_dc(p_dc), m_obj(SelectObject(p_dc,p_obj)) {}
+	~SelectObjectScope() throw() {SelectObject(m_dc,m_obj);}
 private:
-	SelectObjectScope(const SelectObjectScope&) {throw pfc::exception_not_implemented();}
-	const SelectObjectScope & operator=(const SelectObjectScope&) {throw pfc::exception_not_implemented();}
+	PFC_CLASS_NOT_COPYABLE_EX(SelectObjectScope)
 	HDC m_dc;
 	HGDIOBJ m_obj;
+};
+
+class OffsetWindowOrgScope {
+public:
+	OffsetWindowOrgScope(HDC dc, const POINT & pt) throw() : m_dc(dc), m_pt(pt) {
+		OffsetWindowOrgEx(m_dc, m_pt.x, m_pt.y, NULL);
+	}
+	~OffsetWindowOrgScope() throw() {
+		OffsetWindowOrgEx(m_dc, -m_pt.x, -m_pt.y, NULL);
+	}
+
+private:
+	const HDC m_dc;
+	const POINT m_pt;
+};
+class DCStateScope {
+public:
+	DCStateScope(HDC p_dc) throw() : m_dc(p_dc) {
+		m_state = SaveDC(m_dc);
+	}
+	~DCStateScope() throw() {
+		RestoreDC(m_dc,m_state);
+	}
+private:
+	const HDC m_dc;
+	int m_state;
+};
+
+
+class exception_com : public std::exception {
+public:
+	exception_com(HRESULT p_code) : std::exception(format_hresult(p_code)), m_code(p_code) {}
+	exception_com(HRESULT p_code, const char * msg) : std::exception(format_hresult(p_code, msg)), m_code(p_code) {}
+	HRESULT get_code() const {return m_code;}
+private:
+	HRESULT m_code;
+};
+
+// Same format as _WIN32_WINNT macro.
+static WORD GetWindowsVersionCode() throw() {
+	const DWORD ver = GetVersion();
+	return (WORD)HIBYTE(LOWORD(ver)) | ((WORD)LOBYTE(LOWORD(ver)) << 8);
+}
+
+//! Simple implementation of a COM reference counter. The initial reference count is zero, so it can be used with pfc::com_ptr_t<> with plain operator=/constructor rather than attach().
+template<typename TBase> class ImplementCOMRefCounter : public TBase {
+public:
+	TEMPLATE_CONSTRUCTOR_FORWARD_FLOOD(ImplementCOMRefCounter,TBase)
+	ULONG STDMETHODCALLTYPE AddRef() {
+		return ++m_refcounter;
+	}
+	ULONG STDMETHODCALLTYPE Release() {
+		long val = --m_refcounter;
+		if (val == 0) delete this;
+		return val;
+	}
+protected:
+	virtual ~ImplementCOMRefCounter() {}
+private:
+	pfc::refcounter m_refcounter;
 };

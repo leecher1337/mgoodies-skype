@@ -2,6 +2,7 @@
 #define _SHARED_DLL__SHARED_H_
 
 #include "../../pfc/pfc.h"
+#include <signal.h>
 
 #ifndef WIN32
 #error N/A
@@ -14,6 +15,8 @@
 #include <windows.h>
 #include <ddeml.h>
 #include <commctrl.h>
+#include <uxtheme.h>
+#include <tmschema.h>
 
 #ifndef NOTHROW
 #ifdef _MSC_VER
@@ -59,10 +62,11 @@ int SHARED_EXPORT uCharCompare(t_uint32 p_char1,t_uint32 p_char2);
 int SHARED_EXPORT uStringCompare_ConvertNumbers(const char * elem1,const char * elem2);
 HINSTANCE SHARED_EXPORT uLoadLibrary(const char * name);
 HANDLE SHARED_EXPORT uCreateEvent(LPSECURITY_ATTRIBUTES lpEventAttributes,BOOL bManualReset,BOOL bInitialState, const char * lpName);
+HANDLE SHARED_EXPORT GetInfiniteWaitEvent();
 DWORD SHARED_EXPORT uGetModuleFileName(HMODULE hMod,pfc::string_base & out);
 BOOL SHARED_EXPORT uSetClipboardString(const char * ptr);
-BOOL SHARED_EXPORT uIsDialogMessage(HWND dlg,LPMSG msg);
-BOOL SHARED_EXPORT uGetMessage(LPMSG msg,HWND wnd,UINT min,UINT max);
+BOOL SHARED_EXPORT uGetClipboardString(pfc::string_base & out);
+BOOL SHARED_EXPORT uSetClipboardRawData(UINT format,const void * ptr,t_size size);//does not empty the clipboard
 BOOL SHARED_EXPORT uGetClassName(HWND wnd,pfc::string_base & out);
 t_size SHARED_EXPORT uCharLength(const char * src);
 BOOL SHARED_EXPORT uDragQueryFile(HDROP hDrop,UINT idx,pfc::string_base & out);
@@ -93,6 +97,7 @@ BOOL SHARED_EXPORT uGetLongPathName(const char * name,pfc::string_base & out);//
 BOOL SHARED_EXPORT uGetFullPathName(const char * name,pfc::string_base & out);
 BOOL SHARED_EXPORT uSearchPath(const char * path, const char * filename, const char * extension, pfc::string_base & p_out);
 BOOL SHARED_EXPORT uFixPathCaps(const char * path,pfc::string_base & p_out);
+//BOOL SHARED_EXPORT uFixPathCapsQuick(const char * path,pfc::string_base & p_out);
 void SHARED_EXPORT uGetCommandLine(pfc::string_base & out);
 BOOL SHARED_EXPORT uGetTempPath(pfc::string_base & out);
 BOOL SHARED_EXPORT uGetTempFileName(const char * path_name,const char * prefix,UINT unique,pfc::string_base & out);
@@ -185,35 +190,29 @@ bool SHARED_EXPORT uTreeView_GetText(HWND wnd,HTREEITEM item,pfc::string_base & 
 #define uUnhookWindowsHookEx UnhookWindowsHookEx
 #define uCallNextHookEx CallNextHookEx
 
-
-/* usage:
-
-  const char * src = "something";
-
-  void * temp = malloc(uOSStringEstimateSize(src));
-  uOSStringConvert(src,temp);
-  //now temp contains OS-friendly (TCHAR) version of src
-*/
-
 typedef TCITEMA uTCITEM;
 int SHARED_EXPORT uTabCtrl_InsertItem(HWND wnd,t_size idx,const uTCITEM * item);
 int SHARED_EXPORT uTabCtrl_SetItem(HWND wnd,t_size idx,const uTCITEM * item);
 
 int SHARED_EXPORT uGetKeyNameText(LONG lparam,pfc::string_base & out);
 
-void SHARED_EXPORT uFixAmpersandChars(const char * src,pfc::string_base & out);//for systray
+void SHARED_EXPORT uFixAmpersandChars(const char * src,pfc::string_base & out);//for notification area icon
 void SHARED_EXPORT uFixAmpersandChars_v2(const char * src,pfc::string_base & out);//for other controls
 
 //deprecated
 t_size SHARED_EXPORT uPrintCrashInfo(LPEXCEPTION_POINTERS param,const char * extrainfo,char * out);
 enum {uPrintCrashInfo_max_length = 1024};
 
-void SHARED_EXPORT uPrintCrashInfo_Init(const char * name);//called only by exe on startup
-void SHARED_EXPORT uPrintCrashInfo_AddInfo(const char * p_info);//called only by exe on startup
-void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * name);//called only by exe on startup
-
+void SHARED_EXPORT uPrintCrashInfo_Init(const char * name);//called only by the exe on startup
+void SHARED_EXPORT uPrintCrashInfo_SetComponentList(const char * p_info);//called only by the exe on startup
+void SHARED_EXPORT uPrintCrashInfo_AddEnvironmentInfo(const char * p_info);//called only by the exe on startup
+void SHARED_EXPORT uPrintCrashInfo_SetDumpPath(const char * name);//called only by the exe on startup
 
 void SHARED_EXPORT uDumpCrashInfo(LPEXCEPTION_POINTERS param);
+
+
+
+void SHARED_EXPORT uPrintCrashInfo_OnEvent(const char * message, t_size length);
 
 BOOL SHARED_EXPORT uListBox_GetText(HWND listbox,UINT index,pfc::string_base & out);
 
@@ -269,6 +268,17 @@ public:
 private:
 	pfc::string8 m_data;
 };
+
+static pfc::string uGetWindowText(HWND wnd) {
+	pfc::string8 temp;
+	if (!uGetWindowText(wnd,temp)) return "";
+	return temp.toString();
+}
+static pfc::string uGetDlgItemText(HWND wnd,UINT id) {
+	pfc::string8 temp;
+	if (!uGetDlgItemText(wnd,id,temp)) return "";
+	return temp.toString();
+}
 
 #define uMAKEINTRESOURCE(x) ((const char*)LOWORD(x))
 
@@ -379,11 +389,6 @@ public:
 #define uGetDlgItemInt GetDlgItemInt
 #define uSetDlgItemInt SetDlgItemInt
 
-#define __uHookWindowProc(WND,PROC) ((WNDPROC)SetWindowLongPtr(WND,GWLP_WNDPROC,(LONG_PTR)(PROC)))
-static WNDPROC uHookWindowProc(HWND p_wnd,WNDPROC p_proc) {return __uHookWindowProc(p_wnd,p_proc);}
-
-#define uCreateToolbarEx CreateToolbarEx
-#define uIsBadStringPtr IsBadStringPtrA
 #define uSendMessage SendMessage
 #define uSendDlgItemMessage SendDlgItemMessage
 #define uSendMessageTimeout SendMessageTimeout
@@ -392,16 +397,6 @@ static WNDPROC uHookWindowProc(HWND p_wnd,WNDPROC p_proc) {return __uHookWindowP
 #define uPostMessage PostMessage
 #define uPostThreadMessage PostThreadMessage
 
-
-class string_print_crash
-{
-	char block[uPrintCrashInfo_max_length];
-public:
-	inline operator const char * () const {return block;}
-	inline const char * get_ptr() const {return block;}
-	inline t_size length() {return strlen(block);}
-	inline string_print_crash(LPEXCEPTION_POINTERS param,const char * extrainfo = 0) {uPrintCrashInfo(param,extrainfo,block);}
-};
 
 class uStringPrintf
 {
@@ -417,6 +412,7 @@ public:
 	inline t_size length() const {return m_data.length();}
 	inline bool is_empty() const {return length() == 0;}
 	inline const char * get_ptr() const {return m_data.get_ptr();}
+	const char * toString() const {return get_ptr();}
 private:
 	pfc::string8_fastalloc m_data;
 };
@@ -438,6 +434,45 @@ extern "C"
 	LPCSTR SHARED_EXPORT uGetCallStackPath();
 }
 
+namespace pfc {
+	class formatBugCheck : public string_formatter {
+	public:
+		formatBugCheck(const char * msg) {
+			*this << msg;
+			const char * path = uGetCallStackPath();
+			if (*path) {
+				*this << " (at: " << path << ")";
+			}
+		}
+	};
+	class exception_bug_check_v2 : public exception_bug_check {
+	public:
+		exception_bug_check_v2(const char * msg = exception_bug_check::g_what()) : exception_bug_check(formatBugCheck(msg)) {
+			PFC_ASSERT(!"exception_bug_check_v2 triggered");
+		}
+	};
+}
+
+static int uExceptFilterProc_inline(LPEXCEPTION_POINTERS param) {
+	uDumpCrashInfo(param);
+	TerminateProcess(GetCurrentProcess(), 0);
+	return 0;// never reached
+}
+
+#if !defined(FOOBAR2000_TARGET_VERSION) || FOOBAR2000_TARGET_VERSION >= 76
+extern "C" {
+	LONG SHARED_EXPORT uExceptFilterProc(LPEXCEPTION_POINTERS param);
+	PFC_NORETURN void SHARED_EXPORT uBugCheck();
+}
+#else
+#define uExceptFilterProc uExceptFilterProc_inline
+#define uBugCheck() {throw pfc::exception_bug_check_v2(msg);}
+#endif
+
+#define __except_instacrash __except(uExceptFilterProc(GetExceptionInformation()))
+#define fb2k_instacrash_scope(X) __try { X; } __except_instacrash {}
+
+
 #if 1
 #define TRACK_CALL(X) uCallStackTracker TRACKER__##X(#X)
 #define TRACK_CALL_TEXT(X) uCallStackTracker TRACKER__BLAH(X)
@@ -449,11 +484,11 @@ extern "C"
 #endif
 
 extern "C" {
-int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2);
-int SHARED_EXPORT stricmp_utf8_ex(const char * p1,t_size len1,const char * p2,t_size len2);
-int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,t_size p2_bytes);
-int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,t_size num = ~0);
-int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,t_size p1_bytes);
+int SHARED_EXPORT stricmp_utf8(const char * p1,const char * p2) throw();
+int SHARED_EXPORT stricmp_utf8_ex(const char * p1,t_size len1,const char * p2,t_size len2) throw();
+int SHARED_EXPORT stricmp_utf8_stringtoblock(const char * p1,const char * p2,t_size p2_bytes) throw();
+int SHARED_EXPORT stricmp_utf8_partial(const char * p1,const char * p2,t_size num = ~0) throw();
+int SHARED_EXPORT stricmp_utf8_max(const char * p1,const char * p2,t_size p1_bytes) throw();
 t_size SHARED_EXPORT uReplaceStringAdd(pfc::string_base & out,const char * src,t_size src_len,const char * s1,t_size len1,const char * s2,t_size len2,bool casesens);
 t_size SHARED_EXPORT uReplaceCharAdd(pfc::string_base & out,const char * src,t_size src_len,unsigned c1,unsigned c2,bool casesens);
 //all lengths in uReplaceString functions are optional, set to -1 if parameters is a simple null-terminated string
@@ -463,7 +498,7 @@ void SHARED_EXPORT uAddStringUpper(pfc::string_base & out,const char * src,t_siz
 
 class comparator_stricmp_utf8 {
 public:
-	static int compare(const char * p_string1,const char * p_string2) {return stricmp_utf8(p_string1,p_string2);}
+	static int compare(const char * p_string1,const char * p_string2) throw() {return stricmp_utf8(p_string1,p_string2);}
 };
 
 inline void uStringLower(pfc::string_base & out,const char * src,t_size len = ~0) {out.reset();uAddStringLower(out,src,len);}
@@ -505,8 +540,6 @@ private:
 	pfc::string8 m_data;
 };
 
-inline UINT char_lower(UINT c) {return uCharLower(c);}
-inline UINT char_upper(UINT c) {return uCharUpper(c);}
 
 inline BOOL uGetLongPathNameEx(const char * name,pfc::string_base & out)
 {
@@ -528,11 +561,41 @@ struct t_font_description
 	t_uint8 m_charset;
 	char m_facename[m_facename_length];
 
+	bool operator==(const t_font_description & other) const {return g_equals(*this, other);}
+	bool operator!=(const t_font_description & other) const {return !g_equals(*this, other);}
+	
+	static bool g_equals(const t_font_description & v1, const t_font_description & v2) {
+		return v1.m_height == v2.m_height && v1.m_weight == v2.m_weight && v1.m_italic == v2.m_italic && v1.m_charset == v2.m_charset && pfc::strcmp_ex(v1.m_facename, m_facename_length, v2.m_facename, m_facename_length) == 0;
+	}
+
 	HFONT SHARED_EXPORT create() const;
 	bool SHARED_EXPORT popup_dialog(HWND p_parent);
 	void SHARED_EXPORT from_font(HFONT p_font);
 	static t_font_description SHARED_EXPORT g_from_font(HFONT p_font);
+	static t_font_description SHARED_EXPORT g_from_logfont(LOGFONT const & lf);
+	static t_font_description SHARED_EXPORT g_from_system(int id = TMT_MENUFONT);
+
+	template<typename t_stream,typename t_abort> void to_stream(t_stream p_stream,t_abort & p_abort) const;
+	template<typename t_stream,typename t_abort> void from_stream(t_stream p_stream,t_abort & p_abort);
 };
+
+/* relevant types not yet defined here */ template<typename t_stream,typename t_abort> void t_font_description::to_stream(t_stream p_stream,t_abort & p_abort) const {
+	p_stream->write_lendian_t(m_height,p_abort);
+	p_stream->write_lendian_t(m_weight,p_abort);
+	p_stream->write_lendian_t(m_italic,p_abort);
+	p_stream->write_lendian_t(m_charset,p_abort);
+	p_stream->write_string(m_facename,PFC_TABSIZE(m_facename),p_abort);
+}
+
+/* relevant types not yet defined here */ template<typename t_stream,typename t_abort> void t_font_description::from_stream(t_stream p_stream,t_abort & p_abort) {
+	p_stream->read_lendian_t(m_height,p_abort);
+	p_stream->read_lendian_t(m_weight,p_abort);
+	p_stream->read_lendian_t(m_italic,p_abort);
+	p_stream->read_lendian_t(m_charset,p_abort);
+	pfc::string8 temp;
+	p_stream->read_string(temp,p_abort);
+	strncpy_s(m_facename,temp,PFC_TABSIZE(m_facename));
+}
 
 
 struct t_modal_dialog_entry
@@ -550,23 +613,29 @@ extern "C" {
 	void SHARED_EXPORT PokeWindow(HWND p_wnd);
 };
 
+static bool ModalDialogPrologue() {
+	bool rv = ModalDialog_CanCreateNew();
+	if (!rv) ModalDialog_PokeExisting();
+	return rv;
+}
+
 //! The purpose of modal_dialog_scope is to help to avoid the modal dialog recursion problem. Current toplevel modal dialog handle is stored globally, so when creation of a new modal dialog is blocked, it can be activated to indicate the reason for the task being blocked.
 class modal_dialog_scope {
 public:
 	//! This constructor initializes the modal dialog scope with specified dialog handle.
-	inline modal_dialog_scope(HWND p_wnd) : m_initialized(false) {initialize(p_wnd);}
+	inline modal_dialog_scope(HWND p_wnd) throw() : m_initialized(false) {initialize(p_wnd);}
 	//! This constructor leaves the scope uninitialized (you can call initialize() later with your window handle).
-	inline modal_dialog_scope() : m_initialized(false) {}
-	inline ~modal_dialog_scope() {deinitialize();}
+	inline modal_dialog_scope() throw() : m_initialized(false) {}
+	inline ~modal_dialog_scope() throw() {deinitialize();}
 
 	//! Returns whether creation of a new modal dialog is allowed (false when there's another one active).\n
 	//! NOTE: when calling context is already inside a modal dialog that you own, you should not be checking this before creating a new modal dialog.
-	inline static bool can_create() {return ModalDialog_CanCreateNew();}
+	inline static bool can_create() throw(){return ModalDialog_CanCreateNew();}
 	//! Activates the top-level modal dialog existing, if one exists.
-	inline static void poke_existing() {ModalDialog_PokeExisting();}
+	inline static void poke_existing() throw() {ModalDialog_PokeExisting();}
 
 	//! Initializes the scope with specified window handle.
-	void initialize(HWND p_wnd)
+	void initialize(HWND p_wnd) throw()
 	{
 		if (!m_initialized)
 		{
@@ -577,7 +646,7 @@ public:
 		}
 	}
 
-	void deinitialize()
+	void deinitialize() throw()
 	{
 		if (m_initialized)
 		{
@@ -597,10 +666,21 @@ private:
 	bool m_initialized;
 };
 
+class LastErrorRevertScope {
+public:
+	LastErrorRevertScope() : m_val(GetLastError()) {}
+	~LastErrorRevertScope() {SetLastError(m_val);}
+
+private:
+	const DWORD m_val;
+};
+
 class format_win32_error {
 public:
 	format_win32_error(DWORD p_code) {
-		if (!uFormatSystemErrorMessage(m_buffer,p_code)) m_buffer << "Unknown error code (" << (unsigned)p_code << ")";
+		LastErrorRevertScope revert;
+		if (p_code == 0) m_buffer = "Undefined error";
+		else if (!uFormatSystemErrorMessage(m_buffer,p_code)) m_buffer << "Unknown error code (" << (unsigned)p_code << ")";
 	}
 
 	const char * get_ptr() const {return m_buffer.get_ptr();}
@@ -609,13 +689,30 @@ private:
 	pfc::string8 m_buffer;
 };
 
+class format_hresult {
+public:
+	format_hresult(HRESULT p_code) {
+		if (!uFormatSystemErrorMessage(m_buffer,(DWORD)p_code)) m_buffer = "Unknown error code";
+		stamp_hex(p_code);
+	}
+	format_hresult(HRESULT p_code, const char * msgOverride) {
+		m_buffer = msgOverride;
+		stamp_hex(p_code);
+	}
+
+	const char * get_ptr() const {return m_buffer.get_ptr();}
+	operator const char*() const {return m_buffer.get_ptr();}
+private:
+	void stamp_hex(HRESULT p_code) {m_buffer << " (0x" << pfc::format_hex((t_uint32)p_code, 8) << ")";}
+	pfc::string_formatter m_buffer;
+};
+
 struct exception_win32 : public std::exception {
 	exception_win32(DWORD p_code) : std::exception(format_win32_error(p_code)), m_code(p_code) {}
 	DWORD get_code() const {return m_code;}
 private:
 	DWORD m_code;
 };
-
 
 class uDebugLog : public pfc::string_formatter {
 public:
@@ -649,7 +746,116 @@ static bool IsKeyPressed(unsigned vk) {
 	return (GetKeyState(vk) & 0x8000) ? true : false;
 }
 
+//! Returns current modifier keys pressed, using win32 MOD_* flags.
+static unsigned GetHotkeyModifierFlags() {
+	unsigned ret = 0;
+	if (IsKeyPressed(VK_CONTROL)) ret |= MOD_CONTROL;
+	if (IsKeyPressed(VK_SHIFT)) ret |= MOD_SHIFT;
+	if (IsKeyPressed(VK_MENU)) ret |= MOD_ALT;
+	if (IsKeyPressed(VK_LWIN) || IsKeyPressed(VK_RWIN)) ret |= MOD_WIN;
+	return ret;
+}
+
+class CClipboardOpenScope {
+public:
+	CClipboardOpenScope() : m_open(false) {}
+	~CClipboardOpenScope() {Close();}
+	bool Open(HWND p_owner) {
+		Close();
+		if (OpenClipboard(p_owner)) {
+			m_open = true;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	void Close() {
+		if (m_open) {
+			m_open = false;
+			CloseClipboard();
+		}
+	}
+private:
+	bool m_open;
+	
+	PFC_CLASS_NOT_COPYABLE_EX(CClipboardOpenScope)
+};
+
+class CGlobalLockScope {
+public:
+	CGlobalLockScope(HGLOBAL p_handle) : m_handle(p_handle), m_ptr(GlobalLock(p_handle)) {
+		if (m_ptr == NULL) throw std::bad_alloc();
+	}
+	~CGlobalLockScope() {
+		if (m_ptr != NULL) GlobalUnlock(m_handle);
+	}
+	void * GetPtr() const {return m_ptr;}
+	t_size GetSize() const {return GlobalSize(m_handle);}
+private:
+	void * m_ptr;
+	HGLOBAL m_handle;
+
+	PFC_CLASS_NOT_COPYABLE_EX(CGlobalLockScope)
+};
+
+template<typename TItem> class CGlobalLockScopeT {
+public:
+	CGlobalLockScopeT(HGLOBAL handle) : m_scope(handle) {}
+	TItem * GetPtr() const {return reinterpret_cast<TItem*>(m_scope.GetPtr());}
+	t_size GetSize() const {
+		const t_size val = m_scope.GetSize();
+		PFC_ASSERT( val % sizeof(TItem) == 0 );
+		return val / sizeof(TItem);
+	}
+private:
+	CGlobalLockScope m_scope;
+};
+
+
+static bool IsPointInsideControl(const POINT& pt, HWND wnd) {
+	HWND walk = WindowFromPoint(pt);
+	for(;;) {
+		if (walk == NULL) return false;
+		if (walk == wnd) return true;
+		if (GetWindowLong(walk,GWL_STYLE) & WS_POPUP) return false;
+		walk = GetParent(walk);
+	}
+}
+
+static bool IsWindowChildOf(HWND child, HWND parent) {
+	HWND walk = child;
+	while(walk != parent && walk != NULL && (GetWindowLong(walk,GWL_STYLE) & WS_CHILD) != 0) {
+		walk = GetParent(walk);
+	}
+	return walk == parent;
+}
+
+
 #include "audio_math.h"
 #include "win32_misc.h"
+
+template<typename TPtr>
+class CoTaskMemObject {
+public:
+	CoTaskMemObject() : m_ptr() {}
+
+	~CoTaskMemObject() {CoTaskMemFree(m_ptr);}
+
+	TPtr m_ptr;
+	PFC_CLASS_NOT_COPYABLE(CoTaskMemObject, CoTaskMemObject<TPtr> );
+};
+
+
+    
+static void __cdecl _OverrideCrtAbort_handler(int signal) {
+	const ULONG_PTR args[] = {signal};
+	RaiseException(0x6F8E1DC8 /* random GUID */, EXCEPTION_NONCONTINUABLE, _countof(args), args);
+}
+
+static void OverrideCrtAbort() {
+	const int signals[] = {SIGINT, SIGTERM, SIGBREAK, SIGABRT};
+	for(size_t i=0; i<_countof(signals); i++) signal(signals[i], _OverrideCrtAbort_handler);
+	_set_abort_behavior(0, ~0);
+}
 
 #endif //_SHARED_DLL__SHARED_H_
