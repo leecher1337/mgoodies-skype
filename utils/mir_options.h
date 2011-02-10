@@ -46,7 +46,7 @@ typedef struct {
 	unsigned int nID;
 	char *setting;
 	union {
-		DWORD dwDefValue;
+		ULONG_PTR dwDefValue;
 		TCHAR *tszDefValue;
 		char *szDefValue;
 	};
@@ -60,7 +60,7 @@ typedef struct {
 	WORD max;
 } OptPageControl;
 
-BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *module, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *module, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void LoadOpts(OptPageControl *controls, int controlsSize, char *module);
 
