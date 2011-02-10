@@ -1,0 +1,63 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	uuid(D63D265A-88DB-4D95-8B1C-797B871CD6D1),
+	helpstring("IClientHelper Interface"),
+	pointer_default(unique)
+] 
+interface IClientHelper07 : IDispatch
+{
+	[propget,id(1),helpstring("property Running")] HRESULT Running([out,retval] VARIANT_BOOL *pVal);
+	[propget,id(2),helpstring("property Application")] HRESULT Server([out,retval] IDispatch **pVal );
+};
+
+[
+	object,
+	oleautomation,
+	hidden,
+	uuid(623D88DD-8B7E-4ce7-A54A-C5FBD8A7031F),
+	helpstring("IServerHelper07 Interface"),
+	pointer_default(unique)
+] 
+interface IServerHelper07 : IUnknown
+{
+	[id(1),helpstring("method RegisterServerObject")] HRESULT  RegisterServerObject([in] IUnknown *pObj, [out,retval] DWORD *pdwCookie);
+	[id(2),helpstring("method RevokeServerObject")] HRESULT  RevokeServerObject([in] DWORD dwCookie);
+};
+
+[ version(1.0), uuid(332869AA-4769-46C5-BE50-88866927A23D), helpstring("Foobar2000 v0.9 Helper Type Library") ]
+library Foobar2000Helper
+{
+	importlib("stdole2.tlb");
+
+	[
+		hidden,
+		uuid(112498DE-9039-4138-91E9-4B9386309966),
+		helpstring("_IClientHelper Event Interface")
+	] 
+	dispinterface _IClientHelperEvents07
+	{
+	properties:
+
+	methods:
+		[id(1),helpstring("method ServerStateChanged")] HRESULT  ServerStateChanged([in] VARIANT_BOOL bRunning);
+	};
+
+	[
+		uuid(23D75BD0-096D-49F7-83F8-EE21ACFC6A11),
+		helpstring("ApplicationHelper Class")
+	] 
+	coclass ApplicationHelper07
+	{
+		[default] interface IClientHelper07;
+		[default, source]	interface _IClientHelperEvents07;
+		interface IServerHelper07;
+	};
+
+}
+

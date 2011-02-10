@@ -1,0 +1,922 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+/**
+ * Foobar2000 v0.9 Type Library.
+ */
+[
+uuid(cb8f14d8-736e-4bb7-adcf-be26c39b576b),
+helpstring("Foobar2000 v0.9 Type Library"),
+version(1.0)
+]
+library Foobar2000
+{
+/////////////////////////////////////////
+// Forward declarations for interfaces compatible with Visual Basic 6 and scripting clients
+interface IVBApplication;
+interface IVBMediaLibrary;
+interface IVBPlayback;
+interface IVBPlaybackOrders;
+interface IVBPlaybackSettings;
+interface IVBPlaylist;
+interface IVBPlaylists;
+interface IVBReplaygainSettings;
+interface IVBTrack;
+interface IVBTracks;
+dispinterface _IVBPlaybackEvents;
+dispinterface _IVBPlaybackSettingsEvents;
+dispinterface _IVBPlaylistEvents;
+dispinterface _IVBPlaylistsEvents;
+
+/////////////////////////////////////////
+// Forward declarations for interfaces compatible with C/C++
+interface IApplication;
+interface IMediaLibrary;
+interface IPlayback;
+interface IPlaybackOrders;
+interface IPlaybackSettings;
+interface IPlaylist;
+interface IPlaylists;
+interface IReplaygainSettings;
+interface ITrack;
+interface ITrackContainer;
+interface ITracks;
+dispinterface _IPlaybackEvents;
+dispinterface _IPlaybackSettingsEvents;
+dispinterface _IPlaylistEvents;
+dispinterface _IPlaylistsEvents;
+
+/////////////////////////////////////////
+// Declarations for common enumerations
+
+/**
+ * Display level codes. Controls level of playback related information that is visible.
+ */
+[
+	helpstring("fbDisplayLevel Enumeration")
+]
+enum fbDisplayLevel
+{
+	/** No playback-related info */
+	fbDisplayLevelNone   = 0,
+	/** Static info and is_playing/is_paused stats */
+	fbDisplayLevelBasic  = 1,
+	/** Like fbDisplayLevelBasic plus dynamic track titles on e.g. live streams */
+	fbDisplayLevelTitles = 2,
+	/** Like fbDisplayLevelTitles plus timing and VBR bitrate display etc */
+	fbDisplayLevelAll    = 3,
+};
+
+/**
+ * Codes for reasons why playback stopped.
+ */
+[
+	helpstring("fbStopReason Enumeration")
+]
+enum fbStopReason
+{
+	/** Playback stopped by user. */
+	fbStopReasonUser,
+	/** Playback stopped at end of file. */
+	fbStopReasonEOF,
+	/** Playback stopped before starting to another track. */
+	fbStopReasonStartingAnother
+};
+
+/**
+ * Codes for determining the position of items in a list.
+ */
+[
+	helpstring("fbPosition Enumeration")
+]
+enum fbPosition
+{
+	/** Position is last in list. */
+	fbPositionFirst,
+	/** Position is first in list. */
+	fbPositionLast,
+	/** Position is directly before another list item. */
+	fbPositionBefore,
+	/** Position is directly after another list item. */
+	fbPositionAfter
+};
+
+/**
+ * Replaygain source modes.
+ */
+[
+	helpstring("fbReplaygainMode Enumeration")
+]
+enum fbReplaygainMode
+{
+	fbReplaygainModeNone  = 0,
+	fbReplaygainModeTrack = 1,
+	fbReplaygainModeAlbum = 2
+};
+
+/////////////////////////////////////////
+// Declarations for interfaces compatible with Visual Basic 6 and scripting clients
+
+/**
+ * IVBTracks Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("ITrackList Interface"),
+	uuid("0d5d4f8f-4132-48cb-9d6c-126843f78909")
+]
+interface IVBTracks : IDispatch
+{
+	[propget, id(DISPID_NEWENUM), helpstring("property _NewEnum"), hidden, restricted] HRESULT _NewEnum([out, retval] IUnknown** oEnum);
+	[propget, id(DISPID_VALUE), helpstring("property Item")] HRESULT Item([in] LONG lIndex, [out,retval] IVBTrack** oTrack);
+	[propget, id(1), helpstring("property Count")] HRESULT Count([out, retval] LONG* pVal);
+	[id(101), helpstring("method GetTracks")] HRESULT GetTracks([in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+	[id(102), helpstring("method GetSortedTracks")] HRESULT GetSortedTracks([in] BSTR strSortFormat, [in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+};
+
+/**
+ * IVBTrack Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBTrack Interface"),
+	uuid("6d590032-ba42-41ca-866c-321e2b511a62")
+]
+interface IVBTrack : IDispatch
+{
+	[propget, id(1), helpstring("property Path")]
+	HRESULT Path([out, retval] BSTR* strPath);
+
+	[propget, id(2), helpstring("property Index")]
+	HRESULT Index([out, retval] LONG* lIndex);
+
+	[id(3), helpstring("method FormatTitle")]
+	HRESULT FormatTitle([in] BSTR strFormat, [out, retval] BSTR* strText);
+};
+
+/**
+ * IVBPlaybackOrders Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBPlaybackOrders Interface"),
+	uuid("a94be3f4-ea45-4d4c-af02-7c7a398c224e")
+]
+interface IVBPlaybackOrders : IDispatch
+{
+	[propget, id(DISPID_NEWENUM), helpstring("property _NewEnum"), hidden, restricted]
+	HRESULT _NewEnum([out, retval] IUnknown** oEnum);
+
+	[propget, id(DISPID_VALUE), helpstring("property Item")]
+	HRESULT Item([in] LONG lIndex, [out,retval] BSTR* strName);
+
+	[propget, id(1), helpstring("property Count")]
+	HRESULT Count([out, retval] LONG* lCount);
+
+	[id(2), helpstring("method GuidFromName")]
+	HRESULT GuidFromName([in] BSTR strName, [out, retval] BSTR* strGuid);
+
+	[id(3), helpstring("method NameFromGuid")]
+	HRESULT NameFromGuid([in] BSTR strGuid, [out, retval] BSTR* strName);
+};
+
+/**
+ * IVBPlaybackSettings Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBPlaybackSettings Interface"),
+	uuid("d25cec8d-2d0d-42e6-9a9f-0eee52d6f0c5")
+]
+interface IVBPlaybackSettings : IDispatch
+{
+	[propget, id(1), helpstring("property Volume")]
+	HRESULT Volume([out, retval] DOUBLE* dGainInDecibel);
+
+	[propput, id(1), helpstring("property Volume")]
+	HRESULT Volume([in] DOUBLE dGainInDecibel);
+
+	[propget, id(2), helpstring("property PlaybackFollowsCursor")]
+	HRESULT PlaybackFollowsCursor([out, retval] VARIANT_BOOL* bState);
+
+	[propput, id(2), helpstring("property PlaybackFollowsCursor")]
+	HRESULT PlaybackFollowsCursor([in] VARIANT_BOOL bState);
+
+	[propget, id(3), helpstring("property CursorFollowsPlayback")]
+	HRESULT CursorFollowsPlayback([out, retval] VARIANT_BOOL* bState);
+
+	[propput, id(3), helpstring("property CursorFollowsPlayback")]
+	HRESULT CursorFollowsPlayback([in] VARIANT_BOOL bState);
+
+	[propget, id(4), helpstring("property StopAfterCurrent")]
+	HRESULT StopAfterCurrent([out, retval] VARIANT_BOOL* bState);
+
+	[propput, id(4), helpstring("property StopAfterCurrent")]
+	HRESULT StopAfterCurrent([in] VARIANT_BOOL bState);
+
+	[propget, id(5), helpstring("property ActivePlaybackOrder")]
+	HRESULT ActivePlaybackOrder([out, retval] BSTR* bState);
+
+	[propput, id(5), helpstring("property ActivePlaybackOrder")]
+	HRESULT ActivePlaybackOrder([in] BSTR strName);
+
+	[propget, id(6), helpstring("property PlaybackOrders")]
+	HRESULT PlaybackOrders([out, retval] IVBPlaybackOrders ** oOrders);
+};
+
+/**
+ * _IVBPlaybackSettingsEvents Interface.
+ */
+[
+	hidden,
+	helpstring("_IVBPlaybackSettingsEvents Interface"),
+	uuid("831ae6d1-6ebf-488d-9274-a5523cbb29b7")
+]
+dispinterface _IVBPlaybackSettingsEvents
+{
+properties:
+methods:
+	[id(1), helpstring("method VolumeChange")]
+	HRESULT VolumeChanged([in] DOUBLE dNewGainInDecibel);
+
+	[id(2), helpstring("method PlaybackOrderChange")]
+	HRESULT PlaybackOrderChanged([in] BSTR strNewName);
+
+	[id(3), helpstring("method PlaybackFollowsCursorChanged")]
+	HRESULT PlaybackFollowsCursorChanged([in] VARIANT_BOOL bNewState);
+
+	[id(4), helpstring("method CursorFollowsPlaybackChanged")]
+	HRESULT CursorFollowsPlaybackChanged([in] VARIANT_BOOL bNewState);
+
+	[id(5), helpstring("method StopAfterCurrentChanged")]
+	HRESULT StopAfterCurrentChanged([in] VARIANT_BOOL bNewState);
+
+	[id(6), helpstring("method ActivePlaybackOrderChanged")]
+	HRESULT ActivePlaybackOrderChanged([in] BSTR strNewName);
+};
+
+/**
+ * IVBReplaygainSettings Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBReplaygainSettings Interface"),
+	uuid("6f873be6-ae3b-4c2f-828c-d5253a99805c")
+]
+interface IVBReplaygainSettings : IDispatch
+{
+	[propget, id(1), helpstring("property Mode")]
+	HRESULT Mode([out, retval] enum fbReplaygainMode* lReplaygainMode);
+
+	[propput, id(1), helpstring("property Mode")]
+	HRESULT Mode([in] enum fbReplaygainMode lReplaygainMode);
+
+	[propget, id(2), helpstring("property ApplyGain")]
+	HRESULT ApplyGain([out, retval] VARIANT_BOOL* bFlag);
+
+	[propput, id(2), helpstring("property ApplyGain")]
+	HRESULT ApplyGain([in] VARIANT_BOOL bFlag);
+
+	[propget, id(3), helpstring("property PreventClipping")]
+	HRESULT PreventClipping([out, retval] VARIANT_BOOL* bFlag);
+
+	[propput, id(3), helpstring("property PreventClipping")]
+	HRESULT PreventClipping([in] VARIANT_BOOL bFlag);
+
+	[propget, id(4), helpstring("property PreampWithRGInfo")]
+	HRESULT PreampWithRGInfo([out, retval] DOUBLE* dGainInDecibel);
+
+	[propput, id(4), helpstring("property PreampWithRGInfo")]
+	HRESULT PreampWithRGInfo([in] DOUBLE dGainInDecibel);
+
+	[propget, id(5), helpstring("property PreampWithoutRGInfo")]
+	HRESULT PreampWithoutRGInfo([out, retval] DOUBLE* dGainInDecibel);
+
+	[propput, id(5), helpstring("property PreampWithoutRGInfo")]
+	HRESULT PreampWithoutRGInfo([in] DOUBLE dGainInDecibel);
+};
+
+/** 
+ * IVBPlayback Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IPlayback Interface"),
+	uuid("ea5b418a-70a5-4962-b578-17f31a3536c2")
+]
+interface IVBPlayback : IDispatch
+{
+	[id(1), helpstring("method Start")]
+	HRESULT Start([in] VARIANT bPaused);
+
+	[id(2), helpstring("method Stop")]
+	HRESULT Stop(void);
+
+	[id(3), helpstring("method Pause")]
+	HRESULT Pause();
+
+	[id(4), helpstring("method Next")]
+	HRESULT Next(void);
+
+	[id(5), helpstring("method Previous")]
+	HRESULT Previous(void);
+
+	[id(6), helpstring("method Random")]
+	HRESULT Random(void);
+
+	[id(7), helpstring("method Seek")]
+	HRESULT Seek([in] DOUBLE dSecondsFromStart);
+
+	[id(8), helpstring("method SeekRelative")]
+	HRESULT SeekRelative([in] DOUBLE dSecondsFromCurrentPosition);
+
+	[id(9), helpstring("method FormatTitle")]
+	HRESULT FormatTitle([in] BSTR strFormat, [out, retval] BSTR* strText);
+
+	[id(10), helpstring("method FormatTitleEx")]
+	HRESULT FormatTitleEx([in] BSTR strFormat, [in] enum fbDisplayLevel lDisplayLevel, [out, retval] BSTR* strText);
+
+	[propget, id(12), helpstring("property IsPlaying")]
+	HRESULT IsPlaying([out, retval] VARIANT_BOOL* bState);
+
+	[propget, id(13), helpstring("property IsPaused")]
+	HRESULT IsPaused([out, retval] VARIANT_BOOL* bState);
+
+	[propget, id(14), helpstring("property Length")]
+	HRESULT Length([out, retval] DOUBLE* dLengthInSeconds);
+
+	[propget, id(15), helpstring("property CanSeek")]
+	HRESULT CanSeek([out, retval] VARIANT_BOOL* bFlag);
+
+	[propget, id(16), helpstring("property Position")]
+	HRESULT Position([out, retval] DOUBLE* dSecondsFromStart);
+
+	[propget, id(22), helpstring("property Settings")]
+	HRESULT Settings([out, retval] IVBPlaybackSettings** oPlaybackSettings);
+
+	[propget, id(23), helpstring("property Replaygain")]
+	HRESULT Replaygain([out, retval] IVBReplaygainSettings** oReplaygainSettings);
+};
+
+/**
+ * _IVBPlaybackEvents Interface.
+ */
+[
+	hidden,
+	helpstring("_IVBPlaybackEvents Interface"),
+	uuid("7d6b3a92-4421-49d9-a111-4d16ef7144ca")
+]
+dispinterface _IVBPlaybackEvents
+{
+properties:
+methods:
+	[id(1), helpstring("method Started")]
+	HRESULT Started([in] VARIANT_BOOL bPaused);
+
+	[id(2), helpstring("method Stopped")]
+	HRESULT Stopped([in] enum fbStopReason lStopReason);
+
+	[id(3), helpstring("method Paused")]
+	HRESULT Paused([in] VARIANT_BOOL bPaused);
+
+	[id(4), helpstring("method TrackChanged")]
+	HRESULT TrackChanged([in] VARIANT_BOOL bLocationChanged);
+
+	[id(5), helpstring("method InfoChanged")]
+	HRESULT InfoChanged(void);
+
+	[id(6), helpstring("method PositionChanged")]
+	HRESULT PositionChanged([in] DOUBLE dSecondsFromStart, [in] VARIANT_BOOL bSeekFlag);
+};
+
+/**
+ * IVBPlaylist Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBPlaylist Interface"),
+	uuid("e2ab4023-2e5b-4d97-a8dd-823175cbf573")
+]
+interface IVBPlaylist : IDispatch
+{
+	[propget, id(1), helpstring("property Name")]
+	HRESULT Name([out, retval] BSTR* strName);
+
+	[propput, id(1), helpstring("property Name")]
+	HRESULT Name([in] BSTR strName);
+
+	[propget, id(2), helpstring("property Index")]
+	HRESULT Index([out, retval] LONG* lIndex);
+
+	[id(101), helpstring("method GetTracks")]
+	HRESULT GetTracks([in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+
+	[id(102), helpstring("method GetSortedTracks")]
+	HRESULT GetSortedTracks([in] BSTR strSortFormat, [in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+
+	[id(103), helpstring("method DoDefaultAction")]
+	HRESULT DoDefaultAction([in] LONG lItemIndex, [out, retval] VARIANT_BOOL * bSuccess);
+};
+
+/**
+ * _IVBPlaylistEvents Interface.
+ */
+[
+	hidden,
+	helpstring("_IVBPlaylistEvents Interface"),
+	uuid("b38e3232-b271-4072-ba59-47614658fd60")
+]
+dispinterface _IVBPlaylistEvents
+{
+properties:
+methods:
+};
+
+/**
+ * IVBPlaylists Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBPlaylists Interface"),
+	uuid("e4c39463-646a-49d5-9ada-99eaec162ff6")
+]
+interface IVBPlaylists : IDispatch
+{
+	[propget, id(DISPID_NEWENUM), helpstring("property _NewEnum"), hidden, restricted]
+	HRESULT _NewEnum([out, retval] IUnknown** oEnum);
+
+	[propget, id(DISPID_VALUE), helpstring("property Item")]
+	HRESULT Item([in] LONG lIndex, [out,retval] IVBPlaylist** oPlaylist);
+
+	[propget, id(1), helpstring("property Count")]
+	HRESULT Count([out, retval] LONG* lCount);
+
+	[id(3), helpstring("method Add")]
+	HRESULT Add([in] BSTR strName, [in, defaultvalue(0)] VARIANT_BOOL bActivate, [out, retval] IVBPlaylist** oPlaylist);
+
+	[id(4), helpstring("method Remove")]
+	HRESULT Remove([in] IVBPlaylist* oPlaylist, [out, retval] VARIANT_BOOL* bSuccess);
+
+	[id(5), helpstring("method Move")]
+	HRESULT Move([in] IVBPlaylist* oPlaylist, [in] enum fbPosition lPosition, [in, optional] VARIANT oReferencePlaylist);
+
+	[id(6), helpstring("method Load")]
+	HRESULT Load([in] BSTR strName, [in] BSTR strFilename, [in, defaultvalue(0)] VARIANT_BOOL bActivate, [out, retval] IVBPlaylist** oPlaylist);
+
+	[id(7), helpstring("method Save")]
+	HRESULT Save([in] IVBPlaylist* oPlaylist, [in] BSTR strFilename);
+
+	[propget, id(8), helpstring("property ActivePlaylist")]
+	HRESULT ActivePlaylist([out, retval] IVBPlaylist** oPlaylist);
+
+	[propput, id(8), helpstring("property ActivePlaylist")]
+	HRESULT ActivePlaylist([in] IVBPlaylist* oPlaylist);
+
+	[id(101), helpstring("method GetTracks")]
+	HRESULT GetTracks([in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+
+	[id(102), helpstring("method GetSortedTracks")]
+	HRESULT GetSortedTracks([in] BSTR strSortFormat, [in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+};
+
+/**
+ * _IVBPlaylistsEvents Interface.
+ */
+[
+	hidden,
+	helpstring("_IVBPlaylistsEvents Interface"),
+	uuid("c9f6edd0-2bfd-46db-a580-4941eae782d0")
+]
+dispinterface _IVBPlaylistsEvents
+{
+properties:
+methods:
+	[id(1), helpstring("method PlaylistAdded")]
+	HRESULT PlaylistAdded([in] LONG lIndex, [in] IVBPlaylist* oPlaylist, [in] BSTR strName);
+
+	[id(2), helpstring("method PlaylistRemoved")]
+	HRESULT PlaylistRemoved([in] LONG lIndex, [in] IVBPlaylist* oPlaylist);
+
+	[id(3), helpstring("method PlaylistRenamed")]
+	HRESULT PlaylistRenamed([in] LONG lIndex, [in] IVBPlaylist* oPlaylist, [in] BSTR strNewName);
+
+	[id(4), helpstring("method PlaylistsReordered")]
+	HRESULT PlaylistsReordered([in] LONG lFirstIndex, [in] LONG lLastIndex);
+
+	[id(5), helpstring("method PlaylistActivated")]
+	HRESULT PlaylistActivated([in] LONG lIndex, [in] IVBPlaylist* oPlaylist);
+};
+
+/**
+ * IVBMediaLibrary Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBPlaylists Interface"),
+	uuid("0386897e-eb1a-4e20-810d-7bdca4f2ff17")
+]
+interface IVBMediaLibrary : IDispatch
+{
+	[id(1), helpstring("method Rescan")]
+	HRESULT Rescan();
+
+	[id(101), helpstring("method GetTracks")]
+	HRESULT GetTracks([in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+
+	[id(102), helpstring("method GetSortedTracks")]
+	HRESULT GetSortedTracks([in] BSTR strSortFormat, [in, optional] VARIANT strQuery, [out, retval] IVBTracks ** oTracks);
+};
+
+/**
+ * IVBApplication Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IVBApplication Interface"),
+	uuid("a3177b54-b826-40ec-996d-a30b9a57a3bf")
+]
+interface IVBApplication : IDispatch
+{
+	[propget, id(1), helpstring("property Name")]
+	HRESULT Name([out, retval] BSTR* strName);
+
+	[propget, id(2), helpstring("property ApplicationPath")]
+	HRESULT ApplicationPath([out, retval] BSTR* strPath);
+
+	[propget, id(3), helpstring("property ProfilePath")]
+	HRESULT ProfilePath([out, retval] BSTR* strPath);
+
+	[propget, id(4), helpstring("property Visible")]
+	HRESULT Minimized([out, retval] VARIANT_BOOL* bFlag);
+
+	[propput, id(4), helpstring("property Visible")]
+	HRESULT Minimized([in] VARIANT_BOOL bFlag);
+
+	[propget, id(5), source, helpstring("property Playback")]
+	HRESULT Playback([out, retval] IVBPlayback ** oPlaylist);
+
+	[propget, id(6), source, helpstring("property Playlists")]
+	HRESULT Playlists([out, retval] IVBPlaylists ** oPlaylists);
+
+	[propget, id(7), helpstring("property MediaLibary")]
+	HRESULT MediaLibrary([out, retval] IVBMediaLibrary ** oMediaLibrary);
+};
+
+/////////////////////////////////////////
+// Declarations for interfaces compatible with C/C++
+
+#if 0
+/** 
+ * IVBPlayback Interface.
+ */
+[
+	object,
+	oleautomation,
+	dual,
+	nonextensible,
+	helpstring("IPlayback Interface"),
+	uuid("ea5b418a-70a5-4962-b578-17f31a3536c2")
+]
+interface IVBPlayback : IDispatch
+{
+	[helpstring("method Start")]
+	HRESULT Start([in] VARIANT_BOOL bPaused);
+
+	[helpstring("method Stop")]
+	HRESULT Stop(void);
+
+	[helpstring("method Pause")]
+	HRESULT Pause();
+
+	[helpstring("method Next")]
+	HRESULT Next(void);
+
+	[helpstring("method Previous")]
+	HRESULT Previous(void);
+
+	[helpstring("method Random")]
+	HRESULT Random(void);
+
+	[helpstring("method Seek")]
+	HRESULT Seek([in] DOUBLE dSecondsFromStart);
+
+	[helpstring("method SeekRelative")]
+	HRESULT SeekRelative([in] DOUBLE dSecondsFromCurrentPosition);
+
+	[helpstring("method FormatTitle")]
+	HRESULT FormatTitle([in] BSTR strFormat, [out, retval] BSTR* strText);
+
+	[helpstring("method FormatTitleEx")]
+	HRESULT FormatTitleEx([in] BSTR strFormat, [in] enum fbDisplayLevel lDisplayLevel, [out, retval] BSTR* strText);
+
+	[propget, helpstring("property IsPlaying")]
+	HRESULT IsPlaying([out, retval] VARIANT_BOOL* bState);
+
+	[propget, helpstring("property IsPaused")]
+	HRESULT IsPaused([out, retval] VARIANT_BOOL* bState);
+
+	[propget, helpstring("property Length")]
+	HRESULT Length([out, retval] DOUBLE* dLengthInSeconds);
+
+	[propget, helpstring("property CanSeek")]
+	HRESULT CanSeek([out, retval] VARIANT_BOOL* bFlag);
+
+	[propget, helpstring("property Position")]
+	HRESULT Position([out, retval] DOUBLE* dSecondsFromStart);
+
+	[propget, helpstring("property Settings")]
+	HRESULT Settings([out, retval] IVBPlaybackSettings** oPlaybackSettings);
+
+	[propget, helpstring("property Replaygain")]
+	HRESULT Replaygain([out, retval] IVBReplaygainSettings** oReplaygainSettings);
+};
+
+/**
+ * ITrackContainer Interface.
+ */
+[
+	object,
+	oleautomation,
+	helpstring("ITrackContainer Interface"),
+	uuid("D999E823-D68B-481e-A433-0F48C3213795")
+]
+interface ITrackContainer : IUnknown
+{
+	[helpstring("method GetTracks")]
+	HRESULT GetTracks([in, optional] VARIANT querystring, [out, retval] ITracks ** ppObj);
+
+	[helpstring("method GetSortedTracks")]
+	HRESULT GetSortedTracks([in] BSTR sortformat, [in, optional] VARIANT querystring, [out, retval] ITracks ** ppObj);
+};
+
+/**
+ * ITracks Interface.
+ */
+[
+	object,
+	oleautomation,
+	helpstring("ITracks Interface"),
+	uuid("f2d52f20-03e7-4d18-bef4-67dbcd3214be")
+]
+interface ITracks : ITrackContainer
+{
+	[propget, id(DISPID_NEWENUM), helpstring("property _NewEnum"), hidden, restricted]
+	HRESULT _NewEnum([out, retval] IUnknown** ppObj);
+
+	[propget, id(DISPID_VALUE), helpstring("property Item")]
+	HRESULT Item([in] LONG index, [out,retval] ITrack** ppObj);
+
+	[helpstring("property Count")]
+	HRESULT Count([out, retval] LONG* pVal);
+};
+
+/**
+ * ITrack Interface.
+ */
+[
+	object,
+	oleautomation,
+	helpstring("ITrack Interface"),
+	uuid("1e684982-f5f3-44dd-a307-3e738aeb9185")
+]
+interface ITrack : IDispatch
+{
+	[propget, helpstring("property Path")]
+	HRESULT Path([out, retval] BSTR* pVal);
+
+	[propget, helpstring("property Index")]
+	HRESULT Index([out, retval] LONG* pVal);
+
+	[helpstring("method FormatTitle")]
+	HRESULT FormatTitle([in] BSTR format, [out, retval] BSTR* pVal);
+};
+
+/**
+ * IMediaLibrary Interface.
+ */
+[
+	object,
+	oleautomation,
+	helpstring("IPlaylists Interface"),
+	uuid("94425484-c078-449b-a718-dd21ae312b39")
+]
+interface IMediaLibrary : IUnknown
+{
+	[helpstring("method Rescan")]
+	HRESULT Rescan();
+};
+
+/**
+ * IApplication Interface.
+ */
+[
+	object,
+	oleautomation,
+	helpstring("IApplication Interface"),
+	uuid("443f44db-111c-45fe-9ec7-8cfe3956ee32")
+]
+interface IApplication : IUnknown
+{
+	[propget, helpstring("property Name")]
+	HRESULT Name([out, retval] BSTR* pVal);
+
+	[propget, helpstring("property ApplicationPath")]
+	HRESULT ApplicationPath([out, retval] BSTR* pVal);
+
+	[propget, helpstring("property ProfilePath")]
+	HRESULT ProfilePath([out, retval] BSTR* pVal);
+
+	[propget, helpstring("property Minimized")]
+	HRESULT Minimized([out, retval] VARIANT_BOOL* pVal);
+
+	[propput, helpstring("property Minimized")]
+	HRESULT Minimized([in] VARIANT_BOOL newVal);
+
+	[propget, source, helpstring("property Playback")]
+	HRESULT Playback([out, retval] IPlayback ** ppObj);
+
+	[propget, source, helpstring("property Playlists")]
+	HRESULT Playlists([out, retval] IPlaylists ** ppObj);
+
+	[propget, helpstring("property MediaLibary")]
+	HRESULT MediaLibrary([out, retval] IMediaLibrary ** ppObj);
+};
+#endif
+
+/////////////////////////////////////////
+// Declarations for coclasses
+
+/**
+ * Application Class.
+ */
+[
+	helpstring("Application Class"),
+	uuid("1bffc1e4-21a6-45af-8831-5ee045281633")
+]
+coclass Application07
+{
+	[default] interface IVBApplication;
+	// interface IApplication;
+};
+
+/**
+ * MediaLibrary Class.
+ */
+[
+	noncreatable,
+	helpstring("MediaLibrary Class"),
+	uuid("8F5F0CEF-4E98-470e-A62A-7A6BFA79457A")
+]
+coclass MediaLibrary07
+{
+	[default] interface IVBMediaLibrary;
+	// interface IMediaLibrary;
+};
+
+/**
+ * Playback Class
+ */
+[
+	noncreatable,
+	helpstring("Playback Class"),
+	uuid("6becd912-ace6-4d29-beb5-e835c5f39fd6")
+]
+coclass Playback07
+{
+	[default] interface IVBPlayback;
+	// interface IPlayback;
+	[default, source] interface _IVBPlaybackEvents;
+};
+
+/**
+ * PlaybackOrders Class.
+ */
+[
+	noncreatable,
+	helpstring("PlaybackOrders Class"),
+	uuid("655bd1a9-22ec-47ab-ac84-0210e3da0fd5")
+]
+coclass PlaybackOrders07
+{
+	[default] interface IVBPlaybackOrders;
+	// interface IPlaybackOrders;
+};
+
+/**
+ * PlaybackSettings Class
+ */
+[
+	noncreatable,
+	helpstring("PlaybackSettings Class"),
+	uuid("f022879b-544f-48bd-8911-c521406e6e40")
+]
+coclass PlaybackSettings07
+{
+	[default] interface IVBPlaybackSettings;
+	// interface IPlaybackSettings;
+	[default, source] interface _IVBPlaybackSettingsEvents;
+};
+
+/**
+ * Playlist Class.
+ */
+[
+	noncreatable,
+	helpstring("Playlist Class"),
+	uuid("1ba62148-9f9a-4ca4-94a8-22b381a9c232")
+]
+coclass Playlist07
+{
+	[default] interface IVBPlaylist;
+	// interface IPlaylist;
+	[default, source] interface _IVBPlaylistEvents;
+};
+
+/**
+ * Playlists Class.
+ */
+[
+	noncreatable,
+	helpstring("Playlists Class"),
+	uuid("81b34219-82bd-4651-805d-9cfe298a871b")
+]
+coclass Playlists07
+{
+	[default] interface IVBPlaylists;
+	// interface IPlaylists;
+	[default, source] interface _IVBPlaylistsEvents;
+};
+
+/**
+ * ReplaygainSettings Class
+ */
+[
+	noncreatable,
+	helpstring("ReplaygainSettings Class"),
+	uuid("a93cd01d-c851-4953-a2fa-839e4f720635")
+]
+coclass ReplaygainSettings07
+{
+	[default] interface IVBReplaygainSettings;
+	// interface IReplaygainSettings;
+};
+
+/**
+ * Track Class.
+ */
+[
+	noncreatable,
+	helpstring("Track Class"),
+	uuid("f4e5d447-3a78-40d4-8d3d-b311804f67b1")
+]
+coclass Track07
+{
+	[default] interface IVBTrack;
+	// interface ITrack;
+};
+
+/**
+ Tracks Class.
+ */
+[
+	noncreatable,
+	helpstring("Tracks Class"),
+	uuid("942caf04-86a1-42d6-9e71-e62a24987ca3")
+]
+coclass Tracks07
+{
+	[default] interface IVBTracks;
+	// interface ITracks;
+};
+
+}
