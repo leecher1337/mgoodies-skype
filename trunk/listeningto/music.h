@@ -21,48 +21,31 @@ Boston, MA 02111-1307, USA.
 #ifndef __MUSIC_H__
 # define __MUSIC_H__
 
-
-#include "commons.h"
-
-
-// Players
-#include "players\\player.h"
-#include "players\\watrack.h"
-#include "players\\generic.h"
-#include "players\\winamp.h"
-#include "players\\foobar.h"
-#include "players\\itunes.h"
-#include "players\\wmp.h"
-
-
 // First non polling ones
-#define WATRACK 0
-#define GENERIC 1
+#define WATRACK			0
+#define GENERIC			1
 
-#define FIRST_PLAYER 2
-#define WMP 2
-#define WINAMP 3
-#define ITUNES 4
-#define FOOBAR 5
-#define NUM_PLAYERS 6
+#define FIRST_PLAYER	2
 
-extern Player *players[NUM_PLAYERS];
+#define WLM				2
+#define WMP				3
+#define WINAMP			4
+#define ITUNES			5
+#define FOOBAR			6
+//#define VIDEOLAN		7
+#define NUM_PLAYERS		7
 
 
 void InitMusic();
 void FreeMusic();
 void EnableDisablePlayers();
 
-
 int ChangedListeningInfo();
 LISTENINGTOINFO * GetListeningInfo();
-
 
 // Helper functions to players
 void FreeListeningInfo(LISTENINGTOINFO *lti);
 void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src);
-
-
 
 
 #endif // __MUSIC_H__
