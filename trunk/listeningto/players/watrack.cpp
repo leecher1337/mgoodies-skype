@@ -18,7 +18,7 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "..\\commons.h"
+#include "..\commons.h"
 
 
 static WATrack *instance = NULL;
@@ -33,40 +33,39 @@ int NewStatusCallback(WPARAM wParam, LPARAM lParam)
 }
 
 
-WATrack::WATrack()
+WATrack::WATrack(int index)
+: Player(index)
 {
-	name = _T("WATrack");
+	m_name = _T("WATrack");
 	instance = this;
-	hNewStatusHook = NULL;
+	m_hNewStatusHook = NULL;
 }
-
-
 
 WATrack::~WATrack()
 {
-	if (hNewStatusHook != NULL) 
+	if (m_hNewStatusHook != NULL) 
 	{
-		UnhookEvent(hNewStatusHook);
-		hNewStatusHook = NULL;
+		UnhookEvent(m_hNewStatusHook);
+		m_hNewStatusHook = NULL;
 	}
 	instance = NULL;
 }
 
-
-void WATrack::EnableDisable()
+void
+WATrack::EnableDisable()
 {
 	if (!ServiceExists(MS_WAT_GETMUSICINFO))
 	{
-		enabled = FALSE;
+		m_enabled = FALSE;
 		return;
 	}
 
-	if (hNewStatusHook == NULL)
-		hNewStatusHook = HookEvent(ME_WAT_NEWSTATUS, NewStatusCallback);
+	if (m_hNewStatusHook == NULL)
+		m_hNewStatusHook = HookEvent(ME_WAT_NEWSTATUS, NewStatusCallback);
 }
 
-
-void WATrack::NewStatus(int event, int value)
+void
+WATrack::NewStatus(int event, int value)
 {
 	EnterCriticalSection(&cs);
 
@@ -84,21 +83,15 @@ void WATrack::NewStatus(int event, int value)
 	NotifyInfoChanged();
 }
 
-
-void WATrack::GetData()
+void 
+WATrack::GetData()
 {
 #ifdef UNICODE
-
 	SONGINFO *si = NULL;
-
-	int playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_UNICODE, (LPARAM) &si);
-
+	INT_PTR playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_UNICODE, (LPARAM) &si);
 #else
-
 	SONGINFOA *si = NULL;
-
-	int playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_ANSI, (LPARAM) &si);
-
+	INT_PTR playing = CallService(MS_WAT_GETMUSICINFO, WAT_INF_ANSI, (LPARAM) &si);
 #endif
 
 	FreeData();
@@ -114,40 +107,40 @@ void WATrack::GetData()
 
 	// Copy new data
 
-	listening_info.ptszAlbum = DUP(si->album);
-	listening_info.ptszArtist = DUP(si->artist);
-	listening_info.ptszTitle = DUP(si->title);
-	listening_info.ptszYear = DUP(si->year);
+	m_listening_info.ptszAlbum	= DUP(si->album);
+	m_listening_info.ptszArtist	= DUP(si->artist);
+	m_listening_info.ptszTitle	= DUP(si->title);
+	m_listening_info.ptszYear	= DUP(si->year);
 
 	if (si->track > 0)
 	{
-		listening_info.ptszTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
-		_itot(si->track, listening_info.ptszTrack, 10);
+		m_listening_info.ptszTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		_i64tot(si->track, m_listening_info.ptszTrack, 10);
 	}
 
-	listening_info.ptszGenre = DUP(si->genre);
+	m_listening_info.ptszGenre = DUP(si->genre);
 
 	if (si->total > 0)
 	{
-		listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		m_listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
 
 		int s = si->total % 60;
 		int m = (si->total / 60) % 60;
 		int h = (si->total / 60) / 60;
 
 		if (h > 0)
-			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
+			mir_sntprintf(m_listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
 		else
-			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
+			mir_sntprintf(m_listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
 	}
 
 	if (si->width > 0)
-		listening_info.ptszType = mir_tstrdup(_T("Video"));
+		m_listening_info.ptszType = mir_tstrdup(_T("Video"));
 	else
-		listening_info.ptszType = mir_tstrdup(_T("Music"));
+		m_listening_info.ptszType = mir_tstrdup(_T("Music"));
 
-	listening_info.ptszPlayer = DUPD(si->player, name);
+	m_listening_info.ptszPlayer = DUPD(si->player, m_name);
 
-	listening_info.cbSize = sizeof(listening_info);
-	listening_info.dwFlags = LTI_TCHAR;
+	m_listening_info.cbSize = sizeof(m_listening_info);
+	m_listening_info.dwFlags = LTI_TCHAR;
 }
