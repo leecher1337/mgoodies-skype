@@ -18,19 +18,16 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "..\\commons.h"
+#include "..\commons.h"
 
+static UINT_PTR			hSendTimer = NULL;
+static GenericPlayer	*singleton = NULL;
 
-static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+static LRESULT	CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+static VOID		CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
-
-static UINT hTimer = NULL;
-
-GenericPlayer *singleton = NULL;
-
-
-
-int m_log(const TCHAR *function, const TCHAR *fmt, ...)
+int 
+m_log(const TCHAR *function, const TCHAR *fmt, ...)
 {
 #if 0
     va_list va;
@@ -70,11 +67,15 @@ int m_log(const TCHAR *function, const TCHAR *fmt, ...)
 }
 
 
-GenericPlayer::GenericPlayer()
-{
-	name = _T("GenericPlayer");
+/////////////////////////////////////////////////////////////////////////////
+// main
 
-	enabled = TRUE;
+GenericPlayer::GenericPlayer(int index)
+: Player(index)
+{
+	m_name = _T("GenericPlayer");
+
+	m_enabled = TRUE;
 	received[0] = L'\0';
 	singleton = this;
 
@@ -83,32 +84,34 @@ GenericPlayer::GenericPlayer()
 	wc.hInstance		= hInst;
 	wc.lpszClassName	= MIRANDA_WINDOWCLASS;
 
-	RegisterClass(&wc);
+	cWndclass = RegisterClass(&wc);
+	DWORD err = GetLastError();
+	if (!cWndclass) {
+		TCHAR msg[1024];
+		wsprintf(msg, TranslateT("Failed to register %s class."),wc.lpszClassName);
+		MessageBox(NULL, msg, _T(MODULE_NAME), MB_ICONSTOP|MB_OK);
+	}
 
-	hWnd = CreateWindow(MIRANDA_WINDOWCLASS, _T("Miranda ListeningTo receiver"), 
+	m_hwnd = CreateWindow(MIRANDA_WINDOWCLASS, _T("Miranda ListeningTo receiver"), 
 						0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
 }
 
-
-
 GenericPlayer::~GenericPlayer()
 {
-	if (hTimer != NULL)
-	{
-		KillTimer(NULL, hTimer);
-		hTimer = NULL;
-	}
+	KILLTIMER(hSendTimer);
 
-	DestroyWindow(hWnd);
-	hWnd = NULL;
+	DestroyWindow(m_hwnd);
+	m_hwnd = NULL;
 
-	UnregisterClass(MIRANDA_WINDOWCLASS, hInst);
+	//UnregisterClass(MIRANDA_WINDOWCLASS, hInst);
+	UnregisterClass (MAKEINTATOM(cWndclass),hInst);
+	cWndclass = 0;
+
 	singleton = NULL;
 }
 
-
-
-void GenericPlayer::ProcessReceived()
+void 
+GenericPlayer::ProcessReceived()
 {
 	EnterCriticalSection(&cs);
 
@@ -130,6 +133,7 @@ void GenericPlayer::ProcessReceived()
 	}
 
 	// Process string
+	int i;
 	WCHAR *parts[11] = {0};
 	int pCount = 0;
 	WCHAR *p = received;
@@ -144,25 +148,16 @@ void GenericPlayer::ProcessReceived()
 		*p1 = L'\0';
 	parts[pCount] = p;
 
-	if (pCount < 5)
+	// select known player (default is generic = this)
+	Player *player = m_enabled ? this : NULL;
+	for (i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
 	{
-//		m_log(_T("ProcessReceived"), _T("ERROR: Too little pieces"));
-
-		// Ignore
-		LeaveCriticalSection(&cs);
-		return;
-	}
-
-	// See if player is enabled
-	Player *player = this;
-	for (int i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
-	{
-#ifdef UNICODE
-		WCHAR *player_name = players[i]->name;
-#else
-		WCHAR player_name[128];
-		MultiByteToWideChar(CP_ACP, 0, players[i]->name, -1, player_name, MAX_REGS(player_name));
-#endif
+		#ifdef UNICODE
+			WCHAR *player_name = players[i]->m_name;
+		#else
+			WCHAR player_name[128];
+			MultiByteToWideChar(CP_ACP, 0, players[i]->name, -1, player_name, MAX_REGS(player_name));
+		#endif
 		if (_wcsicmp(parts[1], player_name) == 0)
 		{
 			player = players[i];
@@ -170,13 +165,30 @@ void GenericPlayer::ProcessReceived()
 		}
 	}
 
+	//is player enabled
+	if(!player || !player->m_enabled) {
+		LeaveCriticalSection(&cs);
+		return;
+	}
+
+	//set player status
+	SetActivePlayer(player->m_index, player->m_index);
+	int status = IsEmpty(parts[0]) ? 0 : _wtoi(parts[0]);
+	switch(status){
+		case 0:
+			player->m_state = player->GetStatus() ? PL_STOPPED : PL_OFFLINE;
+			break;
+		case 1:
+			player->m_state = PL_PLAYING;
+			break;
+	}
 
 	player->FreeData();
-
-
-	if (wcscmp(L"1", parts[0]) != 0 || IsEmpty(parts[1]) || (IsEmpty(parts[3]) && IsEmpty(parts[4])))
+	if (pCount < 5 || wcscmp(L"1", parts[0]) != 0 || IsEmpty(parts[1]) || (IsEmpty(parts[3]) && IsEmpty(parts[4])))
 	{
 		// Stoped playing or not enought info
+		player->m_state = PL_OFFLINE;
+//		SetActivePlayer(player->m_index, -1);
 
 //		if (wcscmp(L"1", parts[0]) != 0)
 //			m_log(_T("ProcessReceived"), _T("END: Stoped playing"));
@@ -185,22 +197,24 @@ void GenericPlayer::ProcessReceived()
 	}
 	else
 	{
+		SetActivePlayer(player->m_index, player->m_index);
+
 		LISTENINGTOINFO *li = player->LockListeningInfo();
 
-		li->cbSize = sizeof(listening_info);
-		li->dwFlags = LTI_TCHAR;
-		li->ptszType = U2TD(parts[2], L"Music");
-		li->ptszTitle = U2T(parts[3]);
-		li->ptszArtist = U2T(parts[4]);
-		li->ptszAlbum = U2T(parts[5]);
-		li->ptszTrack = U2T(parts[6]);
-		li->ptszYear = U2T(parts[7]);
-		li->ptszGenre = U2T(parts[8]);
+		li->cbSize		= sizeof(m_listening_info);
+		li->dwFlags		= LTI_TCHAR;
+		li->ptszType	= U2TD(parts[2], L"Music");
+		li->ptszTitle	= U2T(parts[3]);
+		li->ptszArtist	= U2T(parts[4]);
+		li->ptszAlbum	= U2T(parts[5]);
+		li->ptszTrack	= U2T(parts[6]);
+		li->ptszYear	= U2T(parts[7]);
+		li->ptszGenre	= U2T(parts[8]);
 
 		if (player == this)
 			li->ptszPlayer = mir_u2t(parts[1]);
 		else
-			li->ptszPlayer = mir_tstrdup(player->name);
+			li->ptszPlayer = mir_tstrdup(player->m_name);
 
 		if (parts[9] != NULL)
 		{
@@ -233,28 +247,13 @@ void GenericPlayer::ProcessReceived()
 
 	LeaveCriticalSection(&cs);
 
-	NotifyInfoChanged();
+	NotifyInfoChanged(player->m_index);
 
 //	m_log(_T("ProcessReceived"), _T("END: Success"));
 }
 
-
-static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
-{
-	KillTimer(NULL, hTimer);
-	hTimer = NULL;
-
-	if (!loaded)
-		return;
-
-//	m_log(_T("SendTimerProc"), _T("It's time to process"));
-
-	if (singleton != NULL)
-		singleton->ProcessReceived();
-}
-
-
-void GenericPlayer::NewData(const WCHAR *data, size_t len)
+void 
+GenericPlayer::NewData(const WCHAR *data, size_t len)
 {
 //	m_log(_T("NewData"), _T("Processing"));
 
@@ -280,9 +279,8 @@ void GenericPlayer::NewData(const WCHAR *data, size_t len)
 //		m_log(_T("NewData"), _T("Text: %S"), received);
 //#endif
 
-		if (hTimer)
-			KillTimer(NULL, hTimer);
-		hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
+		KILLTIMER(hSendTimer);
+		hSendTimer = SetTimer(NULL, NULL, 300, (TIMERPROC)SendTimerProc); // Do the processing after we return true
 	}
 //	else
 //	{
@@ -292,8 +290,21 @@ void GenericPlayer::NewData(const WCHAR *data, size_t len)
 	LeaveCriticalSection(&cs);
 }
 
+static VOID 
+CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+{
+	if (!loaded)
+		return;
+	KILLTIMER(hSendTimer);
 
-static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//	m_log(_T("SendTimerProc"), _T("It's time to process"));
+
+	if (singleton != NULL)
+		singleton->ProcessReceived();
+}
+
+static LRESULT 
+CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{

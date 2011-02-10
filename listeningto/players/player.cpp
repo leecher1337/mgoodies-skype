@@ -18,16 +18,12 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "..\\commons.h"
+#include "..\commons.h"
 
-
-extern void HasNewListeningInfo();
-
-
-
-Player::Player() : name(_T("Player")), enabled(FALSE), needPoll(FALSE)
+Player::Player(int index) : m_index (index), m_name(_T("Player")), m_enabled(FALSE), m_needPoll(FALSE), m_state(PL_OFFLINE)
 {
-	ZeroMemory(&listening_info, sizeof(listening_info));
+	m_hwnd	= NULL;
+	ZeroMemory(&m_listening_info, sizeof(m_listening_info));
 	InitializeCriticalSection(&cs);
 }
 
@@ -37,25 +33,29 @@ Player::~Player()
 	DeleteCriticalSection(&cs);
 }
 
-void Player::NotifyInfoChanged()
+void 
+Player::NotifyInfoChanged(int ID)
 {
-	if (enabled)
-		HasNewListeningInfo();
+	//check if prev event set a timer (handle doubble events)
+	if(hTimer)
+		return;
+	HasNewListeningInfo((ID<0)? m_index : ID);
 }
 
-BOOL Player::GetListeningInfo(LISTENINGTOINFO *lti)
+BOOL 
+Player::GetListeningInfo(LISTENINGTOINFO *lti)
 {
 	EnterCriticalSection(&cs);
 
 	BOOL ret;
-	if (listening_info.cbSize == 0)
+	if (m_listening_info.cbSize == 0)
 	{
 		ret = FALSE;
 	}
 	else 
 	{
 		if (lti != NULL)
-			CopyListeningInfo(lti, &listening_info);
+			CopyListeningInfo(lti, &m_listening_info);
 		ret = TRUE;
 	}
 
@@ -64,57 +64,85 @@ BOOL Player::GetListeningInfo(LISTENINGTOINFO *lti)
 	return ret;
 }
 
-void Player::FreeData()
+void 
+Player::FreeData()
 {
 	EnterCriticalSection(&cs);
 
-	if (listening_info.cbSize != 0)
-		FreeListeningInfo(&listening_info);
+	if (m_listening_info.cbSize != 0)
+		FreeListeningInfo(&m_listening_info);
 
 	LeaveCriticalSection(&cs);
 }
 
-LISTENINGTOINFO * Player::LockListeningInfo()
+LISTENINGTOINFO*
+Player::LockListeningInfo()
 {
 	EnterCriticalSection(&cs);
 
-	return &listening_info;
+	return &m_listening_info;
 }
 
-void Player::ReleaseListeningInfo()
+void 
+Player::ReleaseListeningInfo()
 {
 	LeaveCriticalSection(&cs);
 }
 
-
-
-ExternalPlayer::ExternalPlayer()
+//Retrieves a reference to a COM object from an existing process
+HRESULT 
+Player::ObjGet(CLSID clsid, REFIID riid, void** pDispatch)
 {
-	name = _T("ExternalPlayer");
-	needPoll = TRUE;
+	//based on c++ example http://support.microsoft.com/kb/238610
+	HRESULT hr;
+	IUnknown	*pUnk  = NULL;
 
-	window_classes = NULL;
-	num_window_classes = 0;
-	found_window = FALSE;
+	for(int i=1;i<=5;i++) { //try attaching for up to 5 attempts
+		hr = GetActiveObject(clsid, NULL, (IUnknown**)&pUnk);
+		if(SUCCEEDED(hr)) {
+			hr = pUnk->QueryInterface(riid, pDispatch);
+			break;
+		}
+		::Sleep(200);
+	}
+	//Release the no-longer-needed IUnknown...
+	RELEASE(pUnk, TRUE);
+
+	return hr;
+}
+
+//--------------------------------------------------------
+
+ExternalPlayer::ExternalPlayer(int index)
+: Player(index)
+{
+	m_name					= _T("ExternalPlayer");
+	m_needPoll				= TRUE;
+
+	m_window_classes		= NULL;
+	m_window_classes_num	= 0;
+//	found_window			= FALSE;
 }
 
 ExternalPlayer::~ExternalPlayer()
 {
 }
 
-HWND ExternalPlayer::FindWindow()
+HWND 
+ExternalPlayer::FindWindow()
 {
-	HWND hwnd = NULL;
-	for(int i = 0; i < num_window_classes; i++)
+	m_hwnd = NULL;
+	for(int i = 0; i < m_window_classes_num; i++)
 	{
-		hwnd = ::FindWindow(window_classes[i], NULL);
-		if (hwnd != NULL)
+		m_hwnd = ::FindWindow(m_window_classes[i], NULL);
+		if (m_hwnd != NULL)
 			break;
 	}
-	return hwnd;
+	return m_hwnd;
 }
 
-BOOL ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
+BOOL 
+ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 {
 	if (FindWindow() == NULL)
 		return FALSE;
@@ -122,40 +150,50 @@ BOOL ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 	return Player::GetListeningInfo(lti);
 }
 
+//--------------------------------------------------------
 
-
-CodeInjectionPlayer::CodeInjectionPlayer()
+CodeInjectionPlayer::CodeInjectionPlayer(int index)
+: ExternalPlayer(index)
 {
-	name = _T("CodeInjectionPlayer");
-	dll_name = NULL;
-	message_window_class = NULL;
-	next_request_time = 0;
+	m_name					= _T("CodeInjectionPlayer");
+	m_dll_name				= NULL;
+	m_message_window_class	= NULL;
+	m_next_request_time		= 0;
 }
 
 CodeInjectionPlayer::~CodeInjectionPlayer()
 {
 }
 
-void CodeInjectionPlayer::InjectCode()
+BYTE 
+CodeInjectionPlayer::GetStatus()
+{
+	if(FindWindow() == 0)
+		m_state = PL_OFFLINE;
+	return m_state;
+}
+
+void 
+CodeInjectionPlayer::InjectCode()
 {
 	if (!opts.enable_code_injection)
 		return;
-	else if (next_request_time > GetTickCount())
+	else if (m_next_request_time > GetTickCount())
 		return;
 
 	// Window is opened?
-	HWND hwnd = FindWindow();
-	if (hwnd == NULL)
+	m_hwnd = FindWindow();
+	if (m_hwnd == NULL) {
+		m_state = PL_OFFLINE;
 		return;
+	}
 
 	// Msg Window is registered? (aka plugin is running?)
-	HWND msgHwnd = ::FindWindow(message_window_class, NULL);
+	HWND msgHwnd = ::FindWindow(m_message_window_class, NULL);
 	if (msgHwnd != NULL)
 		return;
 
-
-	next_request_time = GetTickCount() + 30000;
-
+	m_next_request_time = GetTickCount() + 30000;
 
 	// Get the dll path
 	char dll_path[1024] = {0};
@@ -171,7 +209,7 @@ void CodeInjectionPlayer::InjectCode()
 
 	size_t len = p - dll_path;
 
-	mir_snprintf(p, 1024 - len, "listeningto\\%s.dll", dll_name);
+	mir_snprintf(p, 1024 - len, "listeningto\\%s.dll", m_dll_name);
 
 	len = strlen(dll_path);
 
@@ -182,7 +220,7 @@ void CodeInjectionPlayer::InjectCode()
 
 	// Do the code injection
 	unsigned long pid;
-	GetWindowThreadProcessId(hwnd, &pid);
+	GetWindowThreadProcessId(m_hwnd, &pid);
 	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION 
 									| PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
 	if (hProcess == NULL)
@@ -213,9 +251,10 @@ void CodeInjectionPlayer::InjectCode()
 	CloseHandle(hProcess);
 }
 
-BOOL CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
+BOOL 
+CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 {
-	if (enabled)
+	if (m_enabled)
 		InjectCode();
 
 	return ExternalPlayer::GetListeningInfo(lti);

@@ -19,19 +19,38 @@ Boston, MA 02111-1307, USA.
 
 #pragma once
 
-int m_log(const TCHAR *function, const TCHAR *fmt, ...);
-
-class GenericPlayer : public Player
+class WindowsLiveMessanger : public Player
 {
+protected:		//only WLM
+	WCHAR	m_received[1024];
+	WCHAR	m_last_received[1024];
+
+	HWND	FindWindow();			//find Player Window
+
+	BOOL	WLM_Start();			//start
+	BOOL	WLM_Stop();				//stop
+
 protected:
-	ATOM cWndclass;
+	ATOM	cWndclass;
+	HWND	m_hwndclass;
+
+	void EnableDisable();
+
+	virtual ~WindowsLiveMessanger();
 
 public:
-	GenericPlayer(int index);
-	virtual ~GenericPlayer();
+	//common
+	TCHAR **m_window_classes;
+	int		m_window_classes_num;
+	TCHAR	m_window_class[128];
+	WindowsLiveMessanger(int index);
 
-	WCHAR received[1024];
-	WCHAR last_received[1024];
-	void ProcessReceived();
-	void NewData(const WCHAR *data, size_t len);
+	//COM ...Remoting the Windows Media Player Control
+	BOOL GetListeningInfo(LISTENINGTOINFO *lti);
+
+	//WLM ...Windows Live Messanger
+	BYTE GetStatus();
+	void WLM_ProcessReceived();
+	void WLM_NewData(const WCHAR *data, size_t len);
+
 };

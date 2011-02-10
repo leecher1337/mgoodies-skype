@@ -18,18 +18,19 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "..\\commons.h"
+#include "..\commons.h"
 
 
 static TCHAR *wcs[] = {
 		_T("Winamp v1.x")
 };
 
-Winamp::Winamp()
+Winamp::Winamp(int index)
+: CodeInjectionPlayer(index)
 { 
-	name = _T("Winamp");
-	window_classes = wcs;
-	num_window_classes = MAX_REGS(wcs);
-	message_window_class = MIRANDA_WINDOWCLASS _T(".Winamp");
-	dll_name = "gen_mlt";
+	m_name					= _T("Winamp");
+	m_window_classes		= wcs;
+	m_window_classes_num	= MAX_REGS(wcs);
+	m_message_window_class	= MIRANDA_WINDOWCLASS _T(".Winamp");
+	m_dll_name				= "gen_mlt";
 }

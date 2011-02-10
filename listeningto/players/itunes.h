@@ -17,32 +17,68 @@ not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  
 */
 
+#pragma once
+
 extern "C"
 {
-#include "iTunesCOMInterface.h"
+#include ".\iTunes\iTunesCOMInterface.h"
 }
 
+#include "TEventHandler.h"
+using namespace TEventHandlerNamespace;
+
+// ***** Make a forward declaration so that our TEventHandler template class can use it. *****
+class ITunes;
+
+// ***** Declare an event handling class using the TEventHandler template. *****
+typedef TEventHandler<ITunes, IiTunes, _IiTunesEvents> IMIM_iTunesEventH;
 
 class ITunes : public Player
 {
 protected:
-	WCHAR filename[1024];
+	HWND FindWindow();			//find Player Window
+	virtual void EnableDisable();
 
-	HWND hwnd;
-	IiTunes *iTunesApp;
-	IITTrack *track;
-	IITFileOrCDTrack *file;
-	BSTR ret;
+	//com object
+	/* ***** Declare an instance of a COMApplication smart pointer. ***** */
+	IiTunes				*m_comApp;
+	/* ***** Declare an instance of a IITTrack smart pointer. ***** */
+	IITTrack			*m_comTrack;
 
-	void FindWindow();
-	BOOL InitTempData();
-	void FreeTempData();
-	BOOL InitAndGetFilename();
-	int GetMetadata(char *metadata, TCHAR **data);
-	BOOL FillCache();
+	/* ***** Declare a pointer to a TEventHandler class which is specially tailored
+	/  ***** to receiving events from the _IiTunesEvents events of an
+	/  ***** IiTunes object (It is designed to be a sink object) *****/
+	IMIM_iTunesEventH*	m_comAppEventSink;
+
+	WCHAR				m_filename[1024];
+	VARIANT_BOOL		m_vbServerState;			//hold the server state VARIANT_TRUE == server is running
+	BSTR				m_comRet;					//global BSTR for free use
+	BOOL	COM_Start();
+	BOOL	COM_Stop();
+	BOOL	COM_ConnectServer();					//start the COM instance
+	void	COM_ReleaseServer();					//stop  the COM instance, disconect and free all
+	BOOL	COM_infoCache();						//get the listeningTo info
+	BOOL	COM_IsPause();
+
+	/* ***** common function that handle events fired from the COM object. *****/
+	HRESULT	COM_OnEventInvoke
+	(
+		void*			pEventHandler,			//client sync  Interface (m_comAppEventSink)
+		DISPID			dispIdMember,			//server event Interface member
+		REFIID			riid,					//always NULL (see MSDN)
+		LCID			lcid,
+		WORD			wFlags,
+		DISPPARAMS FAR*	pDispParams,
+		VARIANT FAR*	pVarResult,
+		EXCEPINFO FAR*	pExcepInfo,
+		UINT FAR*		puArgErr
+	);
+
+	virtual ~ITunes();
 
 public:
-	ITunes();
+	ITunes(int index);
+	BYTE GetStatus();
 
 	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };

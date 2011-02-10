@@ -17,16 +17,17 @@ not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  
 */
 
+#pragma once
 
 class WATrack : public Player
 {
 protected:
-	HANDLE hNewStatusHook;
+	HANDLE	m_hNewStatusHook;
 
 	void GetData();
 
 public:
-	WATrack();
+	WATrack(int index);
 	virtual ~WATrack();
 
 	void NewStatus(int event, int value);
