@@ -2,6 +2,22 @@ ListeningTo
 
 Changelog:
 
+. (0.3.0.1)
+  + use precompile header (patch by Merlin_de)
+  * change iTunes to new class member and rework COM connection - not testet (patch by Merlin_de)
+  + rework WMP player, COM full "remoting" the Windows Media Player Control
+    real anable / disable the player, event and status support - no need for LiveMessanger (patch by Merlin_de)
+  + rework foobar player, add foo_comserver2 support 
+    and true event handling, no polling need (COM conection - patch by Merlin_de)
+  * change CALL macro to prevent mem leaks (patch by Merlin_de)
+  * change hTimer to support active player (faster - patch by Merlin_de)
+  + foo_mlt check for foo_comserver2 (stop work if present, no need for foo_mlt - patch by Merlin_de)
+  + foo_mlt add "on_init" and "on_quit" to prevent show wrong info (patch by Merlin_de)
+  * FIX foo_mlt and update to foobar2000 SDK 2010-10-02 (patch by Merlin_de)
+  + x64 unicode release (patch by Merlin_de)
+  + native clist_nicer icon-slot support (patch by Merlin_de)
+  + native clist_mw icon-slot support (patch by Merlin_de)
+
 . 0.3.0.0
   + A lot of changes for the internal logic for handling players
 
