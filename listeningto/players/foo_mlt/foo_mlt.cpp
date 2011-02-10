@@ -18,6 +18,8 @@ using namespace pfc;
 UINT timer = 0;
 WCHAR lastSongData[DATA_SIZE] = L"";
 
+static bool g_off = true;		//global state for sending listeningto infos
+
 
 // Functions ////////////////////////////////////////////////////////////////////////////
 
@@ -273,6 +275,8 @@ class play_callback_miranda : public play_callback_static
 	virtual void on_playback_starting(play_control::t_track_command p_command, bool p_paused) {}
 	virtual void on_playback_new_track(metadb_handle_ptr p_track)
 	{
+		if (g_off) return;
+
 		KillTimer();
 		if (IsRadio(p_track))
 			return;
@@ -285,11 +289,13 @@ class play_callback_miranda : public play_callback_static
 	}
 	virtual void on_playback_stop(play_control::t_stop_reason p_reason)
 	{
+		if (g_off) return;
 		SetTimer();
 	}
 	virtual void on_playback_seek(double p_time) {}
 	virtual void on_playback_pause(bool p_state)
 	{
+		if (g_off) return;
 		if (p_state)
 		{
 			SetTimer();
@@ -305,6 +311,7 @@ class play_callback_miranda : public play_callback_static
 	virtual void on_playback_dynamic_info(const file_info & info) {}
 	virtual void on_playback_dynamic_info_track(const file_info & info) 
 	{
+		if (g_off) return;
 		metadb_handle_ptr p_track;
 		static_api_ptr_t<play_control>()->get_now_playing(p_track);
 		if (p_track.is_valid())
@@ -334,4 +341,33 @@ class play_callback_miranda : public play_callback_static
 
 static play_callback_static_factory_t<play_callback_miranda> miranda_callback_factory;
 
-DECLARE_COMPONENT_VERSION("Miranda ListeningTo foobar2000 Plugin", "1.0", 0)
+class myinitquit : public initquit {
+public:
+	void on_init()
+	{
+		//check if foo_comserver2 is present and set g_off to false if foo_mlt go active
+		//TODO:detect foo_comserver2 from component list (can also check for other plugins)
+		CLSID clsid;
+		if(S_OK != CLSIDFromProgID(L"Foobar2000.Application.0.7", &clsid)) {
+			g_off = false;
+			SetTimer();
+		}
+	}
+	void on_quit()
+	{
+		if(!g_off && FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+			SendData(L"0\\0foobar2000\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+	}
+};
+
+static initquit_factory_t<myinitquit> g_myinitquit_factory;
+
+DECLARE_COMPONENT_VERSION("Miranda ListeningTo foobar2000 Plugin",
+"1.1.1",
+"compiled: " __DATE__ " with foo_SDK-2010-10-02\r\n\
+Sending listeningto information to Mitanda IM client\r\n\
+if no foo_comserver2 is present.\r\n\
+Copyright (C) 2006-2010 Ricardo Pescuma Domenecci\r\n\
+http://www.miranda-im.org\r\n\
+http://pescuma.org/miranda/listeningto"
+)

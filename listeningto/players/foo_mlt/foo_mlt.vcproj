@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
-	Name="foo_mlt"
+	Version="9,00"
+	Name="listeningto_foo_mlt"
 	ProjectGUID="{94734E61-D980-4A5F-AAAA-65105755CE24}"
+	RootNamespace="foo_mlt"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -73,11 +75,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="foobar2000\shared\shared.lib"
-				OutputFile="..\..\..\..\bin\release\Plugins\listeningto\foo_mlt.dll"
+				OutputFile="..\..\..\..\bin9\release\Plugins\listeningto\foo_mlt.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ModuleDefinitionFile=""
 				ProgramDatabaseFile=".\Release/foo_mlt.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Release/foo_mlt.lib"
 				TargetMachine="1"
 			/>
@@ -100,9 +104,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -169,12 +170,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="foobar2000\shared\shared.lib"
-				OutputFile="C:\Program Files\foobar2000\components\foo_mlt.dll"
+				OutputFile="..\..\..\..\bin9\debug\Plugins\listeningto\foo_mlt.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/foo_mlt.pdb"
+				ProgramDatabaseFile="..\..\..\..\bin9\debug\Plugins\listeningto\foo_mlt.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug/foo_mlt.lib"
 				TargetMachine="1"
 			/>
@@ -197,9 +200,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
