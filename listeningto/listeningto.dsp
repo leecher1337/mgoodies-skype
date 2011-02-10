@@ -46,7 +46,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O1 /YX /FD /c
 # SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fr /YX /FD /c
+# ADD CPP /nologo /G4 /MT /W3 /GX /Zi /O2 /Ob0 /I "..\..\include" /I "..\..\include_API" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fr /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 user32.lib shell32.lib wininet.lib gdi32.lib /nologo /base:"0x67100000" /dll /machine:I386 /filealign:0x200
 # SUBTRACT BASE LINK32 /pdb:none /map
-# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /debug /machine:I386 /out:"..\..\bin\release\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "listeningto - Win32 Debug"
@@ -75,7 +75,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /FR /YX /FD /c
-# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FR /YX /FD /c
+# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "..\..\include" /I "..\..\include_API" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -86,25 +86,25 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..bin\release\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\listeningto.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
-!ELSEIF  "$(CFG)" == "listeningto - Win32 Unicode Debug"
+!ELSEIF  "$(CFG)" == "listeningto - Win32 Release Unicode"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "listeningto___Win32_Unicode_Debug"
-# PROP BASE Intermediate_Dir "listeningto___Win32_Unicode_Debug"
+# PROP BASE Output_Dir "Release_Unicode"
+# PROP BASE Intermediate_Dir "Release_Unicode"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Unicode_Debug"
-# PROP Intermediate_Dir "Unicode_Debug"
+# PROP Output_Dir "Release_Unicode"
+# PROP Intermediate_Dir "Release_Unicode"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /FR /YX /FD /c
-# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /FR /YX /FD /c
+# ADD BASE CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /Fr /YX /FD /c
+# ADD CPP /nologo /G4 /MT /W3 /GX /Zi /O2 /Ob0 /I "..\..\include" /I "..\..\include_API" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /Fr /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -113,27 +113,27 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD BASE LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /machine:I386 /out:"..\..\bin\release unicode\Plugins\listeningtoW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\listeningtoW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /debug /machine:I386 /out:"..\..\bin\release unicode\Plugins\listeningtoW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
-!ELSEIF  "$(CFG)" == "listeningto - Win32 Unicode Release"
+!ELSEIF  "$(CFG)" == "listeningto - Win32 Debug Unicode"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "listeningto___Win32_Unicode_Release"
-# PROP BASE Intermediate_Dir "listeningto___Win32_Unicode_Release"
+# PROP BASE Output_Dir "Debug_Unicode"
+# PROP BASE Intermediate_Dir "Debug_Unicode"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Unicode_Release"
-# PROP Intermediate_Dir "Unicode_Release"
+# PROP Output_Dir "Debug_Unicode"
+# PROP Intermediate_Dir "Debug_Unicode"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /Fr /YX /FD /c
-# ADD CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /Fr /YX /FD /c
+# ADD BASE CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /FR /YX /FD /c
+# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "..\..\include" /I "..\..\include_API" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_UNICODE" /D "UNICODE" /D "_USRDLL" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -142,9 +142,9 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\listeningto.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD BASE LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\listeningtoW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /map /machine:I386 /out:"..\..\bin\release unicode\Plugins\listeningtoW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib ole32.lib oleaut32.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\listeningtoW.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -153,8 +153,8 @@ LINK32=link.exe
 
 # Name "listeningto - Win32 Release"
 # Name "listeningto - Win32 Debug"
-# Name "listeningto - Win32 Unicode Debug"
-# Name "listeningto - Win32 Unicode Release"
+# Name "listeningto - Win32 Release Unicode"
+# Name "listeningto - Win32 Debug Unicode"
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"

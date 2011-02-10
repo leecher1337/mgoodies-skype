@@ -20,19 +20,21 @@ Boston, MA 02111-1307, USA.
 
 #include "commons.h"
 
+extern int activePlayer;
 
 Player *players[NUM_PLAYERS];
 static LISTENINGTOINFO current = {0};
 
-
 void InitMusic() 
 {
-	players[WATRACK] = new WATrack();
-	players[GENERIC] = new GenericPlayer();
-	players[WMP] = new WindowsMediaPlayer();
-	players[WINAMP] = new Winamp();
-	players[ITUNES] = new ITunes();
-	players[FOOBAR] = new Foobar();
+	players[WATRACK]	= new WATrack(WATRACK);
+	players[GENERIC]	= new GenericPlayer(GENERIC);
+	players[WMP]		= new WindowsMediaPlayer(WMP);
+	players[WLM]		= new WindowsLiveMessanger(WLM);
+	players[WINAMP]		= new Winamp(WINAMP);
+	players[ITUNES]		= new ITunes(ITUNES);
+	players[FOOBAR]		= new Foobar(FOOBAR);
+//	players[VIDEOLAN]	= new VideoLAN(VIDEOLAN);
 }
 
 
@@ -52,9 +54,10 @@ void EnableDisablePlayers()
 		players[i]->EnableDisable();
 }
 
-
 void FreeListeningInfo(LISTENINGTOINFO *lti)
 {
+	if(!lti)
+		lti = &current;
 	lti->cbSize = 0;
 	lti->dwFlags = 0;
 	MIR_FREE(lti->ptszArtist);
@@ -106,27 +109,40 @@ int ChangedListeningInfo()
 {
 //	m_log(_T("ChangedListeningInfo"), _T("Start"));
 
+	int first, last;
 	BOOL changed = FALSE;
 	BOOL playing = FALSE;
 
-	int first = (players[WATRACK]->enabled ? WATRACK : GENERIC);
-	int last = (players[WATRACK]->enabled ? WATRACK + 1 : NUM_PLAYERS);
+	if(activePlayer > -1 && players[activePlayer]->GetStatus() > PL_OFFLINE) {
+		first = activePlayer;
+		last  = activePlayer +1;
+	}
+	else {
+		activePlayer = -1;
+		first = (players[WATRACK]->m_enabled ? WATRACK : GENERIC);
+		last  = (players[WATRACK]->m_enabled ? WATRACK + 1 : NUM_PLAYERS);
+	}
+
 	for (int i = first; i < last; i++) 
 	{
-		if (!players[i]->enabled)
+		if (!players[i]->m_enabled)
+			continue;
+
+		if (activePlayer == -1 && !players[i]->GetStatus())		//player is offline
 			continue;
 
 		LISTENINGTOINFO lti = {0};
 		if (!players[i]->GetListeningInfo(&lti))
 			continue;
 
-		if (!IsTypeEnabled(&lti))
+		if (!IsTypeEnabled(&lti)) //Music, Radio, Video ?
 		{
 			FreeListeningInfo(&lti);
 			continue;
 		}
 
 		playing = TRUE;
+		activePlayer = i;
 
 //		m_log(_T("ChangedListeningInfo"), _T("Has : %s : %d"), players[i]->name, lti.cbSize);
 
@@ -147,7 +163,7 @@ int ChangedListeningInfo()
 		}
 
 		break;
-	}
+	} //end for
 
 	if (!playing && current.cbSize != 0)
 	{

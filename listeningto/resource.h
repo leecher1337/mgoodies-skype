@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by resource.rc
 //
 #define IDD_OPTIONS                     119
@@ -64,6 +64,8 @@
 #define IDC_CONTACTS_G                  1093
 #define IDC_FOOBAR                      1093
 #define IDC_LISTENING_G                 1094
+#define IDC_VIDEOLAN                    1094
+#define IDC_WLM                         1094
 #define IDC_XSTATUS_G                   1095
 #define IDC_XSTATUS_L                   1096
 #define IDC_SET_XSTATUS                 1097

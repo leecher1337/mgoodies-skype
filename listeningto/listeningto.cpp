@@ -40,7 +40,11 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 #ifdef UNICODE
+  #ifdef _WIN64
+	"ListeningTo (Unicode x64)",
+  #else
 	"ListeningTo (Unicode)",
+  #endif
 #else
 	"ListeningTo",
 #endif
@@ -48,7 +52,7 @@ PLUGININFOEX pluginInfo={
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2006-2009 Ricardo Pescuma Domenecci",
+	"© 2006-2010 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/listeningto",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -74,9 +78,10 @@ static HANDLE hMainMenuGroup = NULL;
 static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
-static UINT hTimer = 0;
+UINT_PTR hTimer = 0;
 static HANDLE hExtraImage = NULL;
 static DWORD lastInfoSetTime = 0;
+int activePlayer = -1;
 
 std::vector<ProtocolInfo> proto_itens;
 
@@ -88,20 +93,20 @@ int TopToolBarLoaded(WPARAM wParam, LPARAM lParam);
 int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam);
 int SettingChanged(WPARAM wParam,LPARAM lParam);
 
-int MainMenuClicked(WPARAM wParam, LPARAM lParam);
-BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
-int ListeningToEnabled(WPARAM wParam, LPARAM lParam);
-int EnableListeningTo(WPARAM wParam,LPARAM lParam);
-int GetTextFormat(WPARAM wParam,LPARAM lParam);
-int GetParsedFormat(WPARAM wParam,LPARAM lParam);
-int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
-int GetUnknownText(WPARAM wParam,LPARAM lParam);
-int SetNewSong(WPARAM wParam,LPARAM lParam);
+INT_PTR MainMenuClicked(WPARAM wParam, LPARAM lParam);
+INT_PTR ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
+INT_PTR ListeningToEnabled(WPARAM wParam, LPARAM lParam);
+INT_PTR EnableListeningTo(WPARAM wParam,LPARAM lParam);
+INT_PTR GetTextFormat(WPARAM wParam,LPARAM lParam);
+INT_PTR GetParsedFormat(WPARAM wParam,LPARAM lParam);
+INT_PTR GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
+INT_PTR GetUnknownText(WPARAM wParam,LPARAM lParam);
+INT_PTR SetNewSong(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 void SetListeningInfos(LISTENINGTOINFO *lti);
-int HotkeysEnable(WPARAM wParam,LPARAM lParam);
-int HotkeysDisable(WPARAM wParam,LPARAM lParam);
-int HotkeysToggle(WPARAM wParam,LPARAM lParam);
+INT_PTR HotkeysEnable(WPARAM wParam,LPARAM lParam);
+INT_PTR HotkeysDisable(WPARAM wParam,LPARAM lParam);
+INT_PTR HotkeysToggle(WPARAM wParam,LPARAM lParam);
 
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai);
@@ -152,29 +157,8 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 	return interfaces;
 }
 
-/*
-BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
-{
-	// Find the windows
-	char class_name[1024];
-	if (GetClassNameA(hwnd, class_name, sizeof(class_name)))
-	{
-		class_name[sizeof(class_name)-1] = '\0';
-OutputDebugStringA(class_name);
-OutputDebugStringA(" -> ");
-		GetWindowTextA(hwnd, class_name, 1024);
-OutputDebugStringA(class_name);
-OutputDebugStringA("\n");
-	}
-
-	return TRUE;
-}
-*/
-
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
 {
-//	EnumWindows(EnumWindowsProc, 0);
-
 	pluginLink = link;
 
 	mir_getMMI(&mmi);
@@ -288,7 +272,7 @@ void RegisterProtocol(char *proto, TCHAR *account)
 		!ProtoServiceExists(proto, PS_ICQ_SETCUSTOMSTATUSEX))
 		return;
 
-	int id = proto_itens.size();
+	size_t id = proto_itens.size();
 	proto_itens.resize(id+1);
 
 	strncpy(proto_itens[id].proto, proto, MAX_REGS(proto_itens[id].proto));
@@ -410,7 +394,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaVersionURL = "http://pescuma.org/miranda/listeningto_version.txt";
 		upd.szBetaChangelogURL = "http://pescuma.org/miranda/listeningto#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
-		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+		upd.cpbBetaVersionPrefix = (int)strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
 		upd.szBetaUpdateURL = "http://pescuma.org/miranda/listeningtoW.zip";
 #else
@@ -418,7 +402,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
-		upd.cpbVersion = strlen((char *)upd.pbVersion);
+		upd.cpbVersion = (int)strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
@@ -585,9 +569,10 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	}
 
 	SetListeningInfos(NULL);
-	StartTimer();
 
 	loaded = TRUE;
+	if (!hTimer)		//check if timer running (maybe start by HasNewListeningInfo)
+		StartTimer();
 
 	return 0;
 }
@@ -597,17 +582,13 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
 	loaded = FALSE;
 
-	if (hTimer != NULL)
-	{
-		KillTimer(NULL, hTimer);
-		hTimer = NULL;
-	}
+	KILLTIMER(hTimer);
 
 	DeInitOptions();
 
 	DestroyHookableEvent(hEnableStateChangedEvent);
 
-	int i;
+	unsigned int i;
 	for(i = 0; i < hHooks.size(); i++)
 		UnhookEvent(hHooks[i]);
 
@@ -615,12 +596,14 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		DestroyServiceFunction(hServices[i]);
 
 	FreeMusic();
+	// To be sure that no one was left behind
+	SetListeningInfos(NULL);
 
 	return 0;
 }
 
 
-int TopToolBarClick(WPARAM wParam, LPARAM lParam)
+INT_PTR TopToolBarClick(WPARAM wParam, LPARAM lParam)
 {
 	BOOL enabled = !ListeningToEnabled(NULL, TRUE);
 
@@ -652,14 +635,14 @@ int TopToolBarLoaded(WPARAM wParam, LPARAM lParam)
 }
 
 
-int MainMenuClicked(WPARAM wParam, LPARAM lParam)
+INT_PTR MainMenuClicked(WPARAM wParam, LPARAM lParam)
 {
 	if (!loaded)
 		return -1;
 
 	int pos = wParam == 0 ? 0 : wParam - 500080000;
 
-	if (pos >= proto_itens.size() || pos < 0)
+	if (pos >= (signed) proto_itens.size() || pos < 0)
 		return 0;
 
 	EnableListeningTo((WPARAM) proto_itens[pos].proto, (LPARAM) !ListeningToEnabled(proto_itens[pos].proto, TRUE));
@@ -667,7 +650,7 @@ int MainMenuClicked(WPARAM wParam, LPARAM lParam)
 }
 
 
-BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal) 
+INT_PTR ListeningToEnabled(char *proto, BOOL ignoreGlobal) 
 {
 	if (!ignoreGlobal && !opts.enable_sending)
 		return FALSE;
@@ -675,7 +658,7 @@ BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal)
 	if (proto == NULL || proto[0] == 0)
 	{
 		// Check all protocols
-		BOOL enabled = TRUE;
+		INT_PTR enabled = TRUE;
 
 		for (unsigned int i = 1; i < proto_itens.size(); ++i)
 		{
@@ -692,12 +675,12 @@ BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal)
 	{
 		char setting[256];
 		mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
-		return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
+		return (INT_PTR) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
 	}
 }
 
 
-int ListeningToEnabled(WPARAM wParam, LPARAM lParam) 
+INT_PTR ListeningToEnabled(WPARAM wParam, LPARAM lParam) 
 {
 	if (!loaded)
 		return -1;
@@ -882,7 +865,7 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 }
 
 
-int EnableListeningTo(WPARAM wParam,LPARAM lParam) 
+INT_PTR EnableListeningTo(WPARAM wParam,LPARAM lParam) 
 {
 	if (!loaded)
 		return -1;
@@ -928,7 +911,8 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 		UpdateGlobalStatusMenus();
 	}
 
-	StartTimer();
+	if(!hTimer)		//check always if timer exist !!
+		StartTimer();
 
 	NotifyEventHooks(hEnableStateChangedEvent, wParam, lParam);
 
@@ -936,34 +920,34 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 }
 
 
-int HotkeysEnable(WPARAM wParam,LPARAM lParam) 
+INT_PTR HotkeysEnable(WPARAM wParam,LPARAM lParam) 
 {
 	return EnableListeningTo(lParam, TRUE);
 }
 
 
-int HotkeysDisable(WPARAM wParam,LPARAM lParam) 
+INT_PTR HotkeysDisable(WPARAM wParam,LPARAM lParam) 
 {
 	return EnableListeningTo(lParam, FALSE);
 }
 
 
-int HotkeysToggle(WPARAM wParam,LPARAM lParam) 
+INT_PTR HotkeysToggle(WPARAM wParam,LPARAM lParam) 
 {
 	return EnableListeningTo(lParam, !ListeningToEnabled((char *)lParam, TRUE));
 }
 
 
-int GetTextFormat(WPARAM wParam,LPARAM lParam) 
+INT_PTR GetTextFormat(WPARAM wParam,LPARAM lParam) 
 {
 	if (!loaded)
 		return NULL;
 
-	return (int) mir_tstrdup(opts.templ);
+	return (INT_PTR) mir_tstrdup(opts.templ);
 }
 
 
-int GetParsedFormat(WPARAM wParam,LPARAM lParam) 
+INT_PTR GetParsedFormat(WPARAM wParam,LPARAM lParam) 
 {
 	if (!loaded)
 		return NULL;
@@ -987,19 +971,19 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 
 	Buffer<TCHAR> ret;
 	ReplaceTemplate(&ret, NULL, opts.templ, fr, MAX_REGS(fr));
-	return (int) ret.detach();
+	return (INT_PTR) ret.detach();
 }
 
 
-int GetOverrideContactOption(WPARAM wParam,LPARAM lParam) 
+INT_PTR GetOverrideContactOption(WPARAM wParam,LPARAM lParam) 
 {
-	return (int) opts.override_contact_template;
+	return (INT_PTR) opts.override_contact_template;
 }
 
 
-int GetUnknownText(WPARAM wParam,LPARAM lParam) 
+INT_PTR GetUnknownText(WPARAM wParam,LPARAM lParam) 
 {
-	return (int) opts.unknown;
+	return (INT_PTR) opts.unknown;
 }
 
 
@@ -1009,24 +993,28 @@ void SetListeningInfos(LISTENINGTOINFO *lti)
 	{
 		SetListeningInfo(proto_itens[i].proto, lti);
 	}
+
+	lastInfoSetTime = GetTickCount();
+
+	if (!lti)
+		FreeListeningInfo(NULL);
 }
 
+//--------------------------------------------------------------------------------
 static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	if (hTimer != NULL)
-	{
-		KillTimer(NULL, hTimer);
-		hTimer = NULL;
-	}
+	if (!loaded)
+		return;
+
+	KILLTIMER(hTimer);
 
 	// Check if we can set it now...
 	DWORD now = GetTickCount();
 	if (now < lastInfoSetTime + MIN_TIME_BEETWEEN_SETS)
 	{
-		hTimer = SetTimer(NULL, NULL, lastInfoSetTime + MIN_TIME_BEETWEEN_SETS - now, GetInfoTimer);
+		hTimer = SetTimer(NULL, NULL, lastInfoSetTime + MIN_TIME_BEETWEEN_SETS - now, (TIMERPROC)GetInfoTimer);
 		return;
 	}
-	lastInfoSetTime = GetTickCount(); // TODO Move this to inside the if that really sets
 
 	if (!opts.enable_sending)
 	{
@@ -1036,40 +1024,55 @@ static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTi
 	}
 
 	// Set it
-	int changed = ChangedListeningInfo();
-	if (changed < 0)
-	{
-//		m_log(_T("GetInfoTimer"), _T("changed < 0"));
-		SetListeningInfos(NULL);
+	// ... ChangedListeningInfo reset also activePlayer depend on status !!
+	switch (ChangedListeningInfo()) {
+		case -1:
+		{
+	//		m_log(_T("GetInfoTimer"), _T("changed < 0"));
+			SetListeningInfos(NULL);
+		}	break;
+		case 1:
+		{
+	//		m_log(_T("GetInfoTimer"), _T("changed > 0"));
+			SetListeningInfos(GetListeningInfo());
+		}	break;
+		default:
+			break;
 	}
-	else if (changed > 0)
-	{
-//		m_log(_T("GetInfoTimer"), _T("changed > 0"));
-		SetListeningInfos(GetListeningInfo());
-	}
-
 	StartTimer();
 }
 
 void StartTimer()
 {
-	// See if any protocol want Listening info
-	BOOL want = FALSE;
+	if (!loaded) return;
+
+	// See if any player and protocol want Listening info
+	BOOL want		= FALSE;
+	BOOL needPoll	= FALSE;
 
 	if (opts.enable_sending)
 	{
-		if (!players[WATRACK]->enabled)
+		if (!players[WATRACK]->m_enabled)
 		{
 			// See if any player needs it
-			BOOL needPoll = FALSE;
-			int i;
-			for (i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
-			{
-				if (players[i]->needPoll)
+			if(activePlayer > -1) {
+				needPoll = players[activePlayer]->m_needPoll;
+			}
+			// See if any player needs it
+			else {
+				int i;
+				for (i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
 				{
-					needPoll = TRUE;
-					break;
-				}
+					if(!players[i]->m_enabled)			//player is disabled
+						continue;
+					if(players[i]->GetStatus()) {		//player is online
+						needPoll = players[i]->m_needPoll;
+						break;
+					}
+					else if (players[i]->m_needPoll) {	//any player needs needPoll
+						needPoll = TRUE;
+					}
+				} //end for
 			}
 
 			if (needPoll)
@@ -1087,12 +1090,12 @@ void StartTimer()
 		}
 	}
 
-	if (want)
+	if (want)	//set polling Timer
 	{
 		if (hTimer == NULL)
-			hTimer = SetTimer(NULL, NULL, opts.time_to_pool * 1000, GetInfoTimer);
+			hTimer = SetTimer(NULL, NULL, opts.time_to_pool * 1000, (TIMERPROC)GetInfoTimer);
 	}
-	else
+	else		//disable polling Timer
 	{
 		if (hTimer != NULL)
 		{
@@ -1106,18 +1109,43 @@ void StartTimer()
 	}
 }
 
-void HasNewListeningInfo()
+void HasNewListeningInfo(int ID)		//set timer for NotifyInfoChanged
 {
-	if (hTimer != NULL)
-	{
-		KillTimer(NULL, hTimer);
-		hTimer = NULL;
-	}
+	if(	(activePlayer == -1 || players[activePlayer]->GetStatus() == PL_OFFLINE) &&
+		(players[ID]->GetStatus() > PL_OFFLINE) )
+		activePlayer = ID;
 
-	hTimer = SetTimer(NULL, NULL, 100, GetInfoTimer);
+	else if(activePlayer != ID)
+		return;
+	KILLTIMER(hTimer);
+	//200ms for better handle COM doubble events inside NotifyInfoChanged (e.g. start event + track changed event)
+	hTimer = SetTimer(NULL, NULL, 200, (TIMERPROC)GetInfoTimer);
 }
 
+BOOL SetActivePlayer(int ID, int newVal)
+{
+	if(activePlayer != -1 && activePlayer != ID)
+		return FALSE;	//other player is active
 
+	activePlayer = (newVal > -1 && newVal < NUM_PLAYERS) ? newVal : -1;
+
+	if( (hTimer) && 
+		(activePlayer > 0) &&
+		(players[activePlayer]->m_needPoll == FALSE) )
+		{
+			KILLTIMER(hTimer);
+		}
+	else 
+	if( (!hTimer) &&
+		(activePlayer < 0 || players[activePlayer]->m_needPoll == TRUE) )
+		{
+			StartTimer();
+		}
+
+	return TRUE;
+}
+
+//--------------------------------------------------------------------------------
 int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam)
 {
 	HICON hIcon = IcoLib_LoadIcon(ICON_NAME);
@@ -1137,19 +1165,12 @@ void SetExtraIcon(HANDLE hContact, BOOL set)
 	}
 	else if (opts.show_adv_icon && hExtraImage != NULL)
 	{
+		if (! ServiceExists("CListFrame/SetSkinnedFrame") && opts.adv_icon_slot == 0)
+			return;
 		IconExtraColumn iec;
 		iec.cbSize = sizeof(iec);
 		iec.hImage = set ? hExtraImage : (HANDLE)-1;
-		if (opts.adv_icon_slot < 2)
-		{
-			iec.ColumnType = opts.adv_icon_slot + EXTRA_ICON_ADV1;
-		}
-		else 
-		{
-			int first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
-			iec.ColumnType = opts.adv_icon_slot - 2 + first;
-		}
-
+		iec.ColumnType = opts.adv_icon_slot;
 		CallService(MS_CLIST_EXTRA_SET_ICON, (WPARAM)hContact, (LPARAM)&iec);
 	}
 }
@@ -1180,7 +1201,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 }
 
 
-int SetNewSong(WPARAM wParam,LPARAM lParam)
+INT_PTR SetNewSong(WPARAM wParam,LPARAM lParam)
 {
 	if (lParam == NULL)
 		return -1;
@@ -1200,7 +1221,7 @@ int SetNewSong(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-
+//--------------------------------------------------------------------------------
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 {
 	if (ai->cbSize < sizeof(ARGUMENTSINFO))

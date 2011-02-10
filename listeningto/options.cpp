@@ -35,9 +35,9 @@ BOOL ListeningToEnabled(char *proto, BOOL ignoreGlobal = FALSE);
 
 
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 static OptPageControl optionsControls[] = { 
@@ -61,20 +61,22 @@ static UINT optionsExpertControls[] = {
 };
 
 static OptPageControl formatControls[] = { 
-	{ &opts.templ,					CONTROL_TEXT,		IDC_TEMPLATE,			"Template", (DWORD) _T("%title% - %artist%") },
-	{ &opts.unknown,				CONTROL_TEXT,		IDC_UNKNOWN,			"Unknown", (DWORD) _T("<Unknown>"), 0, 0, 128 },
-	{ &opts.xstatus_name,			CONTROL_TEXT,		IDC_XSTATUS_NAME,		"XStatusName", (DWORD) _T("Listening to") },
-	{ &opts.xstatus_message,		CONTROL_TEXT,		IDC_XSTATUS_MESSAGE,	"XStatusMessage", (DWORD) _T("%listening%") },
-	{ &opts.nothing,				CONTROL_TEXT,		IDC_NOTHING,			"Nothing", (DWORD) _T("<Nothing>"), 0, 0, 128 }
+	{ &opts.templ,					CONTROL_TEXT,		IDC_TEMPLATE,			"Template", (ULONG_PTR) _T("%title% - %artist%") },
+	{ &opts.unknown,				CONTROL_TEXT,		IDC_UNKNOWN,			"Unknown", (ULONG_PTR) _T("<Unknown>"), 0, 0, 128 },
+	{ &opts.xstatus_name,			CONTROL_TEXT,		IDC_XSTATUS_NAME,		"XStatusName", (ULONG_PTR) _T("Listening to") },
+	{ &opts.xstatus_message,		CONTROL_TEXT,		IDC_XSTATUS_MESSAGE,	"XStatusMessage", (ULONG_PTR) _T("%listening%") },
+	{ &opts.nothing,				CONTROL_TEXT,		IDC_NOTHING,			"Nothing", (ULONG_PTR) _T("<Nothing>"), 0, 0, 128 }
 };
 
 static OptPageControl playersControls[] = { 
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WATRACK,		"GetInfoFromWATrack", FALSE },
 	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,		"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WINAMP,			"EnableWinamp", TRUE },
-	{ NULL,							CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WMP,			"EnableWMP", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_WLM,			"EnableWLM", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_FOOBAR,			"EnableFoobar", TRUE },
+//	{ NULL,							CONTROL_CHECKBOX,	IDC_VIDEOLAN,		"EnableVideoLAN", TRUE },
 	{ &opts.enable_other_players,	CONTROL_CHECKBOX,	IDC_OTHER,			"EnableOtherPlayers", TRUE },
 	{ &opts.enable_code_injection,	CONTROL_CHECKBOX,	IDC_CODE_INJECTION,	"EnableCodeInjection", TRUE }
 };
@@ -92,10 +94,10 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Status");
-	odp.ptszTitle = TranslateT("Listening info");
+	odp.ptszGroup = LPGENT("Status");
+	odp.ptszTitle = LPGENT("Listening info");
 
-	odp.ptszTab = TranslateT("General");
+	odp.ptszTab = LPGENT("General");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
 	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
@@ -104,13 +106,13 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.nIDBottomSimpleControl = IDC_LISTENING_G;
 	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
-	odp.ptszTab = TranslateT("Format");
+	odp.ptszTab = LPGENT("Format");
 	odp.pfnDlgProc = FormatDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_FORMAT);
 	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
 	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
-	odp.ptszTab = TranslateT("Players");
+	odp.ptszTab = LPGENT("Players");
 	odp.pfnDlgProc = PlayersDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_PLAYERS);
 	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
@@ -122,11 +124,13 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 void InitOptions()
 {
-	playersControls[0].var = &players[WATRACK]->enabled;
-	playersControls[2].var = &players[WINAMP]->enabled;
-	playersControls[3].var = &players[ITUNES]->enabled;
-	playersControls[4].var = &players[WMP]->enabled;
-	playersControls[5].var = &players[FOOBAR]->enabled;
+	playersControls[0].var = &players[WATRACK]->m_enabled;
+	playersControls[2].var = &players[WINAMP]->m_enabled;
+	playersControls[3].var = &players[WMP]->m_enabled;
+	playersControls[4].var = &players[WLM]->m_enabled;
+	playersControls[5].var = &players[ITUNES]->m_enabled;
+	playersControls[6].var = &players[FOOBAR]->m_enabled;
+//	playersControls[7].var = &players[VIDEOLAN]->m_enabled;
 
 	LoadOptions();
 
@@ -201,9 +205,9 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 }
 
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret;
+	INT_PTR ret;
 	if (msg != WM_INITDIALOG)
 		ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 
@@ -218,23 +222,52 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			}
 			else
 			{
-				// Init combo
-				int total = 0, first = 0;
-				if (ServiceExists(MS_CLUI_GETCAPS))
-				{
-					total = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_EXTRACOLUMNCOUNT);
-					first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
-				}
-
-				SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("1"));
-				SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("2"));
-
-				if (total > 0)
-				{
-					TCHAR tmp[10];
-					for (int i = first; i <= total; i++)
-						SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _itot(i - first + 3, tmp, 10));
-				}
+				if (ServiceExists("CList/HideContactAvatar")!=0) /* check if Clist modern*/  
+					{
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("<none>"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("E-Mail"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Protocol"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Phone/SMS"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #1"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #2"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Web page"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Client (fingerprint.dll is required)"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Visibility/Chat activity"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #3"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #4"));
+					}
+				else if (ServiceExists("CListFrame/SetSkinnedFrame")!=0) /*check if Clist Nicer*/  
+					{
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Reserved, unused"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("E-Mail"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Reserved #1"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Telephone"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #1 (ICQ X-Status)"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #2"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Homepage"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Client (fingerprint required)"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Reserved #2"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #3"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #4"));
+					}
+				else if (ServiceExists("CLUI/GetConnectingIconForProtocol")!=0) /*check if Clist MW*/  
+					{
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("<none>"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("E-Mail"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Protocol Type"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Cellular"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #1"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #2"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Homepage"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Client (fingerprint required)"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("<none>"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #3"));
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("Advanced #4"));
+					}
+				else
+					{
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) TranslateT("<none>"));
+					}
 			}
 
 			ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
@@ -263,7 +296,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
 				RebuildMenu();
-				StartTimer();
+				if(!hTimer)		//check always if timer exist !!
+					StartTimer();
 			}
 
 			break;
@@ -277,6 +311,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 int playerDlgs[] = {
 	WINAMP, IDC_WINAMP, 
 	WMP, IDC_WMP, 
+	WLM, IDC_WLM, 
 	ITUNES, IDC_ITUNES,
 	FOOBAR, IDC_FOOBAR
 };
@@ -294,7 +329,7 @@ static void PlayersEnableDisableCtrls(HWND hwndDlg)
 	for (int i = 0; i < MAX_REGS(playerDlgs); i += 2)
 	{
 		EnableWindow(GetDlgItem(hwndDlg, playerDlgs[i+1]), enabled);
-		if (players[playerDlgs[i]]->needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
+		if (players[playerDlgs[i]]->m_needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
 			needPoll = TRUE;
 	}
 
@@ -307,9 +342,9 @@ static void PlayersEnableDisableCtrls(HWND hwndDlg)
 	EnableWindow(GetDlgItem(hwndDlg, IDC_CODE_INJECTION), enabled);
 }
 
-static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static INT_PTR CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret = SaveOptsDlgProc(playersControls, MAX_REGS(playersControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	INT_PTR ret = SaveOptsDlgProc(playersControls, MAX_REGS(playersControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 
 	switch (msg) 
 	{
@@ -332,7 +367,8 @@ static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
 				EnableDisablePlayers();
-				StartTimer();
+				if(!hTimer)		//check always if timer exist !!
+					StartTimer();
 			}
 
 			break;
@@ -342,7 +378,7 @@ static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	return ret;
 }
 
-static BOOL CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static INT_PTR CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	return SaveOptsDlgProc(formatControls, MAX_REGS(formatControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
