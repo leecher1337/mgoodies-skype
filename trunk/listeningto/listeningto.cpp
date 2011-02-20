@@ -48,9 +48,9 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,3,0,0),
+	PLUGIN_MAKE_VERSION(0,3,1,0),
 	"Handle listening information to/for contacts",
-	"Ricardo Pescuma Domenecci",
+	"Ricardo Pescuma Domenecci, Merlin_de",
 	"",
 	"© 2006-2010 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/listeningto",
@@ -119,8 +119,6 @@ TCHAR* VariablesParseGenre(ARGUMENTSINFO *ai);
 TCHAR* VariablesParseLength(ARGUMENTSINFO *ai);
 TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai);
 
-
-#define XSTATUS_MUSIC 11
 
 #define UNKNOWN(_X_) ( _X_ == NULL || _X_[0] == _T('\0') ? opts.unknown : _X_ )
 
@@ -226,18 +224,15 @@ void UpdateGlobalStatusMenus()
 }
 
 
-struct compareFunc : std::binary_function<const ProtocolInfo, const ProtocolInfo, bool>
+bool CompareAccounts(const ProtocolInfo &one, const ProtocolInfo &two)
 {
-	bool operator()(const ProtocolInfo &one, const ProtocolInfo &two) const
-	{
-		return lstrcmp(one.account, two.account) < 0;
-	}
-};
+	return lstrcmp(one.account, two.account) < 0;
+}
 
 
 void RebuildMenu()
 {
-	std::sort(proto_itens.begin(), proto_itens.end(), compareFunc());
+	std::sort(proto_itens.begin(), proto_itens.end(), CompareAccounts);
 
 	for (unsigned int i = 1; i < proto_itens.size(); i++)
 	{
@@ -338,6 +333,8 @@ int AccListChanged(WPARAM wParam, LPARAM lParam)
 }
 
 
+int GetMusicXStatusID(char *proto);
+
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
@@ -381,7 +378,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 
     // updater plugin support
-    if(ServiceExists(MS_UPDATE_REGISTER))
+    if (ServiceExists(MS_UPDATE_REGISTER))
 	{
 		Update upd = {0};
 		char szCurrentVersion[30];
@@ -698,6 +695,46 @@ ProtocolInfo *GetProtoInfo(char *proto)
 	return NULL;
 }
 
+BOOL IsMusicXStatus(char *proto, int id)
+{
+	TCHAR xstatus_name[1024];
+
+	ICQ_CUSTOM_STATUS ics = {0};
+	ics.cbSize = sizeof(ICQ_CUSTOM_STATUS);
+	ics.flags = (CSSF_MASK_NAME | CSSF_DEFAULT_NAME | CSSF_TCHAR);
+	ics.ptszName = xstatus_name;
+	ics.wParam = (WPARAM *) &id;
+
+	if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics))
+		return FALSE;
+
+	_tcslwr(xstatus_name);
+	return _tcsstr(xstatus_name, _T("music")) != NULL;
+}
+
+int GetMusicXStatusID(char *proto)
+{
+	if (!ProtoServiceExists(proto, PS_ICQ_GETCUSTOMSTATUSEX))
+		return -1;
+
+	int defs[] = { 
+		11, // ICQ default
+		48, // MRA default
+	};
+
+	for (int i = 0; i < MAX_REGS(defs); ++i)
+		if (IsMusicXStatus(proto, defs[i]))
+			return defs[i];
+
+	for (int i = 1; i < 100; ++i)
+	{
+		if (IsMusicXStatus(proto, i))
+			return i;
+	}
+
+	return -1;
+}
+
 void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 {
 //	m_log(_T("SetListeningInfo"), _T("proto=%S  lti=%d  title=%s"), 
@@ -722,6 +759,10 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 		if (opts.xstatus_set == IGNORE_XSTATUS)
 			return;
 
+		int music_xstatus_id = GetMusicXStatusID(proto);
+		if (music_xstatus_id <= 0)
+			return;
+
 		int status;
 		ICQ_CUSTOM_STATUS ics = {0};
 		ics.cbSize = sizeof(ICQ_CUSTOM_STATUS);
@@ -732,7 +773,7 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 		{
 			// Reset -> only if is still in music xstatus
 			ics.flags = CSSF_MASK_STATUS;
-			if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != XSTATUS_MUSIC)
+			if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != music_xstatus_id)
 			{
 				if (opts.xstatus_set == SET_XSTATUS)
 				{
@@ -805,20 +846,20 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 			if (opts.xstatus_set == CHECK_XSTATUS_MUSIC)
 			{
 				ics.flags = CSSF_MASK_STATUS;
-				if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != XSTATUS_MUSIC)
+				if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != music_xstatus_id)
 					return;
 			}
 			else if (opts.xstatus_set == CHECK_XSTATUS)
 			{
 				ics.flags = CSSF_MASK_STATUS;
-				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != XSTATUS_MUSIC && status != 0)
+				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != music_xstatus_id && status != 0)
 					return;
 			}
 			else
 			{
 				// Store old data
 				ics.flags = CSSF_MASK_STATUS;
-				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != XSTATUS_MUSIC)
+				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != music_xstatus_id)
 				{
 					ProtocolInfo *pi = GetProtoInfo(proto);
 					if (pi != NULL)
@@ -851,7 +892,7 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 			Buffer<TCHAR> msg;
 			ReplaceTemplate(&msg, NULL, opts.xstatus_message, fr, MAX_REGS(fr));
 
-			status = XSTATUS_MUSIC;
+			status = music_xstatus_id;
 			ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
 			ics.status = &status;
 			ics.ptszName = name.str;
@@ -1118,7 +1159,7 @@ void HasNewListeningInfo(int ID)		//set timer for NotifyInfoChanged
 	else if(activePlayer != ID)
 		return;
 	KILLTIMER(hTimer);
-	//200ms for better handle COM doubble events inside NotifyInfoChanged (e.g. start event + track changed event)
+	//200ms for better handle COM double events inside NotifyInfoChanged (e.g. start event + track changed event)
 	hTimer = SetTimer(NULL, NULL, 200, (TIMERPROC)GetInfoTimer);
 }
 

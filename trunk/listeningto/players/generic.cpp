@@ -156,7 +156,7 @@ GenericPlayer::ProcessReceived()
 			WCHAR *player_name = players[i]->m_name;
 		#else
 			WCHAR player_name[128];
-			MultiByteToWideChar(CP_ACP, 0, players[i]->name, -1, player_name, MAX_REGS(player_name));
+			MultiByteToWideChar(CP_ACP, 0, players[i]->m_name, -1, player_name, MAX_REGS(player_name));
 		#endif
 		if (_wcsicmp(parts[1], player_name) == 0)
 		{
