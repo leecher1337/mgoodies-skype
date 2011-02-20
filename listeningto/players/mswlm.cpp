@@ -298,7 +298,7 @@ WindowsLiveMessanger::WLM_ProcessReceived()
 				if(wlmcs[i].off) {	//	wcsncmp
 					break;
 				}
-				else if (NULL == (hwnd = ::FindWindow(wlmcs[i].pClass, parts[4]))){
+				else if (NULL == (hwnd = ::FindWindow(wlmcs[i].pClass, WcharToTchar(parts[4])))) {
 					continue;
 				}
 				send = true;

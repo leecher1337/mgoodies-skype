@@ -2,7 +2,7 @@ ListeningTo
 
 Changelog:
 
-. (0.3.0.1)
+. 0.3.1.0
   + use precompile header (patch by Merlin_de)
   * change iTunes to new class member and rework COM connection - not testet (patch by Merlin_de)
   + rework WMP player, COM full "remoting" the Windows Media Player Control
