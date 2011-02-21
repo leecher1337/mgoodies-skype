@@ -109,8 +109,16 @@ BOOL
 ITunes::COM_ConnectServer()
 {
 	HRESULT hr;
-	/***** Attach to the running COM instance... *****/
-	if (SUCCEEDED(ObjGet(CLSID_iTunesApp, __uuidof(m_comApp), (void**)&m_comApp))) {
+	//***** Attach to the running COM instance... *****/
+	//if (SUCCEEDED(ObjGet(CLSID_iTunesApp, __uuidof(m_comApp), (void**)&m_comApp))) {
+
+	// ***** Start new COM instance... *****
+	hr = CoCreateInstance(	CLSID_iTunesApp, 
+							NULL, 
+							CLSCTX_LOCAL_SERVER, 
+							__uuidof(m_comApp), 
+							(void **)&m_comApp );
+	if(SUCCEEDED(hr)) {
 		m_vbServerState = VARIANT_TRUE;
 		DEBUGOUT("iTunes: \tcom Server ","on");
 		// ***** get the IITTrack interface...

@@ -21,9 +21,9 @@ Boston, MA 02111-1307, USA.
 #ifndef __M_LISTENINGTO_H__
 # define __M_LISTENINGTO_H__
 
-
+#ifndef MIID_LISTENINGTO
 #define MIID_LISTENINGTO { 0x1fc1efa, 0xaa9f, 0x461b, { 0x92, 0x69, 0xaf, 0x66, 0x6b, 0x89, 0x31, 0xee } }
-
+#endif
 
 // To be used by other plugins to send listening info to miranda
 #define MIRANDA_WINDOWCLASS _T("Miranda.ListeningTo")
