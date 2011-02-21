@@ -194,6 +194,10 @@ SOURCE=.\options.h
 
 SOURCE=.\resource.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\players\TEventHandler.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
@@ -204,7 +208,7 @@ SOURCE=.\res\listening_to.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.rc
+SOURCE=.\res_vc6.rc
 # End Source File
 # Begin Source File
 
@@ -268,6 +272,22 @@ SOURCE=.\players\itunes.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\players\mswlm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\mswlm.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\mswmp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\mswmp.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\players\player.cpp
 # End Source File
 # Begin Source File
@@ -289,14 +309,6 @@ SOURCE=.\players\winamp.cpp
 # Begin Source File
 
 SOURCE=.\players\winamp.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\players\wmp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\players\wmp.h
 # End Source File
 # End Group
 # Begin Group "Docs"

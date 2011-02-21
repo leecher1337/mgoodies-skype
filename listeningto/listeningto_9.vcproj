@@ -872,14 +872,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug Unicode|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug Unicode|x64"
 					>
 					<Tool
@@ -926,6 +918,10 @@
 			</File>
 			<File
 				RelativePath="res\ttb_enabled.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\version.rc"
 				>
 			</File>
 		</Filter>
@@ -2062,6 +2058,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\version.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

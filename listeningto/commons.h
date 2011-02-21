@@ -91,6 +91,7 @@ Boston, MA 02111-1307, USA.
 #include "players\mswlm.h"
 //#include "players\vlc.h"
 
+#include "version.h"
 #include "resource.h"
 #include "options.h"
 

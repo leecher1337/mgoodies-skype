@@ -36,31 +36,18 @@ Boston, MA 02111-1307, USA.
 
 #define ICON_NAME "LISTENING_TO_ICON"
 
-
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
-#ifdef UNICODE
-  #ifdef _WIN64
-	"ListeningTo (Unicode x64)",
-  #else
-	"ListeningTo (Unicode)",
-  #endif
-#else
-	"ListeningTo",
-#endif
-	PLUGIN_MAKE_VERSION(0,3,1,0),
-	"Handle listening information to/for contacts",
-	"Ricardo Pescuma Domenecci, Merlin_de",
-	"",
-	"© 2006-2010 Ricardo Pescuma Domenecci",
-	"http://pescuma.org/miranda/listeningto",
+	__PLUGIN_DISPLAY_NAME,
+	__VERSION_DWORD,
+	__SHORT_DESC,
+	__AUTHOR,
+	__AUTHOREMAIL,
+	__COPYRIGHT,
+	__AUTHORWEB,
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
-#ifdef UNICODE
-	{ 0xf981f3f5, 0x35a, 0x444f, { 0x98, 0x92, 0xca, 0x72, 0x2c, 0x19, 0x5a, 0xda } } // {F981F3F5-035A-444f-9892-CA722C195ADA}
-#else
-	{ 0xa4a8ff7a, 0xc48a, 0x4d2a, { 0xb5, 0xa9, 0x46, 0x46, 0x84, 0x43, 0x26, 0x3d } } // {A4A8FF7A-C48A-4d2a-B5A9-46468443263D}
-#endif
+	MIID_LISTENINGTO
 };
 
 
@@ -383,25 +370,23 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		Update upd = {0};
 		char szCurrentVersion[30];
 
-		upd.cbSize = sizeof(upd);
-		upd.szComponentName = pluginInfo.shortName;
+		upd.cbSize			= sizeof(upd);
+		upd.szComponentName	= pluginInfo.shortName;
 
-		upd.szUpdateURL = UPDATER_AUTOREGISTER;
+		upd.szUpdateURL		= UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.org/miranda/listeningto_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.org/miranda/listeningto#Changelog";
-		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
-		upd.cpbBetaVersionPrefix = (int)strlen((char *)upd.pbBetaVersionPrefix);
-#ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/listeningtoW.zip";
-#else
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/listeningto.zip";
-#endif
+		upd.pbVersion		= (BYTE *)CreateVersionString(pluginInfo.version, szCurrentVersion);
+		upd.cpbVersion		= (int)strlen((char *)upd.pbVersion);
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
-		upd.cpbVersion = (int)strlen((char *)upd.pbVersion);
+		upd.szBetaVersionURL		= __UPDATER_BETA_VERURL;
+		// bytes occuring in VersionURL before the version, used to locate the version information within the URL data
+		upd.pbBetaVersionPrefix		= (BYTE *)__UPDATER_BETA_VERPRE;
+		upd.cpbBetaVersionPrefix	= (int)strlen((char *)upd.pbBetaVersionPrefix);
+		upd.szBetaUpdateURL			= __UPDATER_BETA_URL;
+		// url for displaying changelog for beta versions
+		upd.szBetaChangelogURL		= __UPDATER_BETA_CHLOG;
 
-        CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+		CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
 
 	{
