@@ -46,8 +46,8 @@ PLUGININFOEX pluginInfo={
 	__COPYRIGHT,
 	__AUTHORWEB,
 	UNICODE_AWARE,
-	0,		//doesn't replace anything built-in
-	MIID_LISTENINGTO
+	0,					//doesn't replace anything built-in
+	MIID_LISTENINGTO	//change to __UPDATER_UID if updater plugin support it
 };
 
 

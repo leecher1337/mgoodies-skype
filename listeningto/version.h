@@ -51,29 +51,25 @@ Boston, MA 02111-1307, USA.
   #define __PLUGIN_DISPLAY_NAME	"ListeningTo (Unicode x64)" //ensure plugin shortName matches file listing! <title>ListeningTo (Unicode x64)</title>
   #define __PLUGIN_FILENAME		"listeningtoW.dll"
   #define __UPDATER_BETA_URL	"http://pescuma.org/miranda/listeningto64.zip"
- #endif
+//#define __UPDATER_UID			{ 0x614e00b5, 0x2571, 0x46b5, { 0xb2, 0x1d, 0xed, 0xaf, 0xa4, 0xa9, 0xa2, 0x4b } } // {614E00B5-2571-46b5-B21D-EDAFA4A9A24B}
+#endif
 #else
  #ifdef _UNICODE
   #define __UPDATER_DOWNLOAD_ID	3693
   #define __PLUGIN_DISPLAY_NAME	"ListeningTo (Unicode)"	//ensure plugin shortName matches file listing! <title>ListeningTo (Unicode)</title>
   #define __PLUGIN_FILENAME		"listeningtoW.dll"
   #define __UPDATER_BETA_URL	"http://pescuma.org/miranda/listeningtoW.zip"
+//#define __UPDATER_UID			{ 0xf981f3f5, 0x35a, 0x444f, { 0x98, 0x92, 0xca, 0x72, 0x2c, 0x19, 0x5a, 0xda } } // {F981F3F5-035A-444f-9892-CA722C195ADA}
  #else
   #define __UPDATER_DOWNLOAD_ID	3692
   #define __PLUGIN_DISPLAY_NAME	"ListeningTo (Ansi)"	//ensure plugin shortName matches file listing! <title>ListeningTo (Ansi)</title>
   #define __PLUGIN_FILENAME		"listeningto.dll"
   #define __UPDATER_BETA_URL	"http://pescuma.org/miranda/listeningto.zip"
+//#define __UPDATER_UID			{ 0xa4a8ff7a, 0xc48a, 0x4d2a, { 0xb5, 0xa9, 0x46, 0x46, 0x84, 0x43, 0x26, 0x3d } } // {A4A8FF7A-C48A-4d2a-B5A9-46468443263D}
  #endif
 #endif
 #define   __UPDATER_BETA_VERPRE	"ListeningTo "
 #define   __UPDATER_BETA_VERURL	"http://pescuma.org/miranda/listeningto_version.txt"
 #define   __UPDATER_BETA_CHLOG	"http://pescuma.org/miranda/listeningto#Changelog"
-
-//TODO: check if this UUID need - what is it ?   (taken from pluginInfo but MUUID interfaces use MIID_LISTENINGTO
-//#ifdef UNICODE
-//	{ 0xf981f3f5, 0x35a, 0x444f, { 0x98, 0x92, 0xca, 0x72, 0x2c, 0x19, 0x5a, 0xda } } // {F981F3F5-035A-444f-9892-CA722C195ADA}
-//#else
-//	{ 0xa4a8ff7a, 0xc48a, 0x4d2a, { 0xb5, 0xa9, 0x46, 0x46, 0x84, 0x43, 0x26, 0x3d } } // {A4A8FF7A-C48A-4d2a-B5A9-46468443263D}
-//#endif
 
 #endif // __M_VERSION_H__
