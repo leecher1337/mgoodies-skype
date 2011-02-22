@@ -165,10 +165,11 @@ __inline static int FoldersRegisterCustomPathW(const char *section, const char *
 __inline static int FoldersGetCustomPath(HANDLE hFolderEntry, char *path, const int size, char *notFound)
 {
 	FOLDERSGETDATA fgd = {0};
+	int res;
 	fgd.cbSize = sizeof(FOLDERSGETDATA);
 	fgd.nMaxPathSize = size;
 	fgd.szPath = path;
-	int res = CallService(MS_FOLDERS_GET_PATH, (WPARAM) hFolderEntry, (LPARAM) &fgd);
+	res = CallService(MS_FOLDERS_GET_PATH, (WPARAM) hFolderEntry, (LPARAM) &fgd);
 	if (res)
 		{
 			strncpy(path, notFound, size);
@@ -180,10 +181,11 @@ __inline static int FoldersGetCustomPath(HANDLE hFolderEntry, char *path, const 
 __inline static int FoldersGetCustomPathW(HANDLE hFolderEntry, wchar_t *pathW, const int count, wchar_t *notFoundW)
 {
 	FOLDERSGETDATA fgd = {0};
+	int res;
 	fgd.cbSize = sizeof(FOLDERSGETDATA);
 	fgd.nMaxPathSize = count;
 	fgd.szPathW = pathW;
-	int res = CallService(MS_FOLDERS_GET_PATH, (WPARAM) hFolderEntry, (LPARAM) &fgd);
+	res = CallService(MS_FOLDERS_GET_PATH, (WPARAM) hFolderEntry, (LPARAM) &fgd);
 	if (res)
 		{
 			wcsncpy(pathW, notFoundW, count);

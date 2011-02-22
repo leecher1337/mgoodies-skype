@@ -13,7 +13,6 @@
 #include "../../include/m_utils.h"
 #include "../../include/m_langpack.h"
 #include "m_toptoolbar.h"
-#include "cshelper.h"
 
 // Imported Globals
 extern HWND hSkypeWnd, hWnd;
@@ -26,6 +25,7 @@ extern LONG AttachStatus;
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern HANDLE hProtocolAvatarsFolder;
+extern char pszSkypeProtoName[];
 extern char DefaultAvatarsFolder[MAX_PATH+1];
 
 // -> Skype Message Queue functions //
@@ -62,6 +62,8 @@ status_map status_codes_in[] = { // maps the right string to the left status val
 CRITICAL_SECTION MsgQueueMutex, ConnectMutex;
 BOOL rcvThreadRunning=FALSE; BOOL isConnecting = FALSE;
 SOCKET ClientSocket=INVALID_SOCKET;
+
+static int _ConnectToSkypeAPI(char *path, BOOL bStart);
 
 /*
  * Skype via Socket --> Skype2Socket connection
@@ -114,13 +116,11 @@ void rcvThread(char *dummy) {
  */
 const TCHAR* getClassName(HWND wnd)
 {
-	static const long classNameLength = 256;
-    static TCHAR className[classNameLength];
-	className[0] = 0;
-
-	GetClassName(wnd, &className[0], classNameLength);
-
-	return &className[0];
+    static TCHAR className[256];
+	
+	*className=0;
+	GetClassName(wnd, &className[0], sizeof(className)/sizeof(className[0]));
+	return className;
 }
 
 /**
@@ -140,31 +140,16 @@ HWND findWindow(HWND parent, const TCHAR* childClassName)
     return wnd;
 }
 
-extern char pszSkypeProtoName[];
-
-DWORD WINAPI setUserNamePasswordThread(LPVOID)
+DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
 {
-	// Check double entrance
+	HWND skype = NULL;
+	int counter = 0;
 	HANDLE mutex = CreateMutex(NULL, TRUE, _T("setUserNamePasswordMutex"));
+
+	// Check double entrance
 	if(GetLastError() == ERROR_ALREADY_EXISTS)
 		return 0;
 
-	// Since we have to close mutex somewhen, this is small RAII class
-	struct MutexCloser
-	{
-		MutexCloser(HANDLE mutex) : mutex_(mutex){}
-		~MutexCloser()
-		{
-			ReleaseMutex(mutex_);
-			CloseHandle(mutex_);
-		}
-
-		HANDLE mutex_;
-	} mc_(mutex);
-
-	// Find skype
-	HWND skype = NULL;
-	int counter = 0;
 	do
 	{
 		skype = FindWindow("tSkMainForm.UnicodeClass", NULL);
@@ -173,53 +158,56 @@ DWORD WINAPI setUserNamePasswordThread(LPVOID)
 		++counter;
 	} while(skype == NULL && counter != 60);
 
-	if(skype == NULL)
+	if (skype)
+	{
+		HWND loginControl = GetWindow(skype, GW_CHILD);
+
+		LOG("setUserNamePasswordThread", "Skype window found!");
+
+		// Sleep for some time, while Skype is loading
+		// It loads slowly :(
+		Sleep(5000);
+
+		// Check for login control
+		if(_tcscmp(getClassName(loginControl), _T("TLoginControl")) == 0)
+		{
+			// Find user name window
+			HWND userName = findWindow(loginControl, _T("TNavigableTntComboBox.UnicodeClass"));
+			HWND password = findWindow(loginControl, _T("TNavigableTntEdit.UnicodeClass"));
+
+			if (userName && password)
+			{
+				// Set user name and password
+				DBVARIANT dbv;
+
+				if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginUserName",&dbv)) 
+				{
+					SendMessageW(userName, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
+					DBFreeVariant(&dbv);    
+				}
+
+				if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginPassword",&dbv)) 
+				{
+					SendMessageW(password, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
+					DBFreeVariant(&dbv);
+				}
+
+
+				SendMessageW(skype,
+							 WM_COMMAND,
+							 0x4a8,  // sign-in button; WARNING: This ID can change during newer Skype versions
+							 (LPARAM)findWindow(loginControl, "TTntButton.UnicodeClass"));
+			}
+		}
+
+	}
+	else
 	{
 		LOG("setUserNamePasswordThread", "Skype window was not found!");
-		return 0;
 	}
 
-	LOG("setUserNamePasswordThread", "Skype window found!");
-
-	// Sleep for some time, while Skype is loading
-	// It loads slowly :(
-	Sleep(5000);
-
-    // Check for login control
-    HWND loginControl = GetWindow(skype, GW_CHILD);
-    if(_tcscmp(getClassName(loginControl), _T("TLoginControl")) != 0)
-        return 0;
-
-    // Find user name window
-    HWND userName = findWindow(loginControl, _T("TNavigableTntComboBox.UnicodeClass"));
-    HWND password = findWindow(loginControl, _T("TNavigableTntEdit.UnicodeClass"));
-
-    if(userName == NULL || password == NULL)
-        return 0;
-
-	// Set user name and password
-    DBVARIANT dbv;
-
-    if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginUserName",&dbv)) 
-    {
-        SendMessageW(userName, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(dbv.pwszVal));
-        DBFreeVariant(&dbv);    
-    }
-
-    if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginPassword",&dbv)) 
-    {
-        SendMessageW(password, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(dbv.pwszVal));        
-		DBFreeVariant(&dbv);
-	}
-
-	// Press "Sign in" button
-	// WARNING: This ID can change during newer Skype versions
-	const UINT signInID = 0x4a8;
-	SendMessageW(skype,
-				 WM_COMMAND,
-				 signInID, 
-				 reinterpret_cast<LPARAM>(findWindow(loginControl, "TTntButton.UnicodeClass")));
-
+	ReleaseMutex(mutex);
+	CloseHandle(mutex);
 	return 0;
 }
 
@@ -393,7 +381,7 @@ int __sendMsg(char *szMsg) {
 	  }
 	  // Reconnect to Skype
 	  ResetEvent(SkypeReady);
-	  if (ConnectToSkypeAPI(NULL,false)!=-1) 
+	  if (ConnectToSkypeAPI(NULL,FALSE)!=-1) 
 	  {
 		  if (UseSockets) {
 		  	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
@@ -689,7 +677,7 @@ int SkypeMsgCollectGarbage(time_t age) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeCall(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeCall(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	char *msg=0;
 	int res;
@@ -720,7 +708,7 @@ int SkypeCall(WPARAM wParam, LPARAM lParam) {
  *          1 - Failure
  *
  */
-int SkypeCallHangup(WPARAM wParam, LPARAM lParam)
+INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
 	char *msg=0;
@@ -1023,7 +1011,7 @@ void SkypeOutCallErrorCheck(char *szCallId) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeOutCall(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeOutCall(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	char *msg;
 	int res;
@@ -1046,7 +1034,7 @@ int SkypeOutCall(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	char *msg;
 	int retval;
@@ -1078,7 +1066,7 @@ int SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
 
 	LOG("SkypeAnswerCall", "started");
 	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_CALLSTAT), NULL, CallstatDlgProc, (LPARAM)((CLISTEVENT*)lParam)->hContact);
@@ -1092,7 +1080,7 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam) {
 	int retval;
 	char *Nick;
 	
@@ -1121,7 +1109,7 @@ int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 	int retval = -1;
 	char *Mood = 0;
 	
@@ -1154,18 +1142,26 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
+	char *filename = (char *) lParam, *ext;
+	char AvatarFile[MAX_PATH+1], OldAvatarFile[1024];
+	char *ptr = NULL;
+	int ret;
+	char command[500];
+	DBVARIANT dbv = {0};
+	BOOL hasOldAvatar = (DBGetContactSetting(NULL, pszSkypeProtoName, "AvatarFile", &dbv) == 0 && dbv.type == DBVT_ASCIIZ);
+	size_t len;
+
 	if (AttachStatus != SKYPECONTROLAPI_ATTACH_SUCCESS)
 		return -3;
-
-	char *filename = (char *) lParam;
+	
 	if (filename == NULL)
 		return -1;
-	size_t len = strlen(filename);
+	len = strlen(filename);
 	if (len < 4)
 		return -1;
 
-	char *ext = &filename[len-4];
+	ext = &filename[len-4];
 	if (stricmp(ext, ".jpg")==0 || stricmp(ext-1, ".jpeg")==0)
 		ext = "jpg";
 	else if (stricmp(ext, ".png")==0)
@@ -1173,15 +1169,10 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 	else
 		return -2;
 	
-	char AvatarFile[MAX_PATH+1];
 	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
 	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s avatar.%s", AvatarFile, pszSkypeProtoName, ext);
 
 	// Backup old file
-	DBVARIANT dbv = {0};
-	BOOL hasOldAvatar = (DBGetContactSetting(NULL, pszSkypeProtoName, "AvatarFile", &dbv) == 0 && dbv.type == DBVT_ASCIIZ);
-
-	char OldAvatarFile[1024];
 	if (hasOldAvatar)
 	{
 		strncpy(OldAvatarFile, dbv.pszVal, sizeof(OldAvatarFile)-4);
@@ -1207,10 +1198,6 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 	}
 
 	// Try to set with skype
-	char *ptr = NULL;
-	int ret;
-
-	char command[500];
 	mir_snprintf(command, sizeof(command), "SET AVATAR 1 %s", AvatarFile);
 	if (SkypeSend(command) || (ptr = SkypeRcv(command+4, INFINITE)) == NULL || !strncmp(ptr, "ERROR", 5))
 	{
@@ -1250,7 +1237,7 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeSendFile(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSendFile(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	int retval;
 
@@ -1269,7 +1256,7 @@ int SkypeSendFile(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeChatCreate(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeChatCreate(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	HANDLE hContact=(HANDLE)wParam;
 	char *ptr, *ptr2;
@@ -1296,7 +1283,7 @@ int SkypeChatCreate(WPARAM wParam, LPARAM lParam) {
  * 
  * Purpose: Show Skype's Add user Dialog
  */
-int SkypeAdduserDlg(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAdduserDlg(WPARAM wParam, LPARAM lParam) {
 	SkypeSend("OPEN ADDAFRIEND");
 	return 0;
 }
@@ -1413,26 +1400,31 @@ char SendSkypeproxyCommand(char command) {
  * Returns: 0 - Connecting succeeded
  *		   -1 - Something went wrong
  */
-int ConnectToSkypeAPI(char *path, bool bStart) {
+int ConnectToSkypeAPI(char *path, BOOL bStart) {
+	static BOOL isConnecting = FALSE;
+	BOOL isInConnect = isConnecting;
+	int iRet;
+
+	// Prevent reentrance
+	EnterCriticalSection(&ConnectMutex);
+	if (!isConnecting) 
+		isConnecting = TRUE;
+	LeaveCriticalSection(&ConnectMutex);
+	if (isInConnect) return -1;
+	iRet = _ConnectToSkypeAPI(path, bStart);
+	EnterCriticalSection(&ConnectMutex);
+	isConnecting = FALSE;
+	LeaveCriticalSection(&ConnectMutex);
+	return iRet;
+}
+
+static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
-	char *args[7];
+	char *args[7], *pFree = NULL;
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:"};
 	const int SkypeDefaults[]={0, 1, 1, 0, 0};
-
-	// Prevent reentrance
-	CCriticalSectionHelper csh(&ConnectMutex);
-	EnterCriticalSection(&ConnectMutex);
-	BOOL isInConnect = isConnecting;
-	if (!isConnecting) 
-	{ 
-		isConnecting = TRUE;
-	}
-	LeaveCriticalSection(&ConnectMutex);
-
-	if (isInConnect) return -1;
-	csh.SetResetFlag(&isConnecting);
 
 	LOG("ConnectToSkypeAPI", "started.");
 	if (UseSockets) 
@@ -1557,7 +1549,7 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 								if(!DBGetContactSetting(NULL,pszSkypeProtoName,"datapath",&dbv)) 
 								{
 									int paramSize = strlen(SkypeOptions[i]) + strlen(dbv.pszVal);
-									args[j] = new char[paramSize + 1];
+									pFree = args[j] = malloc(paramSize + 1);
 									sprintf(args[j],"%s%s",SkypeOptions[i],dbv.pszVal);
 									DBFreeVariant(&dbv);
 								}
@@ -1574,6 +1566,8 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 					if(UseCustomCommand)
 					{
 						DBVARIANT dbv;
+						int pid;
+
 						if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
 						{
 							args[0] = dbv.pszVal;
@@ -1583,7 +1577,7 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 								if(args[i] != NULL)
 									LOG("ConnectToSkypeAPI", args[i]);
 							}*/
-							intptr_t pid = _spawnv(_P_NOWAIT, dbv.pszVal, args);
+							pid = _spawnv(_P_NOWAIT, dbv.pszVal, args);
 							if (pid == -1)
 							{
 								int i = errno; //EINVAL
@@ -1613,6 +1607,7 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 
                         setUserNamePassword();
 					}
+					if (pFree) free(pFree);
 				}
 				ResetEvent(SkypeReady);
 				SkypeLaunched=TRUE;

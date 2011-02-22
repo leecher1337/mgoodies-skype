@@ -203,8 +203,8 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	CLISTMENUITEM mi;
 	char *szProto;
-	bool callAvailable = false;
-	bool hangupAvailable = false;
+	BOOL callAvailable = FALSE;
+	BOOL hangupAvailable = FALSE;
 
 	if (!(szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0))) return 0;
 
@@ -223,15 +223,15 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 				mi.flags=CMIM_ALL;
 				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
 
-				callAvailable = false;
-				hangupAvailable = true;
+				callAvailable = FALSE;
+				hangupAvailable = TRUE;
 
 				DBFreeVariant(&dbv);
-			} else { callAvailable = true; hangupAvailable = false; }
+			} else { callAvailable = TRUE; hangupAvailable = FALSE; }
         
 			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) {
-				callAvailable = false;
-				hangupAvailable = false;
+				callAvailable = FALSE;
+				hangupAvailable = FALSE;
 			}
 
 			mi = CallItem();

@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_toptoolbar.h"
 #include "time.h"
 #include "voiceservice.h"
-#include "cshelper.h"
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
+#endif
 
 struct MM_INTERFACE   mmi; 
 
@@ -198,7 +200,7 @@ int ShowMessage(int iconID, char *lpzText, int mustShow) {
 	lpzText=Translate(lpzText);
 
 	if (bModulesLoaded && ServiceExists(MS_POPUP_ADDPOPUPT) && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UsePopup", 0) && !MirandaShuttingDown) {
-		bool showPopup, popupWindowColor;
+		BOOL showPopup, popupWindowColor;
 		unsigned int popupBackColor, popupTextColor;
 		int popupTimeSec;
 
@@ -406,12 +408,12 @@ void GetInfoThread(HANDLE hContact) {
 				if (tms.tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) 
 				{
 					LOG("WndProc", "Using the TimeZonePatch");
-					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (myTimeZone+2));
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (BYTE)(myTimeZone+2));
 				}
 				else
 				{
 					LOG("WndProc", "Not using the TimeZonePatch");
-					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (myTimeZone+0));
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (BYTE)(myTimeZone+0));
 				}
 			}
 			else 
@@ -569,7 +571,7 @@ void GetDisplaynameThread(char *dummy) {
 
 
 // Starts importing history from Skype
-int ImportHistory(WPARAM wParam, LPARAM lParam) {
+INT_PTR ImportHistory(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	
 	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return 0;
@@ -730,7 +732,7 @@ void FirstLaunch(char *dummy) {
 	int counter=0;
 
 	LOG ("FirstLaunch", "thread started.");
-	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path, false)==-1) 
+	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path, FALSE)==-1) 
 	{
 		int oldstatus=SkypeStatus;
 
@@ -842,7 +844,7 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 
 void FetchMessageThread(fetchmsg_arg *args) {
-	char str[64], *ptr, *who, *msg, *msg_emoted;
+	char str[64], *ptr, *who, *msg, *msg_emoted = NULL;
 	char *ptr3,strChat[64];
 	int msgl, direction=0;
 	DWORD timestamp, lwr=0;
@@ -850,7 +852,8 @@ void FetchMessageThread(fetchmsg_arg *args) {
     PROTORECVEVENT pre;
     HANDLE hContact, hDbEvent;
 	DBEVENTINFO dbei={0};
-	BOOL getstatus, bEmoted=false, isGroupChat=false;
+	wchar_t *unicode;
+	BOOL getstatus, bEmoted=FALSE, isGroupChat=FALSE;
 
 	if (!args || !args->msgnum) return;
 	Sleep(200);
@@ -872,8 +875,8 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	ERRCHK
 	str[msgl]=0;
 	LOG("FetchMessageThread", ptr);
-	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = true;
-	if( !strncmp(ptr+strlen(ptr)-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = true;
+	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = TRUE;
+	if( !strncmp(ptr+strlen(ptr)-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = TRUE;
 	if( !strncmp(ptr+strlen(ptr)-15, "CREATEDCHATWITH", 15) ) {
 		SetEvent(SkypeMsgFetched);
 		return;
@@ -906,11 +909,11 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			}
 			if (!strncmp(ptr+strlen(ptr)-8,"SETTOPIC", 8)) 
 			{
-				LOG("FetchMessageThread", "CHAT SETTOPIC");
 				GCDEST gcd = {0};
 				GCEVENT gce = {0};
 				char *ptr2;
 
+				LOG("FetchMessageThread", "CHAT SETTOPIC");
 				free(ptr);
 				strcat(str, "CHATNAME");
 				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
@@ -1022,7 +1025,6 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 	ERRCHK
 
-	wchar_t *unicode;
 	unicode = make_unicode_string( (const unsigned char *)ptr+strlen(str+4)+1);
     if(unicode == NULL)
     {
@@ -1113,7 +1115,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	LOG("FetchMessageThread", "Compare the STATUS to MULTI_SUBSCRIBED");
 	LOG("FetchMessageThread",ptr3);
 	if (!strcmp(ptr3, "MULTI_SUBSCRIBED"))
-		isGroupChat = true;
+		isGroupChat = TRUE;
 
 
 	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) {
@@ -1137,14 +1139,13 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		}*/
 		if (isGroupChat) {
 
-			LOG("FetchMessageThread", "This is a group chat message");
-
 			GCDEST gcd = {0};
 			GCEVENT gce = {0};
 			DBVARIANT dbv = {0};
 			HANDLE hContact;
             CONTACTINFO ci = {0};
 
+			LOG("FetchMessageThread", "This is a group chat message");
 			gcd.pszModule = pszSkypeProtoName;
 			gcd.pszID = ptr+strlen(str+4)+1;
 			gcd.iType = GC_EVENT_MESSAGE;
@@ -1214,12 +1215,12 @@ void FetchMessageThread(fetchmsg_arg *args) {
 				ci.hContact = hContact;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci))
 				{
-					msg_emoted = new char[strlen(msg) + strlen(ci.pszVal) + 8];
+					msg_emoted = malloc(strlen(msg) + strlen(ci.pszVal) + 8);
 					sprintf(msg_emoted,"** %s %s **",ci.pszVal,msg);
 				}
 				else
 				{
-					msg_emoted = new char[strlen(msg) + 6];
+					msg_emoted = malloc(strlen(msg) + 6);
 					sprintf(msg_emoted,"** %s **",msg);
 				}
 			}
@@ -1234,6 +1235,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		}
 		pre.lParam = 0;
 		CallServiceSync(MS_PROTO_CHAINRECV, 0, (LPARAM) &ccs);
+		if (msg_emoted) free (msg_emoted);
 
 		// Yes, we have successfully read the msg
 		str[0]='S';	// SET, not GET
@@ -1324,7 +1326,7 @@ void RingThread(char *szSkypeMsg) {
 	HANDLE hContact;
 	DBEVENTINFO dbei={0};
 	DBVARIANT dbv;
-	char *ptr;
+	char *ptr = NULL;
 
 	// We use a single critical section for the RingThread- and the EndCallThread-functions
 	// so that only one function is running at the same time. This is needed, because when
@@ -1338,7 +1340,7 @@ void RingThread(char *szSkypeMsg) {
 	// skype doesnt accept status-changes for finished calls. The CriticalSection syncronizes
 	// the threads and the messages are processed in correct order. 
 	// Not the best solution, but it works.
-	CCriticalSectionHelper csHelp(&RingAndEndcallMutex); csHelp.Enter();
+	EnterCriticalSection (&RingAndEndcallMutex);
 
   LOG("RingThread", "started.");
 	if (protocol >= 5) SkypeSend ("MINIMIZE");
@@ -1347,17 +1349,15 @@ void RingThread(char *szSkypeMsg) {
 		// the 'Incoming call' event twice
 		if (!DBGetContactSetting(hContact, pszSkypeProtoName, "CallId", &dbv)) {
 			DBFreeVariant(&dbv);
-			free(szSkypeMsg);
             LOG("RingThread", "terminated.");
-			return;
+			goto l_exitRT;
 		}
 		DBWriteContactSettingString(hContact, pszSkypeProtoName, "CallId", szSkypeMsg);
 	}
 	
 	if (!(ptr=SkypeGet(szSkypeMsg, "TYPE", ""))) {
-		free(szSkypeMsg);
         LOG("RingThread", "terminated.");
-		return;
+		goto l_exitRT;;
 	}
 
 	if (!strncmp(ptr, "INCOMING", 8))
@@ -1372,27 +1372,19 @@ void RingThread(char *szSkypeMsg) {
 			if (szHandle=GetCallerHandle(szSkypeMsg)) {
 				if (!(hContact=add_contact(szHandle, PALF_TEMPORARY))) {
 					free(szHandle);
-					free(ptr);
-					free(szSkypeMsg);
-					return;
+					goto l_exitRT;
 				}
 				DBDeleteContactSetting(hContact, "CList", "Hidden");
 				DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda("SKYPEOUT"));
 				DBWriteContactSettingString(hContact, pszSkypeProtoName, "SkypeOutNr", szHandle);
 				free(szHandle);
-			} else {
-				free(ptr);
-				free(szSkypeMsg);
-				return;
-			}
+			} else goto l_exitRT;
 		}
 	}
 
 	if (HasVoiceService()) {
 		// Voice service will handle it
-		free(ptr);
-		free(szSkypeMsg);
-		return;
+		goto l_exitRT;
 	}
 
 	dbei.cbSize=sizeof(dbei);
@@ -1403,9 +1395,12 @@ void RingThread(char *szSkypeMsg) {
 	dbei.cbBlob=lstrlen((const char*)dbei.pBlob)+1;
 	if (!strncmp(ptr, "INCOMING", 8)) 
 	{
+		CLISTEVENT cle={0};
+		char toolTip[256];
+
 		if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
 		{
-			bool showPopup, popupWindowColor;
+			BOOL showPopup, popupWindowColor;
 			unsigned int popupBackColor, popupTextColor;
 			int popupTimeSec;
 			POPUPDATAT InCallPopup;
@@ -1433,10 +1428,6 @@ void RingThread(char *szSkypeMsg) {
 				CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&InCallPopup,0);
 
 		}
-
-		CLISTEVENT cle={0};
-		char toolTip[256];
-
 		cle.cbSize=sizeof(cle);
 		cle.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
 		cle.pszService=SKYPE_ANSWERCALL;
@@ -1453,8 +1444,10 @@ void RingThread(char *szSkypeMsg) {
 		CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&dbei);
 	}
 
-	free(ptr);
+l_exitRT:
+	if (ptr) free (ptr);
 	free(szSkypeMsg);
+	LeaveCriticalSection (&RingAndEndcallMutex);
 }
 
 void EndCallThread(char *szSkypeMsg) {
@@ -1475,7 +1468,7 @@ void EndCallThread(char *szSkypeMsg) {
 	// skype doesnt accept status-changes for finished calls. The CriticalSection syncronizes
 	// the threads and the messages are processed in correct order. 
 	// Not the best solution, but it works.
-	CCriticalSectionHelper csHelp(&RingAndEndcallMutex); csHelp.Enter();
+	EnterCriticalSection (&RingAndEndcallMutex);
 
   LOG("EndCallThread", "started.");
 	if (szSkypeMsg) {
@@ -1486,38 +1479,37 @@ void EndCallThread(char *szSkypeMsg) {
 			if (tCompareResult) continue; else break;
 		}
 	}
-	if (!hContact) {
-		free(szSkypeMsg);
-		return;
-	}
+	if (hContact)
+	{
+		NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_ENDED);
 
-	NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_ENDED);
+		DBDeleteContactSetting(hContact, pszSkypeProtoName, "CallId");
 
-	DBDeleteContactSetting(hContact, pszSkypeProtoName, "CallId");
-
-	if (!HasVoiceService()) {
-		dbei.cbSize=sizeof(dbei);
-		hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRSTUNREAD,(WPARAM)hContact,0);
-		while(hDbEvent) {
-			dbei.cbBlob=0;
-			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
-				if (!(dbei.flags&(DBEF_SENT|DBEF_READ)) && dbei.eventType==EVENTTYPE_CALL) {
-				CallService(MS_DB_EVENT_MARKREAD,(WPARAM)hContact,(LPARAM)hDbEvent);
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)hDbEvent);
+		if (!HasVoiceService()) {
+			dbei.cbSize=sizeof(dbei);
+			hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRSTUNREAD,(WPARAM)hContact,0);
+			while(hDbEvent) {
+				dbei.cbBlob=0;
+				CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
+					if (!(dbei.flags&(DBEF_SENT|DBEF_READ)) && dbei.eventType==EVENTTYPE_CALL) {
+					CallService(MS_DB_EVENT_MARKREAD,(WPARAM)hContact,(LPARAM)hDbEvent);
+					CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)hDbEvent);
+				}
+				if (dbei.pBlob) free(dbei.pBlob);
+				hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDNEXT,(WPARAM)hDbEvent,0);
 			}
-			if (dbei.pBlob) free(dbei.pBlob);
-			hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDNEXT,(WPARAM)hDbEvent,0);
+		}
+
+		if (!DBGetContactSetting(hContact, pszSkypeProtoName, "SkypeOutNr", &dbv)) {
+			DBFreeVariant(&dbv);
+			if (!strcmp((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0), pszSkypeProtoName) && 
+				DBGetContactSettingByte(hContact, "CList", "NotOnList", 0)
+			   )
+					CallService(MS_DB_CONTACT_DELETE, (WPARAM)hContact, 0);
 		}
 	}
-
-	if (!DBGetContactSetting(hContact, pszSkypeProtoName, "SkypeOutNr", &dbv)) {
-		DBFreeVariant(&dbv);
-		if (!strcmp((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0), pszSkypeProtoName) && 
-			DBGetContactSettingByte(hContact, "CList", "NotOnList", 0)
-		   )
-				CallService(MS_DB_CONTACT_DELETE, (WPARAM)hContact, 0);
-	}
 	free(szSkypeMsg);
+	LeaveCriticalSection (&RingAndEndcallMutex);
 }
 
 void HoldCallThread(char *szSkypeMsg) {
@@ -1570,14 +1562,13 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 		   return 1;
 	   }
 */
-	LOG ("LaunchSkypeAndSetStatusThread", "started.");
-
 	int oldStatus=SkypeStatus;
 
+	LOG ("LaunchSkypeAndSetStatusThread", "started.");
 	InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_CONNECTING);
 	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	   
-	if (ConnectToSkypeAPI(skype_path, true)!=-1) {
+	if (ConnectToSkypeAPI(skype_path, TRUE)!=-1) {
 		pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 		InterlockedExchange((long *)&SkypeStatus, (int)newStatus);
 		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
@@ -1594,7 +1585,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
-	static bool isEdited = false;
+	static BOOL isEdited = FALSE;
 	HANDLE hContact;
 	fetchmsg_arg *args;
 
@@ -1925,18 +1916,18 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 			}
 
 			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_TIMESTAMP"))!=NULL) {
-				isEdited = true;
+				isEdited = TRUE;
 				break;
 			}
 			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_BY"))!=NULL) {
-				isEdited = true;
+				isEdited = TRUE;
 				break;
 			}
 			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " BODY"))!=NULL) {
 				
 				if(isEdited)
 				{
-					isEdited = false;
+					isEdited = FALSE;
 					break;
 				}
 			}
@@ -1980,7 +1971,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 			LOG("SkypeMsgAdd","launched");
 			SkypeMsgAdd(szSkypeMsg);
 			ReleaseSemaphore(SkypeMsgReceived, receivers, NULL);
-		}  
+		} else LOGL ("WM_COPYDATA: Invalid handle, expected:", (LONG)hSkypeWnd);
         break; 
 
         case WM_TIMER:
@@ -2032,13 +2023,15 @@ void TellError(DWORD err) {
 
 
 // SERVICES //
-int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
+INT_PTR SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 {
-	if (MirandaShuttingDown) return 0;
-
 	int oldStatus;
-	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
-	BOOL UnloadOnOffline = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0);
+	BOOL UseCustomCommand, UnloadOnOffline;
+
+
+	if (MirandaShuttingDown) return 0;
+	UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
+	UnloadOnOffline = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0);
 
 	//if (!SkypeInitialized && !DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) return 0;
 
@@ -2114,7 +2107,7 @@ static void __cdecl SkypeGetAwayMessageThread( HANDLE hContact )
 	else SendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE )1, ( LPARAM )0 );
 }
 
-int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
+INT_PTR SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 {
 	CCSDATA* ccs = ( CCSDATA* )lParam;
 	pthread_create( SkypeGetAwayMessageThread, ccs->hContact );
@@ -2127,13 +2120,13 @@ int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 
 static int GetFileHash(char* filename)
 {
-   HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-   if(hFile == INVALID_HANDLE_VALUE)
-	   return 0;
-
-	int remainder = 0;
+	HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	int remainder = 0, byte, bit;
 	char data[1024];
 	DWORD dwRead;
+
+	if(hFile == INVALID_HANDLE_VALUE) return 0;
+
 	do
 	{
 		// Read file chunk
@@ -2141,11 +2134,11 @@ static int GetFileHash(char* filename)
 		ReadFile(hFile, data, 1024, &dwRead, NULL);
 
 		/* loop through each byte of data */
-		for (int byte = 0; byte < (int) dwRead; ++byte) {
+		for (byte = 0; byte < (int) dwRead; ++byte) {
 			/* store the next byte into the remainder */
 			remainder ^= (data[byte] << (WIDTH - 8));
 			/* calculate for all 8 bits in the byte */
-			for (int bit = 8; bit > 0; --bit) {
+			for ( bit = 8; bit > 0; --bit) {
 				/* check if MSB of remainder is a one */
 				if (remainder & TOPBIT)
 					remainder = (remainder << 1) ^ POLYNOMIAL;
@@ -2160,16 +2153,15 @@ static int GetFileHash(char* filename)
 	return remainder;
 }
 
-static int GetFileSize(char* filename)
+static int _GetFileSize(char* filename)
 {
 	HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	int size;
+
 	if(hFile == INVALID_HANDLE_VALUE)
 		return 0;
-
-	int size = GetFileSize(hFile, NULL);
-
+	size = GetFileSize(hFile, NULL);
 	CloseHandle(hFile);
-
 	return size;
 }
 
@@ -2180,19 +2172,23 @@ static int GetFileSize(char* filename)
  */
 void RetrieveUserAvatar(void *param)
 {
-	HANDLE hContact = (HANDLE) param;
+	HANDLE hContact = (HANDLE) param, file;
+	PROTO_AVATAR_INFORMATION AI;
+	ACKDATA ack = {0};
+	DBVARIANT dbv;
+	size_t len;
+	char AvatarFile[MAX_PATH+1], AvatarTmpFile[MAX_PATH+1], command[500], *ptr;
+
 	if (hContact == NULL)
 		return;
 
 	// Mount default ack
-	ACKDATA ack = {0};
 	ack.cbSize = sizeof( ACKDATA );
 	ack.szModule = pszSkypeProtoName;
 	ack.hContact = hContact;
 	ack.type = ACKTYPE_AVATAR;
 
 	// Get skype name
-	DBVARIANT dbv;
 	if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
 	{
 		// No skype name ??
@@ -2201,7 +2197,6 @@ void RetrieveUserAvatar(void *param)
 		return;
 	}
 
-	size_t len;
 	if (dbv.pszVal == NULL || (len = strlen(dbv.pszVal)) > MAX_USERLEN)
 	{
 		// No skype name ??
@@ -2212,8 +2207,6 @@ void RetrieveUserAvatar(void *param)
 	}
 
 	// Get filename
-	char AvatarFile[MAX_PATH+1], AvatarTmpFile[MAX_PATH+1], command[500];
-
 	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
 	mir_snprintf(AvatarTmpFile, sizeof(AvatarTmpFile), "%s\\%s_tmp.jpg", AvatarFile, dbv.pszVal);
 	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s.jpg", AvatarFile, dbv.pszVal);
@@ -2224,7 +2217,7 @@ void RetrieveUserAvatar(void *param)
 
 	// Just to be sure
 	DeleteFile(AvatarTmpFile);
-	HANDLE file = CreateFile(AvatarTmpFile, 0, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	file = CreateFile(AvatarTmpFile, 0, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (file == INVALID_HANDLE_VALUE)
 	{
 		// Error creating empty file
@@ -2235,7 +2228,6 @@ void RetrieveUserAvatar(void *param)
 	CloseHandle(file);
 
 	// Request avatar
-	char *ptr;
 	if (SkypeSend(command) || (ptr=SkypeRcv(command+4, INFINITE))== NULL) 
 	{
 		// Error receiving avatar
@@ -2272,7 +2264,7 @@ void RetrieveUserAvatar(void *param)
 
 	// Is no avatar image?
 	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "ShowDefaultSkypeAvatar", 0) 
-		&& GetFileHash(AvatarTmpFile) == 0x8d34e05d && GetFileSize(AvatarTmpFile) == 3751)
+		&& GetFileHash(AvatarTmpFile) == 0x8d34e05d && _GetFileSize(AvatarTmpFile) == 3751)
 	{
 		// Has no avatar
 		PROTO_AVATAR_INFORMATION AI;
@@ -2282,7 +2274,7 @@ void RetrieveUserAvatar(void *param)
 		AI.filename[0] = '\0';
 
 		ack.result = ACKRESULT_SUCCESS;
-		ack.hProcess = HANDLE( &AI );
+		ack.hProcess = (HANDLE)&AI;
 		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
 
 		DeleteFile(AvatarTmpFile);
@@ -2295,14 +2287,13 @@ void RetrieveUserAvatar(void *param)
 	CopyFile(AvatarTmpFile, AvatarFile, FALSE);
 	DeleteFile(AvatarTmpFile);
 
-	PROTO_AVATAR_INFORMATION AI;
 	AI.cbSize = sizeof( AI );
 	AI.format = PA_FORMAT_JPEG;
 	AI.hContact = hContact;
 	strcpy(AI.filename, AvatarFile);
 
 	ack.result = ACKRESULT_SUCCESS;
-	ack.hProcess = HANDLE( &AI );
+	ack.hProcess = (HANDLE)&AI;
 	CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
 }
 
@@ -2315,7 +2306,7 @@ void RetrieveUserAvatar(void *param)
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
+INT_PTR SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 {
 
 	DBVARIANT dbv;
@@ -2333,6 +2324,9 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 	}
 	else // Contact 
 	{
+		DBVARIANT dbv;
+		char AvatarFile[MAX_PATH+1];
+
 		if (protocol < 7)
 			return GAIR_NOAVATAR;
 
@@ -2343,7 +2337,6 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 			return GAIR_WAITFOR;
 		}
 
-		DBVARIANT dbv;
 		if (DBGetContactSetting(AI->hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
 			// No skype name ??
 			return GAIR_NOAVATAR;
@@ -2356,7 +2349,6 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 		}
 
 		// Get filename
-		char AvatarFile[MAX_PATH+1];
 		FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
 		mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s.jpg", AvatarFile, dbv.pszVal);
 		DBFreeVariant(&dbv);
@@ -2380,7 +2372,7 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
  *			lParam=Depends on wParam
  * Returns: Depends on wParam
  */
-int SkypeGetAvatarCaps(WPARAM wParam, LPARAM lParam)
+INT_PTR SkypeGetAvatarCaps(WPARAM wParam, LPARAM lParam)
 {
 	switch(wParam)
 	{
@@ -2418,18 +2410,18 @@ int SkypeGetAvatarCaps(WPARAM wParam, LPARAM lParam)
 }
 
 
-int SkypeGetStatus(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeGetStatus(WPARAM wParam, LPARAM lParam) {
 	return SkypeStatus;
 }
 
-int SkypeGetInfo(WPARAM wParam,LPARAM lParam) {
+INT_PTR SkypeGetInfo(WPARAM wParam,LPARAM lParam) {
     CCSDATA *ccs = (CCSDATA *) lParam;
 	
 	pthread_create(GetInfoThread, ccs->hContact);
 	return 0;
 }
 
-int SkypeAddToList(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAddToList(WPARAM wParam, LPARAM lParam) {
 	PROTOSEARCHRESULT *psr=(PROTOSEARCHRESULT*)lParam;
 
 	LOG("SkypeAddToList", "Adding API function called");
@@ -2438,7 +2430,7 @@ int SkypeAddToList(WPARAM wParam, LPARAM lParam) {
     return (int)add_contact(psr->nick, wParam);
 }
 
-int SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
 
 	LOG("SkypeBasicSearch", (char *)lParam);
 	if (!SkypeInitialized) return 0;
@@ -2462,7 +2454,7 @@ void MessageSendWatchThread(HANDLE hContact) {
 	LOG("MessageSendWatchThread", "terminated gracefully.");
 }
 
-int SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
     CCSDATA *ccs = (CCSDATA *) lParam;
 	DBVARIANT dbv;
 	BOOL sendok=TRUE;
@@ -2487,7 +2479,7 @@ int SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-int SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
+INT_PTR SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
 {
     DBEVENTINFO dbei;
     CCSDATA *ccs = (CCSDATA *) lParam;
@@ -2506,7 +2498,7 @@ int SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-int SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam) {
 	CCSDATA* ccs = (CCSDATA*)lParam;
 	DBVARIANT dbv;
 	int retval;
@@ -2518,7 +2510,7 @@ int SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam) {
 	if (retval) return 1; else return 0;
 }
 
-int SkypeRecvAuth(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeRecvAuth(WPARAM wParam, LPARAM lParam) {
 	DBEVENTINFO dbei = {0};
 	CCSDATA* ccs = (CCSDATA*)lParam;
 	PROTORECVEVENT* pre = (PROTORECVEVENT*)ccs->lParam;
@@ -2557,7 +2549,7 @@ char *__skypeauth(WPARAM wParam) {
 	return (char *)dbei.pBlob;
 }
 
-int SkypeAuthAllow(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAuthAllow(WPARAM wParam, LPARAM lParam) {
 	char *pBlob;
 
 	if (pBlob=__skypeauth(wParam))
@@ -2569,7 +2561,7 @@ int SkypeAuthAllow(WPARAM wParam, LPARAM lParam) {
 	return 1;
 }
 
-int SkypeAuthDeny(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAuthDeny(WPARAM wParam, LPARAM lParam) {
 	char *pBlob;
 
 	if (pBlob=__skypeauth(wParam))
@@ -2582,7 +2574,7 @@ int SkypeAuthDeny(WPARAM wParam, LPARAM lParam) {
 }
 
 
-int SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam) {
 	char *pBlob;
 
 	if (pBlob=__skypeauth(wParam))
@@ -2627,13 +2619,12 @@ void CleanupNicknames(char *dummy) {
 
 int __stdcall EnterBitmapFileName( char* szDest )
 {
+	char szFilter[ 512 ];
+	char str[ MAX_PATH ] = {0};
+	OPENFILENAMEA ofn = {0};
 	*szDest = 0;
 
-	char szFilter[ 512 ];
 	CallService( MS_UTILS_GETBITMAPFILTERSTRINGS, sizeof szFilter, ( LPARAM )szFilter );
-
-	char str[ MAX_PATH ]; str[0] = 0;
-	OPENFILENAMEA ofn = {0};
 	ofn.lStructSize = sizeof( OPENFILENAME );
 	ofn.lpstrFilter = szFilter;
 	ofn.lpstrFile = szDest;
@@ -2812,7 +2803,7 @@ void __cdecl MsgPump (char *dummy)
 
 // DLL Stuff //
 
-extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirVersion)
+__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirVersion)
 {
 	mirandaVersion = mirVersion;
 
@@ -2820,7 +2811,7 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirVersion)
 	return (PLUGININFO*) &pluginInfo;
 }
 
-extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirVersion)
+__declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirVersion)
 {
 	mirandaVersion = mirVersion;
 
@@ -2828,13 +2819,13 @@ extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirVers
 }
 
 static const MUUID interfaces[] = {MUUID_SKYPE_CALL, MIID_LAST};
-extern "C" __declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+__declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
 {
 	return interfaces;
 }
 
 
-extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst = hinstDLL;
 	return TRUE;
@@ -2846,7 +2837,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
+int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	PROTOCOLDESCRIPTOR pd;
 	DWORD Buffsize;
@@ -2973,7 +2964,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 
 
-extern "C" int __declspec( dllexport ) Unload(void) 
+int __declspec( dllexport ) Unload(void) 
 {
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	BOOL Shutdown = DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0);

@@ -7,9 +7,9 @@
 
 void HookEvents(void);
 void CreateServices(void);
-int SkypeLoadIcon(WPARAM wParam, LPARAM lParam);
-int SkypeGetName(WPARAM wParam, LPARAM lParam);
-int SkypeGetCaps(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeLoadIcon(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam);
 /* SkypeGetAvatar
  * 
  * Purpose: Return the avatar file name
@@ -18,4 +18,4 @@ int SkypeGetCaps(WPARAM wParam, LPARAM lParam);
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeGetAvatar(WPARAM wParam,LPARAM lParam);
+INT_PTR SkypeGetAvatar(WPARAM wParam,LPARAM lParam);

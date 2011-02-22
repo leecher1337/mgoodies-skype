@@ -3,8 +3,14 @@
 #include "pthread.h"
 #include "gchat.h"
 #include "skypeprofile.h"
+#if(WINVER >= 0x0500)
 #include "uxtheme.h"
-#include "tinyxml/tinyxml.h"
+#define HAVE_UXTHEMES
+#endif
+
+#ifdef SKYPE_AUTO_DETECTION
+#include "ezxml/ezxml.c"
+#endif
 
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
@@ -12,15 +18,14 @@ extern char pszSkypeProtoName[MAX_PATH+30],protocol;
 extern BOOL SkypeInitialized;
 extern DWORD mirandaVersion;
 
-bool showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
+BOOL showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
 unsigned int popupBackColor, popupBackColorErr;
 unsigned int popupTextColor, popupTextColorErr;
 int popupTimeSec, popupTimeSecErr;
 POPUPDATAT InCallPopup;
 POPUPDATAT ErrorPopup;
 
-CSkypeProfile myProfile;
-
+static SkypeProfile myProfile;
 static HBITMAP hAvatar = NULL;
 
 extern BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD);
@@ -104,13 +109,13 @@ BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupBackColor", popupBackColor);
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTextColor", popupTextColor);
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSec", popupTimeSec);
-							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", popupWindowColor);
-							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopup", showPopup);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", (BYTE)popupWindowColor);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopup", (BYTE)showPopup);
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupBackColorErr", popupBackColorErr);
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTextColorErr", popupTextColorErr);
 							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSecErr", popupTimeSecErr);
-							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", popupWindowColorErr);
-							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", showPopupErr);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", (BYTE)popupWindowColorErr);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", (BYTE)showPopupErr);
 							break;
 					}
 			}
@@ -122,6 +127,7 @@ BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			switch( LOWORD( wParam )) 
 			{
 				case IDC_PREVIEW:
+				{
 					HANDLE hContact;
 					TCHAR * lpzContactName;
 
@@ -142,6 +148,7 @@ BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 
 					break;
+				}
 				case IDC_PREVIEWERR:					
 					ErrorPopup.lchContact = NULL;
 					ErrorPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
@@ -161,11 +168,13 @@ BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				case IDC_POPUPTIME:
 				case IDC_POPUPTIMEERR:
+				{
 					BOOL Translated;
 					popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
 					popupTimeSecErr = GetDlgItemInt(hwnd,IDC_POPUPTIMEERR,&Translated,FALSE);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
+				}
 				case IDC_POPUPTEXTCOLOR:
 				case IDC_POPUPBACKCOLOR:
 				case IDC_POPUPTEXTCOLORERR:
@@ -233,24 +242,30 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
          tci.pszText = TranslateT("Skype default");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
+#ifdef HAVE_UXTHEMES
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+#endif
 
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_ADVANCED),hwnd,OptionsAdvancedDlgProc);
          tci.pszText = TranslateT("Skype advanced");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
+#ifdef HAVE_UXTHEMES
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+#endif
 
 		 tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_PROXY),hwnd,OptionsProxyDlgProc);
          tci.pszText = TranslateT("Skype proxy");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 2, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
+#ifdef HAVE_UXTHEMES
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+#endif
 
          iInit = FALSE;
          return FALSE;
@@ -340,6 +355,7 @@ int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			switch (nmhdr->code){
 				case PSN_APPLY:
 				case PSN_KILLACTIVE:
+				{
 					char buf[1024];
 					GetDlgItemText(hwndDlg, IDC_HOST, buf, sizeof(buf));
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Host", buf);
@@ -351,6 +367,7 @@ int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 					CallService(MS_DB_CRYPT_ENCODESTRING, sizeof(buf), (LPARAM)buf);
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Password", buf);
 					return TRUE;
+				}
 			}			
 			break; 
 		}
@@ -457,9 +474,10 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
-			initDlg=TRUE;
+		{
 			DBVARIANT dbv;
 
+			initDlg=TRUE;
 			TranslateDialogDefault(hwndDlg);
 			CheckDlgButton(hwndDlg, IDC_STARTSKYPE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1));
 			CheckDlgButton(hwndDlg, IDC_NOSPLASH, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "nosplash", 1));
@@ -502,13 +520,17 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			SendMessage(hwndDlg, WM_COMMAND, IDC_STARTSKYPE, 0);
 			initDlg=FALSE;
 			return TRUE;
-
+		}
 		case WM_NOTIFY: {
 			NMHDR* nmhdr = (NMHDR*)lParam;
 
 			switch (nmhdr->code){
 				case PSN_APPLY:
 				case PSN_KILLACTIVE:
+				{
+					char text[500];
+                    WCHAR wtext[500];
+
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "StartSkype", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_STARTSKYPE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "nosplash", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOSPLASH), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "minimized", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_MINIMIZED), BM_GETCHECK,0,0)));
@@ -519,25 +541,22 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseCustomCommand", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "datapath:", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "removable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
-					char text[500];
 					GetDlgItemText(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "CommandLine", text);
 					GetDlgItemText(hwndDlg,IDC_DATAPATH,text,sizeof(text));
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "datapath", text);
 
-                    // Wide text
-                    static const unsigned wtextLength = 500;
-                    WCHAR wtext[wtextLength];
-                    
+                   
                     // LoginUserName
-                    GetDlgItemTextW(hwndDlg,IDC_USERNAME,wtext,wtextLength);
+                    GetDlgItemTextW(hwndDlg,IDC_USERNAME,wtext,sizeof(wtext)/sizeof(WCHAR));
 					DBWriteContactSettingWString(NULL, pszSkypeProtoName, "LoginUserName", wtext);
 
                     // LoginPassword
-                    GetDlgItemTextW(hwndDlg,IDC_PASSWORD,wtext,wtextLength);
+                    GetDlgItemTextW(hwndDlg,IDC_PASSWORD,wtext,sizeof(wtext)/sizeof(WCHAR));
 					DBWriteContactSettingWString(NULL, pszSkypeProtoName, "LoginPassword", wtext);
 
 					return TRUE;
+				}
 			}			
 			break; 
 		}
@@ -572,11 +591,12 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 int OnDetailsInit( WPARAM wParam, LPARAM lParam )
 {
 	OPTIONSDIALOGPAGE odp = {0};
+	HANDLE hContact = ( HANDLE )lParam;
+
 	odp.cbSize = sizeof(odp);
 	odp.hIcon = NULL;
 	odp.hInstance = hInst;
 
-	HANDLE hContact = ( HANDLE )lParam;
 	if ( hContact == NULL ) {
 		
 		char szTitle[256];
@@ -635,9 +655,10 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 		if ( HIWORD( wParam ) == BN_CLICKED ) {
 			switch( LOWORD( wParam )) {
 			case IDC_SETAVATAR:
+			{
 				char szFileName[ MAX_PATH ];
 				if ( EnterBitmapFileName( szFileName ) != ERROR_SUCCESS )
-					return false;
+					return FALSE;
 
 				hAvatar = ( HBITMAP )CallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )szFileName);
 				if ( hAvatar != NULL ){
@@ -645,12 +666,12 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 					CallService(SKYPE_SETAVATAR, 0, ( LPARAM )szFileName);
 				}
 				break;
-
+			}
 			case IDC_DELETEAVATAR:
 				if ( hAvatar != NULL ) {
 					DeleteObject( hAvatar );
 					hAvatar = NULL;
-					CallService(SKYPE_SETAVATAR, 0, NULL);
+					CallService(SKYPE_SETAVATAR, 0, 0);
 				}
 				DBDeleteContactSetting( NULL, pszSkypeProtoName, "AvatarFile" );
 				InvalidateRect( hwndDlg, NULL, TRUE );
@@ -681,11 +702,10 @@ BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_INITDIALOG:
 		TranslateDialogDefault( hwndDlg );
 
-		strcpy(myProfile.SkypeProtoName,pszSkypeProtoName);
-
-		myProfile.Load();
+		ZeroMemory (&myProfile, sizeof(myProfile));
+		SkypeProfile_Load(&myProfile);
 		if(SkypeInitialized)
-			myProfile.LoadFromSkype();
+			SkypeProfile_LoadFromSkype(&myProfile);
 
 		SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)"");
 		sexM = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)Translate("MALE"));
@@ -710,35 +730,21 @@ BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if ( HIWORD( wParam ) == BN_CLICKED ) {
 			switch( LOWORD( wParam )) {
 			case IDC_SAVEDETAILS:
-
-				char text[256];
-				GetDlgItemText(hwndDlg,IDC_FULLNAME,text,sizeof(text));
-				strcpy(myProfile.FullName,text);
-
-				GetDlgItemText(hwndDlg,IDC_HOMEPAGE,text,sizeof(text));
-				strcpy(myProfile.HomePage,text);
-
-				GetDlgItemText(hwndDlg,IDC_HOMEPHONE,text,sizeof(text));
-				strcpy(myProfile.HomePhone,text);
-
-				GetDlgItemText(hwndDlg,IDC_OFFICEPHONE,text,sizeof(text));
-				strcpy(myProfile.OfficePhone,text);
-
-				GetDlgItemText(hwndDlg,IDC_CITY,text,sizeof(text));
-				strcpy(myProfile.City,text);
-
-				GetDlgItemText(hwndDlg,IDC_PROVINCE,text,sizeof(text));
-				strcpy(myProfile.Province,text);
-
+				GetDlgItemText(hwndDlg,IDC_FULLNAME,myProfile.FullName,sizeof(myProfile.FullName)/sizeof(TCHAR));
+				GetDlgItemText(hwndDlg,IDC_HOMEPAGE,myProfile.HomePage,sizeof(myProfile.HomePage)/sizeof(TCHAR));
+				GetDlgItemText(hwndDlg,IDC_HOMEPHONE,myProfile.HomePhone,sizeof(myProfile.HomePhone)/sizeof(TCHAR));
+				GetDlgItemText(hwndDlg,IDC_OFFICEPHONE,myProfile.OfficePhone,sizeof(myProfile.OfficePhone)/sizeof(TCHAR));
+				GetDlgItemText(hwndDlg,IDC_CITY,myProfile.City,sizeof(myProfile.City)/sizeof(TCHAR));
+				GetDlgItemText(hwndDlg,IDC_PROVINCE,myProfile.Province,sizeof(myProfile.Province)/sizeof(TCHAR));
 				sex = SendMessage(GetDlgItem(hwndDlg,IDC_SEX),CB_GETCURSEL,0,0);
 				
 				myProfile.Sex = 0;
 				if(sex == sexF) myProfile.Sex = 0x46;
 				if(sex == sexM) myProfile.Sex = 0x4D;
 
-				myProfile.Save();
+				SkypeProfile_Save(&myProfile);
 				if(SkypeInitialized)
-					myProfile.SaveToSkype();
+					SkypeProfile_SaveToSkype(&myProfile);
 				break;
 			}	
 		}
@@ -762,7 +768,8 @@ void DoAutoDetect(HWND dlg)
 {
 	char basePath[MAX_PATH];
 	char fileName[MAX_PATH];
-	char accountName[129];
+	char tmpUser[255];
+	ezxml_t f1, acc;
 	
 	if (FAILED(SHGetFolderPath(dlg,CSIDL_APPDATA,NULL,0,basePath)))
 	{
@@ -771,46 +778,29 @@ void DoAutoDetect(HWND dlg)
 	}
 
 	strcat(basePath,"\\Skype\\");
-	strcpy(fileName,basePath);
-	strcat(fileName,"\\shared.xml");
+	sprintf (fileName, "%s\\shared.xml", basePath);
 
-	TiXmlDocument doc(fileName); // TODO: build path based on named folders
-	if (!doc.LoadFile())
+	if (f1 = ezxml_parse_file(fileName))
 	{
-		OUTPUT("Failed to open skypes configuration files!");
-		return;
-	}
-	
-	TiXmlHandle docHandle(&doc);
-	TiXmlElement* defaultAccount = docHandle.FirstChild("config").FirstChild("Lib").FirstChild("Account").FirstChild("Default").Element();
-	if (defaultAccount)
-	{
-		strncpy(accountName, defaultAccount->GetText(), min(strlen(defaultAccount->GetText()),128)+1);
-		char tmpUser[255];
-		GetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),tmpUser,255);
-		if (strlen(tmpUser)==0)
+ 		if (acc = ezxml_get(f1, "Lib", 0, "Account", 0, "Default", -1))
 		{
-			SetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),accountName);
+			if (GetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),tmpUser,sizeof(tmpUser)))
+				SetWindowTextA(GetDlgItem(dlg,IDC_USERNAME),acc->txt);
+			/* Can't find this stuff in current Skype verions??
+			sprintf (fileName, "%s\\%s\\config.xml", basePath, acc->txt);
+			if ((acc = ezxml_get(f1, "UI", 0, "Messages", 0, "OpenWindowInCompactMode", -1)) && *acc->txt!='0')
+			{
+				ezxml_set_txt (acc, "0");
+				// ezXML doesn't supprot saving yet
+			}
+			*/
 		}
+		ezxml_free(f1);
 	}
-
-	strcpy(fileName,basePath);
-	strcat(fileName,accountName);
-	strcat(fileName,"\\config.xml");
-
-	TiXmlDocument docConf(fileName);
-	if (!docConf.LoadFile())
+	else
 	{
 		OUTPUT("Failed to open skypes configuration files!");
 		return;
-	}
-	TiXmlHandle confHandle(&docConf);
-	TiXmlElement* openWindowInCompactMode = confHandle.FirstChild("config").FirstChild("UI").FirstChild("Messages").FirstChild("OpenWindowInCompactMode").Element();
-	if (openWindowInCompactMode && strcmp(openWindowInCompactMode->GetText(),"0")!=0)
-	{
-		openWindowInCompactMode->Clear();
-		openWindowInCompactMode->LinkEndChild(new TiXmlText("0"));
-		docConf.SaveFile();
 	}
 }
 #endif
