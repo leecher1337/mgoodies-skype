@@ -88,7 +88,7 @@ void HookEvents(void)
 	hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
 }
 
-int SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
     int ret = 0;
     switch (wParam) {        
         case PFLAGNUM_1:
@@ -121,7 +121,7 @@ int SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
 		
 }
 
-int SkypeGetName(WPARAM wParam, LPARAM lParam)
+INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam)
 {
 	if (lParam)
 	{
@@ -132,7 +132,7 @@ int SkypeGetName(WPARAM wParam, LPARAM lParam)
 }
 
 
-int SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
+INT_PTR SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 {
 	UINT id;
 
@@ -143,7 +143,7 @@ int SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 	return (int)LoadImage(hInst,MAKEINTRESOURCE(id),IMAGE_ICON,GetSystemMetrics(wParam&PLIF_SMALL?SM_CXSMICON:SM_CXICON),GetSystemMetrics(wParam&PLIF_SMALL?SM_CYSMICON:SM_CYICON),0);
 }
 
-int SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
+INT_PTR SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
 {	DBVARIANT dbv;
 	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv)){
 		lstrcpynA((char*)wParam, dbv.pszVal, (int)lParam);

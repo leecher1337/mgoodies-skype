@@ -11,20 +11,19 @@
 #include "../../include/newpluginapi.h"
 #include "../../include/m_database.h"
 
-class CSkypeProfile
+typedef struct
 {
-public:
-	char SkypeProtoName[256];
-	TCHAR FullName[TEXT_LEN];
+	TCHAR FullName[256];
 	char HomePhone[256];
 	char OfficePhone[256];
 	char HomePage[256];
-	TCHAR City[TEXT_LEN];
-	TCHAR Province[TEXT_LEN];
+	TCHAR City[256];
+	TCHAR Province[256];
 	BYTE Sex;
+} SkypeProfile;
 
-	void Load(void);
-	void Save(void);
-	void CSkypeProfile::SaveToSkype(void);
-	void CSkypeProfile::LoadFromSkype(void);
-};
+void SkypeProfile_Load(SkypeProfile *pstProf);
+void SkypeProfile_Save(SkypeProfile *pstProf);
+void SkypeProfile_Free(SkypeProfile *pstProf);
+void SkypeProfile_LoadFromSkype(SkypeProfile *pstProf);
+void SkypeProfile_SaveToSkype(SkypeProfile *pstProf);

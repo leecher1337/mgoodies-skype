@@ -29,7 +29,7 @@ void NofifyVoiceService(HANDLE hContact, char *callId, int state)
 	NotifyEventHooks(hVoiceNotify, (WPARAM) &vc, 0);
 }
 
-static int VoiceGetInfo(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceGetInfo(WPARAM wParam, LPARAM lParam)
 {
 	return VOICE_SUPPORTED | VOICE_CALL_CONTACT | VOICE_CAN_HOLD;
 }
@@ -57,32 +57,32 @@ static HANDLE FindContactByCallId(char *callId)
 	return NULL;
 }
 
-static int VoiceCall(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 {
-	if (wParam == NULL)
-		return -1;
-
 	DBVARIANT dbv;
+	char msg[512];
+
+	if (!wParam) return -1;
+
 	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
 		return -1;
 
-	char msg[512];
 	mir_snprintf(msg, sizeof(msg), "CALL %s", dbv.pszVal);
 	SkypeSend(msg);
 
 	return 0;
 }
 
-static int VoiceAnswer(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceAnswer(WPARAM wParam, LPARAM lParam)
 {
-	if (wParam == NULL)
-		return -1;
-
 	char *callId = (char *) wParam;
+	char msg[512];
+
+	if (!wParam) return -1;
+	
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	char msg[512];
 	mir_snprintf(msg, sizeof(msg), "SET %s STATUS INPROGRESS", callId);
 	SkypeSend(msg);
 	testfor("ERROR", 200);
@@ -90,32 +90,32 @@ static int VoiceAnswer(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static int VoiceDrop(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceDrop(WPARAM wParam, LPARAM lParam)
 {
-	if (wParam == NULL)
-		return -1;
-
 	char *callId = (char *) wParam;
+	char msg[512];
+
+	if (!wParam) return -1;
+
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	char msg[512];
 	mir_snprintf(msg, sizeof(msg), "SET %s STATUS FINISHED", callId);
 	SkypeSend(msg);
 
 	return 0;
 }
 
-static int VoiceHold(WPARAM wParam, LPARAM lParam)
+static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 {
-	if (wParam == NULL)
-		return -1;
-
 	char *callId = (char *) wParam;
+	char msg[512];
+
+	if (!wParam) return -1;
+
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	char msg[512];
 	mir_snprintf(msg, sizeof(msg), "SET %s STATUS ONHOLD", callId);
 	SkypeSend(msg);
 

@@ -4,7 +4,7 @@
 #define TEXT_LEN	1024
 #define CP_ACP		0 
 
-static int code_page = CP_ACP;
+#define code_page CP_ACP;
 
 
 // System includes
@@ -100,7 +100,6 @@ typedef void ( __cdecl* pThreadFunc )( void* );
 
 void __cdecl SkypeSystemInit(char *);
 void __cdecl MsgPump (char *dummy);
-int HookContactAdded(WPARAM wParam, LPARAM lParam);
 void PingPong(void);
 void CheckIfApiIsResponding(char *);
 void TellError(DWORD err);
@@ -108,26 +107,26 @@ int ShowMessage(int, char*, int);
 void EndCallThread(char *);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
-int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
-int SkypeGetAvatarCaps(WPARAM wParam,LPARAM lParam);
-int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
+INT_PTR SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
+INT_PTR SkypeGetAvatarCaps(WPARAM wParam,LPARAM lParam);
+INT_PTR SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
 int HookContactAdded(WPARAM wParam, LPARAM lParam);
 int HookContactDeleted(WPARAM wParam, LPARAM lParam);
-int ImportHistory(WPARAM wParam, LPARAM lParam);
+INT_PTR ImportHistory(WPARAM wParam, LPARAM lParam);
 int CreateTopToolbarButton(WPARAM wParam, LPARAM lParam);
 int OnModulesLoaded(WPARAM wParam, LPARAM lParam);
-int SkypeSetStatus(WPARAM wParam, LPARAM lParam);
-int SkypeGetStatus(WPARAM wParam, LPARAM lParam);
-int SkypeGetInfo(WPARAM wParam,LPARAM lParam);
-int SkypeAddToList(WPARAM wParam, LPARAM lParam);
-int SkypeBasicSearch(WPARAM wParam, LPARAM lParam);
-int SkypeSendMessage(WPARAM wParam, LPARAM lParam);
-int SkypeRecvMessage(WPARAM wParam, LPARAM lParam);
-int SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam);
-int SkypeRecvAuth(WPARAM wParam, LPARAM lParam);
-int SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
-int SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
-int SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeSetStatus(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeGetStatus(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeGetInfo(WPARAM wParam,LPARAM lParam);
+INT_PTR SkypeAddToList(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeBasicSearch(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeRecvMessage(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeRecvAuth(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 int OkToExit(WPARAM wParam, LPARAM lParam);
 int MirandaExit(WPARAM wParam, LPARAM lParam);
 int __stdcall EnterBitmapFileName( char* szDest );
