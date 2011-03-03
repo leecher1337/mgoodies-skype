@@ -318,7 +318,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="contacts.cpp"
+				RelativePath="contacts.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -346,39 +346,12 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\debug.cpp"
+				RelativePath=".\debug.c"
 				>
 			</File>
+
 			<File
-				RelativePath="gchat.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseRemote|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="pthread.cpp"
+				RelativePath="gchat.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -406,7 +379,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skype.cpp"
+				RelativePath="pthread.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -434,7 +407,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skypeapi.cpp"
+				RelativePath="skype.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -462,35 +435,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\skypeopt.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\skypeprofile.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\skypesvc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinystr.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinyxml.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinyxmlerror.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinyxmlparser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="utf8.cpp"
+				RelativePath="skypeapi.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -518,7 +463,47 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\voiceservice.cpp"
+				RelativePath=".\skypeopt.c"
+				>
+			</File>
+			<File
+				RelativePath=".\skypeprofile.c"
+				>
+			</File>
+			<File
+				RelativePath=".\skypesvc.c"
+				>
+			</File>
+			<File
+				RelativePath="utf8.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseRemote|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\voiceservice.c"
 				>
 			</File>
 		</Filter>
@@ -536,6 +521,10 @@
 			</File>
 			<File
 				RelativePath="debug.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ezxml\ezxml.h"
 				>
 			</File>
 			<File
@@ -576,14 +565,6 @@
 			</File>
 			<File
 				RelativePath=".\skypesvc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinystr.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tinyxml\tinyxml.h"
 				>
 			</File>
 			<File
