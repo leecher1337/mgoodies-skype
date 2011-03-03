@@ -44,6 +44,12 @@
 						 you can login from multiple sessions and messages etc. entered there
 						 will be reflected to the current session. This may be addressed in one
 						 of the next builds...
+	1.14  - 02.03.2011 - Added a Skype WIN32-API Emulation Layer for better compatibility with
+						 other clients that don't want to implement the socks-protocol, so that
+						 we are compatible out-of-the-box.
+					   - Added a few features to be compatible with libpurple. i.e. we now support
+					     message numbering, even tough this is only supported in PROTOCOL 4.
+					   - Added Keepalive packet sending to circumvent imo.im AutoAway.
 */
 
 #include <memory.h>

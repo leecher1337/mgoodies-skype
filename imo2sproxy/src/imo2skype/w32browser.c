@@ -1062,7 +1062,7 @@ static DWORD WINAPI ShowIEWndFunc(PVOID pLoadWnd)
 //				  memory. Drawback: Higher memory consumption
 int W32Browser_Init(BOOL bInitBrowser)
 {
-	m_hThread = CreateThread(NULL, 0, ShowIEWndFunc, (LPVOID)bInitBrowser, 0, &m_dwThread);
+	m_hThread = (HANDLE)_beginthreadex(NULL, 0, ShowIEWndFunc, (LPVOID)bInitBrowser, 0, &m_dwThread);
 	if (!m_hThread) return -1;
 	if (!(m_hEvent = CreateEvent (NULL, FALSE, FALSE, NULL)))
 	{

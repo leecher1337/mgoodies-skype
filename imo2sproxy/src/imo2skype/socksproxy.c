@@ -52,6 +52,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
+#include <process.h> 
 #define thread_t HANDLE
 #define LockMutex(x) EnterCriticalSection (&x)
 #define UnlockMutex(x) LeaveCriticalSection(&x)
@@ -295,8 +296,8 @@ static int Dispatcher_Start(CONNINST *pInst)
 {
 	DWORD ThreadID;
 
-    return (pInst->hThread=CreateThread(NULL, 0, 
-		(LPTHREAD_START_ROUTINE)DispatcherThread, pInst, 0, &ThreadID))!=0; 
+    return (pInst->hThread=(thread_t)_beginthreadex(NULL, 0, 
+		(unsigned(__stdcall *)(void*))DispatcherThread, pInst, 0, &ThreadID))!=0; 
 	
 }
 

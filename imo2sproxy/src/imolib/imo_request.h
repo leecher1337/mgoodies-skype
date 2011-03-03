@@ -19,5 +19,6 @@ char *ImoRq_PostToSys(IMORQ *hRq, char *pszMethod, char *pszSysTo, cJSON *data, 
 void ImoRq_UpdateAck(IMORQ *hRq, unsigned long lAck);
 char *ImoRq_UserActivity(IMORQ *hRq);
 char *ImoRq_ResetRPC(IMORQ *hRq);
-
+char *ImoRq_Reui_Session(IMORQ *hRq);
+char *ImoRq_Echo(IMORQ *hRq);
 #endif

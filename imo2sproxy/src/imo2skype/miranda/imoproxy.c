@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include <fcntl.h>
+#include <process.h> 
 #pragma comment (lib, "Ws2_32.lib")
 #include <stdio.h>
 #include "imo2sproxy.h"
@@ -310,7 +311,7 @@ static BOOL StartProxy (int i)
 	// an error. So we need a Mutex for synchronisation.
 	m_hEvent = ahEvents[1] = CreateEvent (NULL, FALSE, FALSE, NULL);
 
-	if (!(m_hThread[i] = ahEvents[0] = CreateThread (NULL, 0, ProxyThread, m_apProxy[i], 0, &dwThreadId)))
+	if (!(m_hThread[i] = ahEvents[0] = (HANDLE)_beginthreadex (NULL, 0, ProxyThread, m_apProxy[i], 0, &dwThreadId)))
 	{
 		MessageBox (NULL, Translate("IMOPROXY Cannot start dispatch thread"), "IMOPROXY", MB_OK | MB_ICONSTOP);
 		CloseHandle (m_hEvent);
@@ -503,10 +504,12 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						iFlags != iOldFlags)
 						iProxies=(1<<PROXY_MAX)-1;
 
+					/*
 					StopProxies(iProxies);
 					LoadSettings();
 					CheckSettings(iProxies);
 					StartProxies(iProxies);
+					*/
 					UpdateProxyStatus (hWnd, PROXY_SOCKS);
 					UpdateProxyStatus (hWnd, PROXY_W32SKYPEEMU);
 
@@ -684,6 +687,17 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		fclose(m_stCfg.fpLog);
 		m_stCfg.fpLog = NULL;
 	}
+	if (m_stCfg.pszUser)
+	{
+		free(m_stCfg.pszUser);
+		m_stCfg.pszUser = NULL;
+	}
+	if (m_stCfg.pszPass)
+	{
+		free(m_stCfg.pszPass);
+		m_stCfg.pszPass = NULL;
+	}
+
 	FreeConsole();
 	return 0;
 }
