@@ -3,8 +3,13 @@
    Author:  leecher
    Date:    30.08.2009
 */
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "fifo.h"
 #include "imo_request.h"
@@ -31,21 +36,27 @@ static IMORQ *Init(void);
 IMORQ *ImoRq_Init(void)
 {
 
-	IMORQ *hRq = Init();
+	IMORQ *hRq;
 
-	/* Create session ID */
-	ImoRq_CreateID (hRq->szSessId, SSID_LENGTH+1);
-
-	/* Fetch start page to get cookies */
-	IoLayer_Get (hRq->hIO, "https://imo.im/");
-
-	/* Get new session ID from system */
+	if (hRq = Init())
 	{
-		char *pszRPC = ImoRq_ResetRPC (hRq);
-		if (pszRPC)
+		/* Create session ID */
+		ImoRq_CreateID (hRq->szSessId, SSID_LENGTH+1);
+
+		/* Fetch start page to get cookies */
+		if (IoLayer_Get (hRq->hIO, "https://o.imo.im/"))
+
+		/* Get new session ID from system */
 		{
-			if (pszRPC = strstr(pszRPC, "ssid\":\""))
-				strcpy (hRq->szSessId, strtok (pszRPC+7, "\""));
+			char *pszRPC = ImoRq_ResetRPC (hRq);
+			if (pszRPC)
+			{
+				if (pszRPC = strstr(pszRPC, "ssid\":\""))
+					strcpy (hRq->szSessId, strtok (pszRPC+7, "\""));
+			}
+		} else {
+			ImoRq_Exit(hRq);
+			hRq = NULL;
 		}
 	}
 
@@ -79,7 +90,11 @@ char *ImoRq_PostImo(IMORQ *hRq, char *pszMethod, cJSON *data)
 	unsigned int uiCount = -1;
 
 	if (!(pszData = cJSON_Print(data))) return NULL;
-printf ("-> %s\n", pszData);
+//printf ("-> %s\n", pszData);
+#ifdef _WIN32
+OutputDebugString (pszData);
+OutputDebugString ("\n");
+#endif
 	pszEscData = IoLayer_EscapeString(hRq->hIO, pszData);
 	free (pszData);
 	if (!pszEscData || !(hPostString = Fifo_Init(strlen(pszEscData)+32)))
@@ -93,7 +108,7 @@ printf ("-> %s\n", pszData);
 	Fifo_AddString (hPostString, pszEscData);
 	IoLayer_FreeEscapeString (pszEscData);
 	pszEscData =  Fifo_Get(hPostString, &uiCount);
-	pszData = IoLayer_Post (hRq->hIO, "https://imo.im/imo", pszEscData,
+	pszData = IoLayer_Post (hRq->hIO, "https://o.imo.im/imo", pszEscData,
 		uiCount-1);
 	Fifo_Exit(hPostString);
 printf ("<- %s\n", pszData);
@@ -163,7 +178,34 @@ char *ImoRq_UserActivity(IMORQ *hRq)
 
 	ssid=cJSON_CreateObject();
 	cJSON_AddStringToObject (ssid, "ssid", hRq->szSessId);
-	return ImoRq_PostToSys (hRq, "observerd_user_activity", "session", ssid, 1);
+	return ImoRq_PostToSys (hRq, "observed_user_activity", "session", ssid, 1);
+}
+
+// -----------------------------------------------------------------------------
+
+char *ImoRq_Echo(IMORQ *hRq)
+{
+	cJSON *data;
+	time_t t;
+	char szTime[16], *pszRet;
+
+	if (!(data=cJSON_CreateObject())) return NULL;
+	sprintf (szTime, "%ld", time(&t)*1000);
+	cJSON_AddStringToObject (data, "t", szTime);
+	pszRet = ImoRq_PostImo (hRq, "echo", data);
+	cJSON_Delete (data);
+	return pszRet;
+}
+
+// -----------------------------------------------------------------------------
+
+char *ImoRq_Reui_Session(IMORQ *hRq)
+{
+	cJSON *ssid;
+
+	ssid=cJSON_CreateObject();
+	cJSON_AddStringToObject (ssid, "ssid", hRq->szSessId);
+	return ImoRq_PostToSys (hRq, "reui_session", "session", ssid, 1);
 }
 
 // -----------------------------------------------------------------------------

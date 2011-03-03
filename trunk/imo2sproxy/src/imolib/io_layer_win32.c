@@ -38,7 +38,7 @@ IOLAYER *IoLayer_Init(void)
 	if (!(hIO = calloc(1, sizeof(IOLAYER))))
 		return NULL;
 		
-	if (!(hIO->hInet = InternetOpen ("XMLHttpRequest/1.0",
+	if (!(hIO->hInet = InternetOpen ("Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13",
 		INTERNET_OPEN_TYPE_PRECONFIG, NULL, "<local>", 0)))
 	{
 		free (hIO);
@@ -50,6 +50,8 @@ IOLAYER *IoLayer_Init(void)
 		IoLayer_Exit(hIO);
 		return NULL;
 	}
+
+	//InternetSetCookie ("https://o.imo.im/", "proto", "prpl-skype");
 
 	return hIO;
 }
@@ -74,7 +76,7 @@ char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int
 	char szHostName[INTERNET_MAX_HOST_NAME_LENGTH],
 		szURLPath[INTERNET_MAX_URL_LENGTH], *p;
 
-OutputDebugString(pszPostFields);
+//OutputDebugString(pszPostFields);
 	urlInfo.dwStructSize = sizeof (URL_COMPONENTS);
 	urlInfo.lpszHostName = szHostName;
 	urlInfo.dwHostNameLength = sizeof(szHostName);
@@ -100,8 +102,8 @@ OutputDebugString(pszPostFields);
 		INET_FLAGS, 0);
 	if (!hRequest)
 	{
-		InternetCloseHandle (hUrl);
 		FetchLastError (hIO);
+		InternetCloseHandle (hUrl);
 		return NULL;
 	}
 	
@@ -109,7 +111,23 @@ OutputDebugString(pszPostFields);
 	dwFlags |= SECURITY_FLAG_IGNORE_UNKNOWN_CA;
 	InternetSetOption (hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof (dwFlags));
 
-	if (!(HttpSendRequest (hRequest, "Content-Type: application/x-www-form-urlencoded", 47,
+	/*
+	{
+		char szCookies[4096];
+		DWORD cbCookies, dwIndex=0;
+
+		OutputDebugString ("Sending headers:\n");
+		do
+		{
+			cbCookies=sizeof(szCookies);
+			HttpQueryInfo (hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			OutputDebugString (szCookies);
+		} while (GetLastError() == ERROR_SUCCESS);
+	}
+	*/
+
+	if (!(HttpSendRequest (hRequest, "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
+		"X-Requested-With: XMLHttpRequest", -1,
 		pszPostFields, cbPostFields)))
 	{
 		FetchLastError (hIO);
@@ -117,6 +135,22 @@ OutputDebugString(pszPostFields);
 		InternetCloseHandle (hUrl);
 		return NULL;
 	}
+
+	/*
+	{
+		char szCookies[4096];
+		DWORD cbCookies, dwIndex=0;
+
+		OutputDebugString ("Received headers:\n");
+		do
+		{
+			cbCookies=sizeof(szCookies);
+			HttpQueryInfo (hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			OutputDebugString (szCookies);
+		} while (GetLastError() == ERROR_SUCCESS);
+	}
+	*/
+
 
 	while (InternetQueryDataAvailable (hRequest, &dwRemaining, 0, 0) && dwRemaining > 0)
 	{
@@ -128,6 +162,7 @@ OutputDebugString(pszPostFields);
 	InternetCloseHandle (hRequest);
 	InternetCloseHandle (hUrl);
 OutputDebugString(p);
+OutputDebugString("\n");
 	return p;
 }
 

@@ -90,6 +90,7 @@ int ImoSkype_Login(IMOSKYPE *hSkype, char *pszUser, char *pszPass)
 	cJSON_AddStringToObject(root, "uid", hSkype->pszUser = strdup(pszUser));
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "passwd", pszPass);
+	cJSON_AddNullToObject(root, "captcha");	// Uh-oh, thay may get annoying in the future! :(
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "account_login", root))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
@@ -129,6 +130,30 @@ int ImoSkype_Poll(IMOSKYPE *hSkype)
 	pszRet = ImoRq_PostSystem(hSkype->hPoll, "forward_to_server", NULL, NULL, NULL, 1);
 	if (!pszRet) return -1;
 	return CheckReturn (hSkype, pszRet, "ping");
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_KeepAlive(IMOSKYPE *hSkype)
+{
+	char *pszRet;
+
+	/* In case we want to receive Promo-Infos...
+	{
+		cJSON *edata = cJSON_CreateObject(), *root;
+
+		root=cJSON_CreateObject();
+		cJSON_AddStringToObject(edata, "kind", "web");
+		cJSON_AddNumberToObject(edata, "quantity", 1);
+		cJSON_AddItemToObject(root, "edata", edata);
+		if (pszRet = ImoRq_PostToSys(hSkype->hRq, "get_promos", "promo", root, 1))
+			CheckReturn(hSkype, pszRet, "ok");
+	}
+	*/
+
+	pszRet = ImoRq_UserActivity(hSkype->hRq);
+	if (!pszRet) return -1;
+	return CheckReturn (hSkype, pszRet, "ok");
 }
 
 // -----------------------------------------------------------------------------
@@ -201,14 +226,26 @@ int ImoSkype_SetStatus(IMOSKYPE *hSkype, char *pszStatus, char *pszStatusMsg)
 	char *pszRet;
 	int iRet = -1;
 
+	/*
 	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "ad", "");
 	cJSON_AddStringToObject(root, "primitive", pszStatus);
 	cJSON_AddStringToObject(root, "status", pszStatusMsg);
 	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "set_status", root))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	*/
+
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "ad", "");
+	cJSON_AddStringToObject(root, "primitive", pszStatus);
+	cJSON_AddStringToObject(root, "status", pszStatusMsg);
+	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "set_status", "session", root, 0))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+
 	cJSON_Delete(root);
 	return iRet;
 }
@@ -289,6 +326,17 @@ int ImoSkype_StartVoiceCall(IMOSKYPE *hSkype, char *pszBuddy)
 	return iRet;
 }
 
+// -----------------------------------------------------------------------------
+
+int ImoSkype_Ping(IMOSKYPE *hSkype)
+{
+	char *pszRet;
+	int iRet = -1;
+
+	if (pszRet = ImoRq_Echo(hSkype->hRq))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	return iRet;
+}
 
 // -----------------------------------------------------------------------------
 // Static

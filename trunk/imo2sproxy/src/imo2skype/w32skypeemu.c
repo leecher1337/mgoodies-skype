@@ -64,6 +64,7 @@ static void EventHandler(char *pszMsg, void *pUser)
 {
 	CONNINST *pInst = (CONNINST*)pUser;
 	COPYDATASTRUCT cds;
+	DWORD dwRes = 0;
 
 	LockMutex(pInst->sendmutex);
 	if (pInst->hProxy->pCfg->bVerbose && pInst->hProxy->pCfg->fpLog)
@@ -74,7 +75,7 @@ static void EventHandler(char *pszMsg, void *pUser)
 	cds.dwData = 0;
 	cds.cbData = strlen(pszMsg)+1;
 	cds.lpData = pszMsg;
-	SendMessage (pInst->hWnd, WM_COPYDATA, (WPARAM)pInst->hProxy->hWndDispatch, (LPARAM)&cds);
+	SendMessageTimeout (pInst->hWnd, WM_COPYDATA, (WPARAM)pInst->hProxy->hWndDispatch, (LPARAM)&cds, SMTO_NORMAL, 1000, &dwRes);
 	UnlockMutex(pInst->sendmutex);
 }
 

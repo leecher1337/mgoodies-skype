@@ -15,6 +15,7 @@
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <process.h> 
 #include "w32browser.h"
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
@@ -210,8 +211,8 @@ int Imo2S_Send (IMOSAPI *pInst, char *pszMsg)
 		(strncasecmp (pszRealMsg+4, "USERSTATUS", 10)==0 ||
 		 strncasecmp (pszRealMsg+4, "CONNSTATUS", 10)==0))
 	{
-		if (pInst->fpLog) fprintf (pInst->fpLog, "Imo2S_Send: iLoginStat = %d\n", 
-			pInst->iLoginStat);
+//		if (pInst->fpLog) fprintf (pInst->fpLog, "Imo2S_Send: iLoginStat = %d\n", 
+//			pInst->iLoginStat);
 		if (pInst->iLoginStat == 0)
 		{
 			if (pInst->myUser.pszUser && pInst->pszPass && strncasecmp (pszRealMsg+15, "OFFLINE", 7))
@@ -621,6 +622,7 @@ OutputDebugString (szHTML);
 static void DispatcherThread(void *pUser)
 {
 	IMOSAPI *pInst = (IMOSAPI*)pUser;
+	time_t t = 0, tcur;
 
 	if (pInst->fpLog) fprintf (pInst->fpLog, "Imo2S::DispatcherThread() start\n");
 	while (!pInst->iShuttingDown)
@@ -631,6 +633,12 @@ static void DispatcherThread(void *pUser)
 		sprintf (szBuf, "DispatcherThread %d loops.\n", GetCurrentThreadId());
 		OutputDebugString (szBuf);
 #endif
+		if (time(&tcur)>=t+300)
+		{
+			t=tcur;
+			//ImoSkype_Ping (pInst->hInst);
+			ImoSkype_KeepAlive(pInst->hInst);
+		}
 		ImoSkype_Poll(pInst->hInst);
 	}
 }
@@ -643,8 +651,8 @@ static int Dispatcher_Start(IMOSAPI *pInst)
 	DWORD ThreadID;
 
 	if (pInst->fpLog) fprintf (pInst->fpLog, "Imo2S::Dispatcher_Start()\n");
-    return (pInst->hThread=CreateThread(NULL, 0, 
-		(LPTHREAD_START_ROUTINE)DispatcherThread, pInst, 0, &ThreadID))!=0; 
+    return (pInst->hThread=(thread_t)_beginthreadex(NULL, 0, 
+		(unsigned(__stdcall *)(void*))DispatcherThread, pInst, 0, &ThreadID))!=0; 
 	
 }
 
@@ -1146,18 +1154,22 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				return;
 			}
 
-			for (i=0; i<sizeof(m_stMap)/sizeof(m_stMap[0]); i++)
+			if (strcasecmp(pInst->myUser.szStatus, pszCmd))
 			{
-				if (!strcasecmp(m_stMap[i].pszSkypeStat, pszCmd))
+				for (i=0; i<sizeof(m_stMap)/sizeof(m_stMap[0]); i++)
 				{
-					if (ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, "")>0)
-						strcpy (pInst->myUser.szStatus, pszCmd);
-					Send (pInst, "USERSTATUS %s", pInst->myUser.szStatus);
-					break;
+					if (!strcasecmp(m_stMap[i].pszSkypeStat, pszCmd))
+					{
+						if (ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, 
+							pInst->myUser.pszStatusText?pInst->myUser.pszStatusText:"")>0)
+							strcpy (pInst->myUser.szStatus, pszCmd);
+						Send (pInst, "USERSTATUS %s", pInst->myUser.szStatus);
+						break;
+					}
 				}
-			}
-			if (i==sizeof(m_stMap)/sizeof(m_stMap[0]))
-				Send (pInst, "ERROR 28 Unknown userstatus");
+				if (i==sizeof(m_stMap)/sizeof(m_stMap[0]))
+					Send (pInst, "ERROR 28 Unknown userstatus");
+			} else Send (pInst, "USERSTATUS %s", pInst->myUser.szStatus);
 			return;
 		}
 		else
@@ -1254,9 +1266,24 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 
 			if (!strcasecmp (pszCmd, "MOOD_TEXT"))
 			{
-				if (pInst->myUser.pszStatusText) free (pInst->myUser.pszStatusText);
-				pInst->myUser.pszStatusText = strdup (pszCmd+10);
-				ImoSkype_SetStatus (pInst->hInst, pInst->myUser.szStatus, pInst->myUser.pszStatusText);
+				int i;
+
+				if (!pInst->myUser.pszStatusText || 
+					strcasecmp(pInst->myUser.pszStatusText, pszCmd+10))
+				{
+					for (i=0; i<sizeof(m_stMap)/sizeof(m_stMap[0]); i++)
+					{
+						if (!strcasecmp(m_stMap[i].pszSkypeStat, pInst->myUser.szStatus))
+						{
+							if (ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, pszCmd+10)>0)
+							{
+								if (pInst->myUser.pszStatusText) free (pInst->myUser.pszStatusText);
+								pInst->myUser.pszStatusText = strdup (pszCmd+10);
+							}
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
