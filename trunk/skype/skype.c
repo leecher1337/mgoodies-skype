@@ -1356,7 +1356,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 
 //					if (SkypeStatus==ID_STATUS_ONLINE) SkypeSend("SEARCH MISSEDMESSAGES");
 				}
-				break;
+//				break;
 			}
 			if (!strncmp(szSkypeMsg, "USERSTATUS", 10)) {
 //				if ((sstat=SkypeStatusToMiranda(szSkypeMsg+11)) && SkypeStatus!=ID_STATUS_CONNECTING) {
