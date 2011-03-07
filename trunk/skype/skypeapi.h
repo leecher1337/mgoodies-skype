@@ -61,4 +61,4 @@ char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
 char *SkypeGetProfile(char *szProperty);
 void SetUserNamePassword();
 INT_PTR SkypeAdduserDlg(WPARAM wParam, LPARAM lParam);
-
+INT_PTR SkypeReceivedAPIMessage(WPARAM wParam, LPARAM lParam);

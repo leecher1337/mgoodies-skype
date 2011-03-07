@@ -19,14 +19,12 @@ extern HWND hSkypeWnd, hWnd;
 extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown ;
 extern int SkypeStatus, receivers;
 extern HANDLE SkypeReady, SkypeMsgReceived, httbButton;
-extern char pszSkypeProtoName[MAX_PATH+30];
 extern UINT ControlAPIAttach, ControlAPIDiscover;
 extern LONG AttachStatus;
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
-extern HANDLE hProtocolAvatarsFolder;
-extern char pszSkypeProtoName[];
-extern char DefaultAvatarsFolder[MAX_PATH+1];
+extern HANDLE hProtocolAvatarsFolder, hHookSkypeApiRcv;
+extern char DefaultAvatarsFolder[MAX_PATH+1], *pszProxyCallout;
 
 // -> Skype Message Queue functions //
 
@@ -65,6 +63,19 @@ SOCKET ClientSocket=INVALID_SOCKET;
 
 static int _ConnectToSkypeAPI(char *path, BOOL bStart);
 
+
+/* SkypeReceivedMessage
+ * 
+ * Purpose: Hook to be called when a message is received, if some caller is 
+ *          using our internal I/O services.
+ * Params : wParam - Not used
+ *          lParam - COPYDATASTRUCT like in WM_COPYDATA
+ * Returns: Result from SendMessage
+ */
+INT_PTR SkypeReceivedAPIMessage(WPARAM wParam, LPARAM lParam) {
+	return SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, lParam);
+}
+
 /*
  * Skype via Socket --> Skype2Socket connection
  */
@@ -73,6 +84,7 @@ void rcvThread(char *dummy) {
 	unsigned int length;
 	char *buf;
 	COPYDATASTRUCT CopyData;
+	int rcv;
 
 	if (!UseSockets) return;
 	rcvThreadRunning=TRUE;
@@ -81,28 +93,30 @@ void rcvThread(char *dummy) {
 			return;
 			rcvThreadRunning=FALSE;
 		}
-		LOG("rcvThread", "Receiving from socket..");
-		if (recv(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR) {
+		LOG(("rcvThread Receiving from socket.."));
+		if ((rcv=recv(ClientSocket, (char *)&length, sizeof(length), 0))==SOCKET_ERROR || rcv==0) {
 			rcvThreadRunning=FALSE;
-			LOG("rcvThread", "Socket error");
+			if (rcv==SOCKET_ERROR) {LOG(("rcvThread Socket error"));}
+			else {LOG(("rcvThread lost connection, graceful shutdown"));}
 			return;
 		}
-		LOG("rcvThread", "Received length, recieving message..");
+		LOG(("rcvThread Received length, recieving message.."));
 		buf=(char *)calloc(1, length+1);
-		if (recv(ClientSocket, buf, length, 0)==SOCKET_ERROR) {
+		if ((rcv = recv(ClientSocket, buf, length, 0))==SOCKET_ERROR || rcv==0) {
 			rcvThreadRunning=FALSE;
-			LOG("rcvThread", "Socket error");
+			if (rcv==SOCKET_ERROR) {LOG(("rcvThread Socket error"));}
+			else {LOG(("rcvThread lost connection, graceful shutdown"));}
 			free(buf);
 			return;
 		}
-		LOG("Received message: ", buf);
+		LOG(("Received message: %s", buf));
 
 		CopyData.dwData=0; 
 		CopyData.lpData=buf; 
 		CopyData.cbData=strlen(buf)+1;
 		if (!SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
 		{
-			LOGL("SendMessage failed: ", GetLastError());
+			LOG(("SendMessage failed: %08X", GetLastError()));
 		}
 		free(buf);
 	}
@@ -162,7 +176,7 @@ DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
 	{
 		HWND loginControl = GetWindow(skype, GW_CHILD);
 
-		LOG("setUserNamePasswordThread", "Skype window found!");
+		LOG(("setUserNamePasswordThread: Skype window found!"));
 
 		// Sleep for some time, while Skype is loading
 		// It loads slowly :(
@@ -180,13 +194,13 @@ DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
 				// Set user name and password
 				DBVARIANT dbv;
 
-				if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginUserName",&dbv)) 
+				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
 				{
 					SendMessageW(userName, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
 					DBFreeVariant(&dbv);    
 				}
 
-				if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginPassword",&dbv)) 
+				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
 				{
 					SendMessageW(password, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
 					DBFreeVariant(&dbv);
@@ -203,7 +217,7 @@ DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
 	}
 	else
 	{
-		LOG("setUserNamePasswordThread", "Skype window was not found!");
+		LOG(("setUserNamePasswordThread: Skype window was not found!"));
 	}
 
 	ReleaseMutex(mutex);
@@ -284,10 +298,10 @@ void SkypeMsgCleanup(void) {
 	struct MsgQueue *ptr;
 	int i;
 
-	LOG("SkypeMsgCleanup", "Cleaning up message queue..");
+	LOG(("SkypeMsgCleanup Cleaning up message queue.."));
 	if (receivers>1)
 	{
-		LOGL ("SkypeMsgCleanup Releasing receivers: ", receivers);
+		LOG (("SkypeMsgCleanup Releasing %d receivers", receivers));
 		for (i=0;i<receivers; i++)
 		{
 			SkypeMsgAdd ("ERROR Semaphore was blocked");
@@ -308,7 +322,7 @@ void SkypeMsgCleanup(void) {
 	LeaveCriticalSection(&ConnectMutex);
 	DeleteCriticalSection(&MsgQueueMutex);
 	DeleteCriticalSection(&ConnectMutex);
-	LOG("SkypeMsgCleanup", "Done.");
+	LOG(("SkypeMsgCleanup Done."));
 }
 
 /* SkypeMsgGet
@@ -331,13 +345,14 @@ char *SkypeMsgGet(void) {
 }
 
 // Message sending routine, for internal use by SkypeSend
-int __sendMsg(char *szMsg) {
+static int __sendMsg(char *szMsg) {
    COPYDATASTRUCT CopyData;
    LRESULT SendResult;
    int oldstatus;
    unsigned int length=strlen(szMsg);
 
-   LOG(">", szMsg);
+   LOG(("> %s", szMsg));
+
    if (UseSockets) {
 
 	   if (ClientSocket==INVALID_SOCKET) return -1;
@@ -358,12 +373,18 @@ int __sendMsg(char *szMsg) {
 	   CopyData.dwData=0; 
 	   CopyData.lpData=szMsg; 
 	   CopyData.cbData=strlen(szMsg)+1;
+
+       // Internal comm channel
+	   if (pszProxyCallout)
+		   return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
+
+	   // If this didn't work, proceed with normal Skype API
        if (!hSkypeWnd) 
 	   {
-		   LOG("SkypeSend", "DAMN! No Skype window handle! :(");
+		   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
 	   }
 	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData);
-       LOGL("SkypeSend: SendMessage returned ", SendResult);
+       LOG(("SkypeSend: SendMessage returned %d", SendResult));
    }
    if (!SendResult) 
    {
@@ -377,7 +398,7 @@ int __sendMsg(char *szMsg) {
 		logoff_contacts();
 		oldstatus=SkypeStatus;
 		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
-		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
 	  }
 	  // Reconnect to Skype
 	  ResetEvent(SkypeReady);
@@ -469,47 +490,52 @@ int SkypeSend(char *szFmt, ...) {
 char *SkypeRcv(char *what, DWORD maxwait) {
     char *msg, *token=NULL;
 	struct MsgQueue *ptr, *ptr_;
+	int j;
 	DWORD dwWaitStat;
 
-	LOG ("SkypeRcv - Requesting answer: ", what);
+	LOG (("SkypeRcv - Requesting answer: %s", what));
 	do {
 		EnterCriticalSection(&MsgQueueMutex);
-		ptr_=SkypeMsgs;
-		ptr=ptr_->next;
-		while (ptr!=NULL) {
-			if (what && what[0]==0) {
-				// Tokenizer syntax active
-				token=what+1;
-				while (*token) {
-					if (!strstr (ptr->message, token)) {
-						token=NULL;
-						break;
-					}
-					token+=strlen(token)+1;
-				}
-			}
-
-			if (what==NULL || token || 	(what[0] && !strncmp(ptr->message, what, strlen(what))) || !strncmp(ptr->message, "ERROR", 5)) 
-			{
-				msg=ptr->message;
-				ptr_->next=ptr->next;
-				LOG("<SkypeRcv:", msg);
-				free(ptr);
-				LeaveCriticalSection(&MsgQueueMutex);
-				return msg;
-			}
-			ptr_=ptr;
+		// First, search for the requested message. On second run, also accept an ERROR
+		for (j=0; j<2; j++)
+		{
+			ptr_=SkypeMsgs;
 			ptr=ptr_->next;
+			while (ptr!=NULL) {
+				if (what && what[0]==0) {
+					// Tokenizer syntax active
+					token=what+1;
+					while (*token) {
+						if (!strstr (ptr->message, token)) {
+							token=NULL;
+							break;
+						}
+						token+=strlen(token)+1;
+					}
+				}
+
+				if (what==NULL || token || 	(what[0] && !strncmp(ptr->message, what, strlen(what))) || (j==1 && !strncmp(ptr->message, "ERROR", 5))) 
+				{
+					msg=ptr->message;
+					ptr_->next=ptr->next;
+					LOG(("<SkypeRcv: %s", msg));
+					free(ptr);
+					LeaveCriticalSection(&MsgQueueMutex);
+					return msg;
+				}
+				ptr_=ptr;
+				ptr=ptr_->next;
+			}
 		}
 		LeaveCriticalSection(&MsgQueueMutex);
 		InterlockedIncrement ((long *)&receivers); //receivers++;
 		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
 		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
-		if (receivers>1) {LOGL ("SkypeRcv: receivers still waiting: ", receivers);}
+		if (receivers>1) {LOG (("SkypeRcv: %d receivers still waiting", receivers));}
 		
 	} while(dwWaitStat == WAIT_OBJECT_0 && !MirandaShuttingDown);	
 	InterlockedDecrement ((long *)&receivers);
-	LOG("<SkypeRcv:", "(empty)");	
+	LOG(("<SkypeRcv: (empty)"));	
 	return NULL;
 }
 
@@ -518,7 +544,7 @@ char *SkypeRcvMsg(char *what, DWORD maxwait) {
 	struct MsgQueue *ptr, *ptr_;
 	DWORD dwWaitStat;
 
-	LOG ("SkypeRcvMsg - Requesting answer: ", what);
+	LOG (("SkypeRcvMsg - Requesting answer: %s ", what));
 	do {
 		EnterCriticalSection(&MsgQueueMutex);
 		ptr_=SkypeMsgs;
@@ -537,14 +563,14 @@ char *SkypeRcvMsg(char *what, DWORD maxwait) {
 			}
 
 		*/
-			LOG ("SkypeRcvMsg - msg: ", ptr->message);
+			LOG (("SkypeRcvMsg - msg: %s", ptr->message));
 			if( (strstr (ptr->message, "MESSAGE") && 
 					(strstr (ptr->message, "STATUS SENT") || strstr (ptr->message, "STATUS QUEUED"))
 				) || !strncmp(ptr->message, "ERROR", 5))
 			{
 				msg=ptr->message;
 				ptr_->next=ptr->next;
-				LOG("<SkypeRcv:", msg);
+				LOG(("<SkypeRcv: %s", msg));
 				free(ptr);
 				LeaveCriticalSection(&MsgQueueMutex);
 				return msg;
@@ -557,11 +583,11 @@ char *SkypeRcvMsg(char *what, DWORD maxwait) {
 		InterlockedIncrement ((long *)&receivers); //receivers++;
 		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
 		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
-		if (receivers>1) {LOGL ("SkypeRcvMsg: receivers still waiting: ", receivers);}
+		if (receivers>1) {LOG (("SkypeRcvMsg: %d receivers still waiting", receivers));}
 		
 	} while(dwWaitStat == WAIT_OBJECT_0 && !MirandaShuttingDown);	
 	InterlockedDecrement ((long *)&receivers);
-	LOG("<SkypeRcvMsg:", "(empty)");	
+	LOG(("<SkypeRcvMsg: (empty)"));	
 	return NULL;
 }
 
@@ -576,22 +602,16 @@ char *SkypeRcvMsg(char *what, DWORD maxwait) {
 */ 
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
   char *str, *ptr;
-  int retval, len;
+  int len;
 
-  if (!(str=(char *)malloc(strlen(szWhat)+strlen(szWho)+strlen(szProperty)+7))) return NULL;
-  sprintf(str, "GET %s %s %s", szWhat, szWho, szProperty);
-  retval=__sendMsg(str);
-  if (retval) {
-	  free(str);
-	  return NULL;
-  }
-  len=strlen(str+3);
-  if (!szProperty[0]) len--;
+  str=(char *)_alloca((len=strlen(szWhat)+strlen(szWho)+strlen(szProperty)+2)+5);
+  sprintf(str, "GET %s%s%s %s", szWhat, *szWho?" ":"", szWho, szProperty);
+  if (__sendMsg(str)) return NULL;
+  if (*szProperty) len++;
   ptr = SkypeRcv(str+4, INFINITE);
-  LOG("SkypeGet - Request", str);
-  free(str);
-  if (ptr) memmove(ptr, ptr+len, strlen(ptr)-len+1);
-  LOG("SkypeGet - Answer", ptr);
+  LOG(("SkypeGet - Request %s", str));
+  if (ptr && strncmp (ptr, "ERROR", 5)) memmove(ptr, ptr+len, strlen(ptr)-len+1);
+  LOG(("SkypeGet - Answer %s", ptr));
   return ptr;
 }
 
@@ -604,24 +624,7 @@ char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
  * For example:  SkypeGetProfile("FULLNAME", "Tweety");
 */ 
 char *SkypeGetProfile(char *szProperty) {
-  char *str, *ptr;
-  int retval, len;
-
-  if (!(str=(char *)malloc(strlen(szProperty)+13))) return NULL;
-  sprintf(str, "GET PROFILE %s", szProperty);
-  retval=__sendMsg(str);
-  if (retval) {
-	  free(str);
-	  return NULL;
-  }
-  len=strlen(str+3);
-  if (!szProperty[0]) len--;
-  ptr = SkypeRcv(str+4, INFINITE);
-  LOG("SkypeGetProfile - Request", str);
-  free(str);
-  if (ptr) memmove(ptr, ptr+len, strlen(ptr)-len+1);
-  LOG("SkypeGetProfile - Answer", ptr);
-  return ptr;
+  return SkypeGet ("PROFILE", "", szProperty);
 }
 
 /* SkypeSetProfile
@@ -629,9 +632,7 @@ char *SkypeGetProfile(char *szProperty) {
  * 
 */ 
 int SkypeSetProfile(char *szProperty, char *szValue) {
-  int retval;
-  retval= SkypeSend("SET PROFILE %s %s", szProperty, szValue);
-  return retval;
+  return SkypeSend("SET PROFILE %s %s", szProperty, szValue);
 }
 
 /* SkypeMsgCollectGarbage
@@ -652,7 +653,7 @@ int SkypeMsgCollectGarbage(time_t age) {
 	ptr=ptr_->next;
 	while (ptr!=NULL) {
 		if (ptr->tAdded && time(NULL)-ptr->tAdded>age) {
-			LOG("GarbageCollector throwing out message: ", ptr->message);
+			LOG(("GarbageCollector throwing out message: %s", ptr->message));
 			free(ptr->message);
 			ptr_->next=ptr->next;
 			free(ptr);
@@ -682,10 +683,10 @@ INT_PTR SkypeCall(WPARAM wParam, LPARAM lParam) {
 	char *msg=0;
 	int res;
 
-	if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+	if (!DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 		res = -1; // no direct return, because dbv needs to be freed
 	} else {
-		if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
+		if (DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) return -1;
 		msg=(char *)malloc(strlen(dbv.pszVal)+6);
 		strcpy(msg, "CALL ");
 		strcat(msg, dbv.pszVal);
@@ -714,16 +715,16 @@ INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam)
 	char *msg=0;
 	int res;
 
-	if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+	if (!DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
 		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
 		//sprintf(msg, "ALTER CALL %s HANGUP", dbv.pszVal);
 		res=SkypeSend(msg);
 #if _DEBUG
-		DBDeleteContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId");
+		DBDeleteContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId");
 #endif
 	//} else {
-	//	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
+	//	if (DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) return -1;
 	//	msg=(char *)malloc(strlen(dbv.pszVal)+6);
 	//	strcpy(msg, "CALL ");
 	//	strcat(msg, dbv.pszVal);
@@ -764,7 +765,7 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	switch (uMsg){
 		case WM_INITDIALOG:	
 			hContact=(HANDLE)lParam;
-			Utils_RestoreWindowPosition(hwndDlg, NULL, pszSkypeProtoName, "DIALdlg");
+			Utils_RestoreWindowPosition(hwndDlg, NULL, SKYPE_PROTONAME, "DIALdlg");
 			TranslateDialogDefault(hwndDlg);
 
 			if (lParam) {
@@ -786,7 +787,7 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 						DBFreeVariant(&dbv);
 					}
 				}
-				if (DBGetContactSetting(hContact,pszSkypeProtoName,"SkypeOutNr",&dbv)) {
+				if (DBGetContactSetting(hContact,SKYPE_PROTONAME,"SkypeOutNr",&dbv)) {
 					DBGetContactSetting(hContact,"UserInfo","MyPhone0",&dbv);
 					FixNumber(dbv.pszVal+1);
 				}
@@ -799,7 +800,7 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				for (entries=0;entries<MAX_ENTRIES;entries++) {
 					_snprintf(number, sizeof(number), "LastNumber%d", entries);
-					if (!DBGetContactSetting(NULL, pszSkypeProtoName, number, &dbv)) {
+					if (!DBGetContactSetting(NULL, SKYPE_PROTONAME, number, &dbv)) {
 						SendDlgItemMessage(hwndDlg,IDC_NUMBER,CB_ADDSTRING,0,(LPARAM)dbv.pszVal);
 						DBFreeVariant(&dbv);
 					} else break	;
@@ -823,7 +824,7 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							break;
 						}
 						DBDeleteContactSetting(hContact, "CList", "Hidden");
-						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda("SKYPEOUT"));
+						DBWriteContactSettingWord(hContact, SKYPE_PROTONAME, "Status", (WORD)SkypeStatusToMiranda("SKYPEOUT"));
 						if (SendDlgItemMessage(hwndDlg,IDC_NUMBER,CB_FINDSTRING,0,(LPARAM)number)==CB_ERR) {
 							int i;
 							char buf[64];
@@ -832,22 +833,22 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							if (entries>MAX_ENTRIES) entries=MAX_ENTRIES;
 							for (i=entries;i>0;i--) {
 								_snprintf(buf, sizeof(buf), "LastNumber%d", i-1);
-								if (!DBGetContactSetting(NULL, pszSkypeProtoName, buf, &dbv)) {
+								if (!DBGetContactSetting(NULL, SKYPE_PROTONAME, buf, &dbv)) {
 									_snprintf(buf, sizeof(buf), "LastNumber%d", i);
-									DBWriteContactSettingString(NULL, pszSkypeProtoName, buf, dbv.pszVal);
+									DBWriteContactSettingString(NULL, SKYPE_PROTONAME, buf, dbv.pszVal);
 									DBFreeVariant(&dbv);
 								} else break;
 							}
-							DBWriteContactSettingString(NULL, pszSkypeProtoName, "LastNumber0", number);
+							DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "LastNumber0", number);
 						}
 						TempAdded=TRUE;
 					}
-					if (!DBWriteContactSettingString(hContact, pszSkypeProtoName, "SkypeOutNr", number)) {
+					if (!DBWriteContactSettingString(hContact, SKYPE_PROTONAME, "SkypeOutNr", number)) {
 						msg=(char *)malloc(strlen(number)+6);
 						strcpy(msg, "CALL ");
 						strcat(msg, number);
 						if (SkypeSend(msg) || (ptr=SkypeRcv("ERROR", 500))) {
-							DBDeleteContactSetting(hContact, pszSkypeProtoName, "SkypeOutNr");
+							DBDeleteContactSetting(hContact, SKYPE_PROTONAME, "SkypeOutNr");
 							if (ptr) {
 								OUTPUT(ptr);
 								free(ptr);
@@ -862,7 +863,7 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			}			
 			break;
 		case WM_DESTROY:
-			Utils_SaveWindowPosition(hwndDlg, NULL, pszSkypeProtoName, "DIALdlg");
+			Utils_SaveWindowPosition(hwndDlg, NULL, SKYPE_PROTONAME, "DIALdlg");
 			if (httbButton) CallService(MS_TTB_SETBUTTONSTATE, (WPARAM)httbButton, TTBST_RELEASED);
 			break;
 	}
@@ -884,16 +885,16 @@ static int CALLBACK CallstatDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			HANDLE hContact;
 			char *szProto;
 
-			if (!DBGetContactSetting((HANDLE)lParam, pszSkypeProtoName, "CallId", &dbv)) {
+			if (!DBGetContactSetting((HANDLE)lParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 
 				// Check, if another call is in progress
 				for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 					szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-					if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) && hContact!=(HANDLE)lParam &&
-						DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) == 0 &&
-						!DBGetContactSetting(hContact, pszSkypeProtoName, "CallId", &dbv2)) 
+					if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) && hContact!=(HANDLE)lParam &&
+						DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) == 0 &&
+						!DBGetContactSetting(hContact, SKYPE_PROTONAME, "CallId", &dbv2)) 
 					{
-						if (DBGetContactSettingByte(hContact, pszSkypeProtoName, "OnHold", 0)) {
+						if (DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "OnHold", 0)) {
 							DBFreeVariant(&dbv2);
 							continue;
 						} else break;
@@ -905,7 +906,7 @@ static int CALLBACK CallstatDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 					char buf[256], buf2[256];
 					char *szOtherCaller=(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0);
 
-					Utils_RestoreWindowPosition(hwndDlg, NULL, pszSkypeProtoName, "CALLSTATdlg");
+					Utils_RestoreWindowPosition(hwndDlg, NULL, SKYPE_PROTONAME, "CALLSTATdlg");
 					TranslateDialogDefault(hwndDlg);
 					SendMessage(hwndDlg, WM_COMMAND, IDC_JOIN, 0);
 
@@ -981,7 +982,7 @@ static int CALLBACK CallstatDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			}
 			break;
 		case WM_DESTROY:
-			Utils_SaveWindowPosition(hwndDlg, NULL, pszSkypeProtoName, "CALLSTATdlg");
+			Utils_SaveWindowPosition(hwndDlg, NULL, SKYPE_PROTONAME, "CALLSTATdlg");
 			break;
 	}
 	return 0;
@@ -1016,7 +1017,7 @@ INT_PTR SkypeOutCall(WPARAM wParam, LPARAM lParam) {
 	char *msg;
 	int res;
 
-	if (wParam && !DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+	if (wParam && !DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
 		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
 		res=SkypeSend(msg);
@@ -1039,8 +1040,8 @@ INT_PTR SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
 	char *msg;
 	int retval;
 
-	LOG("SkypeHoldCall", "started");
-	if (!wParam || DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv))
+	LOG(("SkypeHoldCall started"));
+	if (!wParam || DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv))
 		return -1;
 	
 	if (!(msg=(char*)malloc(strlen(dbv.pszVal)+23))) {
@@ -1049,7 +1050,7 @@ INT_PTR SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
 	}
 	sprintf(msg, "SET %s STATUS ", dbv.pszVal);
 	DBFreeVariant(&dbv);
-	if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "OnHold", 0)) strcat (msg, "INPROGRESS");
+	if (DBGetContactSettingByte((HANDLE)wParam, SKYPE_PROTONAME, "OnHold", 0)) strcat (msg, "INPROGRESS");
 	else strcat(msg, "ONHOLD");
 
 	retval=SkypeSend(msg);
@@ -1068,7 +1069,7 @@ INT_PTR SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
  */
 INT_PTR SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
 
-	LOG("SkypeAnswerCall", "started");
+	LOG(("SkypeAnswerCall started"));
 	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_CALLSTAT), NULL, CallstatDlgProc, (LPARAM)((CLISTEVENT*)lParam)->hContact);
 	return 0;
 }
@@ -1084,12 +1085,12 @@ INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam) {
 	int retval;
 	char *Nick;
 	
-	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "Nick", (const char *)lParam)) {
+	if(DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Nick", (const char *)lParam)) {
 		#if defined( _UNICODE )
 			char buff[TEXT_LEN];
 			WideCharToMultiByte(code_page, 0, (const char *)lParam, -1, buff, TEXT_LEN, 0, 0);
 			buff[TEXT_LEN] = 0;
-			DBWriteContactSettingString(0, pszSkypeProtoName, "Nick", buff);
+			DBWriteContactSettingString(0, SKYPE_PROTONAME, "Nick", buff);
 		#endif
 	}
 
@@ -1111,14 +1112,14 @@ INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam) {
  */
 INT_PTR SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 	int retval = -1;
-	char *Mood = 0;
+	char *Mood = NULL;
 	
-	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "MoodText", (const char *)lParam)) {
+	if(DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "MoodText", (const char *)lParam)) {
 		#if defined( _UNICODE )
 			char buff[TEXT_LEN];
 			WideCharToMultiByte(code_page, 0, (const char *)lParam, -1, buff, TEXT_LEN, 0, 0);
 			buff[TEXT_LEN] = 0;
-			DBWriteContactSettingString(0, pszSkypeProtoName, "MoodText", buff);
+			DBWriteContactSettingString(0, SKYPE_PROTONAME, "MoodText", buff);
 		#endif
 	}
 
@@ -1130,6 +1131,7 @@ INT_PTR SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 	 
 	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
 		retval = SkypeSend("SET PROFILE MOOD_TEXT %s", Mood);
+	free (Mood);
 
 	return retval;
 
@@ -1149,7 +1151,7 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 	int ret;
 	char command[500];
 	DBVARIANT dbv = {0};
-	BOOL hasOldAvatar = (DBGetContactSetting(NULL, pszSkypeProtoName, "AvatarFile", &dbv) == 0 && dbv.type == DBVT_ASCIIZ);
+	BOOL hasOldAvatar = (DBGetContactSetting(NULL, SKYPE_PROTONAME, "AvatarFile", &dbv) == 0 && dbv.type == DBVT_ASCIIZ);
 	size_t len;
 
 	if (AttachStatus != SKYPECONTROLAPI_ATTACH_SUCCESS)
@@ -1170,7 +1172,7 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 		return -2;
 	
 	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
-	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s avatar.%s", AvatarFile, pszSkypeProtoName, ext);
+	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s avatar.%s", AvatarFile, SKYPE_PROTONAME, ext);
 
 	// Backup old file
 	if (hasOldAvatar)
@@ -1213,8 +1215,8 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 		if (hasOldAvatar)
 			DeleteFile(OldAvatarFile);
 
-		DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", "");
-		DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarFile);
+		DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "AvatarFile", "");
+		DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "AvatarFile", AvatarFile);
 
 		ret = 0;
 	}
@@ -1241,7 +1243,7 @@ INT_PTR SkypeSendFile(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	int retval;
 
-	if (!wParam || DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv))
+	if (!wParam || DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv))
 		return -1;
 	retval=SkypeSend("OPEN FILETRANSFER %s", dbv.pszVal);
 	DBFreeVariant(&dbv);
@@ -1261,7 +1263,7 @@ INT_PTR SkypeChatCreate(WPARAM wParam, LPARAM lParam) {
 	HANDLE hContact=(HANDLE)wParam;
 	char *ptr, *ptr2;
 
-	if (!hContact || DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv))
+	if (!hContact || DBGetContactSetting(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv))
 		return -1;
 	// Flush old messages
 	while (testfor("\0CHAT \0 STATUS \0", 0));
@@ -1307,7 +1309,7 @@ void SkypeFlush(void) {
  */
 int SkypeStatusToMiranda(char *s) {
 	int i;
-	if (!strcmp("SKYPEOUT", s)) return DBGetContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", ID_STATUS_ONTHEPHONE);
+	if (!strcmp("SKYPEOUT", s)) return DBGetContactSettingDword(NULL, SKYPE_PROTONAME, "SkypeOutStatusMode", ID_STATUS_ONTHEPHONE);
 	for(i=0; status_codes_in[i].szStat; i++)
 		if (!strcmp(status_codes_in[i].szStat, s))
 		return status_codes_in[i].id;
@@ -1339,27 +1341,24 @@ char *MirandaStatusToSkype(int id) {
 char *GetSkypeErrorMsg(char *str) {
 	char *pos, *reason, *msg;
 
-    LOG ("GetSkypeErrorMsg received error: ", str);
+    LOG (("GetSkypeErrorMsg received error: %s", str));
 	if (!strncmp(str, "ERROR", 5)) {
 		reason=_strdup(str);
 		return reason;
 	}
 	if ((pos=strstr(str, "FAILURE")) ) {
 		switch(atoi(pos+14)) {
-			case MISC_ERROR: msg=_strdup("Misc. Error"); break;
-			case USER_NOT_FOUND: msg=_strdup("User does not exist, check username"); break;
-			case USER_NOT_ONLINE: msg=_strdup("Trying to send IM to an user, who is not online"); break;
-			case USER_BLOCKED: msg=_strdup("IM blocked by recipient"); break;
-			case TYPE_UNSUPPORTED: msg=_strdup("Type unsupported"); break;
-			case SENDER_NOT_FRIEND: msg=_strdup("Sending IM message to user, who has not added you to friendslist and has chosen 'only people in my friendslist can start IM'"); break;
-			case SENDER_NOT_AUTHORIZED: msg=_strdup("Sending IM message to user, who has not authorized you and has chosen 'only people whom I have authorized can start IM'"); break;
-			default: msg=_strdup("Unknown error");
+			case MISC_ERROR: msg="Misc. Error"; break;
+			case USER_NOT_FOUND: msg="User does not exist, check username"; break;
+			case USER_NOT_ONLINE: msg="Trying to send IM to an user, who is not online"; break;
+			case USER_BLOCKED: msg="IM blocked by recipient"; break;
+			case TYPE_UNSUPPORTED: msg="Type unsupported"; break;
+			case SENDER_NOT_FRIEND: msg="Sending IM message to user, who has not added you to friendslist and has chosen 'only people in my friendslist can start IM'"; break;
+			case SENDER_NOT_AUTHORIZED: msg="Sending IM message to user, who has not authorized you and has chosen 'only people whom I have authorized can start IM'"; break;
+			default: msg="Unknown error";
 		}
 		reason=(char *)malloc(strlen(pos)+strlen(msg)+3);
-		strcpy(reason, pos);
-		strcat(reason, ": ");
-		strcat(reason, msg);
-		free(msg);
+		sprintf (reason, "%s: %s", pos, msg);
 		return reason;
 	}
 	return NULL;
@@ -1420,13 +1419,13 @@ int ConnectToSkypeAPI(char *path, BOOL bStart) {
 
 static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 	BOOL SkypeLaunched=FALSE;
-	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
-	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
+	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0);
+	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "ConnectionAttempts", 10);
 	char *args[7], *pFree = NULL;
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:"};
 	const int SkypeDefaults[]={0, 1, 1, 0, 0};
 
-	LOG("ConnectToSkypeAPI", "started.");
+	LOG(("ConnectToSkypeAPI started."));
 	if (UseSockets) 
 	{
 		SOCKADDR_IN service;
@@ -1434,10 +1433,10 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 		long inet;
 		struct hostent *hp;
 
-		LOG("ConnectToSkypeAPI", "Connecting to Skype2socket socket...");
+		LOG(("ConnectToSkypeAPI: Connecting to Skype2socket socket..."));
         if ((ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))==INVALID_SOCKET) return -1;
 
-		if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Host", &dbv)) {
+		if (!DBGetContactSetting(NULL, SKYPE_PROTONAME, "Host", &dbv)) {
 			if ((inet=inet_addr(dbv.pszVal))==-1) {
 				if (hp=gethostbyname(dbv.pszVal))
 					memcpy(&inet, hp->h_addr, sizeof(inet));
@@ -1455,11 +1454,11 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 
 		service.sin_family = AF_INET;
 		service.sin_addr.s_addr = inet;
-		service.sin_port = htons((unsigned short)DBGetContactSettingWord(NULL, pszSkypeProtoName, "Port", 1401));
+		service.sin_port = htons((unsigned short)DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "Port", 1401));
 	
 		if ( connect( ClientSocket, (SOCKADDR*) &service, sizeof(service) ) == SOCKET_ERROR) return -1;
             
-		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0) && !DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) 
+		if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0) && !DBGetContactSetting(NULL, SKYPE_PROTONAME, "Password", &dbv)) 
 		{
 				char reply=0;
 
@@ -1471,7 +1470,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 				}
 				if (!reply) {
 					OUTPUT("Authentication is not supported/needed for this Skypeproxy server. It will be disabled.");
-					DBWriteContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0);
+					DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0);
 				} else {
 					unsigned int length=strlen(dbv.pszVal);
 					if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
@@ -1509,6 +1508,12 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 		return 0;
 	}
 
+	if (pszProxyCallout)
+	{
+		AttachStatus=SKYPECONTROLAPI_ATTACH_SUCCESS;
+		return 0;
+	}
+
 	do 
 	{
         int retval;
@@ -1516,9 +1521,9 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 			('SkypeControlAPIDiscover') to all windows in the system, specifying its own
 			window handle in wParam parameter.
 		 */
-		LOGL("ConnectToSkypeAPI sending discover message.. hWnd=", (long)hWnd);
+		LOG(("ConnectToSkypeAPI sending discover message.. hWnd=%08X", (long)hWnd));
 		retval=SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-		LOGL("ConnectToSkypeAPI sent discover message returning", retval);
+		LOG(("ConnectToSkypeAPI sent discover message returning %d", retval));
 
 		/*	In response, Skype responds with
 			message 'SkypeControlAPIAttach' to the handle specified, and indicates
@@ -1531,22 +1536,22 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 		{
 			if (hWnd==NULL) 
 			{
-				LOG("ConnectToSkypeAPI", "hWnd of SkypeDispatchWindow not yet set..");
+				LOG(("ConnectToSkypeAPI: hWnd of SkypeDispatchWindow not yet set.."));
 				continue;
 			}
 			if (!SkypeLaunched && (path ||  UseCustomCommand)) 
 			{
-				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || bStart)
+				if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "StartSkype", 1) || bStart)
 				{
-					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
+					LOG(("ConnectToSkypeAPI Starting Skype, as it's not running"));
 
 					j=1;
 					for (i=0; i<5; i++)
-						if (DBGetContactSettingByte(NULL, pszSkypeProtoName, SkypeOptions[i]+1, SkypeDefaults[i])) {
+						if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, SkypeOptions[i]+1, SkypeDefaults[i])) {
 							if( i == 4)
 							{
 								DBVARIANT dbv;
-								if(!DBGetContactSetting(NULL,pszSkypeProtoName,"datapath",&dbv)) 
+								if(!DBGetContactSetting(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
 								{
 									int paramSize = strlen(SkypeOptions[i]) + strlen(dbv.pszVal);
 									pFree = args[j] = malloc(paramSize + 1);
@@ -1557,7 +1562,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 							}
 							else
 								args[j]=SkypeOptions[i];
-							LOG("Using Skype parameter: ", args[j]);
+							LOG(("Using Skype parameter: %s", args[j]));
 							//MessageBox(NULL,"Using Skype parameter: ",args[j],0);
 							j++;
 						}
@@ -1568,20 +1573,20 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 						DBVARIANT dbv;
 						int pid;
 
-						if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
+						if(!DBGetContactSetting(NULL,SKYPE_PROTONAME,"CommandLine",&dbv)) 
 						{
 							args[0] = dbv.pszVal;
-							LOG("ConnectToSkypeAPI", "Launch skype using command line");
+							LOG(("ConnectToSkypeAPI: Launch skype using command line"));
 							/*for(int i=0;i<j;i++)
 							{
 								if(args[i] != NULL)
 									LOG("ConnectToSkypeAPI", args[i]);
 							}*/
-							pid = _spawnv(_P_NOWAIT, dbv.pszVal, args);
+							pid = *dbv.pszVal?_spawnv(_P_NOWAIT, dbv.pszVal, args):-1;
 							if (pid == -1)
 							{
 								int i = errno; //EINVAL
-								LOG("ConnectToSkypeAPI","Failed to launch skype!");
+								LOG(("ConnectToSkypeAPI: Failed to launch skype!"));
 							}
 							DBFreeVariant(&dbv);
 
@@ -1591,7 +1596,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 					else
 					{
 						args[0]=path;
-						LOG("ConnectToSkypeAPI", "Launch skype");
+						LOG(("ConnectToSkypeAPI: Launch skype"));
 						/*for(int i=0;i<j;i++)
 						{
 							if(args[i] != NULL)
@@ -1611,15 +1616,15 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 				}
 				ResetEvent(SkypeReady);
 				SkypeLaunched=TRUE;
-				LOG("ConnectToSkypeAPI", "Skype process started.");
+				LOG(("ConnectToSkypeAPI: Skype process started."));
 				// Skype launching iniciated, keep sending Discover messages until it responds.
 				continue;
 			} 
 			else 
 			{
-				LOG("ConnectToSkypeAPI", "Check if Skype was launchable..");
-				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) && !(path ||  UseCustomCommand)) return -1;
-				LOGL("Trying to attach: #", counter);
+				LOG(("ConnectToSkypeAPI: Check if Skype was launchable.."));
+				if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "StartSkype", 1) && !(path ||  UseCustomCommand)) return -1;
+				LOG(("Trying to attach: #%d", counter));
 				counter++;
 				if (counter>=maxattempts && AttachStatus==-1) 
 				{
@@ -1628,11 +1633,11 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 				}
 			}
 		}
-		LOGL("Attachstatus", AttachStatus);
+		LOG(("Attachstatus %d", AttachStatus));
 	} while (AttachStatus==SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE || AttachStatus==SKYPECONTROLAPI_ATTACH_API_AVAILABLE || AttachStatus==-1);
 	
 	while (AttachStatus==SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) Sleep(1000);
-	LOGL("Attachstatus", AttachStatus);
+	LOG(("Attachstatus %d", AttachStatus));
 	if (AttachStatus!=SKYPECONTROLAPI_ATTACH_SUCCESS) {
 		switch(AttachStatus) {
 			case SKYPECONTROLAPI_ATTACH_REFUSED:
@@ -1642,7 +1647,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 				OUTPUT("The Skype API is not available");
 				break;
 			default:
-				LOGL("ERROR: AttachStatus:", AttachStatus);
+				LOG(("ERROR: AttachStatus: %d", AttachStatus));
 				OUTPUT("Wheee, Skype won't let me use the API. :(");
 		}
 		return -1;
@@ -1668,12 +1673,15 @@ int CloseSkypeAPI(char *skypePath)
 		}
 	}
 	else {
-		if (AttachStatus!=-1) 
+		if (!pszProxyCallout)
 		{
-			// it was crashing when the skype-network-proxy is used (imo2sproxy for imo.im) and skype-path is empty 
-			// now, with the "UseSockets" check and the skypePath[0] != 0 check its fixed
-			if (skypePath != NULL && skypePath[0] != 0)
-				_spawnl(_P_NOWAIT, skypePath, skypePath, "/SHUTDOWN", NULL);
+			if (AttachStatus!=-1) 
+			{
+				// it was crashing when the skype-network-proxy is used (imo2sproxy for imo.im) and skype-path is empty 
+				// now, with the "UseSockets" check and the skypePath[0] != 0 check its fixed
+				if (skypePath != NULL && skypePath[0] != 0)
+					_spawnl(_P_NOWAIT, skypePath, skypePath, "/SHUTDOWN", NULL);
+			}
 		}
 	}
 	logoff_contacts();
@@ -1699,12 +1707,12 @@ int CloseSkypeAPI(char *skypePath)
 //	  return -1;
 //  }
 //  InterlockedExchange((long *)&SkypeStatus, ID_STATUS_CONNECTING);
-//  ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
+//  ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
 //  retval=__connectAPI(path);
 //  if (retval==-1) {
 //	logoff_contacts();
 //	InterlockedExchange((long *)&SkypeStatus, ID_STATUS_OFFLINE);
-//	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
+//	ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
 //  }
 //  LeaveCriticalSection(&ConnectMutex);
 //  return retval;

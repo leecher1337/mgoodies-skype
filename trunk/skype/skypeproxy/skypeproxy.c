@@ -188,7 +188,7 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 			return;
 		}
 		GetWindowThreadProcessId(hSkypeWnd, &dwPID);
-		LOG(szFuncName, "Shutting down Skype as it was not behaving the way it should...");
+		LOG(("%s: Shutting down Skype as it was not behaving the way it should...", szFuncName));
 		if (hProc = OpenProcess(SYNCHRONIZE|PROCESS_TERMINATE, FALSE, dwPID)) {
 
 			// Try to shutdown Skype the nice way by asking it to close
@@ -196,13 +196,13 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 
 			if(WaitForSingleObject(hProc, 10000)!=WAIT_OBJECT_0) {
 				// Try it the hard way by killing it
-				LOG(szFuncName, "I tried it the nice way, but you were not listening! Now DIIIIEEE!");
+				LOG(("%s: I tried it the nice way, but you were not listening! Now DIIIIEEE!", szFuncName));
 				if (!TerminateProcess(hProc,0)) {
 					OUTPUT("Argh, process refused to die, it's too mighty for me, I've given up");
 					CloseHandle(hProc);
 					return;
 				}
-				LOG(szFuncName, "Process killed! >:)");
+				LOG(("%s: Process killed! >:)", szFuncName));
 			}
 			CloseHandle(hProc);
 		}
@@ -212,9 +212,9 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 			('SkypeControlAPIDiscover') to all windows in the system, specifying its own
 			window handle in wParam parameter.
 		 */
-		LOG(szFuncName, "Sending discover message..");
+		LOG(("%s: Sending discover message..", szFuncName));
 		SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-		LOG(szFuncName, "Discover message sent, waiting for Skype to become ready..");
+		LOG(("%s: Discover message sent, waiting for Skype to become ready..", szFuncName));
 
 		/*	In response, Skype responds with
 			message 'SkypeControlAPIAttach' to the handle specified, and indicates
@@ -227,33 +227,33 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 			AttachStatus!=SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) 
 		{
 			if (hWnd==NULL) {
-				LOG(szFuncName, "hWnd of SkypeDispatchWindow not yet set..");
+				LOG(("%s: hWnd of SkypeDispatchWindow not yet set..", szFuncName));
 				continue;
 			}
 			if (!SkypeLaunched && skype_path) {
-				LOG(szFuncName, "Starting Skype, as it's not running");
+				LOG(("%s: Starting Skype, as it's not running", szFuncName));
 				args[0]=skype_path;
 				j=1;
 				for (i=0; i<3; i++) {
 					args[j]=SkypeOptions[i];
-					LOG("Using Skype parameter: ", args[j]);
+					LOG(("%s: Using Skype parameter: ", szFuncName, args[j]));
 					j++;
 				}
 				args[j]=NULL;
 				_spawnv(_P_NOWAIT, skype_path, args);
 				ResetEvent(SkypeReady);
 				SkypeLaunched=TRUE;
-				LOG(szFuncName, "Skype process started.");
+				LOG(("%s: Skype process started.", szFuncName));
 				// Skype launching iniciated, keep sending Discover messages until it responds.
 				continue;
 			} else {
-				LOG(szFuncName, "Check if Skype was launchable..");
+				LOG(("%s: Check if Skype was launchable..", szFuncName));
 				if (!skype_path) {
 					OUTPUT("There was no correct path for Skype application");
 					bail_out(1);
 					return;
 				}
-				LOGL("Trying to attach: #", counter);
+				LOG("%s: Trying to attach: #%d", szFuncName, counter));
 				counter++;
 				if (counter==5) {
 					OUTPUT("ERROR: Skype not running / too old / working!");
@@ -262,11 +262,11 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 				}
 			}
 		}
-		LOGL("Attachstatus", AttachStatus);
+		LOG(("%s: Attachstatus %d", szFuncName, AttachStatus));
 	} while (AttachStatus==SKYPECONTROLAPI_ATTACH_API_AVAILABLE || AttachStatus==-1);
 	
 	while (AttachStatus==SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) Sleep(1000);
-	LOGL("Attachstatus", AttachStatus);
+	LOG(("%s: Attachstatus %d", szFuncName, AttachStatus));
 	if (AttachStatus!=SKYPECONTROLAPI_ATTACH_SUCCESS) {
 		switch(AttachStatus) {
 			case SKYPECONTROLAPI_ATTACH_REFUSED:
@@ -276,7 +276,7 @@ void ConnectToSkypeAPI(void *ForceRestart) {
 				OUTPUT("The Skype API is not available");
 				break;
 			default:
-				LOGL("ERROR: AttachStatus:", AttachStatus);
+				LOG(("%s: ERROR: AttachStatus: %d", szFuncName, AttachStatus));
 				OUTPUT("Wheee, Skype won't let me use the API. :(");
 		}
 		bail_out(1);
@@ -296,16 +296,16 @@ void SkypeSend(char *szMsg) {
    int count=0;
 
    if (!hSkypeWnd) {
-	   LOG("SkypeSend", "DAMN! No Skype window handle! :(");
+	   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
 	   return;
    }
-   if (strcmp(szMsg, "PING")) {LOG(">", szMsg);}
+   if (strcmp(szMsg, "PING")) {LOG(("> %s", szMsg));}
    CopyData.dwData=0; 
    CopyData.lpData=szMsg; 
    CopyData.cbData=strlen(szMsg)+1;
    while (!SendMessageTimeout(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData, SMTO_ABORTIFHUNG, 3000, NULL)) {
 	   count++;
-	   LOGL("SkypeSend: failed, try #", count);
+	   LOG(("SkypeSend: failed, try #%d", count));
 	   if (count==5) {
 		   OUTPUT("Sending message to Skype failed too often.");
 		   OUTPUT("Skype may have died unexpectedly, I will try to restart it.");
@@ -328,11 +328,11 @@ void ServerThread(char *dummy) {
 	unsigned int length, received;
 	char *buf, command, reply;
 
-	LOG("ServerThread", "Started");
+	LOG(("ServerThread started"));
 	AcceptSocket=INVALID_SOCKET;
 	while( AcceptSocket == INVALID_SOCKET) {
 		if ((AcceptSocket = accept( ListenSocket, NULL, NULL ))==INVALID_SOCKET) {
-			LOG("ServerThread", "Byebye...");
+			LOG(("ServerThread: Byebye..."));
 			SetEvent(ServerThreadBye);
 			bail_out(1);
 			return;
@@ -413,7 +413,7 @@ void ServerThread(char *dummy) {
 
 
 void WatchDogTimer(char *dummy) {
-	LOG("WatchDogTimer", "started");
+	LOG(("WatchDogTimer started"));
 	WatchDogRunning=TRUE;
 	while (1) {
 		Sleep(PING_INTERVAL);
@@ -443,7 +443,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 				WatchDog=1;
 				break;
 			} // Hide PING-PONG
-			LOG("<", szSkypeMsg);
+			LOG(("< %s", szSkypeMsg));
 			if (!strcmp(szSkypeMsg, "USERSTATUS LOGGEDOUT")) {
 				OUTPUT("Skype shut down gracefully. I'll leave too, bye.. :)");
 				bail_out(1);
@@ -627,7 +627,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	signal(SIGINT, &bail_out);
-	LOG("Startup", "Messagepump started.\nPress CTRL+C to terminate\n");
+	LOG(("Startup: Messagepump started.\nPress CTRL+C to terminate\n"));
 
 	while (GetMessage(&Message, hWnd, 0, 0)) 
     { 
@@ -635,16 +635,16 @@ int main(int argc, char *argv[]) {
         DispatchMessage(&Message);
     }
 	
-	LOG("Shutdown", "Messagepump stopped");
+	LOG(("Shutdown: Messagepump stopped"));
 
 	if (password) free(password);
 	if (AcceptSocket != INVALID_SOCKET) closesocket(AcceptSocket);
 	closesocket(ListenSocket);
-	LOG("Shutdown", "Waiting for serverthread to quit...");
+	LOG(("Shutdown: Waiting for serverthread to quit..."));
 	if (WaitForSingleObject(ServerThreadBye, 3000)==WAIT_TIMEOUT)
 		{OUTPUT("Serverthread didn't terminate correctly, shutting down anyway...");}
 	else
-		{LOG("ServerThread", "terminated");}
+		{LOG(("ServerThread terminated"));}
 	CloseHandle(WndClass.hInstance);
 	CloseHandle(SkypeReady);
 	return exitcode;

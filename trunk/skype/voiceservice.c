@@ -5,9 +5,6 @@
 #include "../../include/m_utils.h"
 
 
-extern char pszSkypeProtoName[MAX_PATH+30];
-
-
 HANDLE hVoiceNotify = NULL;
 BOOL has_voice_service = FALSE;
 
@@ -21,7 +18,7 @@ void NofifyVoiceService(HANDLE hContact, char *callId, int state)
 {
 	VOICE_CALL vc = {0};
 	vc.cbSize = sizeof(vc);
-	vc.szModule = pszSkypeProtoName;
+	vc.szModule = SKYPE_PROTONAME;
 	vc.id = callId;
 	vc.flags = VOICE_CALL_CONTACT;
 	vc.state = state;
@@ -45,9 +42,9 @@ static HANDLE FindContactByCallId(char *callId)
 
 		DBVARIANT dbv;
 		if (szProto != NULL 
-			&& !strcmp(szProto, pszSkypeProtoName) 
-			&& DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) == 0 
-			&& !DBGetContactSetting(hContact, pszSkypeProtoName, "CallId", &dbv)) 
+			&& !strcmp(szProto, SKYPE_PROTONAME) 
+			&& DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) == 0 
+			&& !DBGetContactSetting(hContact, SKYPE_PROTONAME, "CallId", &dbv)) 
 		{
 			if (!strcmp(callId, dbv.pszVal))
 				return hContact;
@@ -64,7 +61,7 @@ static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 
 	if (!wParam) return -1;
 
-	if (DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
+	if (DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
 		return -1;
 
 	mir_snprintf(msg, sizeof(msg), "CALL %s", dbv.pszVal);
@@ -125,22 +122,22 @@ static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 void VoiceServiceInit() 
 {
 	char szTmp[ 200 ];
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PE_VOICE_CALL_STATE, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PE_VOICE_CALL_STATE, SKYPE_PROTONAME );
 	hVoiceNotify = CreateHookableEvent( szTmp );
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_GETINFO, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_GETINFO, SKYPE_PROTONAME );
 	CreateServiceFunction( szTmp, VoiceGetInfo );
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_CALL, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_CALL, SKYPE_PROTONAME );
 	CreateServiceFunction( szTmp, VoiceCall );
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_ANSWERCALL, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_ANSWERCALL, SKYPE_PROTONAME );
 	CreateServiceFunction( szTmp, VoiceAnswer );
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_DROPCALL, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_DROPCALL, SKYPE_PROTONAME );
 	CreateServiceFunction( szTmp, VoiceDrop );
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_HOLDCALL, pszSkypeProtoName );
+	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_HOLDCALL, SKYPE_PROTONAME );
 	CreateServiceFunction( szTmp, VoiceHold );
 }
 

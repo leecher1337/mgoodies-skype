@@ -8,7 +8,6 @@
 #include "../../include/m_history.h"
 #include "../../include/m_contacts.h"
 
-extern char pszSkypeProtoName[MAX_PATH+30];
 extern HANDLE hInitChat;
 extern HINSTANCE hInst;
 
@@ -93,7 +92,7 @@ int AddChatContact(gchat_contacts *gc, char *who) {
 	if (!(hContact=find_contact(who))) return -1;
 	if ((i=ExistsChatContact(gc, hContact))>=0) return i;
 
-	gcd.pszModule = pszSkypeProtoName;
+	gcd.pszModule = SKYPE_PROTONAME;
 	gcd.pszID = gc->szChatName;
 	gcd.iType = GC_EVENT_JOIN;
 
@@ -104,7 +103,7 @@ int AddChatContact(gchat_contacts *gc, char *who) {
 	gce.bAddToLog = TRUE;
 
 	ci.cbSize = sizeof(ci);
-	ci.szProto = pszSkypeProtoName;
+	ci.szProto = SKYPE_PROTONAME;
 	ci.dwFlag = CNF_DISPLAY;
 	ci.hContact = hContact;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci)) gce.pszNick=ci.pszVal; 
@@ -145,10 +144,10 @@ HANDLE find_chat(char *chatname) {
 
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&
-			DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0)==1)
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&
+			DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==1)
 		{
-			if (DBGetContactSetting(hContact, pszSkypeProtoName, "ChatRoomID", &dbv)) continue;
+			if (DBGetContactSetting(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv)) continue;
             tCompareResult = strcmp(dbv.pszVal, chatname);
 			DBFreeVariant(&dbv);
 			if (tCompareResult) continue;
@@ -167,7 +166,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 	int i;
 	gchat_contacts *gc;
 
-	LOG("AddMembers", "STARTED"); 
+	LOG(("AddMembers STARTED")); 
 	if (!(ptr=strstr(szSkypeMsg, " MEMBERS"))) return -1;
 	ptr[0]=0;
     szChatId = szSkypeMsg+5;
@@ -175,7 +174,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 	if (!find_chat(szChatId) || !(gc=GetChat(szChatId))) return -1;
 
 	who=strtok(ptr, " ");
-	if (DBGetContactSetting(NULL, pszSkypeProtoName, SKYPE_NAME, &dbv2)) return -1;
+	if (DBGetContactSetting(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2)) return -1;
 
 	// Add new contacts
 	while (who) {
@@ -196,7 +195,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 		GCDEST gcd = {0};
 		GCEVENT gce = {0};
 
-		gcd.pszModule = pszSkypeProtoName;
+		gcd.pszModule = SKYPE_PROTONAME;
 		gcd.pszID = szChatId;
 		gcd.iType = GC_EVENT_QUIT;
 
@@ -206,12 +205,12 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 		gce.bAddToLog = TRUE;
         
         ci.cbSize = sizeof(ci);
-		ci.szProto = pszSkypeProtoName;
+		ci.szProto = SKYPE_PROTONAME;
 		ci.dwFlag = CNF_DISPLAY;
 
 		for (i=0;i<gc->mJoinedCount;i++)
 		if (!contactmask[i] &&
-			!DBGetContactSetting(gc->mJoinedContacts[i], pszSkypeProtoName, SKYPE_NAME, &dbv)) 
+			!DBGetContactSetting(gc->mJoinedContacts[i], SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
 		{
 			ci.hContact = gc->mJoinedContacts[i];
 			if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci)) gce.pszNick=ci.pszVal; 
@@ -235,7 +234,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 */
 	}
 	DBFreeVariant(&dbv2);
-	LOG("AddMembers", "DONE");
+	LOG(("AddMembers DONE"));
 	return 0;
 }
 
@@ -291,7 +290,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	if (!wParam) return -1;
 	gcw.cbSize = sizeof(GCWINDOW);
 	gcw.iType = GCW_CHATROOM;
-	gcw.pszModule = pszSkypeProtoName;
+	gcw.pszModule = SKYPE_PROTONAME;
 	gcw.pszID = (char *)wParam;
 
 	if (!(szTopic = SkypeGet ("CHAT", (char *)gcw.pszID, "TOPIC"))) return -1;
@@ -306,7 +305,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
     free (szTopic);
 
 	gce.cbSize = sizeof(GCEVENT);
-	gcd.pszModule = pszSkypeProtoName;
+	gcd.pszModule = SKYPE_PROTONAME;
 	gcd.pszID = (char *) gcw.pszID;
 	gcd.iType = GC_EVENT_ADDGROUP;
 	gce.pDest = &gcd;
@@ -317,8 +316,8 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 
 	gcd.iType = GC_EVENT_JOIN;
 	gce.pszStatus = Translate("Me");
-	if (DBGetContactSetting(NULL, pszSkypeProtoName, "Nick", &dbv)) return -1;
-	if (DBGetContactSetting(NULL, pszSkypeProtoName, SKYPE_NAME, &dbv2)) {
+	if (DBGetContactSetting(NULL, SKYPE_PROTONAME, "Nick", &dbv)) return -1;
+	if (DBGetContactSetting(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2)) {
 		DBFreeVariant(&dbv);
 		return -1;
 	}
@@ -328,7 +327,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	gce.bIsMe = TRUE;
 	gce.bAddToLog = FALSE;
 	if (CallService(MS_GC_EVENT, 0, (LPARAM)&gce)) {
-        LOG ("ChatInit", "Joining 'me' failed.");
+        LOG (("ChatInit: Joining 'me' failed."));
 		DBFreeVariant(&dbv);
 		DBFreeVariant(&dbv2);
 		return -1;
@@ -358,7 +357,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
    Parameters:  szChatId = (char *)Name of new chat session
 */
 int  __cdecl ChatStart(char *szChatId) {
-	LOG("ChatStart", "New groupchat started");
+	LOG(("ChatStart: New groupchat started"));
 	if (!szChatId || NotifyEventHooks(hInitChat, (WPARAM)szChatId, 0)) return -1;
 	return AddMembers(szChatId);
 }
@@ -367,7 +366,7 @@ int  __cdecl ChatStart(char *szChatId) {
 void KillChatSession(GCDEST *gcd) {
 	GCEVENT gce = {0};
 
-	LOG("KillChatSession", "Groupchatsession terminated.");
+	LOG(("KillChatSession: Groupchatsession terminated."));
 	gce.cbSize = sizeof(GCEVENT);
 	gce.pDest = gcd;
 	gcd->iType = GC_EVENT_CONTROL;
@@ -392,14 +391,14 @@ void InviteUser(char *szChatId) {
 	AppendMenu(tMenu, MF_SEPARATOR, (UINT_PTR)1, NULL);
     
     ci.cbSize = sizeof(ci);
-	ci.szProto = pszSkypeProtoName;
+	ci.szProto = SKYPE_PROTONAME;
 	ci.dwFlag = CNF_DISPLAY;
 
 	// generate a list of contact
 	while (hContact) {
-		if (!lstrcmp(pszSkypeProtoName, (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact,0 )) &&
-			!DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) &&
-			 DBGetContactSettingWord(hContact, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE) 
+		if (!lstrcmp(SKYPE_PROTONAME, (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact,0 )) &&
+			!DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) &&
+			 DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE) 
 		{
 			BOOL alreadyInSession = FALSE;
 			for (j=0; j<gc->mJoinedCount; j++) {
@@ -426,7 +425,7 @@ void InviteUser(char *szChatId) {
 	DestroyMenu(tMenu);
 	DestroyWindow(tWindow);
 
-	if (!hInvitedUser || DBGetContactSetting(hInvitedUser, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
+	if (!hInvitedUser || DBGetContactSetting(hInvitedUser, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
 		return;
 	SkypeSend ("ALTER CHAT %s ADDMEMBERS %s", szChatId, dbv.pszVal);
 	DBFreeVariant(&dbv);
@@ -440,7 +439,7 @@ void SetChatTopic (char *szChatId, char *szTopic)
 	HANDLE hContact = find_chat (szChatId);
 
 	gce.cbSize = sizeof(GCEVENT);
-	gcd.pszModule = pszSkypeProtoName;
+	gcd.pszModule = SKYPE_PROTONAME;
 	gcd.pszID = szChatId;
 	gcd.iType = GC_EVENT_TOPIC;
 	gce.pDest = &gcd;
@@ -455,7 +454,7 @@ void SetChatTopic (char *szChatId, char *szTopic)
 	testfor ("ALTER CHAT SETTOPIC", INFINITE);
 
 	if (hContact)
-		DBWriteContactSettingString(hContact, pszSkypeProtoName, "Nick", szTopic);
+		DBWriteContactSettingString(hContact, SKYPE_PROTONAME, "Nick", szTopic);
 }
 
 
@@ -464,7 +463,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 	gchat_contacts *gc = GetChat(gch->pDest->pszID);
 
 	if(gch) {
-		if (!lstrcmpi(gch->pDest->pszModule, pszSkypeProtoName)) {
+		if (!lstrcmpi(gch->pDest->pszModule, SKYPE_PROTONAME)) {
 
 			switch (gch->pDest->iType) {
 			case GC_USER_TERMINATE: {
@@ -495,7 +494,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
                     // Send message to the chat-contact    
 					if (ccs.hContact = find_chat(gch->pDest->pszID)) {
 						ccs.lParam = (LPARAM)gch->pszText;
-						CallProtoService(pszSkypeProtoName, PSS_MESSAGE, (WPARAM)0, (LPARAM)&ccs);
+						CallProtoService(SKYPE_PROTONAME, PSS_MESSAGE, (WPARAM)0, (LPARAM)&ccs);
 					}
 
 					// Add our line to the chatlog	
@@ -505,9 +504,9 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 
 					gce.cbSize = sizeof(GCEVENT);
 					gce.pDest = &gcd;
-					if (DBGetContactSetting(NULL, pszSkypeProtoName, "Nick", &dbv)) gce.pszNick=Translate("Me");
+					if (DBGetContactSetting(NULL, SKYPE_PROTONAME, "Nick", &dbv)) gce.pszNick=Translate("Me");
 					else gce.pszNick = dbv.pszVal;
-					DBGetContactSetting(NULL, pszSkypeProtoName, SKYPE_NAME, &dbv2);
+					DBGetContactSetting(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2);
 					gce.pszUID = dbv2.pszVal;
 					gce.time = time(NULL);
 					gce.pszText = gch->pszText;
@@ -595,16 +594,16 @@ int __cdecl  GCMenuHook(WPARAM wParam,LPARAM lParam) {
 	Item_nicklist[0].pszDesc  = szDetails;
 	Item_nicklist[1].pszDesc  = szHistory;
 
-	LOG ("GCMenuHook", "started.");
+	LOG (("GCMenuHook started."));
 	if(gcmi) {
-		if (!lstrcmpi(gcmi->pszModule, pszSkypeProtoName)) {
+		if (!lstrcmpi(gcmi->pszModule, SKYPE_PROTONAME)) {
 			if(gcmi->Type == MENU_ON_LOG) {
 				gcmi->nItems = sizeof(Item_log)/sizeof(Item_log[0]);
 				gcmi->Item = &Item_log[0];
-                LOGL ("GCMenuHook: Items in log window: ", gcmi->nItems);
+                LOG (("GCMenuHook: Items in log window: %d", gcmi->nItems));
 			}
 			if(gcmi->Type == MENU_ON_NICKLIST) {
-				if (DBGetContactSetting(NULL, pszSkypeProtoName, SKYPE_NAME, &dbv)) return -1;
+				if (DBGetContactSetting(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) return -1;
 				if (!lstrcmp(dbv.pszVal, (char *)gcmi->pszUID)) {
 					gcmi->nItems = sizeof(Item_nicklist_me)/sizeof(Item_nicklist_me[0]);
 					gcmi->Item = &Item_nicklist_me[0];
@@ -614,8 +613,8 @@ int __cdecl  GCMenuHook(WPARAM wParam,LPARAM lParam) {
 				}
 				DBFreeVariant(&dbv);
 			}
-        } else {LOG ("GCMenuHook", "ERROR: Not our protocol.");}
-	} else {LOG ("GCMenuHook", "ERROR: No gcmi");}
-	LOG ("GCMenuHook", "terminated.");
+        } else {LOG (("GCMenuHook: ERROR: Not our protocol."));}
+	} else {LOG (("GCMenuHook: ERROR: No gcmi"));}
+	LOG (("GCMenuHook: terminated."));
 	return 0;
 }

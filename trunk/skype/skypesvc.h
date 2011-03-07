@@ -6,6 +6,7 @@
 #include "resource.h"
 
 void HookEvents(void);
+void UnhookEvents(void);
 void CreateServices(void);
 INT_PTR SkypeLoadIcon(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam);

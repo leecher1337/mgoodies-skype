@@ -3,16 +3,17 @@
 #include "skypeapi.h"
 #include "skypeopt.h"
 #include "contacts.h"
+#include "m_toptoolbar.h"
 
-//From skype.cpp
-extern char pszSkypeProtoName[MAX_PATH+30],protocol;
+//From skype.c
+extern char protocol;
 extern HINSTANCE hInst;
-extern HANDLE hPrebuildCMenu, hStatusHookContact, hContactDeleted, hHookModulesLoaded, hHookOkToExit, hOptHook, hHookMirandaExit;
+static HANDLE m_hPrebuildCMenu=NULL, m_hStatusHookContact=NULL, m_hContactDeleted=NULL, 
+	m_hHookModulesLoaded=NULL, m_hHookOkToExit=NULL, m_hOptHook=NULL, m_hHookMirandaExit=NULL,
+	m_hTTBModuleLoadedHook = NULL, m_hHookOnUserInfoInit = NULL;
 
 void CreateServices(void)
 {
-
-	char pszServiceName[MAX_PATH+30];
 
 	CreateServiceFunction(SKYPE_CALL, SkypeCall);
 	CreateServiceFunction(SKYPE_CALLHANGUP, SkypeCallHangup);
@@ -24,69 +25,67 @@ void CreateServices(void)
 	CreateServiceFunction(SKYPE_SENDFILE, SkypeSendFile);
 	CreateServiceFunction(SKYPE_SETAVATAR, SkypeSetAvatar);
 
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETCAPS);
-	CreateServiceFunction(pszServiceName , SkypeGetCaps);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETNAME);
-	CreateServiceFunction(pszServiceName , SkypeGetName);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_LOADICON);
-	CreateServiceFunction(pszServiceName , SkypeLoadIcon);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETCAPS, SkypeGetCaps);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETNAME, SkypeGetName);
+	CreateServiceFunction(SKYPE_PROTONAME PS_LOADICON, SkypeLoadIcon);
+	CreateServiceFunction(SKYPE_PROTONAME PS_SETSTATUS, SkypeSetStatus);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETSTATUS, SkypeGetStatus);
+	CreateServiceFunction(SKYPE_PROTONAME PS_ADDTOLIST, SkypeAddToList);
+	CreateServiceFunction(SKYPE_PROTONAME PS_ADDTOLISTBYEVENT, SkypeAddToListByEvent);
+	CreateServiceFunction(SKYPE_PROTONAME PS_BASICSEARCH, SkypeBasicSearch);
 
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETSTATUS);
-	CreateServiceFunction(pszServiceName , SkypeSetStatus);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETSTATUS);
-	CreateServiceFunction(pszServiceName , SkypeGetStatus);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_ADDTOLIST);
-	CreateServiceFunction(pszServiceName , SkypeAddToList);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_ADDTOLISTBYEVENT);
-	CreateServiceFunction(pszServiceName , SkypeAddToListByEvent);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_BASICSEARCH);
-	CreateServiceFunction(pszServiceName , SkypeBasicSearch);
+	CreateServiceFunction(SKYPE_PROTONAME PSS_GETINFO, SkypeGetInfo);
+	CreateServiceFunction(SKYPE_PROTONAME PSS_MESSAGE, SkypeSendMessage);
+	CreateServiceFunction(SKYPE_PROTONAME PSR_MESSAGE, SkypeRecvMessage);
+	CreateServiceFunction(SKYPE_PROTONAME PSS_AUTHREQUEST, SkypeSendAuthRequest);
+	CreateServiceFunction(SKYPE_PROTONAME PSR_AUTH, SkypeRecvAuth);
+	CreateServiceFunction(SKYPE_PROTONAME PS_AUTHALLOW, SkypeAuthAllow);
+	CreateServiceFunction(SKYPE_PROTONAME PS_AUTHDENY, SkypeAuthDeny);
 
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_GETINFO);
-	CreateServiceFunction(pszServiceName , SkypeGetInfo);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_MESSAGE);
-	CreateServiceFunction(pszServiceName , SkypeSendMessage);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSR_MESSAGE);
-	CreateServiceFunction(pszServiceName , SkypeRecvMessage);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_AUTHREQUEST);
-	CreateServiceFunction(pszServiceName , SkypeSendAuthRequest);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSR_AUTH);
-	CreateServiceFunction(pszServiceName , SkypeRecvAuth);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_AUTHALLOW);
-	CreateServiceFunction(pszServiceName , SkypeAuthAllow);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_AUTHDENY);
-	CreateServiceFunction(pszServiceName , SkypeAuthDeny);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETAVATARINFO, SkypeGetAvatarInfo);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETAVATARCAPS, SkypeGetAvatarCaps);
+	CreateServiceFunction(SKYPE_PROTONAME PS_GETMYAVATAR, SkypeGetAvatar);
+	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYAVATAR, SkypeSetAvatar);
 
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
-	CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARCAPS);
-	CreateServiceFunction(pszServiceName , SkypeGetAvatarCaps);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETMYAVATAR);
-	CreateServiceFunction(pszServiceName , SkypeGetAvatar);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETMYAVATAR);
-	CreateServiceFunction(pszServiceName , SkypeSetAvatar);
+	CreateServiceFunction(SKYPE_PROTONAME PS_SETAWAYMSG, SkypeSetAwayMessage);
+	CreateServiceFunction(SKYPE_PROTONAME PSS_GETAWAYMSG, SkypeGetAwayMessage);
+	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYNICKNAME, SkypeSetNick);
 
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
-	CreateServiceFunction(pszServiceName , SkypeSetAwayMessage);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_GETAWAYMSG);
-	CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);
-	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETMYNICKNAME);
-	CreateServiceFunction(pszServiceName , SkypeSetNick);
-
+	CreateServiceFunction(SKYPE_PROTONAME PSS_SKYPEAPIMSG, SkypeReceivedAPIMessage);
+	CreateServiceFunction(SKYPE_PROTONAME SKYPE_REGPROXY, SkypeRegisterProxy);
 }
 
 void HookEvents(void)
 {
-	hPrebuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PrebuildContactMenu);
+	m_hPrebuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PrebuildContactMenu);
 
 	//HookEvent(ME_CLIST_DOUBLECLICKED, ClistDblClick);
-	hOptHook = HookEvent(ME_OPT_INITIALISE, RegisterOptions);
-	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
-	hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
-	hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
-	hHookMirandaExit = HookEvent(ME_SYSTEM_OKTOEXIT, MirandaExit);
-	hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
+	m_hOptHook = HookEvent(ME_OPT_INITIALISE, RegisterOptions);
+	m_hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
+	m_hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
+	m_hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
+	m_hHookMirandaExit = HookEvent(ME_SYSTEM_OKTOEXIT, MirandaExit);
+	m_hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
+
+	// We cannot check for the TTB-service before this event gets fired... :-/
+	m_hTTBModuleLoadedHook = HookEvent(ME_TTB_MODULELOADED, CreateTopToolbarButton);
+	m_hHookOnUserInfoInit = HookEvent( ME_USERINFO_INITIALISE, OnDetailsInit );
 }
+
+void UnhookEvents(void)
+{
+	UnhookEvent(m_hOptHook);
+	UnhookEvent(m_hTTBModuleLoadedHook);
+	UnhookEvent(m_hHookOnUserInfoInit);
+	UnhookEvent(m_hStatusHookContact);
+	UnhookEvent(m_hContactDeleted);
+	UnhookEvent(m_hHookModulesLoaded);
+	UnhookEvent(m_hPrebuildCMenu);
+	UnhookEvent(m_hHookOkToExit);
+	UnhookEvent(m_hHookMirandaExit);
+	//UnhookEvent(ClistDblClick);
+}
+
 
 INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
     int ret = 0;
@@ -111,10 +110,10 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
             ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS;
             break;
         case PFLAG_UNIQUEIDTEXT:
-            ret = (int) "NAME";
+            ret = (INT_PTR) "NAME";
             break;
         case PFLAG_UNIQUEIDSETTING:
-            ret = (int) SKYPE_NAME;
+            ret = (INT_PTR) SKYPE_NAME;
             break;
     }
     return ret;
@@ -125,7 +124,7 @@ INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam)
 {
 	if (lParam)
 	{
-		lstrcpyn((char *)lParam, pszSkypeProtoName, wParam);
+		lstrcpyn((char *)lParam, SKYPE_PROTONAME, wParam);
 		return 0; // Success
 	}
 	return 1; // Failure
@@ -145,7 +144,7 @@ INT_PTR SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 
 INT_PTR SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
 {	DBVARIANT dbv;
-	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv)){
+	if (!DBGetContactSetting(NULL,SKYPE_PROTONAME, "AvatarFile", &dbv)){
 		lstrcpynA((char*)wParam, dbv.pszVal, (int)lParam);
 		DBFreeVariant(&dbv);
 	}
