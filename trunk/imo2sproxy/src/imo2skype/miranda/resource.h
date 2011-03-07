@@ -14,6 +14,7 @@
 #define IDC_PASSWORD                    1009
 #define IDC_STATUSSOCKS                 1010
 #define IDC_STATUSCOMM                  1011
+#define IDC_STATUSSKYPEPL               1012
 #define IDC_USESOCKS                    1013
 #define IDC_STARTSOCKS                  1014
 #define IDC_STOPSOCKS                   1015
@@ -21,6 +22,9 @@
 #define IDC_STARTCOMM                   1017
 #define IDC_STOPCOMM                    1018
 #define IDC_CONSOLE                     1019
+#define IDC_USESKYPEPL                  1020
+#define IDC_STARTSKYPEPL                1021
+#define IDC_STOPSKYPEPL                 1022
 
 // Next default values for new objects
 // 

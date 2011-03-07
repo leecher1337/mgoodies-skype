@@ -154,7 +154,7 @@ int Imo2S_Login (IMOSAPI *pInst, char *pszUser, char *pszPass, char **ppszError)
 	char *pszLocalUser, *pszLocalPass;
 
 	if (pInst->fpLog) fprintf (pInst->fpLog, "Imo2S_Login(%s, ****)\n", pszUser);
-	if (pInst->iLoginStat == 1) Imo2S_Logout(pInst);
+	if (pInst->iLoginStat == 1) return pInst->iLoginStat;
 	if (!pInst->hInst) pInst->hInst=ImoSkype_Init(StatusCallback, pInst);
 	pszLocalUser = strdup(pszUser);
 	if (pInst->myUser.pszUser) free (pInst->myUser.pszUser);
@@ -162,6 +162,7 @@ int Imo2S_Login (IMOSAPI *pInst, char *pszUser, char *pszPass, char **ppszError)
 	pszLocalPass = strdup(pszPass);
 	if (pInst->pszPass) free (pInst->pszPass);
 	pInst->pszPass = pszLocalPass;
+	Send(pInst, "CONNSTATUS CONNECTING");
 	pInst->iLoginStat = ImoSkype_Login(pInst->hInst, pszLocalUser, pszLocalPass);
 	if (pInst->iLoginStat == 1)
 		Dispatcher_Start(pInst);
@@ -455,6 +456,10 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 							}
 						}
 
+						// Just ensure that on autoaway we notify imo.im that we are still there
+						if (!strcmp (pValue->valuestring, "away"))
+							ImoSkype_KeepAlive(pInst->hInst);
+
 						if (pValue = cJSON_GetObjectItem(pEdata,"status"))
 						{
 							if (pInst->myUser.pszStatusText) free (pInst->myUser.pszStatusText);
@@ -462,6 +467,7 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 							if (*pValue->valuestring)
 								pInst->myUser.pszStatusText = strdup(pValue->valuestring);
 						}
+
 					}
 				}
 				else
@@ -909,6 +915,8 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			else if (!strcasecmp (pszCmd, "MOOD_TEXT"))
 				Send (pInst, "USER %s MOOD_TEXT %s", pUser->pszUser, 
 					pUser->pszStatusText?pUser->pszStatusText:"");
+			else if (!strcasecmp (pszCmd, "SEX"))
+				Send (pInst, "USER %s SEX UNKNOWN", pUser->pszUser);
 			else if (!strcasecmp (pszCmd, "ONLINESTATUS"))
 			{
 				unsigned int i;

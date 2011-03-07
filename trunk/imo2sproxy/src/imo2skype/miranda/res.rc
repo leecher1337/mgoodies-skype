@@ -26,7 +26,7 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN_AUSTRIAN
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 287, 209
+IDD_OPTIONS DIALOGEX 0, 0, 287, 224
 STYLE WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Sans Serif"
@@ -46,30 +46,38 @@ BEGIN
                     WS_TABSTOP,7,68,110,10
     EDITTEXT        IDC_LOGFILE,119,68,128,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_OPEN,248,68,14,12
-    LTEXT           "Status:",IDC_STATIC,126,121,29,10
-    LTEXT           "Stopped",IDC_STATUSSOCKS,157,121,54,9,SS_SUNKEN
-    GROUPBOX        "Socket Proxy",IDC_STATIC,7,110,273,45
-    LTEXT           "Bind to address:",IDC_STATIC,17,138,73,9
-    COMBOBOX        IDC_BINDIP,95,136,75,12,CBS_DROPDOWN | CBS_SORT | 
+    LTEXT           "Status:",IDC_STATIC,126,108,29,10
+    LTEXT           "Stopped",IDC_STATUSSOCKS,157,108,54,9,SS_SUNKEN
+    GROUPBOX        "Socket Proxy",IDC_STATIC,7,97,273,45
+    LTEXT           "Bind to address:",IDC_STATIC,17,125,73,9
+    COMBOBOX        IDC_BINDIP,95,123,75,12,CBS_DROPDOWN | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Port:",IDC_STATIC,179,138,31,9
-    EDITTEXT        IDC_BINDPORT,211,136,31,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Port:",IDC_STATIC,179,125,31,9
+    EDITTEXT        IDC_BINDPORT,211,123,31,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Use Socket Proxy",IDC_USESOCKS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,18,121,81,9
-    PUSHBUTTON      "Start",IDC_STARTSOCKS,216,118,30,12
-    PUSHBUTTON      "Stop",IDC_STOPSOCKS,246,118,30,12,WS_DISABLED
-    GROUPBOX        "Skype compatible communication API",IDC_STATIC,7,158,
+                    WS_TABSTOP,18,108,81,9
+    PUSHBUTTON      "Start",IDC_STARTSOCKS,216,105,30,12
+    PUSHBUTTON      "Stop",IDC_STOPSOCKS,246,105,30,12,WS_DISABLED
+    GROUPBOX        "Skype compatible communication API",IDC_STATIC,7,145,
                     273,40
     LTEXT           "Caution: Don't use this if you have the Skype application running!",
-                    IDC_STATIC,13,169,260,8
-    LTEXT           "Status:",IDC_STATIC,126,182,29,10
-    LTEXT           "Stopped",IDC_STATUSCOMM,158,182,54,9,SS_SUNKEN
+                    IDC_STATIC,13,156,260,8
+    LTEXT           "Status:",IDC_STATIC,126,169,29,10
+    LTEXT           "Stopped",IDC_STATUSCOMM,158,169,54,9,SS_SUNKEN
     CONTROL         "Use compatible comm API",IDC_USECOMM,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,18,182,105,9
-    PUSHBUTTON      "Start",IDC_STARTCOMM,216,179,30,12
-    PUSHBUTTON      "Stop",IDC_STOPCOMM,246,179,30,12,WS_DISABLED
+                    BS_AUTOCHECKBOX | WS_TABSTOP,18,169,105,9
+    PUSHBUTTON      "Start",IDC_STARTCOMM,216,166,30,12
+    PUSHBUTTON      "Stop",IDC_STOPCOMM,246,166,30,12,WS_DISABLED
     CONTROL         "Console",IDC_CONSOLE,"Button",BS_AUTOCHECKBOX | 
                     BS_PUSHLIKE | WS_TABSTOP,216,87,45,11
+    GROUPBOX        "Skype Plugin 0.0.0.46+ internal communication link",
+                    IDC_STATIC,7,188,273,25
+    LTEXT           "Status:",IDC_STATIC,126,199,29,10
+    LTEXT           "Stopped",IDC_STATUSSKYPEPL,158,199,54,9,SS_SUNKEN
+    CONTROL         "Use plugin link",IDC_USESKYPEPL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,18,199,105,9
+    PUSHBUTTON      "Start",IDC_STARTSKYPEPL,216,196,30,12
+    PUSHBUTTON      "Stop",IDC_STOPSKYPEPL,246,196,30,12,WS_DISABLED
 END
 
 
@@ -86,7 +94,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 280
         TOPMARGIN, 7
-        BOTTOMMARGIN, 202
+        BOTTOMMARGIN, 217
     END
 END
 #endif    // APSTUDIO_INVOKED
