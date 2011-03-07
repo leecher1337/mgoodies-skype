@@ -1510,6 +1510,21 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 
 	if (pszProxyCallout)
 	{
+		if (SkypeSend("SET USERSTATUS ONLINE")==-1)
+		{
+			AttachStatus=SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE;
+			return -1;
+		}
+		while (1) {
+			char *ptr = SkypeRcv ("CONNSTATUS", INFINITE);
+			if (strcmp (ptr+11, "CONNECTING"))
+			{
+				free (ptr);
+				break;
+			}
+			free (ptr);
+		}
+
 		AttachStatus=SKYPECONTROLAPI_ATTACH_SUCCESS;
 		return 0;
 	}
