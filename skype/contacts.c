@@ -13,7 +13,6 @@
 
 
 // Imported Globals
-extern char pszSkypeProtoName[MAX_PATH+30];
 extern HINSTANCE hInst;
 extern BOOL bSkypeOut;
 extern char protocol;
@@ -51,7 +50,7 @@ CLISTMENUITEM CallItem(void) {
 	mi.position=-2000005000;
 	mi.flags=CMIF_NOTOFFLINE;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszName=Translate("Call (Skype)");
 	mi.pszService=SKYPE_CALL;
 	
@@ -78,7 +77,7 @@ CLISTMENUITEM HupItem(void) {
 	mi.position=-2000005000;
 	mi.flags=CMIF_NOTOFFLINE;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszName=Translate("Hang up call (Skype)");
 	mi.pszService=SKYPE_CALLHANGUP;
 
@@ -129,7 +128,7 @@ CLISTMENUITEM FileTransferItem(void) {
 	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
 	mi.hIcon=LoadSkinnedIcon(SKINICON_EVENT_FILE);
 	mi.pszName=Translate("&File");
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszService=SKYPE_SENDFILE;
 	return mi;
 }
@@ -142,7 +141,7 @@ CLISTMENUITEM ChatInitItem(void) {
 	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
 	mi.hIcon=LoadIcon( hInst, MAKEINTRESOURCE( IDI_INVITE ));
 	mi.pszName=Translate("&Open groupchat");
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszService=SKYPE_CHATNEW;
 	return mi;
 }
@@ -179,7 +178,7 @@ HANDLE add_contextmenu(HANDLE hContact) {
 	mi.position=-2000005000;
 	mi.flags=0;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_IMPORT));
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszName=Translate("Import Skype history");
 	mi.pszService=SKYPE_IMPORTHISTORY;
 	return (HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
@@ -192,7 +191,7 @@ HANDLE add_mainmenu(void) {
 	mi.position=-2000005000;
 	mi.flags=0;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_ADD));
-	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszName=Translate("Add Skype contact");
 	mi.pszService=SKYPE_ADDUSER;
 	return (HANDLE)CallService(MS_CLIST_ADDMAINMENUITEM, (WPARAM)NULL,(LPARAM)&mi);
@@ -215,10 +214,10 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
 	}
 
-	if (!strcmp(szProto, pszSkypeProtoName)) {
+	if (!strcmp(szProto, SKYPE_PROTONAME)) {
 		if (!HasVoiceService()) {
-			if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
-				if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "OnHold", 0))
+			if (!DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
+				if (DBGetContactSettingByte((HANDLE)wParam, SKYPE_PROTONAME, "OnHold", 0))
 					mi=ResumeCallItem(); else mi=HoldCallItem();
 				mi.flags=CMIM_ALL;
 				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
@@ -229,7 +228,7 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 				DBFreeVariant(&dbv);
 			} else { callAvailable = TRUE; hangupAvailable = FALSE; }
         
-			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) {
+			if (DBGetContactSettingByte((HANDLE)wParam, SKYPE_PROTONAME, "ChatRoom", 0)!=0) {
 				callAvailable = FALSE;
 				hangupAvailable = FALSE;
 			}
@@ -251,21 +250,21 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 		// File sending and groupchat-creation works starting with protocol version 5
 		if (protocol>=5) {
 			mi=FileTransferItem();
-            if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)==0)
+            if (DBGetContactSettingByte((HANDLE)wParam, SKYPE_PROTONAME, "ChatRoom", 0)==0)
 			    mi.flags ^= CMIF_HIDDEN;
 			mi.flags |= CMIM_FLAGS;
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuFileTransferItem,(LPARAM)&mi);
             
             mi=ChatInitItem();
-			if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0) &&
-				DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)==0)
+			if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseGroupchat", 0) &&
+				DBGetContactSettingByte((HANDLE)wParam, SKYPE_PROTONAME, "ChatRoom", 0)==0)
 					mi.flags ^= CMIF_HIDDEN;
 			mi.flags |= CMIM_FLAGS;
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuChatInitItem,(LPARAM)&mi);
 		}
 
 	} else if (bSkypeOut) {
-		if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+		if (!DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 			mi=SkypeOutHupItem();
 			DBFreeVariant(&dbv);
 		} else {
@@ -287,8 +286,8 @@ int ClistDblClick(WPARAM wParam, LPARAM lParam) {
 	char *szProto;
 
 	szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, wParam, 0 );
-	if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) && 
-		DBGetContactSettingWord((HANDLE)wParam, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE)==ID_STATUS_ONTHEPHONE) {
+	if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) && 
+		DBGetContactSettingWord((HANDLE)wParam, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)==ID_STATUS_ONTHEPHONE) {
 			SkypeCall(wParam, 0);
 	}
 
@@ -306,9 +305,9 @@ HANDLE find_contact(char *name) {
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) 
 	{
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&	DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0)==0)	
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&	DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==0)	
 		{
-			if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) continue;
+			if (DBGetContactSetting(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) continue;
             tCompareResult = strcmp(dbv.pszVal, name);
 			DBFreeVariant(&dbv);
 			if (tCompareResult) continue;
@@ -328,38 +327,30 @@ HANDLE add_contact(char *name, DWORD flags) {
 			DBDeleteContactSetting( hContact, "CList", "NotOnList" );
 			DBDeleteContactSetting( hContact, "CList", "Hidden" );
 		}
-		LOG("add_contact: Found", name);
+		LOG(("add_contact: Found %s", name));
 		return hContact; // already there, return handle
 	}
 	// no, so add
 	
-	LOG("add_contact: Adding", name);
+	LOG(("add_contact: Adding %s", name));
 	hContact=(HANDLE)CallServiceSync(MS_DB_CONTACT_ADD, 0, 0);
 	if (hContact) {
-		char *str;
-
-		if (CallServiceSync(MS_PROTO_ADDTOCONTACT, (WPARAM)hContact,(LPARAM)pszSkypeProtoName)!=0) {
-			LOG("add_contact", "Ouch! MS_PROTO_ADDTOCONTACT failed for some reason");
+		if (CallServiceSync(MS_PROTO_ADDTOCONTACT, (WPARAM)hContact,(LPARAM)SKYPE_PROTONAME)!=0) {
+			LOG(("add_contact: Ouch! MS_PROTO_ADDTOCONTACT failed for some reason"));
 			CallServiceSync(MS_DB_CONTACT_DELETE, (WPARAM)hContact, 0);
 			return NULL;
 		}
-		if (name[0]) DBWriteContactSettingString(hContact, pszSkypeProtoName, SKYPE_NAME, name);
+		if (name[0]) DBWriteContactSettingString(hContact, SKYPE_PROTONAME, SKYPE_NAME, name);
 
    		if (flags & PALF_TEMPORARY ) {
 			DBWriteContactSettingByte(hContact, "CList", "NotOnList", 1);
 			DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
 		}
 		if (name[0]) {
-			if (str=(char*)malloc(strlen(name)+22)) {
-				strcpy(str, "GET USER ");
-				strcat(str, name);
-				strcat(str, " DISPLAYNAME");
-				SkypeSend(str);
-				free(str);
-			} else {LOG("add_contact", "Ouch! Memory allocation failed!");}
-		} else {LOG("add_contact", "Info: The contact added has no name.");}
-	} else {LOG("add_contact", "Ouch! MS_DB_CONTACT_ADD failed for some reason");}
-	LOG("add_contact", "succeeded");
+			SkypeSend("GET USER %s DISPLAYNAME", name);
+		} else {LOG(("add_contact: Info: The contact added has no name."));}
+	} else {LOG(("add_contact: Ouch! MS_DB_CONTACT_ADD failed for some reason"));}
+	LOG(("add_contact succeeded"));
 	return hContact;
 }
 
@@ -367,15 +358,15 @@ void logoff_contacts(void) {
 	HANDLE hContact;
 	char *szProto;
 
-	LOG("logoff_contacts", "Logging off contacts.");
+	LOG(("logoff_contacts: Logging off contacts."));
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&	DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) == 0)
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&	DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) == 0)
 		{
-			if (DBGetContactSettingWord(hContact, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE)
-				DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE);
+			if (DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE)
+				DBWriteContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE);
 
-			DBDeleteContactSetting(hContact, pszSkypeProtoName, "CallId");
+			DBDeleteContactSetting(hContact, SKYPE_PROTONAME, "CallId");
 		}
 	}
 }

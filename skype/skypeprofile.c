@@ -2,50 +2,48 @@
 #include "skypeapi.h"
 #include "utf8.h"
 
-extern char pszSkypeProtoName[MAX_PATH+30];
-
 void SkypeProfile_Save(SkypeProfile *pstProf)
 {
-	DBWriteContactSettingByte(NULL, pszSkypeProtoName, "Gender", pstProf->Sex);
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "HomePhone", pstProf->HomePhone);
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "OfficePhone", pstProf->OfficePhone);
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "HomePage", pstProf->HomePage);
-	DBWriteContactSettingTString(NULL, pszSkypeProtoName, "Nick", pstProf->FullName);
-	DBWriteContactSettingTString(NULL, pszSkypeProtoName, "City", pstProf->City);
-	DBWriteContactSettingTString(NULL, pszSkypeProtoName, "Province", pstProf->Province);
+	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", pstProf->Sex);
+	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "HomePhone", pstProf->HomePhone);
+	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "OfficePhone", pstProf->OfficePhone);
+	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "HomePage", pstProf->HomePage);
+	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Nick", pstProf->FullName);
+	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "City", pstProf->City);
+	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Province", pstProf->Province);
 }
 
 void SkypeProfile_Load(SkypeProfile *pstProf)
 {
 	DBVARIANT dbv;
 
-	pstProf->Sex = DBGetContactSettingByte(NULL, pszSkypeProtoName, "Gender", 0);
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"Nick",&dbv)) 
+	pstProf->Sex = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", 0);
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Nick",&dbv)) 
 	{	
 		_tcsncpy (pstProf->FullName, dbv.ptszVal, sizeof(pstProf->FullName)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"HomePage",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"HomePage",&dbv)) 
 	{	
 		_tcsncpy (pstProf->HomePage, dbv.ptszVal, sizeof(pstProf->HomePage)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"Province",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Province",&dbv)) 
 	{	
 		_tcsncpy (pstProf->Province, dbv.ptszVal, sizeof(pstProf->Province)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"City",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"City",&dbv)) 
 	{	
 		_tcsncpy (pstProf->City, dbv.ptszVal, sizeof(pstProf->City)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"OfficePhone",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"OfficePhone",&dbv)) 
 	{	
 		_tcsncpy (pstProf->OfficePhone, dbv.ptszVal, sizeof(pstProf->OfficePhone)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,pszSkypeProtoName,"HomePhone",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"HomePhone",&dbv)) 
 	{	
 		_tcsncpy (pstProf->HomePhone, dbv.ptszVal, sizeof(pstProf->HomePhone)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
