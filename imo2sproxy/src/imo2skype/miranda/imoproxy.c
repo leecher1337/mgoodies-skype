@@ -18,6 +18,7 @@
 #include "imo2sproxy.h"
 #include "socksproxy.h"
 #include "w32skypeemu.h"
+#include "skypepluginlink.h"
 #include "include/newpluginapi.h"
 #include "include/m_langpack.h"
 #include "include/m_options.h"
@@ -51,16 +52,17 @@ void CrashLog (const char *pszFormat, ...)
 
 PLUGINLINK *pluginLink;
 HINSTANCE m_hInst;
-HANDLE m_hOptHook=NULL;
-PLUGINLINK *pluginLink;
+static HANDLE m_hOptHook=NULL, m_hPreShutdownHook=NULL, m_hHookModulesLoaded=NULL;
 
 #define PROXY_SOCKS			0
 #define PROXY_W32SKYPEEMU	1
-#define PROXY_MAX			2
+#define PROXY_SKYPEPLUGIN	2
+#define PROXY_MAX			3
 
 static IMO2SPROXY_CFG m_stCfg;
 static SOCKSPROXY_CFG m_stSocksCfg;
 static W32SKYPEEMU_CFG m_stSypeEmuCfg;
+static SKYPEPLUGINLINK_CFG m_stSkypePluginCfg;
 
 static IMO2SPROXY *m_apProxy[PROXY_MAX] = {0};
 static HANDLE m_hThread[PROXY_MAX]={0}, m_hEvent = INVALID_HANDLE_VALUE;
@@ -189,12 +191,12 @@ static BOOL CheckSettings(int iMask)
 
 	if (iMask & PROXY_SOCKS)
 	{
-		if (DBGetContactSetting(NULL, "SKYPE", "Host", &dbv)==0)
+		if (DBGetContactSetting(NULL, SKYPE_PROTONAME, "Host", &dbv)==0)
 		{
-			if (DBGetContactSettingByte(NULL, "SKYPE", "UseSkype2Socket", 0) &&
+			if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseSkype2Socket", 0) &&
 				(lstrcmp (dbv.pszVal, "127.0.0.1")==0 || 
 				lstrcmp (dbv.pszVal, "localhost")==0) &&
-				DBGetContactSettingWord(NULL, "SKYPE", "Port", 0) ==
+				DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "Port", 0) ==
 				DBGetContactSettingWord(NULL, "IMOPROXY", "Port", 1401))
 			{
 				DBFreeVariant(&dbv);
@@ -203,7 +205,7 @@ static BOOL CheckSettings(int iMask)
 			DBFreeVariant(&dbv);
 		}
 	}
-	if (DBGetContactSettingByte(NULL, "SKYPE", "FirstRun", 9) == 9)
+	if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "FirstRun", 9) == 9)
 	{
 		MessageBox (NULL, Translate("SKYPE plugin may not be installed, this plugin only works together with "
 			"the SKYPE-plugin. Please check if you installed and enabled it."), "IMOPROXY", 
@@ -211,15 +213,16 @@ static BOOL CheckSettings(int iMask)
 	}
 	else
 	{
-		if (iMask & PROXY_SOCKS)
+		
+		if ((iMask & PROXY_SOCKS) && !ServiceExists(SKYPE_PROTONAME PSS_SKYPEAPIMSG) )
 		{
 			if (MessageBox (NULL, Translate("Your Skype plugin currently doesn't seem to be setup to use imo2proxy, "
 				"do you want me to change its settings so that it uses this plugins?"), "IMOPROXY", 
 				MB_YESNO | MB_ICONQUESTION) == IDYES)
 			{
-				DBWriteContactSettingByte (NULL, "SKYPE", "UseSkype2Socket", 1);
-				DBWriteContactSettingWord (NULL, "SKYPE", "Port", m_stSocksCfg.sPort);
-				DBWriteContactSettingString (NULL, "SKYPE", "Host", "127.0.0.1");
+				DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseSkype2Socket", 1);
+				DBWriteContactSettingWord (NULL, SKYPE_PROTONAME, "Port", m_stSocksCfg.sPort);
+				DBWriteContactSettingString (NULL, SKYPE_PROTONAME, "Host", "127.0.0.1");
 				return TRUE;
 			}
 		}
@@ -277,11 +280,19 @@ static DWORD WINAPI ProxyThread(IMO2SPROXY *pProxy)
 
 // -----------------------------------------------------------------------------
 
+static BYTE GetProxies(void)
+{
+	return DBGetContactSettingByte(NULL, "IMOPROXY", "Proxies", 
+		(ServiceExists(SKYPE_PROTONAME PSS_SKYPEAPIMSG)?(1<<PROXY_SKYPEPLUGIN):(1<<PROXY_SOCKS)));
+}
+
+// -----------------------------------------------------------------------------
+
 static BOOL StartProxy (int i)
 {
 	DWORD dwThreadId;
 	BOOL bCreateThread = FALSE, bRet = TRUE;
-	BYTE cEnabled = DBGetContactSettingByte(NULL, "IMOPROXY", "Proxies", 1<<PROXY_SOCKS);
+	BYTE cEnabled = GetProxies();
 	HANDLE ahEvents[2];
 
 	// Username and Password must me available
@@ -299,6 +310,15 @@ static BOOL StartProxy (int i)
 		if (!(m_apProxy[i]))
 			m_apProxy[i] = W32SkypeEmu_Init (&m_stCfg, &m_stSypeEmuCfg);
 		break;
+	case PROXY_SKYPEPLUGIN:
+		if (!(m_apProxy[i]))
+			m_apProxy[i] = SkypePluginLink_Init (&m_stCfg, &m_stSkypePluginCfg);
+		if (m_apProxy[i]->Open(m_apProxy[i])<0)
+		{
+			m_apProxy[i]->Exit(m_apProxy[i]);
+			return FALSE;
+		}
+		return TRUE;
 	default:
 		return FALSE;
 	}
@@ -376,7 +396,8 @@ static void UpdateProxyStatus (HWND hWnd, int iID)
 		UINT uStop;
 	} astStatus[] = {
 		{IDC_STATUSSOCKS, IDC_STARTSOCKS, IDC_STOPSOCKS},
-		{IDC_STATUSCOMM, IDC_STARTCOMM, IDC_STOPCOMM}
+		{IDC_STATUSCOMM, IDC_STARTCOMM, IDC_STOPCOMM},
+		{IDC_STATUSSKYPEPL, IDC_STARTSKYPEPL, IDC_STOPSKYPEPL}
 	};
 
 	if (m_apProxy[iID])
@@ -387,7 +408,7 @@ static void UpdateProxyStatus (HWND hWnd, int iID)
 	}
 	else
 	{
-		BYTE cEnabled = DBGetContactSettingByte(NULL, "IMOPROXY", "Proxies", 1<<PROXY_SOCKS);
+		BYTE cEnabled = GetProxies();
 
 		SetDlgItemText (hWnd, astStatus[iID].uStatus, Translate("Stopped"));
 		EnableWindow ((HWND)GetDlgItem (hWnd, astStatus[iID].uStart), 
@@ -448,9 +469,19 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				lstrcpyn (szOldPass, dbv.pszVal, sizeof(szOldPass));
 				DBFreeVariant(&dbv); 
 			}
-			iOldProxies= DBGetContactSettingByte(NULL, "IMOPROXY", "Proxies", 1<<PROXY_SOCKS);
+			iOldProxies= GetProxies();
 			CheckDlgButton (hWnd, IDC_USESOCKS, (iOldProxies&(1<<PROXY_SOCKS))?BST_CHECKED:BST_UNCHECKED);
 			CheckDlgButton (hWnd, IDC_USECOMM, (iOldProxies&(1<<PROXY_W32SKYPEEMU))?BST_CHECKED:BST_UNCHECKED);
+			if (ServiceExists(SKYPE_PROTONAME PSS_SKYPEAPIMSG))
+			{
+				CheckDlgButton (hWnd, IDC_USESKYPEPL, (iOldProxies&(1<<PROXY_SKYPEPLUGIN))?BST_CHECKED:BST_UNCHECKED);
+				UpdateProxyStatus (hWnd, PROXY_SKYPEPLUGIN);
+			}
+			else 
+			{
+				EnableWindow (GetDlgItem (hWnd, IDC_USESKYPEPL), FALSE);
+				EnableWindow (GetDlgItem (hWnd, IDC_STARTSKYPEPL), FALSE);
+			}
 			SetDlgItemText (hWnd, IDC_PASSWORD, szOldPass);
 			UpdateProxyStatus (hWnd, PROXY_SOCKS);
 			UpdateProxyStatus (hWnd, PROXY_W32SKYPEEMU);
@@ -494,6 +525,8 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						iProxies|=(1<<PROXY_SOCKS);
 					if (IsDlgButtonChecked (hWnd, IDC_USECOMM)==BST_CHECKED)
 						iProxies|=(1<<PROXY_W32SKYPEEMU);
+					if (IsDlgButtonChecked (hWnd, IDC_USESKYPEPL)==BST_CHECKED)
+						iProxies|=(1<<PROXY_SKYPEPLUGIN);
 					DBWriteContactSettingByte(NULL, "IMOPROXY", "Proxies", (char)iProxies);
 					iProxies^=iOldProxies;
 					if (sPort != sOldPort || lstrcmp (szOldHost, szHost))
@@ -512,8 +545,8 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					*/
 					UpdateProxyStatus (hWnd, PROXY_SOCKS);
 					UpdateProxyStatus (hWnd, PROXY_W32SKYPEEMU);
-
-
+					if (ServiceExists(SKYPE_PROTONAME PSS_SKYPEAPIMSG))
+						UpdateProxyStatus (hWnd, PROXY_SKYPEPLUGIN);
 					return TRUE;
 				}
 			}
@@ -550,6 +583,7 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				case IDC_STARTSOCKS:
 				case IDC_STARTCOMM:
+				case IDC_STARTSKYPEPL:
 				{
 					int iID;
 
@@ -561,6 +595,9 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					case IDC_STARTCOMM: 
 						iID = PROXY_W32SKYPEEMU; 
 						break;
+					case IDC_STARTSKYPEPL:
+						iID = PROXY_SKYPEPLUGIN; 
+						break;
 					}
 					EnableWindow ((HWND)lParam, FALSE);
 					LoadSettings();
@@ -571,6 +608,7 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				case IDC_STOPSOCKS:
 				case IDC_STOPCOMM:
+				case IDC_STOPSKYPEPL:
 				{
 					int iID;
 
@@ -581,6 +619,9 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						break;
 					case IDC_STOPCOMM: 
 						iID = PROXY_W32SKYPEEMU; 
+					case IDC_STOPSKYPEPL:
+						iID = PROXY_SKYPEPLUGIN; 
+						break;
 						break;
 					}
 					EnableWindow ((HWND)lParam, FALSE);
@@ -704,6 +745,18 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------------------------------
 
+int OnModulesLoaded(WPARAM wParam, LPARAM lParam)
+{
+	BYTE CheckSkype = DBGetContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 2);
+	if (CheckSkype) CheckSettings(-1);
+	if (CheckSkype == 2) DBWriteContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 0);
+	StartProxies(-1);
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------------
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	m_hInst=hinstDLL;
@@ -737,7 +790,6 @@ __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 
 int __declspec(dllexport) Load(PLUGINLINK *link)
 {
-	BYTE CheckSkype;
 
 #ifdef _DEBUG
 	Crash_Init();
@@ -748,16 +800,14 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	Imo2sproxy_Defaults (&m_stCfg);
 	SocksProxy_Defaults (&m_stSocksCfg);
 	W32SkypeEmu_Defaults(&m_stSypeEmuCfg);
+	SkypePluginLink_Defaults(&m_stSkypePluginCfg);
 	m_stCfg.logerror = ShowError;
 	LoadSettings();
 
-	CheckSkype = DBGetContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 2);
-	if (CheckSkype) CheckSettings(-1);
-	if (CheckSkype == 2) DBWriteContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 0);
-
 	m_hOptHook = HookEvent(ME_OPT_INITIALISE, RegisterOptions);
-	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
-	StartProxies(-1);
+	m_hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	m_hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
+	
 	OutputDebugString ("IMOPROXY: Loaded");
 	return 0;
 }
@@ -767,6 +817,8 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 int __declspec(dllexport) Unload(void)
 {
 	OutputDebugString ("IMOPROXY: Unload");
-	if (m_hOptHook) UnhookEvent(m_hOptHook);
+	UnhookEvent(m_hOptHook);
+	UnhookEvent(m_hPreShutdownHook);
+	UnhookEvent(m_hHookModulesLoaded);
 	return 0;
 }

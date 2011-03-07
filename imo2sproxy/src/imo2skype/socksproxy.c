@@ -61,6 +61,9 @@
 #define strcasecmp stricmp
 #define strncasecmp stricmpn
 #define mutex_t CRITICAL_SECTION
+#define SHUT_RD SD_RECEIVE
+#define SHUT_WR SD_SEND
+#define SHUT_RDWR SD_BOTH
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -486,6 +489,7 @@ static void Imo2sproxy_Loop(IMO2SPROXY *hInst)
 	TYP_LIST *hConns = List_Init(32);
 	CONNINST *pInst;
 	IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)hInst;
+	FD_SET fdListen;
 
 	if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
 		fprintf (hProxy->pCfg->fpLog, "Socksproxy:Loop(Start)\n");
@@ -493,24 +497,29 @@ static void Imo2sproxy_Loop(IMO2SPROXY *hInst)
 	LockMutex(hProxy->loopmutex);
 	while (hProxy->iRunning)
 	{
+		FD_ZERO(&fdListen);
+		FD_SET(hProxy->listen_fd, &fdListen);
 		socklen = sizeof(sock);
-		new_fd = accept(hProxy->listen_fd, (struct sockaddr *) &sock, &socklen); 
-		if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
+		if (select (0, &fdListen, NULL, NULL, NULL) != SOCKET_ERROR && FD_ISSET(hProxy->listen_fd, &fdListen))
 		{
-			fprintf (hProxy->pCfg->fpLog, "Connection from %s:%d -> Connection: %d\n", inet_ntoa(sock.sin_addr),
-				ntohs(sock.sin_port), new_fd);
-			fflush (hProxy->pCfg->fpLog);
-		}
-		if (new_fd != INVALID_SOCKET && (pInst = calloc (1, sizeof(CONNINST))))
-		{
-			CleanConnections (hConns);
-			List_Push(hConns, pInst);
-			pInst->hSock = new_fd;
-			pInst->hProxy = hProxy;
-			InitMutex(pInst->connected);
-			LockMutex(pInst->connected);
-			InitMutex(pInst->sendmutex);
-			Dispatcher_Start(pInst);
+			new_fd = accept(hProxy->listen_fd, (struct sockaddr *) &sock, &socklen); 
+			if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
+			{
+				fprintf (hProxy->pCfg->fpLog, "Connection from %s:%d -> Connection: %d\n", inet_ntoa(sock.sin_addr),
+					ntohs(sock.sin_port), new_fd);
+				fflush (hProxy->pCfg->fpLog);
+			}
+			if (new_fd != INVALID_SOCKET && (pInst = calloc (1, sizeof(CONNINST))))
+			{
+				CleanConnections (hConns);
+				List_Push(hConns, pInst);
+				pInst->hSock = new_fd;
+				pInst->hProxy = hProxy;
+				InitMutex(pInst->connected);
+				LockMutex(pInst->connected);
+				InitMutex(pInst->sendmutex);
+				Dispatcher_Start(pInst);
+			}
 		}
 	}
 	if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
@@ -538,6 +547,7 @@ static void Imo2sproxy_Exit(IMO2SPROXY *hInst)
 		fprintf (hProxy->pCfg->fpLog, "Socksproxy:Exit()\n");
 
 	hProxy->iRunning = 0;
+	shutdown (hProxy->listen_fd, SHUT_RDWR);
 	closesocket (hProxy->listen_fd);
 	LockMutex(hProxy->loopmutex);
 
