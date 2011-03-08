@@ -8,6 +8,10 @@
 #include "imo_request.h"
 #include "imo_skype.h"
 
+#ifdef _WIN64
+#pragma comment (lib, "bufferoverflowU.lib")
+#endif
+
 #define PROTO "prpl-skype"
 
 struct _tagIMOSKYPE

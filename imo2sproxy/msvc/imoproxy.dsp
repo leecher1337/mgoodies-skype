@@ -145,7 +145,7 @@ SOURCE=..\src\imo2skype\queue.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\miranda\skypepluginlink.c
+SOURCE=..\src\imo2skype\miranda\skypepluginlink.c
 # End Source File
 # Begin Source File
 
@@ -213,7 +213,7 @@ SOURCE=..\src\imo2skype\queue.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\miranda\skypepluginlink.h
+SOURCE=..\src\imo2skype\miranda\skypepluginlink.h
 # End Source File
 # Begin Source File
 

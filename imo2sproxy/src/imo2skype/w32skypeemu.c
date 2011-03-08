@@ -15,6 +15,17 @@
 #include "memlist.h"
 #include "w32skypeemu.h"
 
+#ifndef _WIN64
+#if WINVER<0x0500
+#define SetWindowLongPtr SetWindowLong
+#define GetWindowLongPtr GetWindowLong
+#endif
+#ifndef LONG_PTR
+#define LONG_PTR LONG
+#endif
+#define GWLP_USERDATE GWL_USERDATA
+#endif
+
 // Skype API defines
 #define SKYPECONTROLAPI_ATTACH_SUCCESS 0
 #define SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION 1
@@ -141,7 +152,7 @@ static LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 		{
 			LPCREATESTRUCT lpCr = (LPCREATESTRUCT)lParam;
 
-			SetWindowLong (hWnd, GWL_USERDATA, (LONG)lpCr->lpCreateParams);
+			SetWindowLongPtr (hWnd, GWLP_USERDATA, (LONG_PTR)lpCr->lpCreateParams);
 			SetTimer (hWnd, 0, 60000, NULL);
 			break;
 		}
@@ -149,7 +160,7 @@ static LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 		{
 			PCOPYDATASTRUCT pCopyData = (PCOPYDATASTRUCT)lParam;
 			CONNINST *pInst;
-			IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)GetWindowLong(hWnd, GWL_USERDATA);
+			IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
 			if (pInst = FindClient (hProxy, (HWND)wParam))
 			{
@@ -180,7 +191,7 @@ static LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 		}
 		case WM_TIMER:
 			// Housekeeping timer
-			CleanConnections (((IMO2SPROXY_INST*)GetWindowLong(hWnd, GWL_USERDATA))->hClients);
+			CleanConnections (((IMO2SPROXY_INST*)GetWindowLongPtr(hWnd, GWLP_USERDATA))->hClients);
 			break;
 		case WM_DESTROY:
 			KillTimer (hWnd, 0);
@@ -189,7 +200,7 @@ static LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 			if (message == m_ControlAPIDiscover)
 			{
 				CONNINST *pInst;
-				IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)GetWindowLong(hWnd, GWL_USERDATA);
+				IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 				char *pszError;
 				
 				if (!(pInst = FindClient (hProxy, (HWND)wParam)))
