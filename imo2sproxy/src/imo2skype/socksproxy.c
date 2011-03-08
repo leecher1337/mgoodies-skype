@@ -67,6 +67,7 @@
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
@@ -74,10 +75,10 @@
 #include <unistd.h>
 #include <pthread.h>
 #define SOCKET int
-#define __cdecl
 #define thread_t pthread_t
 #define mutex_t pthread_mutex_t
 #define INVALID_SOCKET -1
+#define SOCKET_ERROR INVALID_SOCKET
 #define closesocket close
 #define LockMutex(x) pthread_mutex_lock(&x)
 #define UnlockMutex(x) pthread_mutex_unlock(&x)
@@ -489,7 +490,7 @@ static void Imo2sproxy_Loop(IMO2SPROXY *hInst)
 	TYP_LIST *hConns = List_Init(32);
 	CONNINST *pInst;
 	IMO2SPROXY_INST *hProxy = (IMO2SPROXY_INST*)hInst;
-	FD_SET fdListen;
+	fd_set fdListen;
 
 	if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
 		fprintf (hProxy->pCfg->fpLog, "Socksproxy:Loop(Start)\n");

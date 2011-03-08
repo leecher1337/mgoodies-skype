@@ -2,7 +2,7 @@ CFLAGS	= -O0 -g -I../common/ -I../imolib/ -lcurl -lpthread -lm
 CC	= gcc
 COMMON  = ../common/fifo.c ../common/cJSON.c ../common/memlist.c
 IMOLIB  = ../imolib/imo_request.c ../imolib/imo_skype.c ../imolib/io_layer.c
-IMO2S   = buddylist.c queue.c msgqueue.c imo2skypeapi.c callqueue.c 
+IMO2S   = buddylist.c queue.c msgqueue.c imo2skypeapi.c callqueue.c socksproxy.c
 .PHONY: all imo2stest imo2sproxy clean
 
 all	:	imo2stest imo2sproxy

@@ -602,8 +602,8 @@ static int StartCallSWF (IMOSAPI *pInst, CALLENTRY *pCall)
 		"</body></html>\n",
 		szID, szFlashVars, szSWF, szSWF, szFlashVars, szID);
 
-OutputDebugString (szHTML);
 #ifdef WIN32
+	OutputDebugString (szHTML);
 	sprintf (szSWF, "Voicechat with %s", pCall->pszUser);
 	if ((pCall->hCallWnd = W32Browser_ShowHTMLStr (szHTML, 310, 220, szSWF))>0)
 	{
