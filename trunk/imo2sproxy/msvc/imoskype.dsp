@@ -87,39 +87,39 @@ LINK32=xilink6.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\buddylist.c
+SOURCE=..\src\imo2skype\buddylist.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\callqueue.c
+SOURCE=..\src\imo2skype\callqueue.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\cJSON.c
+SOURCE=..\src\common\cJSON.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\fifo.c
+SOURCE=..\src\common\fifo.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\imo2skypeapi.c
+SOURCE=..\src\imo2skype\imo2skypeapi.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\imo2sproxy.c
+SOURCE=..\src\imo2skype\imo2sproxy.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\imo_request.c
+SOURCE=..\src\imolib\imo_request.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\imo_skype.c
+SOURCE=..\src\imolib\imo_skype.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\io_layer_win32.c
+SOURCE=..\src\imolib\io_layer_win32.c
 # End Source File
 # Begin Source File
 
@@ -127,15 +127,15 @@ SOURCE=..\src\imo2skype\main.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\memlist.c
+SOURCE=..\src\common\memlist.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\msgqueue.c
+SOURCE=..\src\imo2skype\msgqueue.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\queue.c
+SOURCE=..\src\imo2skype\queue.c
 # End Source File
 # Begin Source File
 
@@ -143,7 +143,7 @@ SOURCE=..\src\imo2skype\socksproxy.c
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\w32browser.c
+SOURCE=..\src\imo2skype\w32browser.c
 # End Source File
 # Begin Source File
 
@@ -155,23 +155,23 @@ SOURCE=..\src\imo2skype\w32skypeemu.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\buddylist.h
+SOURCE=..\src\imo2skype\buddylist.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\callqueue.h
+SOURCE=..\src\imo2skype\callqueue.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\cJSON.h
+SOURCE=..\src\common\cJSON.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\fifo.h
+SOURCE=..\src\common\fifo.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\imo2skypeapi.h
+SOURCE=..\src\imo2skype\imo2skypeapi.h
 # End Source File
 # Begin Source File
 
@@ -179,27 +179,27 @@ SOURCE=..\src\imo2skype\imo2sproxy.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\imo_request.h
+SOURCE=..\src\imolib\imo_request.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\imo_skype.h
+SOURCE=..\src\imolib\imo_skype.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imolib\io_layer.h
+SOURCE=..\src\imolib\io_layer.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\common\memlist.h
+SOURCE=..\src\common\memlist.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\msgqueue.h
+SOURCE=..\src\imo2skype\msgqueue.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\queue.h
+SOURCE=..\src\imo2skype\queue.h
 # End Source File
 # Begin Source File
 
@@ -207,7 +207,7 @@ SOURCE=..\src\imo2skype\socksproxy.h
 # End Source File
 # Begin Source File
 
-SOURCE=\temp\debug\imo.im\src\imo2skype\w32browser.h
+SOURCE=..\src\imo2skype\w32browser.h
 # End Source File
 # Begin Source File
 

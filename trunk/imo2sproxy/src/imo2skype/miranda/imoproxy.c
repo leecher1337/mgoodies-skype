@@ -46,7 +46,9 @@ void CrashLog (const char *pszFormat, ...)
 	}
 }
 #define LOG(_args_) CrashLog _args_ 
+#ifndef _WIN64
 #include "crash.c"
+#endif
 #endif
 
 

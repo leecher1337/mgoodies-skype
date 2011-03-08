@@ -15,7 +15,9 @@
 #define Daemonize FreeConsole()
 #ifdef _DEBUG
 #define LOG(_args_) printf _args_
+#ifndef _WIN64
 #include "crash.c"
+#endif
 #endif
 #else
 #define Daemonize daemon(0, 0)

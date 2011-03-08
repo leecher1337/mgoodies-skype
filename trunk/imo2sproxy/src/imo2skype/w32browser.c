@@ -14,6 +14,17 @@
 #include "memlist.h"
 #include "w32browser.h"
 
+#ifndef _WIN64
+#if WINVER<0x0500
+#define SetWindowLongPtr SetWindowLong
+#define GetWindowLongPtr GetWindowLong
+#endif
+#ifndef LONG_PTR
+#define LONG_PTR LONG
+#endif
+#define GWLP_USERDATE GWL_USERDATA
+#endif
+
 static const SAFEARRAYBOUND ArrayBound = {1, 0};
 static TYP_LIST *m_hWindows = NULL;
 static DWORD m_dwThread = 0;
@@ -532,7 +543,7 @@ void UnEmbedBrowserObject(HWND hwnd)
 
 	// Retrieve the browser object's pointer we stored in our window's GWL_USERDATA when
 	// we initially attached the browser object to this window.
-	if ((browserHandle = (IOleObject **)GetWindowLong(hwnd, GWL_USERDATA)))
+	if ((browserHandle = (IOleObject **)GetWindowLongPtr(hwnd, GWLP_USERDATA)))
 	{
 		// Unembed the browser object, and release its resources.
 		browserObject = *browserHandle;
@@ -577,7 +588,7 @@ long DisplayHTMLStr(HWND hwnd, LPCTSTR string)
 
 	// Retrieve the browser object's pointer we stored in our window's GWL_USERDATA when
 	// we initially attached the browser object to this window.
-	browserObject = *((IOleObject **)GetWindowLong(hwnd, GWL_USERDATA));
+	browserObject = *((IOleObject **)GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
 	// Assume an error.
 	bstr = 0;
@@ -697,7 +708,7 @@ void ResizeBrowser(HWND hwnd, DWORD width, DWORD height)
 
 	// Retrieve the browser object's pointer we stored in our window's GWL_USERDATA when
 	// we initially attached the browser object to this window.
-	browserObject = *((IOleObject **)GetWindowLong(hwnd, GWL_USERDATA));
+	browserObject = *((IOleObject **)GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
 	// We want to get the base address (ie, a pointer) to the IWebBrowser2 object embedded within the browser
 	// object, so we can call some of the functions in the former's table.
@@ -836,7 +847,7 @@ long EmbedBrowserObject(HWND hwnd)
 			// call EmbedBrowserObject() for each one, and easily associate the appropriate browser object with
 			// its matching window and its own objects containing per-window data.
 			*((IOleObject **)ptr) = browserObject;
-			SetWindowLong(hwnd, GWL_USERDATA, (LONG)ptr);
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)ptr);
 
 			// Give the browser a pointer to my IOleClientSite object
 			if (!browserObject->lpVtbl->SetClientSite(browserObject, (IOleClientSite *)_iOleClientSiteEx))

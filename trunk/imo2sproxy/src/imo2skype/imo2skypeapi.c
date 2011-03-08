@@ -609,9 +609,16 @@ static int StartCallSWF (IMOSAPI *pInst, CALLENTRY *pCall)
 	{
 		// Hook WndProc to handle WM_DESTROY so that we generate a CALL %d STATUS FINISHED on
 		// closing the chat window
+#ifdef _WIN64
+		SetWindowLongPtr ((HWND)pCall->hCallWnd, GWL_PINST, (LONG_PTR)pInst);
+		SetWindowLongPtr ((HWND)pCall->hCallWnd, GWL_ORIGWPRC, 
+			GetWindowLongPtr ((HWND)pCall->hCallWnd, GWLP_WNDPROC));
+		SetWindowLongPtr ((HWND)pCall->hCallWnd, GWLP_WNDPROC, (LONG_PTR)CallWndFilter);
+#else
 		SetWindowLong ((HWND)pCall->hCallWnd, GWL_PINST, (LONG)pInst);
 		SetWindowLong ((HWND)pCall->hCallWnd, GWL_ORIGWPRC, GetWindowLong ((HWND)pCall->hCallWnd, GWL_WNDPROC));
-		SetWindowLong ((HWND)pCall->hCallWnd, GWL_WNDPROC, (LONG)CallWndFilter);
+		SetWindowLong((HWND)pCall->hCallWnd, GWLP_WNDPROC, (LONG)CallWndFilter);
+#endif
 		return 0;
 	}
 	return -1;
