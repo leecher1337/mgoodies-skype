@@ -619,9 +619,9 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						break;
 					case IDC_STOPCOMM: 
 						iID = PROXY_W32SKYPEEMU; 
+						break;
 					case IDC_STOPSKYPEPL:
 						iID = PROXY_SKYPEPLUGIN; 
-						break;
 						break;
 					}
 					EnableWindow ((HWND)lParam, FALSE);

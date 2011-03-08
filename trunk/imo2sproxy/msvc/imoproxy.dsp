@@ -43,7 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\src\common" /I "..\src\imolib" /I "..\src\imo2skype" /I "c:\stuff\Projects\Privat\miranda\SDK\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\src\common" /I "..\src\imolib" /I "..\src\imo2skype" /I "F:\miranda09_src\miranda" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /YX /FD /c
+# SUBTRACT CPP /X
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc07 /d "NDEBUG"
@@ -69,7 +70,7 @@ LINK32=xilink6.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\src\common" /I "..\src\imolib" /I "..\src\imo2skype" /I "c:\stuff\Projects\Privat\miranda\SDK\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\src\common" /I "..\src\imolib" /I "..\src\imo2skype" /I "F:\miranda09_src\miranda" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc07 /d "_DEBUG"
@@ -79,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"F:\miranda09_src\miranda\bin\debug\Plugins\imoproxy.dll" /pdbtype:sept
 
 !ENDIF 
 
@@ -144,6 +145,10 @@ SOURCE=..\src\imo2skype\queue.c
 # End Source File
 # Begin Source File
 
+SOURCE=\temp\debug\imo.im\src\imo2skype\miranda\skypepluginlink.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\imo2skype\socksproxy.c
 # End Source File
 # Begin Source File
@@ -205,6 +210,10 @@ SOURCE=..\src\imo2skype\msgqueue.h
 # Begin Source File
 
 SOURCE=..\src\imo2skype\queue.h
+# End Source File
+# Begin Source File
+
+SOURCE=\temp\debug\imo.im\src\imo2skype\miranda\skypepluginlink.h
 # End Source File
 # Begin Source File
 

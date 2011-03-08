@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include "imo2skypeapi.h"
+#ifndef WIN32
+#define __cdecl
+#endif
 
 typedef struct
 {

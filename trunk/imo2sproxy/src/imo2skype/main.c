@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include "imo2sproxy.h"
 #include "socksproxy.h"
-#include "w32skypeemu.h"
 #ifdef WIN32
+#include "w32skypeemu.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
@@ -30,7 +30,9 @@ int main(int argc, char **argv)
 	char cMode='s';
 	IMO2SPROXY_CFG stCfg;
 	SOCKSPROXY_CFG stSocksCfg;
+#ifdef WIN32
 	W32SKYPEEMU_CFG stSypeEmuCfg;
+#endif
 	IMO2SPROXY *pProxy;
 
 #ifdef _DEBUG
@@ -39,7 +41,9 @@ int main(int argc, char **argv)
 
 	Imo2sproxy_Defaults (&stCfg);
 	SocksProxy_Defaults (&stSocksCfg);
+#ifdef WIN32
 	W32SkypeEmu_Defaults(&stSypeEmuCfg);
+#endif
 	if (argc<3)
 	{
 		printf ("imo.im Skypeproxy V1.11 - (c) by leecher 2009-2010\n\n"
@@ -143,12 +147,12 @@ int main(int argc, char **argv)
 
 	if (!stCfg.pszUser)
 	{
-		printf ("Please specify Username\n");
+		fprintf (stderr, "Please specify Username\n");
 		return EXIT_FAILURE;
 	}
 	if (!stCfg.pszPass)
 	{
-		printf ("Please specify Password\n");
+		fprintf (stderr, "Please specify Password\n");
 		return EXIT_FAILURE;
 	}
 	if (bDaemon && stCfg.bVerbose && stCfg.fpLog == stdout)
@@ -166,8 +170,13 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		break;
 	case 'a':
+#ifdef WIN32
 		if (!(pProxy = W32SkypeEmu_Init (&stCfg, &stSypeEmuCfg)))
 			return EXIT_FAILURE;
+#else
+		fprintf (stderr, "Skype API EMulator is only available in WIN32\n");
+		return EXIT_FAILURE;
+#endif
 		break;
 	}
 
