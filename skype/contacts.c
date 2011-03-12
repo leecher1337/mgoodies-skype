@@ -48,10 +48,10 @@ CLISTMENUITEM CallItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=CMIF_NOTOFFLINE;
+	mi.flags=CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
 	mi.pszContactOwner=SKYPE_PROTONAME;
-	mi.pszName=Translate("Call (Skype)");
+	mi.ptszName=LPGENT("Call (Skype)");
 	mi.pszService=SKYPE_CALL;
 	
 	return mi;
@@ -62,9 +62,9 @@ CLISTMENUITEM SkypeOutCallItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=CMIF_HIDDEN;
+	mi.flags=CMIF_HIDDEN|CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALLSKYPEOUT));
-	mi.pszName=Translate("Call using SkypeOut");
+	mi.ptszName=LPGENT("Call using SkypeOut");
 	mi.pszService=SKYPEOUT_CALL;
 
 	return mi;
@@ -75,10 +75,10 @@ CLISTMENUITEM HupItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=CMIF_NOTOFFLINE;
+	mi.flags=CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
 	mi.pszContactOwner=SKYPE_PROTONAME;
-	mi.pszName=Translate("Hang up call (Skype)");
+	mi.ptszName=LPGENT("Hang up call (Skype)");
 	mi.pszService=SKYPE_CALLHANGUP;
 
 	return mi;
@@ -89,8 +89,9 @@ CLISTMENUITEM SkypeOutHupItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
+	mi.flags=CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
-	mi.pszName=Translate("Hang up SkypeOut call");
+	mi.ptszName=LPGENT("Hang up SkypeOut call");
 	mi.pszService=SKYPEOUT_CALL;
 	return mi;
 }
@@ -100,9 +101,9 @@ CLISTMENUITEM HoldCallItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
+	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HOLD));
-	mi.pszName=Translate("Hold call");
+	mi.ptszName=LPGENT("Hold call");
 	mi.pszService=SKYPE_HOLDCALL;
 	return mi;
 }
@@ -112,9 +113,9 @@ CLISTMENUITEM ResumeCallItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
+	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_RESUME));
-	mi.pszName=Translate("Resume call");
+	mi.ptszName=LPGENT("Resume call");
 	mi.pszService=SKYPE_HOLDCALL;
 	return mi;
 }
@@ -125,9 +126,9 @@ CLISTMENUITEM FileTransferItem(void) {
 	// Stolen from file.c of Miranda core
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000020000;
-	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
+	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadSkinnedIcon(SKINICON_EVENT_FILE);
-	mi.pszName=Translate("&File");
+	mi.ptszName=LPGENT("&File");
 	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszService=SKYPE_SENDFILE;
 	return mi;
@@ -138,9 +139,9 @@ CLISTMENUITEM ChatInitItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000020000;
-	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
+	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE|CMIF_TCHAR;
 	mi.hIcon=LoadIcon( hInst, MAKEINTRESOURCE( IDI_INVITE ));
-	mi.pszName=Translate("&Open groupchat");
+	mi.ptszName=LPGENT("&Open groupchat");
 	mi.pszContactOwner=SKYPE_PROTONAME;
 	mi.pszService=SKYPE_CHATNEW;
 	return mi;
@@ -176,10 +177,10 @@ HANDLE add_contextmenu(HANDLE hContact) {
 	ZeroMemory(&mi,sizeof(mi));
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=0;
+	mi.flags=CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_IMPORT));
 	mi.pszContactOwner=SKYPE_PROTONAME;
-	mi.pszName=Translate("Import Skype history");
+	mi.ptszName=LPGENT("Import Skype history");
 	mi.pszService=SKYPE_IMPORTHISTORY;
 	return (HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
 }
@@ -189,10 +190,10 @@ HANDLE add_mainmenu(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.flags=0;
+	mi.flags=CMIF_TCHAR;
 	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_ADD));
 	mi.pszContactOwner=SKYPE_PROTONAME;
-	mi.pszName=Translate("Add Skype contact");
+	mi.ptszName=LPGENT("Add Skype contact");
 	mi.pszService=SKYPE_ADDUSER;
 	return (HANDLE)CallService(MS_CLIST_ADDMAINMENUITEM, (WPARAM)NULL,(LPARAM)&mi);
 
