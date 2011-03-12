@@ -151,7 +151,8 @@ static void EventHandler(char *pszMsg, void *pUser)
 		fprintf (pInst->hProxy->pCfg->fpLog, "%03d> %s\n", pInst->hSock, pszMsg);
 		fflush (pInst->hProxy->pCfg->fpLog);
 	}
-	if (bFirstLogin && strncmp (pszMsg, "CONNSTATUS", 10) == 0)
+	if (bFirstLogin && strncmp (pszMsg, "CONNSTATUS", 10) == 0 &&
+		strcmp(pszMsg+11, "CONNECTING"))
 	{
 		pInst->iConnectionStat = (strcmp(pszMsg+11, "ONLINE")==0);
 		UnlockMutex (pInst->connected);

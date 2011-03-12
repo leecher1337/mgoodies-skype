@@ -617,7 +617,7 @@ static int StartCallSWF (IMOSAPI *pInst, CALLENTRY *pCall)
 #else
 		SetWindowLong ((HWND)pCall->hCallWnd, GWL_PINST, (LONG)pInst);
 		SetWindowLong ((HWND)pCall->hCallWnd, GWL_ORIGWPRC, GetWindowLong ((HWND)pCall->hCallWnd, GWL_WNDPROC));
-		SetWindowLong((HWND)pCall->hCallWnd, GWLP_WNDPROC, (LONG)CallWndFilter);
+		SetWindowLong((HWND)pCall->hCallWnd, GWL_WNDPROC, (LONG)CallWndFilter);
 #endif
 		return 0;
 	}

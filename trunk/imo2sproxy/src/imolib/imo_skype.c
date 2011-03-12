@@ -350,7 +350,7 @@ int ImoSkype_Ping(IMOSKYPE *hSkype)
 // 2	-	Received expected message pszExpected [deprecated]
 static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 {
-	cJSON *root, *data, *msgs, *msg, *sys, *arr;
+	cJSON *root, *data, *msgs, *msg, *sys, *arr, *prefs, *pref;
 	char *pszMethod, *pszSys;
 
 	hSkype->pszLastRes = pszMsg;
@@ -365,7 +365,13 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 		{
 			int i, iCount = cJSON_GetArraySize(msgs);
 
-			if (!iCount && pszExpected && strcmp(pszExpected, "ok") == 0) return 2;	// Empty msg = ok?
+			if (!iCount && pszExpected && strcmp(pszExpected, "ok") == 0) 
+			{
+				if ((sys = cJSON_GetObjectItem(data,"ack")) && (unsigned long)sys->valueint >= ImoRq_GetSeq(hSkype->hRq))
+					return 2;	// imoim ACKnowledged this
+				else
+					return 0;	// No ACK, sequence number not incremented :(
+			}
 			for (i=0; i<iCount; i++)
 			{
 				if (msg = cJSON_GetArrayItem(msgs, i))
@@ -383,22 +389,69 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 
 						// Callback is only called for system IM
 						if ((sys = cJSON_GetObjectItem(msg,"from")) &&
-						(pszSys = cJSON_GetObjectItem(sys, "system")->valuestring) &&
-						(strcmp (pszSys, "im") == 0 || strcmp (pszSys, "av") == 0) &&
-
-						(data = cJSON_GetObjectItem(msg,"data")) &&
-						(arr = cJSON_CreateArray()))
+						(pszSys = cJSON_GetObjectItem(sys, "system")->valuestring))
 						{
-							// Pack data into array for Callback backwards
-							// compatibility
-							cJSON *next;
+							if ((strcmp (pszSys, "im") == 0 || strcmp (pszSys, "av") == 0) &&
+							(data = cJSON_GetObjectItem(msg,"data")) &&
+							(arr = cJSON_CreateArray()))
+							{
+								// Pack data into array for Callback backwards
+								// compatibility
+								cJSON *next;
 
-							next = data->next;
-							data->next = NULL;
-							cJSON_AddItemToArray (arr, data);
-							hSkype->StatusCb(arr, hSkype->pUser);
-							data->next = next;
-							free(arr);
+								next = data->next;
+								data->next = NULL;
+								cJSON_AddItemToArray (arr, data);
+								hSkype->StatusCb(arr, hSkype->pUser);
+								data->next = next;
+								free(arr);
+							}
+							// Ensure to disable annoying autoaway
+							else if (strcmp (pszSys, "preference") == 0 && 
+								(data = cJSON_GetObjectItem(msg,"data")) &&
+								(prefs = cJSON_GetObjectItem(data, "preferences")))
+							{
+								int j, nPrefs = cJSON_GetArraySize(prefs);
+								cJSON *kind, *thispref, *value, *prefdata;
+
+								for (j=0; j<nPrefs; j++)
+								{
+									if ((pref = cJSON_GetArrayItem(prefs, j)) && 
+										(kind = cJSON_GetObjectItem(pref, "kind")) &&
+										strcmp (kind->valuestring, "impref") == 0 &&
+										(thispref = cJSON_GetObjectItem(pref, "pref")) &&
+										strcmp (thispref->valuestring, "auto_away") == 0 &&
+										(value = cJSON_GetObjectItem(pref, "value")) &&
+										value->type == cJSON_True && hSkype->pszUser &&
+										(prefdata = cJSON_CreateObject()))
+									{
+										cJSON *accs, *acc, *setprefs, *newpref;
+
+										if (accs = cJSON_CreateArray())
+										{
+											if (acc = cJSON_CreateObject())
+											{
+												cJSON_AddStringToObject(acc, "uid", hSkype->pszUser);
+												cJSON_AddStringToObject(acc, "proto", PROTO);
+												cJSON_AddItemToArray (accs, acc);
+											}
+											cJSON_AddItemToObject(prefdata, "accounts", accs);
+										}
+										if (setprefs = cJSON_CreateArray())
+										{
+											if (newpref = cJSON_CreateObject())
+											{
+												cJSON_AddStringToObject(newpref, "kind", kind->valuestring);
+												cJSON_AddStringToObject(newpref, "pref", thispref->valuestring);
+												cJSON_AddFalseToObject (newpref, "value");
+												cJSON_AddItemToArray (setprefs, newpref);
+											}
+											cJSON_AddItemToObject(prefdata, "preferences", setprefs);
+										}
+										ImoRq_PostToSys (hSkype->hRq, "set", "preference", prefdata, 1);
+									}
+								}
+							}
 						}
 					}
 				}
