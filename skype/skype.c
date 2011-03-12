@@ -31,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
 #endif
+#ifdef _WIN64
+#pragma comment (lib, "bufferoverflowU.lib")
+#endif
+
 
 struct MM_INTERFACE   mmi; 
 
@@ -176,12 +180,22 @@ void RegisterToUpdate(void)
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
+
+#ifdef _WIN64
+		update.szUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_x64.zip";	// FIXME!!
+		update.szVersionURL = "http://dose.0wnz.at/miranda/Skype/"; // FIXME
+		update.pbVersionPrefix = (BYTE *)"SKYPE version "; //FIXME
+		update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_x64.zip";
+		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
+		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+#else
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3200";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3200";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Skype Protocol ";
-	    update.szBetaUpdateURL = "http://www.miranda-fr.net/tweety/skype/skype.zip";
-		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/skype/skype_beta.html";
+	    update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol.zip";
+		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
 		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+#endif
 
 		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
 		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
@@ -1721,31 +1735,34 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				break;
 			}
 
-			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_TIMESTAMP"))!=NULL) {
-				isEdited = TRUE;
-				break;
-			}
-			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_BY"))!=NULL) {
-				isEdited = TRUE;
-				break;
-			}
-			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " BODY"))!=NULL) {
-				
-				if(isEdited)
-				{
-					isEdited = FALSE;
+			if (!strncmp(szSkypeMsg, "MESSAGE", 7) || !strncmp(szSkypeMsg, "CHATMESSAGE", 11)) 
+			{
+				if ((ptr=strstr(szSkypeMsg, " EDITED_TIMESTAMP"))!=NULL) {
+					isEdited = TRUE;
+					break;
+				}else
+				if ((ptr=strstr(szSkypeMsg, " EDITED_BY"))!=NULL) {
+					isEdited = TRUE;
 					break;
 				}
-			}
+				if ((ptr=strstr(szSkypeMsg, " BODY"))!=NULL) {
+					
+					if(isEdited)
+					{
+						isEdited = FALSE;
+						break;
+					}
+				}
 
-			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
-				// If new message is available, fetch it
-				ptr[0]=0;
-				if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
-				strncpy (args->msgnum, strchr(szSkypeMsg, ' ')+1, sizeof(args->msgnum));
-				args->getstatus=FALSE;
-				pthread_create(( pThreadFunc )FetchMessageThread, args);
-				break;
+				if ((ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
+					// If new message is available, fetch it
+					ptr[0]=0;
+					if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
+					strncpy (args->msgnum, strchr(szSkypeMsg, ' ')+1, sizeof(args->msgnum));
+					args->getstatus=FALSE;
+					pthread_create(( pThreadFunc )FetchMessageThread, args);
+					break;
+				}
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
 				if (strlen(szSkypeMsg)<=(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1)) 
@@ -2675,7 +2692,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 		
 		if (SkypeInstalled==FALSE || RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, (unsigned char *)skype_path,  &Buffsize)!=ERROR_SUCCESS) 
 		{
-			    OUTPUT("Skype was not found installed :( \nMaybe you are using portable skype.");
+			    //OUTPUT("Skype was not found installed :( \nMaybe you are using portable skype.");
 				RegCloseKey(MyKey);
 				skype_path[0]=0;
 				//return 0;
