@@ -22,7 +22,7 @@
 #ifndef LONG_PTR
 #define LONG_PTR LONG
 #endif
-#define GWLP_USERDATE GWL_USERDATA
+#define GWLP_USERDATA GWL_USERDATA
 #endif
 
 static const SAFEARRAYBOUND ArrayBound = {1, 0};

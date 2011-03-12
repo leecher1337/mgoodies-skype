@@ -23,7 +23,9 @@
 #ifndef LONG_PTR
 #define LONG_PTR LONG
 #endif
-#define GWLP_USERDATE GWL_USERDATA
+#ifndef GWLP_USERDATA
+#define GWLP_USERDATA GWL_USERDATA
+#endif
 #endif
 
 // Skype API defines

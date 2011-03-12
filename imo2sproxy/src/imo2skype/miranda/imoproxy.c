@@ -24,6 +24,7 @@
 #include "include/m_options.h"
 #include "include/m_database.h"
 #include "include/m_system.h"
+#include "sdk/m_updater.h"
 #include "resource.h"
 
 // Crash dumper
@@ -721,6 +722,44 @@ static int RegisterOptions(WPARAM wParam, LPARAM lParam)
 
 // -----------------------------------------------------------------------------
 
+void RegisterToUpdate(void)
+{
+	//Use for the Updater plugin
+	if(ServiceExists(MS_UPDATE_REGISTER)) 
+	{
+		Update update = {0};
+		char szVersion[16];
+
+		update.szComponentName = pluginInfo.shortName;
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
+		update.cpbVersion = strlen((char *)update.pbVersion);
+
+#ifdef _WIN64
+		update.szUpdateURL = "http://dose.0wnz.at/miranda/Skype/imo2sproxy_x64_binonly.zip";	// FIXME!!
+		update.szVersionURL = "http://dose.0wnz.at/miranda/Skype/"; // FIXME
+		update.pbVersionPrefix = (BYTE *)"imo2sproxy version "; //FIXME
+		update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/imo2sproxy_x64_binonly.zip";
+		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
+		update.pbBetaVersionPrefix = (BYTE *)"imo2sproxy version ";
+#else
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=4146";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=4146";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Skype to imo.im Gateway ";
+	    update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/imo2sproxy_w32_binonly.zip";
+		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
+		update.pbBetaVersionPrefix = (BYTE *)"imo2sproxy version ";
+#endif
+
+		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+
+		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
+
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
 	OutputDebugString ("IMOPROXY: PreShutdown");
@@ -752,6 +791,7 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam)
 	BYTE CheckSkype = DBGetContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 2);
 	if (CheckSkype) CheckSettings(-1);
 	if (CheckSkype == 2) DBWriteContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 0);
+	RegisterToUpdate();
 	StartProxies(-1);
 
 	return 0;

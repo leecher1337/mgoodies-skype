@@ -255,6 +255,11 @@ void ImoRq_UpdateAck(IMORQ *hRq, unsigned long lAck)
 	hRq->send_ack = lAck;
 }
 // -----------------------------------------------------------------------------
+unsigned long ImoRq_GetSeq(IMORQ *hRq)
+{
+	return hRq->send_seq;
+}
+// -----------------------------------------------------------------------------
 
 void ImoRq_CreateID(char *pszID, int cbID)
 {
