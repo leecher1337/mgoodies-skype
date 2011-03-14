@@ -84,7 +84,7 @@ int ImoSkype_Login(IMOSKYPE *hSkype, char *pszUser, char *pszPass)
 	char *pszRet;
 	int iRet = -1;
 
-	if (!(root=cJSON_CreateObject())) return 0;
+	if (!hSkype || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "cookie_login", "session", root, 1))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
@@ -114,7 +114,7 @@ int ImoSkype_Logout(IMOSKYPE *hSkype)
 	char *pszRet;
 	int iRet = -1;
 
-	if (!(root=cJSON_CreateObject())) return 0;
+	if (!hSkype  || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "signoff_all", "session", root, 1))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
@@ -131,6 +131,7 @@ int ImoSkype_Poll(IMOSKYPE *hSkype)
 {
 	char *pszRet;
 
+	if (!hSkype || !hSkype->hPoll) return 0;
 	pszRet = ImoRq_PostSystem(hSkype->hPoll, "forward_to_server", NULL, NULL, NULL, 1);
 	if (!pszRet) return -1;
 	return CheckReturn (hSkype, pszRet, "ping");
@@ -155,6 +156,7 @@ int ImoSkype_KeepAlive(IMOSKYPE *hSkype)
 	}
 	*/
 
+	if (!hSkype) return 0;
 	pszRet = ImoRq_UserActivity(hSkype->hRq);
 	if (!pszRet) return -1;
 	return CheckReturn (hSkype, pszRet, "ok");
@@ -177,7 +179,7 @@ int ImoSkype_Typing(IMOSKYPE *hSkype, char *pszBuddy, char *pszStatus)
 	char *pszRet;
 	int iRet = -1;
 
-	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	if (!hSkype || !hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
@@ -200,7 +202,7 @@ int ImoSkype_SendMessage(IMOSKYPE *hSkype, char *pszBuddy, char *pszMessage)
 	char *pszRet;
 	int iRet = -1;
 
-	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	if (!hSkype || !hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
 	cJSON_AddStringToObject(root, "proto", PROTO);
@@ -242,7 +244,7 @@ int ImoSkype_SetStatus(IMOSKYPE *hSkype, char *pszStatus, char *pszStatusMsg)
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 	*/
 
-	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	if (!hSkype || !hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	cJSON_AddStringToObject(root, "ad", "");
 	cJSON_AddStringToObject(root, "primitive", pszStatus);

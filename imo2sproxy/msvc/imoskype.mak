@@ -36,22 +36,22 @@ INCLUDES=/I "../src/common" /I "../src/imo2skype" /I "../src/imolib"
 !IF  "$(CFG)" == "Win64 Release"
 OUTDIR=..\bin64
 INTDIR=.\Release64
-CPP_PROJ=/nologo /MT /W3 /EHsc /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 !ELSEIF  "$(CFG)" == "Win32 Release"
 OUTDIR=..\bin
 INTDIR=.\Release
-CPP_PROJ=/nologo /MT /W3 /GX /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 !ELSEIF  "$(CFG)" == "Win64 Debug"
 OUTDIR=.\Debug64
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 !ELSEIF  "$(CFG)" == "Win32 Debug"
 OUTDIR=.\Debug
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 !ENDIF
 
