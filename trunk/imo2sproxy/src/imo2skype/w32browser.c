@@ -22,7 +22,9 @@
 #ifndef LONG_PTR
 #define LONG_PTR LONG
 #endif
+#ifndef GWLP_USERDATA
 #define GWLP_USERDATA GWL_USERDATA
+#endif
 #endif
 
 static const SAFEARRAYBOUND ArrayBound = {1, 0};
@@ -648,6 +650,7 @@ long DisplayHTMLStr(HWND hwnd, LPCTSTR string)
 						// Store our BSTR pointer in the VARIENT.
 						if ((pVar->bstrVal = bstr))
 						{
+							htmlDoc2->lpVtbl->clear(htmlDoc2);
 							// Pass the VARIENT with its BSTR to write() in order to shove our desired HTML string
 							// into the body of that empty page we created above.
 							htmlDoc2->lpVtbl->write(htmlDoc2, sfArray);
@@ -977,12 +980,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			UnEmbedBrowserObject(hwnd);
 
 			// If all the windows are now closed, quit this app
-			for (i=0, nCount=List_Count(m_hWindows); i<nCount; i++)
+			if (m_hWindows)
 			{
-				if (List_ElementAt (m_hWindows, i)==hwnd)
+				for (i=0, nCount=List_Count(m_hWindows); i<nCount; i++)
 				{
-					List_RemoveElementAt (m_hWindows, i);
-					break;
+					if (List_ElementAt (m_hWindows, i)==hwnd)
+					{
+						List_RemoveElementAt (m_hWindows, i);
+						break;
+					}
 				}
 			}
 
@@ -1073,6 +1079,7 @@ static DWORD WINAPI ShowIEWndFunc(PVOID pLoadWnd)
 //				  memory. Drawback: Higher memory consumption
 int W32Browser_Init(BOOL bInitBrowser)
 {
+	if (m_hThread) W32Browser_Exit();
 	m_hThread = (HANDLE)_beginthreadex(NULL, 0, ShowIEWndFunc, (LPVOID)bInitBrowser, 0, &m_dwThread);
 	if (!m_hThread) return -1;
 	if (!(m_hEvent = CreateEvent (NULL, FALSE, FALSE, NULL)))

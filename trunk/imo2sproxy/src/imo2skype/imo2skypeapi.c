@@ -5,7 +5,7 @@
 */
 
 #define VOICECALL_VERSION 1221873445
-#define IVC_VERSION "201010261148"
+#define IVC_VERSION "98a29c15e305a7af04634b03d5e1425d6c67806e"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +16,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <process.h> 
+#include <direct.h>
 #include "w32browser.h"
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
@@ -63,6 +64,7 @@ struct _tagIMOSAPI
     int bFriendsPending;
     int iFlags;
 	int iShuttingDown;
+	volatile time_t tSetMoodText;
 	char *pszCmdID;
 };
 
@@ -550,7 +552,7 @@ static LRESULT CallWndFilter(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 static int StartCallSWF (IMOSAPI *pInst, CALLENTRY *pCall)
 {
-	char szSWF[256], szFlashVars[512], szID[18];
+	char szSWF[256], szFlashVars[1024], szID[18];
 	char szHTML[2048];
 	static unsigned int id=100;
 
@@ -564,48 +566,121 @@ static int StartCallSWF (IMOSAPI *pInst, CALLENTRY *pCall)
 
 	sprintf (pCall->szCallFile, "xdg-open %s.html", tmpnam(NULL));
 	if (!(fpTemp=fopen(pCall->szCallFile, "w"))) return -1;
+#else
+	// Windows:
+	// Ensure that we are allowed to load the .swf from imo.im
+#ifndef CSIDL_APPDATA
+#define CSIDL_APPDATA                   0x001a
 #endif
-	sprintf (szSWF, "http://www.imo.im/images/schat.swf?v=%s", IVC_VERSION);
+	static BOOL bInit = TRUE;
+
+	if (bInit)
+	{
+		char szPath[MAX_PATH]={0};
+		HMODULE hModule;
+		typedef HMODULE  (__stdcall *SHGETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
+
+		if (hModule = LoadLibrary("SHFOLDER.DLL"))
+		{
+			SHGETFOLDERPATH fnShGetFolderPath = (SHGETFOLDERPATH)GetProcAddress(hModule, "SHGetFolderPathA");
+   
+			 if (fnShGetFolderPath && fnShGetFolderPath( NULL, CSIDL_APPDATA, NULL, 0, szPath)==S_OK)
+			 {
+				 strcat (szPath, "\\Macromedia\\Flash Player");
+				 if (GetFileAttributes (szPath) != 0xFFFFFFFF)
+				 {
+					 strcat (szPath, "\\#Security");
+					 _mkdir (szPath);
+					 strcat (szPath, "\\FlashPlayerTrust");
+					 _mkdir (szPath);
+					 strcat (szPath, "\\imo2sproxy.cfg");
+					 if (GetFileAttributes (szPath) == 0xFFFFFFFF)
+					 {
+						 FILE *fp = fopen (szPath, "w");
+
+						 if (fp)
+						 {
+							 fputs ("https://imo.im/images/nchat.swf\nabout:blank\n", fp);
+							 fclose (fp);
+						 }
+					 }
+				 }
+			 }
+		  FreeLibrary(hModule);
+		}
+		bInit = FALSE;
+	}
+#endif
+	sprintf (szSWF, "https://imo.im/images/nchat.swf?%s", IVC_VERSION);
 	ImoRq_CreateID (szID, 16);
 	//sprintf (szID, "imo%d", id++);
 
 	if (*pCall->szSendStream)
-		sprintf (szFlashVars, "type=skype&amp;send_stream=%s&amp;recv_stream=%s&amp;call_type=%s&amp;chat_id=%s&amp;host=video0.imo.im&amp;id=%s",
-			pCall->szSendStream, pCall->szRecvStream, pCall->iDirection?"outgoing":"incoming", pCall->szSendStream, szID);
+		sprintf (szFlashVars, 
+		"type=skype&amp;"
+		"send_stream=%s&amp;"
+		"recv_stream=%s&amp;"
+		"id=skype#%s&amp;"
+		"host=video0.imo.im&amp;"
+		"debug=conv net&amp;"
+		"buddy_icon=https://imo.im/assets/main/icn_default.png&amp;"
+		"setCookie=setCookie&amp;"
+		"getCookie=getCookie&amp;"
+		"removeCookie=removeCookie&amp;"
+		"log=log&amp;"
+		"init_callback=init_callback&amp;"
+		"video_options_changed_cb=video_options_changed_cb&amp;"
+		"options_changed_cb=options_changed_cb&amp;"
+		"mic_changed_cb=mic_changed_cb&amp;"
+		"cam_changed_cb=cam_changed_cb&amp;"
+		"connection_status_cb=connection_status_cb",
+		pCall->szSendStream, pCall->szRecvStream, pCall->szSendStream);
 	else
-		sprintf (szFlashVars, "type=imo&amp;conv=%s&amp;role=%d&amp;host=%s&amp;id=%s", pCall->szConv, pCall->iRole, pCall->szIP, szID);
+		return -1;
+	//	sprintf (szFlashVars, "type=imo&amp;conv=%s&amp;role=%d&amp;host=%s&amp;id=%s", pCall->szConv, pCall->iRole, pCall->szIP, szID);
 
 	strcat (szFlashVars, "&amp;audio_only=true");
 	// Currently not supported 
-	// strcat (szFlashVars, "&amp;log=log&amp;getCookie=getCookie&amp;setCookie=setCookie&amp;removeCookie=removeCookie&amp;init_callback=loaded");
 	sprintf (szHTML, "<html>\n"
-		/*
-		"<head><script language='javascript'>"
-		"function log(M, L) { }"
-		"function setCookie (N, L, M) { alert ('setcookie video_chat_'+L+' = '+M); }"
-		"function getCookie (M, L) { alert ('getcookie video_chat_'+L); }"
-		"function removeCookie (M, L) { alert ('removecookie video_chat_'+L); }"
-		"function loaded(L) { alert('loaded'); }"
+		"<head><script language='javascript'>\n"
+		"function log(t, s) { document.all.log.innerHTML+=s+'<br>'; }\n"
+		"function setCookie (N, L, M) { alert ('setcookie av_chat_'+L+' = '+M); }\n"
+		"function getCookie (M, L) { alert ('getcookie av_chat_'+L); }\n"
+		"function removeCookie (M, L) { alert ('removecookie av_chat_'+L); }\n"
+		"function init_callback(L) { }\n"
+		"function video_options_changed_cb(v, t, s) { }\n"
+		"function options_changed_cb(v, t, s) { }\n"
+		"function mic_changed_cb(u, s) { }\n"
+		"function cam_changed_cb(u, t) { }\n"
+		"function connection_status_cb (u, s) { }\n"
 		"</script></head>"
-		*/
 		"<body>\n"
-		"<object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\" width=\"265\" height=\"160\" id=\"%s\">\n"
-		"<param name=\"FlashVars\" value=\"%s\" />\n"
-		"<param name=\"allowScriptAccess\" value=\"never\" />\n"
-		"<param name=\"movie\" value=\"%s\"/>\n"
-		"<param name=\"quality\" value=\"high\" />\n"
-		"<param name=\"bgcolor\" value=\"#F2F2F2\" />\n"
-		"<embed src=\"%s\" FlashVars=\"%s\" quality=\"high\" bgcolor=\"#F2F2F2\" "
-		"width=\"265\" height=\"160\" name=\"%s\" allowScriptAccess=\"never\" "
-		"type=\"application/x-shockwave-flash\" />\n"
-		"</object>\n"
+		"<object width=\"400\" height=\"208\" type=\"application/x-shockwave-flash\" data=\"%s\" id=\"flash_widget_%s\" "
+		"style=\"visibility: visible; width: 400px; height: 208px;\">\n"
+		"<param name=\"movie\" value=\"%s\">\n"
+		"<param name=\"allowscriptaccess\" value=\"always\">\n"
+		"<param name=\"bgcolor\" value=\"#ffffff\">"
+		"<param name=\"flashvars\" value=\"%s\">\n"
+		"</object><br><div id=\"log\"></div>\n"
 		"</body></html>\n",
-		szID, szFlashVars, szSWF, szSWF, szFlashVars, szID);
+		szSWF, szID, szSWF, szFlashVars);
 
 #ifdef WIN32
-	OutputDebugString (szHTML);
+	//OutputDebugString (szHTML);
 	sprintf (szSWF, "Voicechat with %s", pCall->pszUser);
-	if ((pCall->hCallWnd = W32Browser_ShowHTMLStr (szHTML, 310, 220, szSWF))>0)
+
+	/*
+
+	{
+		FILE *fpOut = fopen("C:\\TEMP\\CALL.HTML", "w");
+
+		fputs (szHTML, fpOut);
+		fclose (fpOut);
+		system ("\"C:\\Programme\\Internet Explorer\\IEXPLORE.EXE\" C:\\TEMP\\CALL.HTML");
+	}
+	*/
+
+	if ((pCall->hCallWnd = W32Browser_ShowHTMLStr (szHTML,420, 280, szSWF))>0)
 	{
 		// Hook WndProc to handle WM_DESTROY so that we generate a CALL %d STATUS FINISHED on
 		// closing the chat window
@@ -651,6 +726,23 @@ static void DispatcherThread(void *pUser)
 			t=tcur;
 			//ImoSkype_Ping (pInst->hInst);
 			ImoSkype_KeepAlive(pInst->hInst);
+		}
+
+		// Set status in case this is needed
+		if (pInst->tSetMoodText && tcur>=pInst->tSetMoodText)
+		{
+			int i;
+
+			pInst->tSetMoodText = 0;
+			for (i=0; i<sizeof(m_stMap)/sizeof(m_stMap[0]); i++)
+			{
+				if (!strcasecmp(m_stMap[i].pszSkypeStat, pInst->myUser.szStatus))
+				{
+					ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, 
+						pInst->myUser.pszStatusText?pInst->myUser.pszStatusText:"");
+					break;
+				}
+			}
 		}
 		ImoSkype_Poll(pInst->hInst);
 	}
@@ -755,7 +847,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 {
 	char *pszCmd=strtok(pszMsg, " ");
 
-	if (!pInst || !pszCmd) return;
+	if (!pInst || !pszCmd || !pInst->hInst) return;
 	if (*pszCmd=='#')
 	{
 		// This is a PROTOCOL 4 feature, but we will support it just in case...
@@ -1175,6 +1267,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				{
 					if (!strcasecmp(m_stMap[i].pszSkypeStat, pszCmd))
 					{
+						pInst->tSetMoodText = 0;
 						if (ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, 
 							pInst->myUser.pszStatusText?pInst->myUser.pszStatusText:"")>0)
 							strcpy (pInst->myUser.szStatus, pszCmd);
@@ -1281,23 +1374,16 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 
 			if (!strcasecmp (pszCmd, "MOOD_TEXT"))
 			{
-				int i;
-
 				if (!pInst->myUser.pszStatusText || 
 					strcasecmp(pInst->myUser.pszStatusText, pszCmd+10))
 				{
-					for (i=0; i<sizeof(m_stMap)/sizeof(m_stMap[0]); i++)
-					{
-						if (!strcasecmp(m_stMap[i].pszSkypeStat, pInst->myUser.szStatus))
-						{
-							if (ImoSkype_SetStatus(pInst->hInst, m_stMap[i].pszImoStat, pszCmd+10)>0)
-							{
-								if (pInst->myUser.pszStatusText) free (pInst->myUser.pszStatusText);
-								pInst->myUser.pszStatusText = strdup (pszCmd+10);
-							}
-							break;
-						}
-					}
+					time_t t;
+					// Delay setting of MOOD_TEXT, as next command in chain may change online status
+					// and we want to prevent double calls
+					// The polling-thread will take care of this event
+					pInst->tSetMoodText = time(&t)+15;
+					if (pInst->myUser.pszStatusText) free (pInst->myUser.pszStatusText);
+					pInst->myUser.pszStatusText = strdup (pszCmd+10);
 				}
 			}
 			else
