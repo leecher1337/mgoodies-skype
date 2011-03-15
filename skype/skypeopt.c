@@ -36,22 +36,22 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    ZeroMemory(&odp, sizeof(odp));
    odp.cbSize = sizeof(odp);
    odp.hInstance = hInst;
-   odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS);
-   odp.pszGroup = Translate("Network");
-   odp.pszTitle = _T("Skype");
+   odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
+   odp.ptszGroup = LPGENT("Network");
+   odp.ptszTitle = LPGENT("Skype");
    odp.pfnDlgProc = OptionsDlgProc;
-   odp.flags = ODPF_BOLDGROUPS;
+   odp.flags = ODPF_BOLDGROUPS|ODPF_TCHAR;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 
-   odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_POPUP);
-   odp.pszGroup = Translate("Popups");
-   odp.pszTitle = _T("Skype");
+   odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_POPUP);
+   odp.ptszGroup = LPGENT("Popups");
+   odp.ptszTitle = LPGENT("Skype");
    odp.pfnDlgProc = OptPopupDlgProc;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    return 0;
 }
 
-BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static RECT r;
 
@@ -224,7 +224,7 @@ BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static int iInit = TRUE;
    
@@ -323,7 +323,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
    return FALSE;
 }
 
-int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+INT_PTR CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	const int Skype2SocketControls[]={IDC_HOST, IDC_PORT, IDC_REQPASS, IDC_PASSWORD};
 	static BOOL initDlg=FALSE;
 	DBVARIANT dbv;
@@ -388,7 +388,7 @@ int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	return 0;
 }
 
-int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
 	static BOOL initDlg=FALSE;
 	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
@@ -467,7 +467,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 	return 0;
 }
 
-int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
 	static BOOL initDlg=FALSE;
 	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
@@ -629,7 +629,7 @@ int OnDetailsInit( WPARAM wParam, LPARAM lParam )
 * For setting the skype avatar
 *
 */
-BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static RECT r;
 
@@ -693,7 +693,7 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 * For setting the skype infos
 *
 */
-BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static RECT r;
 	static int sexM = 0,sexF = 0, sex;
