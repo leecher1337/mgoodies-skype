@@ -492,6 +492,9 @@ static INT_PTR CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			if (Options::getGeneralFlags() & Options::GENERAL_NO_BORDER) {
 				CheckDlgButton(hwndDlg, IDC_NO_BORDER, TRUE);
 			}
+			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_EMBED) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_EMBED, TRUE);
+			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MATHMODULE), Options::isMathModule());
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), Options::isSmileyAdd());
 			return TRUE;
@@ -505,6 +508,7 @@ static INT_PTR CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
             case IDC_ENABLE_PNGHACK:
             case IDC_SMILEYS_IN_NAMES:
             case IDC_NO_BORDER:
+			case IDC_ENABLE_EMBED:
 				MarkChanges(1, hwndDlg);
 				break;
 			}
@@ -532,6 +536,9 @@ static INT_PTR CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 				}
 				if (IsDlgButtonChecked(hwndDlg, IDC_NO_BORDER)) {
 					i |= Options::GENERAL_NO_BORDER;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_EMBED)) {
+					i |= Options::GENERAL_ENABLE_EMBED;
 				}
 				Options::setGeneralFlags(i);
 				ApplyChanges(1);

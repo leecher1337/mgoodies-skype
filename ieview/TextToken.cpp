@@ -637,14 +637,36 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
             Utils::appendText(str, sizeAlloced, L"%s", eText);
             break;
         case WWWLINK:
-            eText = htmlEncode(wtext);
-            eLink = htmlEncode(wlink);
-            Utils::appendText(str, sizeAlloced, L"<a class=\"link\" target=\"_self\" href=\"http://%s\">%s</a>", eLink, eText);
-            break;
         case LINK:
-            eText = htmlEncode(wtext);
-            eLink = htmlEncode(wlink);
-            Utils::appendText(str, sizeAlloced, L"<a class=\"link\" target=\"_self\" href=\"%s\">%s</a>", eLink, eText);
+			{
+				eText = htmlEncode(wtext);
+				eLink = htmlEncode(wlink);
+				wchar_t *linkPrefix = type == WWWLINK ? L"http://" : L"";
+				if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_EMBED)) {
+					wchar_t *match = wcsstr(wlink, L"youtube.com");
+					if (match != NULL) {
+						match = wcsstr(match + 11, L"v=");
+						if (match != NULL) {
+							match += 2;
+							wchar_t *match2 = wcsstr(match, L"&");
+							int len = match2 != NULL ? match2 - match : wcslen(match);
+							match = mir_wstrdup(match);
+							match[len] = 0;
+							int width = 640;
+							int height = 390;
+							Utils::appendText(str, sizeAlloced, L"<div><object width=\"%d\" height=\"%d\">\
+																 <param name=\"movie\" value=\"http://www.youtube.com/v/%s&feature=player_embedded&version=3\"/>\
+																 <param name=\"allowFullScreen\" value=\"true\"/>\
+																 <param name=\"allowScriptAccess\" value=\"true\"/>\
+																 <embed src=\"http://www.youtube.com/v/%s&feature=player_embedded&version=3\" type=\"application/x-shockwave-flash\" allowfullscreen=\"true\" allowScriptAccess=\"always\" width=\"%d\" height=\"%d\"/>\
+																 </object></div>", width, height, match, match, width, height);
+							mir_free(match);
+							break;
+						}
+					}
+				}
+				Utils::appendText(str, sizeAlloced, L"<a class=\"link\" target=\"_self\" href=\"%s%s\">%s</a>", linkPrefix, eLink, eText);
+			}
             break;
         case SMILEY:
             eText = htmlEncode(wtext);
