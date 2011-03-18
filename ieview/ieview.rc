@@ -68,7 +68,7 @@ STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Options",IDC_SIMPLE,4,2,297,128
+    GROUPBOX        "Options",IDC_SIMPLE,4,2,297,138
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
     LTEXT           "Currently the following BBCodes are supported: [b][i][u][s][img][size][color][url]",IDC_SIMPLE, 26,31,265,12
