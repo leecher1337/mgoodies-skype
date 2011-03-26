@@ -641,7 +641,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 			{
 				eText = htmlEncode(wtext);
 				eLink = htmlEncode(wlink);
-				wchar_t *linkPrefix = type == WWWLINK ? L"http://" : L"";
+				const wchar_t *linkPrefix = type == WWWLINK ? L"http://" : L"";
 				if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_EMBED)) {
 					wchar_t *match = wcsstr(wlink, L"youtube.com");
 					if (match != NULL) {
