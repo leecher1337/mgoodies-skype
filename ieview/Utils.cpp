@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utils.h"
 #include <ctype.h>
 #include <m_netlib.h>
-
 wchar_t Utils::base_dir[MAX_PATH];
 unsigned Utils::hookNum = 0;
 unsigned Utils::serviceNum = 0;
@@ -271,7 +270,8 @@ char *Utils::UTF8Encode(const char *text) {
 void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
 	wchar_t *wtext = Utils::convertToWCS(text);
 	char *atext = UTF8Encode(wtext);
-	memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	int slen = (int)strlen(atext) + 1;
+	memcpy(output, atext, slen > maxLen ? maxLen : slen);
 	output[maxLen - 1] = '\0';
 	delete atext;
 	delete wtext;
@@ -279,7 +279,8 @@ void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
 
 void Utils::UTF8Encode(const wchar_t *wtext, char *output, int maxLen) {
 	char *atext = UTF8Encode(wtext);
-	memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	int slen = (int)strlen(atext) + 1;
+	memcpy(output, atext, slen > maxLen ? maxLen : slen);
 	output[maxLen - 1] = '\0';
 	delete atext;
 }
