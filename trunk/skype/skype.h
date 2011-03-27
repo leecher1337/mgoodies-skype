@@ -97,6 +97,7 @@
 
 // Common used code-pieces
 #define OUTPUT(a) ShowMessage(IDI_ERRORS, a, 1);
+#define OUTPUTA(a) ShowMessageA(IDI_ERRORS, a, 1);
 
 typedef void ( __cdecl* pThreadFunc )( void* );
 
@@ -107,7 +108,12 @@ void __cdecl MsgPump (char *dummy);
 void PingPong(void);
 void CheckIfApiIsResponding(char *);
 void TellError(DWORD err);
-int ShowMessage(int, char*, int);
+int ShowMessage(int, TCHAR*, int);
+#ifdef _UNICODE
+int ShowMessageA(int iconID, char *lpzText, int mustShow);
+#else
+#define ShowMessageA ShowMessage
+#endif
 void EndCallThread(char *);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
@@ -138,6 +144,9 @@ int __stdcall EnterBitmapFileName( char* szDest );
 void CleanupNicknames(char *dummy);
 int InitVSApi();
 int FreeVSApi();
+
+// Write contact setting as UTF-8 for convenience, if possible. Older Miranda IM versions will store it as ANSI
+INT_PTR SkypeDBWriteContactSettingUTF8String(HANDLE hContact,const char *szModule,const char *szSetting,const char *val);
 
 // Structs
 

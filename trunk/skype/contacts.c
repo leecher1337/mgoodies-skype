@@ -308,8 +308,29 @@ HANDLE find_contact(char *name) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
 		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&	DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==0)	
 		{
-			if (DBGetContactSetting(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) continue;
+			if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) continue;
             tCompareResult = strcmp(dbv.pszVal, name);
+			DBFreeVariant(&dbv);
+			if (tCompareResult) continue;
+			return hContact; // already there, return handle
+		}
+	}
+	return NULL;
+}
+HANDLE find_contactT(TCHAR *name) {
+	char *szProto;
+	int tCompareResult;
+	HANDLE hContact;
+	DBVARIANT dbv;
+
+	// already on list?
+	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) 
+	{
+		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&	DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==0)	
+		{
+			if (DBGetContactSettingTString(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) continue;
+            tCompareResult = _tcscmp(dbv.ptszVal, name);
 			DBFreeVariant(&dbv);
 			if (tCompareResult) continue;
 			return hContact; // already there, return handle

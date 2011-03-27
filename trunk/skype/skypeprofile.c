@@ -11,6 +11,9 @@ void SkypeProfile_Save(SkypeProfile *pstProf)
 	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Nick", pstProf->FullName);
 	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "City", pstProf->City);
 	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Province", pstProf->Province);
+	DBWriteContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", (WORD)pstProf->Birthday.wYear);
+	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "BirthMonth", (BYTE)pstProf->Birthday.wMonth);
+	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "BirthDay", (BYTE)pstProf->Birthday.wDay);
 }
 
 void SkypeProfile_Load(SkypeProfile *pstProf)
@@ -18,14 +21,17 @@ void SkypeProfile_Load(SkypeProfile *pstProf)
 	DBVARIANT dbv;
 
 	pstProf->Sex = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", 0);
+	pstProf->Birthday.wYear = DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", 1900);
+	pstProf->Birthday.wMonth = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthMonth", 01);
+	pstProf->Birthday.wDay = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthDay", 01);
 	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Nick",&dbv)) 
 	{	
 		_tcsncpy (pstProf->FullName, dbv.ptszVal, sizeof(pstProf->FullName)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"HomePage",&dbv)) 
+	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"HomePage",&dbv)) 
 	{	
-		_tcsncpy (pstProf->HomePage, dbv.ptszVal, sizeof(pstProf->HomePage)/sizeof(TCHAR));
+		strncpy (pstProf->HomePage, dbv.pszVal, sizeof(pstProf->HomePage));
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Province",&dbv)) 
@@ -38,79 +44,95 @@ void SkypeProfile_Load(SkypeProfile *pstProf)
 		_tcsncpy (pstProf->City, dbv.ptszVal, sizeof(pstProf->City)/sizeof(TCHAR));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"OfficePhone",&dbv)) 
+	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"OfficePhone",&dbv)) 
 	{	
-		_tcsncpy (pstProf->OfficePhone, dbv.ptszVal, sizeof(pstProf->OfficePhone)/sizeof(TCHAR));
+		strncpy (pstProf->OfficePhone, dbv.pszVal, sizeof(pstProf->OfficePhone));
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"HomePhone",&dbv)) 
+	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"HomePhone",&dbv)) 
 	{	
-		_tcsncpy (pstProf->HomePhone, dbv.ptszVal, sizeof(pstProf->HomePhone)/sizeof(TCHAR));
+		strncpy (pstProf->HomePhone, dbv.pszVal, sizeof(pstProf->HomePhone));
 		DBFreeVariant(&dbv);
+	}
+}
+
+static void LoadSaveSkype(SkypeProfile *pstProf, BOOL bSet)
+{
+#define ENTRY(x,y) {x, pstProf->y, sizeof(pstProf->y)/sizeof(pstProf->y[0]), sizeof(pstProf->y[0])}
+	struct {
+		char *pszSetting;
+		LPVOID lpDest;
+		int iSize;
+		char cType;
+	} astSettings[] = {
+		ENTRY("FULLNAME", FullName),
+		ENTRY("PHONE_HOME", HomePhone),
+		ENTRY("PHONE_OFFICE", OfficePhone),
+		ENTRY("HOMEPAGE", HomePage),
+		ENTRY("CITY", City),
+		ENTRY("PROVINCE", Province)
+	};
+#undef ENTRY
+	char *ptr;
+	int i;
+
+	if (bSet) {
+		char *pBuf, szBirthday[16];
+		for (i=0; i<sizeof(astSettings)/sizeof(astSettings[0]); i++) {
+			if ((astSettings[i].cType == sizeof(char)  && utf8_encode((char*)astSettings[i].lpDest, &pBuf) != -1) ||
+				(astSettings[i].cType == sizeof(WCHAR) && (pBuf = make_utf8_string((WCHAR*)astSettings[i].lpDest)))) {
+					SkypeSetProfile (astSettings[i].pszSetting, pBuf);
+					free (pBuf);
+			}
+		}
+		switch (pstProf->Sex)
+		{
+		case 0x4D: SkypeSetProfile ("SEX", "MALE"); break;
+		case 0x46: SkypeSetProfile ("SEX", "FEMALE"); break;
+		}
+		sprintf (szBirthday, "%04d%02d%02d", pstProf->Birthday.wYear, pstProf->Birthday.wMonth, pstProf->Birthday.wDay);
+		SkypeSetProfile ("BIRTHDAY", szBirthday);
+	} else {
+		for (i=0; i<sizeof(astSettings)/sizeof(astSettings[0]); i++) {
+			if (ptr=SkypeGetProfile(astSettings[i].pszSetting)) {
+				if (astSettings[i].cType == sizeof(char)) {
+					char *pBuf;
+					if (utf8_decode (ptr, &pBuf) != -1) {
+						strncpy ((char*)astSettings[i].lpDest, pBuf, astSettings[i].iSize);
+						free (pBuf);
+					}
+				} else {
+					WCHAR *pBuf;
+					if (pBuf = make_unicode_string(ptr)) {
+						wcsncpy ((WCHAR*)astSettings[i].lpDest, pBuf, astSettings[i].iSize);
+						free (pBuf);
+					}
+				}
+				free (ptr);
+			}
+		}
+		if (ptr=SkypeGetProfile("SEX"))
+		{
+			if (!_stricmp(ptr, "MALE")) pstProf->Sex=0x4D; else
+			if (!_stricmp(ptr, "FEMALE")) pstProf->Sex=0x46;
+			free (ptr);
+		}
+		if (ptr=SkypeGetProfile("BIRTHDAY"))
+		{
+			if (*ptr != '0')
+				sscanf(ptr, "%04hd%02hd%02hd", &pstProf->Birthday.wYear, &pstProf->Birthday.wMonth, 
+					&pstProf->Birthday.wDay);
+			free(ptr);
+		}
 	}
 }
 
 void SkypeProfile_LoadFromSkype(SkypeProfile *pstProf)
 {
-	TCHAR *ptr;
-
-	if (ptr=SkypeGetProfile("FULLNAME"))
-	{
-		_tcsncpy (pstProf->FullName, ptr, sizeof(pstProf->FullName)/sizeof(TCHAR));
-		free(ptr);
-	}
-	if (ptr=SkypeGetProfile("PHONE_HOME"))
-	{
-		_tcsncpy (pstProf->HomePhone, ptr, sizeof(pstProf->HomePhone)/sizeof(TCHAR));
-		free(ptr);
-	}
-	if (ptr=SkypeGetProfile("PHONE_OFFICE"))
-	{
-		_tcsncpy (pstProf->OfficePhone, ptr, sizeof(pstProf->OfficePhone)/sizeof(TCHAR));
-		free(ptr);
-	}
-	if (ptr=SkypeGetProfile("HOMEPAGE"))
-	{
-		_tcsncpy (pstProf->HomePage, ptr, sizeof(pstProf->HomePage)/sizeof(TCHAR));
-		free(ptr);
-	}
-	if (ptr=SkypeGetProfile("CITY"))
-	{
-		_tcsncpy (pstProf->City, ptr, sizeof(pstProf->City)/sizeof(TCHAR));
-		free(ptr);
-	}
-	if (ptr=SkypeGetProfile("PROVINCE"))
-	{
-		_tcsncpy (pstProf->Province, ptr, sizeof(pstProf->Province)/sizeof(TCHAR));
-		free(ptr);
-	}
+	LoadSaveSkype (pstProf, FALSE);
 }
 
 void SkypeProfile_SaveToSkype(SkypeProfile *pstProf)
 {
-	char *tmp;
-
-	SkypeSetProfile("PHONE_HOME", pstProf->HomePhone);
-
-	SkypeSetProfile("PHONE_OFFICE", pstProf->OfficePhone);
-
-	SkypeSetProfile("HOMEPAGE", pstProf->HomePage);
-
-	if(utf8_encode((const char *)pstProf->FullName, &tmp) != -1 )
-	{
-		SkypeSetProfile("FULLNAME", tmp);
-		free (tmp);
-	}
-
-	if(utf8_encode((const char *)pstProf->City, &tmp) != -1 )
-	{
-		SkypeSetProfile("CITY", tmp);
-		free (tmp);
-	}
-
-	if(utf8_encode((const char *)pstProf->Province, &tmp) != -1 )
-	{
-		SkypeSetProfile("PROVINCE", tmp);
-		free (tmp);
-	}
+	LoadSaveSkype (pstProf, TRUE);
 }

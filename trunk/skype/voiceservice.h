@@ -6,6 +6,7 @@
 
 BOOL HasVoiceService();
 void VoiceServiceInit();
+void VoiceServiceExit();
 void VoiceServiceModulesLoaded();
 void NofifyVoiceService(HANDLE hContact, char *callId, int state) ;
 

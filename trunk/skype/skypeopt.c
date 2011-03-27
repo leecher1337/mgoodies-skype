@@ -15,7 +15,7 @@
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char protocol;
-extern BOOL SkypeInitialized;
+extern BOOL SkypeInitialized, bProtocolSet;
 extern DWORD mirandaVersion;
 
 BOOL showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
@@ -140,7 +140,7 @@ INT_PTR CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					InCallPopup.iSeconds = popupTimeSec;
 					InCallPopup.PluginData = (void *)1;
 					
-					lstrcpy(InCallPopup.lpzText, TranslateT("Incoming Skype Call"));
+					lstrcpy(InCallPopup.lptzText, TranslateT("Incoming Skype Call"));
 
 					lstrcpy(InCallPopup.lptzContactName, lpzContactName);
 
@@ -157,9 +157,9 @@ INT_PTR CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					ErrorPopup.iSeconds = popupTimeSecErr;
 					ErrorPopup.PluginData = (void *)1;
 					
-					lstrcpy(ErrorPopup.lpzText, TranslateT("Preview Error Message"));
+					lstrcpy(ErrorPopup.lptzText, TranslateT("Preview Error Message"));
 
-					lstrcpy(ErrorPopup.lptzContactName, "Error Message");
+					lstrcpy(ErrorPopup.lptzContactName, _T("Error Message"));
 
 
 					CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&ErrorPopup,0);
@@ -333,16 +333,16 @@ INT_PTR CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 		case WM_INITDIALOG:	
 			initDlg=TRUE;
 			TranslateDialogDefault(hwndDlg);
-			if (!DBGetContactSetting(NULL, SKYPE_PROTONAME, "Host", &dbv)) {
-				SetDlgItemText(hwndDlg, IDC_HOST, dbv.pszVal);
+			if (!DBGetContactSettingString(NULL, SKYPE_PROTONAME, "Host", &dbv)) {
+				SetDlgItemTextA(hwndDlg, IDC_HOST, dbv.pszVal);
 				DBFreeVariant(&dbv);
-			} else SetDlgItemText(hwndDlg, IDC_HOST, "localhost");
+			} else SetDlgItemText(hwndDlg, IDC_HOST, _T("localhost"));
 			SetDlgItemInt(hwndDlg, IDC_PORT, DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "Port", 1401), FALSE);
 			CheckDlgButton(hwndDlg, IDC_REQPASS, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0));
 			CheckDlgButton(hwndDlg, IDC_USES2S, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseSkype2Socket", 0));
-			if (!DBGetContactSetting(NULL, SKYPE_PROTONAME, "Password", &dbv)) {
+			if (!DBGetContactSettingString(NULL, SKYPE_PROTONAME, "Password", &dbv)) {
 				CallService(MS_DB_CRYPT_DECODESTRING, strlen(dbv.pszVal)+1, (LPARAM)dbv.pszVal);
-				SetDlgItemText(hwndDlg, IDC_PASSWORD, dbv.pszVal);
+				SetDlgItemTextA(hwndDlg, IDC_PASSWORD, dbv.pszVal);
 				DBFreeVariant(&dbv);
 			}
 			SendMessage(hwndDlg, WM_COMMAND, IDC_USES2S, 0);
@@ -357,13 +357,13 @@ INT_PTR CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 				case PSN_KILLACTIVE:
 				{
 					char buf[1024];
-					GetDlgItemText(hwndDlg, IDC_HOST, buf, sizeof(buf));
+					GetDlgItemTextA(hwndDlg, IDC_HOST, buf, sizeof(buf));
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "Host", buf);
 					DBWriteContactSettingWord(NULL, SKYPE_PROTONAME, "Port", (unsigned short)GetDlgItemInt(hwndDlg, IDC_PORT, NULL, FALSE));
 					DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REQPASS), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseSkype2Socket", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_USES2S), BM_GETCHECK,0,0)));
 					ZeroMemory(buf, sizeof(buf));
-					GetDlgItemText(hwndDlg, IDC_PASSWORD, buf, sizeof(buf));
+					GetDlgItemTextA(hwndDlg, IDC_PASSWORD, buf, sizeof(buf));
 					CallService(MS_DB_CRYPT_ENCODESTRING, sizeof(buf), (LPARAM)buf);
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "Password", buf);
 					return TRUE;
@@ -403,19 +403,17 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			CheckDlgButton(hwndDlg, IDC_NOERRORS, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "SuppressErrors", 0));
 			CheckDlgButton(hwndDlg, IDC_KEEPSTATE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "KeepState", 0));
 			CheckDlgButton(hwndDlg, IDC_TIMEZONE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseTimeZonePatch", 0));
+			CheckDlgButton(hwndDlg, IDC_IGNTZ, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "IgnoreTimeZones", 0));
 			CheckDlgButton(hwndDlg, IDC_SHOWDEFAULTAVATAR, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "ShowDefaultSkypeAvatar", 0));
 			CheckDlgButton(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", 1));
 
-			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
+			if (ServiceExists(MS_GC_NEWSESSION) && (!bProtocolSet || protocol>=5)) {
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseGroupchat", 0));
-			else
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT), FALSE);
-
-			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
 				CheckDlgButton(hwndDlg, IDC_GROUPCHATREAD, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "MarkGroupchatRead", 0));
-			else
+			} else {
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT), FALSE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHATREAD), FALSE);
-
+			}
 
 #ifdef USEPOPUP
 			if (ServiceExists(MS_POPUP_ADDPOPUP))
@@ -428,7 +426,7 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			for(i=0;i<sizeof(statusModes)/sizeof(statusModes[0]);i++) {
 				int k;
 
-				k=SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_ADDSTRING,0,(LPARAM)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,statusModes[i],0));
+				k=SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_ADDSTRING,0,(LPARAM)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,statusModes[i],GCMDF_TCHAR));
 				SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_SETITEMDATA,k,statusModes[i]);
 				if (statusModes[i]==j) SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_SETCURSEL,i,0);
 			}
@@ -449,6 +447,7 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "KeepState", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_KEEPSTATE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingDword(NULL, SKYPE_PROTONAME, "SkypeOutStatusMode", SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETITEMDATA,SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETCURSEL,0,0),0));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseTimeZonePatch", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_TIMEZONE), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "IgnoreTimeZones", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_IGNTZ), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "ShowDefaultSkypeAvatar", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SHOWDEFAULTAVATAR), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE), BM_GETCHECK,0,0)));
 					return TRUE;
@@ -489,12 +488,12 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 			CheckDlgButton(hwndDlg, IDC_UNLOADOFFLINE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UnloadOnOffline", 0));
 			
 			CheckDlgButton(hwndDlg, IDC_CUSTOMCOMMAND, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0));
-			if(!DBGetContactSetting(NULL,SKYPE_PROTONAME,"CommandLine",&dbv)) 
+			if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"CommandLine",&dbv)) 
 			{
 				SetWindowTextA(GetDlgItem(hwndDlg, IDC_COMMANDLINE), dbv.pszVal);
 				DBFreeVariant(&dbv);
 			}
-			if(!DBGetContactSetting(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
+			if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
 			{
 				SetWindowTextA(GetDlgItem(hwndDlg, IDC_DATAPATH), dbv.pszVal);
 				DBFreeVariant(&dbv);
@@ -541,9 +540,9 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseCustomCommand", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "datapath:", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "removable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
-					GetDlgItemText(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
+					GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "CommandLine", text);
-					GetDlgItemText(hwndDlg,IDC_DATAPATH,text,sizeof(text));
+					GetDlgItemTextA(hwndDlg,IDC_DATAPATH,text,sizeof(text));
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "datapath", text);
 
                    
@@ -695,7 +694,6 @@ INT_PTR CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPa
 */
 INT_PTR CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	static RECT r;
 	static int sexM = 0,sexF = 0, sex;
 
 	switch ( msg ) {
@@ -707,23 +705,22 @@ INT_PTR CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lP
 		if(SkypeInitialized)
 			SkypeProfile_LoadFromSkype(&myProfile);
 
-		SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)"");
-		sexM = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)Translate("MALE"));
-		sexF = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)Translate("FEMALE"));
+		SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)_T(""));
+		sexM = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)TranslateT("MALE"));
+		sexF = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)TranslateT("FEMALE"));
 		
-		if(myProfile.Sex == 0x4D){
-			SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexM, (LPARAM) Translate("MALE"));
-		}
-		if(myProfile.Sex == 0x46){
-			SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexF, (LPARAM) Translate("FEMALE"));
+		switch(myProfile.Sex) {
+		case 0x4D: SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexM, 0); break;
+		case 0x46: SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexF, 0); break;
 		}
 
 		SetDlgItemText(hwndDlg, IDC_FULLNAME, myProfile.FullName);
-		SetDlgItemText(hwndDlg, IDC_HOMEPAGE, myProfile.HomePage);
-		SetDlgItemText(hwndDlg, IDC_HOMEPHONE, myProfile.HomePhone);
-		SetDlgItemText(hwndDlg, IDC_OFFICEPHONE, myProfile.OfficePhone);
+		SetDlgItemTextA(hwndDlg, IDC_HOMEPAGE, myProfile.HomePage);
+		SetDlgItemTextA(hwndDlg, IDC_HOMEPHONE, myProfile.HomePhone);
+		SetDlgItemTextA(hwndDlg, IDC_OFFICEPHONE, myProfile.OfficePhone);
 		SetDlgItemText(hwndDlg, IDC_CITY, myProfile.City);
 		SetDlgItemText(hwndDlg, IDC_PROVINCE, myProfile.Province);
+		DateTime_SetSystemtime (GetDlgItem (hwndDlg, IDC_BIRTHDAY), GDT_VALID, &myProfile.Birthday);
 		return TRUE;
 
 	case WM_COMMAND:
@@ -731,16 +728,17 @@ INT_PTR CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lP
 			switch( LOWORD( wParam )) {
 			case IDC_SAVEDETAILS:
 				GetDlgItemText(hwndDlg,IDC_FULLNAME,myProfile.FullName,sizeof(myProfile.FullName)/sizeof(TCHAR));
-				GetDlgItemText(hwndDlg,IDC_HOMEPAGE,myProfile.HomePage,sizeof(myProfile.HomePage)/sizeof(TCHAR));
-				GetDlgItemText(hwndDlg,IDC_HOMEPHONE,myProfile.HomePhone,sizeof(myProfile.HomePhone)/sizeof(TCHAR));
-				GetDlgItemText(hwndDlg,IDC_OFFICEPHONE,myProfile.OfficePhone,sizeof(myProfile.OfficePhone)/sizeof(TCHAR));
+				GetDlgItemTextA(hwndDlg,IDC_HOMEPAGE,myProfile.HomePage,sizeof(myProfile.HomePage)/sizeof(TCHAR));
+				GetDlgItemTextA(hwndDlg,IDC_HOMEPHONE,myProfile.HomePhone,sizeof(myProfile.HomePhone)/sizeof(TCHAR));
+				GetDlgItemTextA(hwndDlg,IDC_OFFICEPHONE,myProfile.OfficePhone,sizeof(myProfile.OfficePhone)/sizeof(TCHAR));
 				GetDlgItemText(hwndDlg,IDC_CITY,myProfile.City,sizeof(myProfile.City)/sizeof(TCHAR));
 				GetDlgItemText(hwndDlg,IDC_PROVINCE,myProfile.Province,sizeof(myProfile.Province)/sizeof(TCHAR));
 				sex = SendMessage(GetDlgItem(hwndDlg,IDC_SEX),CB_GETCURSEL,0,0);
 				
 				myProfile.Sex = 0;
-				if(sex == sexF) myProfile.Sex = 0x46;
+				if(sex == sexF) myProfile.Sex = 0x46; else
 				if(sex == sexM) myProfile.Sex = 0x4D;
+				DateTime_GetSystemtime (GetDlgItem (hwndDlg, IDC_BIRTHDAY), &myProfile.Birthday);
 
 				SkypeProfile_Save(&myProfile);
 				if(SkypeInitialized)
