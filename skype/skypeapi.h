@@ -35,7 +35,7 @@ void SkypeMsgCleanup(void);
 char *SkypeMsgGet(void);
 int SkypeSend(char*, ...);
 char *SkypeRcv(char *what, DWORD maxwait);
-char *SkypeRcvMsg(char *what, DWORD maxwait);
+char *SkypeRcvMsg(char *what, time_t st, DWORD maxwait);
 INT_PTR SkypeCall(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeOutCall(WPARAM wParam, LPARAM lParam);
@@ -54,10 +54,17 @@ int SkypeMsgCollectGarbage(time_t age);
 INT_PTR SkypeSendFile(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeSetAwayMessageW(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeChatCreate(WPARAM wParam, LPARAM lParam);
 int SkypeSetProfile(char *szProperty, char *szValue);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
+#ifdef _UNICODE
+WCHAR *SkypeGetW(char *szWhat, WCHAR *szWho, char *szProperty);
+#define SkypeGetT SkypeGetW
+#else
+#define SkypeGetT SkypeGet
+#endif
 char *SkypeGetProfile(char *szProperty);
 void SetUserNamePassword();
 INT_PTR SkypeAdduserDlg(WPARAM wParam, LPARAM lParam);

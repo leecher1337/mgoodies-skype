@@ -20,6 +20,7 @@ typedef struct
 	TCHAR City[256];
 	TCHAR Province[256];
 	BYTE Sex;
+	SYSTEMTIME Birthday;
 } SkypeProfile;
 
 void SkypeProfile_Load(SkypeProfile *pstProf);

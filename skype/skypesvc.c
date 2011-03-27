@@ -48,6 +48,7 @@ void CreateServices(void)
 	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYAVATAR, SkypeSetAvatar);
 
 	CreateServiceFunction(SKYPE_PROTONAME PS_SETAWAYMSG, SkypeSetAwayMessage);
+	CreateServiceFunction(SKYPE_PROTONAME PS_SETAWAYMSGW, SkypeSetAwayMessageW);
 	CreateServiceFunction(SKYPE_PROTONAME PSS_GETAWAYMSG, SkypeGetAwayMessage);
 	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYNICKNAME, SkypeSetNick);
 
@@ -66,7 +67,10 @@ void HookEvents(void)
 	m_hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
 	m_hHookMirandaExit = HookEvent(ME_SYSTEM_OKTOEXIT, MirandaExit);
 	m_hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
+}
 
+void HookEventsLoaded(void)
+{
 	// We cannot check for the TTB-service before this event gets fired... :-/
 	m_hTTBModuleLoadedHook = HookEvent(ME_TTB_MODULELOADED, CreateTopToolbarButton);
 	m_hHookOnUserInfoInit = HookEvent( ME_USERINFO_INITIALISE, OnDetailsInit );
@@ -107,7 +111,7 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
             break;
             
         case PFLAGNUM_4:
-            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS;
+            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS | PF4_IMSENDUTF;
             break;
         case PFLAG_UNIQUEIDTEXT:
             ret = (INT_PTR) "NAME";
@@ -124,7 +128,7 @@ INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam)
 {
 	if (lParam)
 	{
-		lstrcpyn((char *)lParam, SKYPE_PROTONAME, wParam);
+		strncpy((char *)lParam, SKYPE_PROTONAME, wParam);
 		return 0; // Success
 	}
 	return 1; // Failure
@@ -144,7 +148,7 @@ INT_PTR SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 
 INT_PTR SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
 {	DBVARIANT dbv;
-	if (!DBGetContactSetting(NULL,SKYPE_PROTONAME, "AvatarFile", &dbv)){
+	if (!DBGetContactSettingString(NULL,SKYPE_PROTONAME, "AvatarFile", &dbv)){
 		lstrcpynA((char*)wParam, dbv.pszVal, (int)lParam);
 		DBFreeVariant(&dbv);
 	}

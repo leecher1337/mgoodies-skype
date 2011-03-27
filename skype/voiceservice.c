@@ -34,6 +34,7 @@ static INT_PTR VoiceGetInfo(WPARAM wParam, LPARAM lParam)
 static HANDLE FindContactByCallId(char *callId)
 {
 	HANDLE hContact;
+	int iCmpRes;
 	for (hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 			hContact != NULL;
 			hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) 
@@ -44,10 +45,11 @@ static HANDLE FindContactByCallId(char *callId)
 		if (szProto != NULL 
 			&& !strcmp(szProto, SKYPE_PROTONAME) 
 			&& DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) == 0 
-			&& !DBGetContactSetting(hContact, SKYPE_PROTONAME, "CallId", &dbv)) 
+			&& !DBGetContactSettingString(hContact, SKYPE_PROTONAME, "CallId", &dbv)) 
 		{
-			if (!strcmp(callId, dbv.pszVal))
-				return hContact;
+			iCmpRes = strcmp(callId, dbv.pszVal);
+			DBFreeVariant(&dbv);
+			if (iCmpRes == 0) return hContact;
 		}
 	}
 
@@ -57,15 +59,14 @@ static HANDLE FindContactByCallId(char *callId)
 static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
-	char msg[512];
 
 	if (!wParam) return -1;
 
-	if (DBGetContactSetting((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
+	if (DBGetContactSettingString((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
 		return -1;
 
-	mir_snprintf(msg, sizeof(msg), "CALL %s", dbv.pszVal);
-	SkypeSend(msg);
+	SkypeSend("CALL %s", dbv.pszVal);
+	DBFreeVariant (&dbv);
 
 	return 0;
 }
@@ -73,15 +74,13 @@ static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 static INT_PTR VoiceAnswer(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
-	char msg[512];
 
 	if (!wParam) return -1;
 	
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	mir_snprintf(msg, sizeof(msg), "SET %s STATUS INPROGRESS", callId);
-	SkypeSend(msg);
+	SkypeSend("SET %s STATUS INPROGRESS", callId);
 	testfor("ERROR", 200);
 
 	return 0;
@@ -90,15 +89,13 @@ static INT_PTR VoiceAnswer(WPARAM wParam, LPARAM lParam)
 static INT_PTR VoiceDrop(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
-	char msg[512];
 
 	if (!wParam) return -1;
 
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	mir_snprintf(msg, sizeof(msg), "SET %s STATUS FINISHED", callId);
-	SkypeSend(msg);
+	SkypeSend("SET %s STATUS FINISHED", callId);
 
 	return 0;
 }
@@ -106,39 +103,31 @@ static INT_PTR VoiceDrop(WPARAM wParam, LPARAM lParam)
 static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
-	char msg[512];
 
 	if (!wParam) return -1;
 
 	if (FindContactByCallId(callId) == NULL)
 		return -1;
 
-	mir_snprintf(msg, sizeof(msg), "SET %s STATUS ONHOLD", callId);
-	SkypeSend(msg);
+	SkypeSend("SET %s STATUS ONHOLD", callId);
 
 	return 0;
 }
 
 void VoiceServiceInit() 
 {
-	char szTmp[ 200 ];
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PE_VOICE_CALL_STATE, SKYPE_PROTONAME );
-	hVoiceNotify = CreateHookableEvent( szTmp );
+	// leecher, 26.03.2011: Did this ever work in the old versions?? 
+	hVoiceNotify = CreateHookableEvent( SKYPE_PROTONAME PE_VOICE_CALL_STATE);
+	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_GETINFO, VoiceGetInfo );
+	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_CALL, VoiceCall );
+	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_ANSWERCALL, VoiceAnswer );
+	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_DROPCALL, VoiceDrop );
+	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_HOLDCALL, VoiceHold );
+}
 
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_GETINFO, SKYPE_PROTONAME );
-	CreateServiceFunction( szTmp, VoiceGetInfo );
-
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_CALL, SKYPE_PROTONAME );
-	CreateServiceFunction( szTmp, VoiceCall );
-
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_ANSWERCALL, SKYPE_PROTONAME );
-	CreateServiceFunction( szTmp, VoiceAnswer );
-
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_DROPCALL, SKYPE_PROTONAME );
-	CreateServiceFunction( szTmp, VoiceDrop );
-
-	mir_snprintf( szTmp, sizeof(szTmp), "%s" PS_VOICE_HOLDCALL, SKYPE_PROTONAME );
-	CreateServiceFunction( szTmp, VoiceHold );
+void VoiceServiceExit()
+{
+	DestroyHookableEvent(hVoiceNotify);
 }
 
 void VoiceServiceModulesLoaded() 

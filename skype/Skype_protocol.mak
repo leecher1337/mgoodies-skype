@@ -3,7 +3,7 @@ CFG=Win32 Debug
 !MESSAGE Keine Konfiguration angegeben. Win32 Debug wird als Standard verwendet.
 !ENDIF 
 
-!IF "$(CFG)" != "Win32 Release" && "$(CFG)" != "Win32 Debug" && "$(CFG)" != "Win64 Release" && "$(CFG)" != "Win64 Debug"
+!IF "$(CFG)" != "Win32 Release" && "$(CFG)" != "Win32 Debug" && "$(CFG)" != "Win64 Release" && "$(CFG)" != "Win64 Debug" && "$(CFG)" != "Win32 UNICODE Release" && "$(CFG)" != "Win32 UNICODE Debug" && "$(CFG)" != "Win64 UNICODE Release" && "$(CFG)" != "Win64 UNICODE Debug"
 !MESSAGE Ungültige Konfiguration "$(CFG)" angegeben.
 !MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
 !MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
@@ -16,6 +16,11 @@ CFG=Win32 Debug
 !MESSAGE "Win32 Debug"
 !MESSAGE "Win64 Release"
 !MESSAGE "Win64 Debug"
+!MESSAGE "Win32 UNICODE Release"
+!MESSAGE "Win32 UNICODE Debug"
+!MESSAGE "Win64 UNICODE Release"
+!MESSAGE "Win64 UNICODE Debug"
+
 !MESSAGE 
 !ERROR Eine ungültige Konfiguration wurde angegeben.
 !ENDIF 
@@ -58,6 +63,34 @@ RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG"
 OUTDIR=.\Debug
 INTDIR=$(OUTDIR)
 CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+!ELSEIF  "$(CFG)" == "Win64 UNICODE Release"
+OUTDIR=.\Release64-UNICODE
+INTDIR=.\Release64-UNICODE
+CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+!ELSEIF  "$(CFG)" == "Win32 UNICODE Release"
+OUTDIR=.\Release-UNICODE
+INTDIR=.\Release-UNICODE
+CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+!ELSEIF  "$(CFG)" == "Win64 UNICODE Debug"
+OUTDIR=Debug64-UNICODE
+INTDIR=$(OUTDIR)
+CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+!ELSEIF  "$(CFG)" == "Win32 UNICODE Debug"
+OUTDIR=.\Debug-UNICODE
+INTDIR=$(OUTDIR)
+CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
 RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
