@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=Skype_protocol - Win32 Debug
+CFG=Skype_protocol - Win32 Debug UNICODE
 !MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
 !MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
 !MESSAGE 
@@ -13,12 +13,13 @@ CFG=Skype_protocol - Win32 Debug
 !MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
 !MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
 !MESSAGE 
-!MESSAGE NMAKE /f "Skype_protocol.mak" CFG="Skype_protocol - Win32 Debug"
+!MESSAGE NMAKE /f "Skype_protocol.mak" CFG="Skype_protocol - Win32 Debug UNICODE"
 !MESSAGE 
 !MESSAGE Für die Konfiguration stehen zur Auswahl:
 !MESSAGE 
 !MESSAGE "Skype_protocol - Win32 Release" (basierend auf  "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "Skype_protocol - Win32 Debug" (basierend auf  "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Skype_protocol - Win32 Debug UNICODE" (basierend auf  "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -84,12 +85,43 @@ LINK32=xilink6.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /debug /machine:I386 /out:"../../bin/debug/plugins/Skype.dll" /pdbtype:sept
 # SUBTRACT LINK32 /map
 
+!ELSEIF  "$(CFG)" == "Skype_protocol - Win32 Debug UNICODE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Skype_protocol___Win32_Debug_UNICODE"
+# PROP BASE Intermediate_Dir "Skype_protocol___Win32_Debug_UNICODE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Skype_protocol___Win32_Debug_UNICODE"
+# PROP Intermediate_Dir "Skype_protocol___Win32_Debug_UNICODE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /GZ /c
+# SUBTRACT BASE CPP /Fr
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE" /FR /YX /FD /GZ /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0xc07 /d "_DEBUG"
+# ADD RSC /l 0xc07 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=xilink6.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /debug /machine:I386 /out:"../../bin/debug/plugins/Skype.dll" /pdbtype:sept
+# SUBTRACT BASE LINK32 /map
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /debug /machine:I386 /out:"../../bin/debug Unicode/plugins/Skype.dll" /pdbtype:sept
+# SUBTRACT LINK32 /map
+
 !ENDIF 
 
 # Begin Target
 
 # Name "Skype_protocol - Win32 Release"
 # Name "Skype_protocol - Win32 Debug"
+# Name "Skype_protocol - Win32 Debug UNICODE"
 # Begin Group "Quellcodedateien"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -104,6 +136,14 @@ SOURCE=.\debug.c
 # Begin Source File
 
 SOURCE=.\gchat.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\memlist.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\msglist.c
 # End Source File
 # Begin Source File
 
@@ -160,6 +200,14 @@ SOURCE=.\m_popup.h
 # Begin Source File
 
 SOURCE=.\m_toptoolbar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\memlist.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\msglist.h
 # End Source File
 # Begin Source File
 

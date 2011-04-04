@@ -8,6 +8,7 @@
 //From skype.c
 extern char protocol;
 extern HINSTANCE hInst;
+extern DWORD mirandaVersion;
 static HANDLE m_hPrebuildCMenu=NULL, m_hStatusHookContact=NULL, m_hContactDeleted=NULL, 
 	m_hHookModulesLoaded=NULL, m_hHookOkToExit=NULL, m_hOptHook=NULL, m_hHookMirandaExit=NULL,
 	m_hTTBModuleLoadedHook = NULL, m_hHookOnUserInfoInit = NULL;
@@ -111,7 +112,8 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
             break;
             
         case PFLAGNUM_4:
-            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS | PF4_IMSENDUTF;
+            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS;
+			if (mirandaVersion >= 0x070000) ret |= PF4_IMSENDUTF;
             break;
         case PFLAG_UNIQUEIDTEXT:
             ret = (INT_PTR) "NAME";

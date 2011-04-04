@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_toptoolbar.h"
 #include "time.h"
 #include "voiceservice.h"
+#include "msglist.h"
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
 #endif
@@ -42,7 +43,7 @@ POPUPDATAT MessagePopup;
 
 // Exported Globals
 HWND hSkypeWnd=NULL, hWnd=NULL;
-HANDLE SkypeReady, SkypeMsgReceived, hInitChat=NULL, httbButton=NULL;
+HANDLE SkypeReady, SkypeMsgReceived, hInitChat=NULL, httbButton=NULL, FetchMessageEvent=NULL;
 BOOL SkypeInitialized=FALSE, QueryMsgDirection=FALSE, MirandaShuttingDown=FALSE;
 BOOL UseSockets=FALSE, bSkypeOut=FALSE, bProtocolSet=FALSE;
 char skype_path[MAX_PATH], protocol=2, *pszProxyCallout=NULL;
@@ -107,6 +108,12 @@ PDTT pfnDrawThemeText = 0;
 
 #define FIXED_TAB_SIZE 100                  // default value for fixed width tabs
 
+typedef struct {
+	char msgnum[16];
+	BOOL getstatus;
+	BOOL bIsRead;
+	TYP_MSGLENTRY *pMsgEntry;
+} fetchmsg_arg;
 
 /*
  * visual styles support (XP+)
@@ -146,7 +153,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,46),
+	PLUGIN_MAKE_VERSION(0,0,0,48),
 	"Support for Skype network",
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -182,19 +189,33 @@ void RegisterToUpdate(void)
 		update.cpbVersion = strlen((char *)update.pbVersion);
 
 #ifdef _WIN64
-		update.szUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_x64.zip";	// FIXME!!
-		update.szVersionURL = "http://dose.0wnz.at/miranda/Skype/"; // FIXME
-		update.pbVersionPrefix = (BYTE *)"SKYPE version "; //FIXME
+#ifdef _UNICODE
+		update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_unicode_x64.zip";
+#else
 		update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_x64.zip";
+#endif
 		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
 		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+		update.szUpdateURL = update.szBetaUpdateURL;	// FIXME!!
+		update.szVersionURL = update.szBetaVersionURL; // FIXME
+		update.pbVersionPrefix = update.pbBetaVersionPrefix; //FIXME
+#else /* _WIN64 */
+#ifdef _UNICODE
+		update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol_unicode.zip";
+#else
+	    update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol.zip";
+#endif
+		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
+		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+#ifdef _UNICODE
+		update.szUpdateURL = update.szBetaUpdateURL;	// FIXME!!
+		update.szVersionURL = update.szBetaVersionURL; // FIXME
+		update.pbVersionPrefix = update.pbBetaVersionPrefix; //FIXME
 #else
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3200";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3200";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Skype Protocol ";
-	    update.szBetaUpdateURL = "http://dose.0wnz.at/miranda/Skype/Skype_protocol.zip";
-		update.szBetaVersionURL = "http://dose.0wnz.at/miranda/Skype/";
-		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+#endif
 #endif
 
 		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
@@ -706,15 +727,15 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-
 void FetchMessageThread(fetchmsg_arg *pargs) {
 	char str[64], *ptr, *who, *msg, *msgptr, *pszProp, *pszEnd, *chat, *msg_emoted = NULL;
 	int direction=0, msglen = 0;
 	DWORD timestamp = 0, lwr=0;
     CCSDATA ccs={0};
     PROTORECVEVENT pre={0};
-    HANDLE hContact, hDbEvent;
+    HANDLE hContact = NULL, hDbEvent;
 	DBEVENTINFO dbei={0};
+	DBVARIANT dbv={0};
 	fetchmsg_arg args;
 	BOOL bEmoted=FALSE, isGroupChat=FALSE, bHasPartList=FALSE;
 	BOOL bUseGroupChat = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseGroupchat", 0);
@@ -725,6 +746,9 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 	Sleep(200);
 	
 	pszProp = str + sprintf(str, "GET %s %s ", cmdMessage, args.msgnum);
+	pre.lParam = strtoul(args.msgnum, NULL, 10);
+	//if (args.bIsRead) pre.flags |= PREF_CREATEREAD;
+	//pEvent = MsgList_FindMessage(pre.lParam);
 	
 	// Was it a message?
 	strcpy(pszProp, "TYPE");
@@ -751,7 +775,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 					// We have a new Groupchat
 					LOG(("FetchMessageThread CHAT SAWMEMBERS"));
 					free(ptr);
-					strcat(str, "CHATNAME");
+					strcpy(pszProp, "CHATNAME");
 					if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
 						return;
 
@@ -827,14 +851,16 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 	}
 
 	// Timestamp
-	strcpy(pszProp, "TIMESTAMP");
-	if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE)))
-		return;
-	if (strncmp(ptr, "ERROR", 5))
-		timestamp=atol(ptr+strlen(str+4)+1);
-	free(ptr);
+	if (!args.pMsgEntry || !args.pMsgEntry->tEdited) {
+		strcpy(pszProp, "TIMESTAMP");
+		if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE)))
+			return;
+		if (strncmp(ptr, "ERROR", 5))
+			timestamp=atol(ptr+strlen(str+4)+1);
+		free(ptr);
+	} else timestamp=args.pMsgEntry->tEdited;
 
-	if (QueryMsgDirection && args.getstatus) {
+	if (args.getstatus) {
 		strcpy(pszProp, "STATUS");
 		if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE)))
 			return;
@@ -843,15 +869,32 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		free(ptr);
 	}
 
-	// Text which was sent
+	// Text which was sent (on edited msg, BODY may already be in queue, check)
 	strcpy(pszProp, "BODY");
-	if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE)))
-		return;
+	if (!args.pMsgEntry || !args.pMsgEntry->tEdited || !(ptr=SkypeRcv(str+4, 1000)))
+	{
+		if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE)))
+			return;
+	}
 	if (strncmp(ptr, "ERROR", 5)) {
 		msgptr = ptr+strlen(str+4)+1;
+		if (args.pMsgEntry && args.pMsgEntry->tEdited) {
+			// Mark the message as edited
+			if (!*msgptr && args.pMsgEntry->hEvent != INVALID_HANDLE_VALUE) {
+				// Empty message and edited -> Delete event
+				if ((int)(hContact = (HANDLE)CallService (MS_DB_EVENT_GETCONTACT, (WPARAM)args.pMsgEntry->hEvent, 0)) != -1) {
+					CallService (MS_DB_EVENT_DELETE, (WPARAM)hContact, (LPARAM)args.pMsgEntry->hEvent);
+					free (ptr);
+					return;
+				}
+			} else {
+				msgptr-=9;
+				memcpy (msgptr, "[EDITED] ", 9);
+			}
+		}
 		bHasPartList = strncmp(msgptr,"<partlist ",10)==0;
 
-		if (mirandaVersion >= 0x060000 &&	// 0.6.0+ supports PREF_UTF flag, no need to decode UTF8
+		if (mirandaVersion >= 0x070000 &&	// 0.7.0+ supports PREF_UTF flag, no need to decode UTF8
 			!bUseGroupChat) {				// I guess Groupchat doesn't support UTF8?
 			msg = ptr;
 			pre.flags |= PREF_UTF;
@@ -903,6 +946,43 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 
 	// Aaaand add it..
 	LOG(("FetchMessageThread Finding contact handle"));
+	DBGetContactSettingString(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv);
+	if (dbv.pszVal && !strcmp (who, dbv.pszVal))
+	{
+		char *pTok, *chat;
+
+		// It's from me.. But to whom?
+		free (who);
+		// CHATMESSAGE .. USERS doesn't return anything, so we have to query the CHAT-Object
+		strcpy(pszProp, "CHATNAME");
+		if (SkypeSend(str)==-1 || !(chat=SkypeRcv(str+4, INFINITE))) {
+			free (msg);
+			DBFreeVariant (&dbv);
+			return;
+		}
+		ptr=SkypeGet ("CHAT", chat+strlen(str+4)+1, "ACTIVEMEMBERS");
+		free (chat);
+		if (!ptr) {
+			free(msg);
+			DBFreeVariant (&dbv);
+			return; // Dunno, skip that msg
+		}
+
+		for (pTok = strtok (ptr, " "); pTok; pTok=strtok(NULL, " ")) {
+			if (strcmp (pTok, dbv.pszVal)) break; // Take the first dude in the list who is not me
+		}
+
+		if (!pTok) {
+			free (ptr);
+			free(msg);
+			DBFreeVariant (&dbv);
+			return; // We failed
+		}
+		who=memmove (ptr, pTok, strlen(pTok)+1);
+		direction = DBEF_SENT;
+	}
+	DBFreeVariant (&dbv);
+
 	if (!(hContact=find_contact(who))) {
 		// Permanent adding of user obsolete, we use the BUDDYSTATUS now (bug #0000005)
 		ResetEvent(hBuddyAdded);
@@ -915,35 +995,6 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		}
 	}
 
-	if (QueryMsgDirection) {
-		// Check if the timestamp is valid
-		LOG(("FetchMessageThread Checking timestamps"));
-		dbei.cbSize=sizeof(dbei);
-		dbei.cbBlob=0;
-		if (hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRST,(WPARAM)hContact,0)) {
-			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
-			lwr=dbei.timestamp;
-		}
-		dbei.cbSize=sizeof(dbei);
-		dbei.cbBlob=0;
-		dbei.timestamp=0;
-		if (hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDLAST,(WPARAM)hContact,0))
-			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
-		if (timestamp<lwr) {
-			LOG(("FetchMessageThread Adding event"));
-			dbei.szModule=SKYPE_PROTONAME;
-			dbei.cbBlob=msglen;
-			if (pre.flags & PREF_UNICODE)
-				dbei.cbBlob += sizeof(WCHAR)*( (DWORD)wcslen((WCHAR*)&msgptr[dbei.cbBlob])+1);
-			dbei.pBlob=(PBYTE)msgptr;
-			dbei.timestamp=timestamp>0?timestamp:time(NULL);
-			dbei.flags=direction | DBEF_READ;
-			if (pre.flags & PREF_UTF) dbei.flags|=DBEF_UTF;
-			dbei.eventType=EVENTTYPE_MESSAGE;
-			CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hContact, (LPARAM)&dbei);
-		}
-	}
-	
 	LOG(("FetchMessageThread Check if message if a groupchat or not"));
 	// Is it a groupchat message?
 	strcpy (pszProp, "CHATNAME");
@@ -991,6 +1042,13 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				gcd.iType = GC_EVENT_MESSAGE;
 				gce.cbSize = sizeof(GCEVENT);
 				gce.pDest = &gcd;
+				if ((gce.bIsMe = (direction&DBEF_SENT)?TRUE:FALSE) &&
+					DBGetContactSettingString(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv)==0)
+				{
+					free(who);
+					who = strdup(dbv.pszVal);
+					DBFreeVariant(&dbv);
+				}
 #ifdef _UNICODE
 				gce.ptszUID = make_unicode_string(who);
 #else
@@ -1000,18 +1058,19 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				ci.szProto = SKYPE_PROTONAME;
 				ci.dwFlag = CNF_DISPLAY | CNF_TCHAR;
 				gce.ptszNick=gce.ptszUID;
-				if ((hContact=find_contact(who)))
+				if (!gce.bIsMe && (hContact=find_contact(who)))
 				{
 					ci.hContact = hContact;
 					if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci)) gce.ptszNick=ci.pszVal; 
 				}
-				gce.time = timestamp>0?timestamp:time(NULL);;
-				gce.bIsMe = FALSE;
+				gce.time = timestamp>0?timestamp:time(NULL);
+				
 
 				gce.pszText = msgptr;
 				if (pre.flags & PREF_UNICODE) gce.pszText += msglen;
 				gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
 				CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+				MsgList_Add (pre.lParam, INVALID_HANDLE_VALUE);	// Mark as groupchat
 				if (dbv.pszVal) DBFreeVariant(&dbv);
 				if (ci.pszVal) miranda_sys_free (ci.pszVal);
 #ifdef _UNICODE
@@ -1035,7 +1094,38 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 #endif
 	} else free(ptr);
 
-	if (!QueryMsgDirection || (QueryMsgDirection && timestamp>dbei.timestamp)) {
+	if (QueryMsgDirection || (direction&DBEF_SENT)) {
+		// Check if the timestamp is valid
+		LOG(("FetchMessageThread Checking timestamps"));
+		dbei.cbSize=sizeof(dbei);
+		dbei.cbBlob=0;
+		if (hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRST,(WPARAM)hContact,0)) {
+			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
+			lwr=dbei.timestamp;
+		}
+		dbei.cbSize=sizeof(dbei);
+		dbei.cbBlob=0;
+		dbei.timestamp=0;
+		if (hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDLAST,(WPARAM)hContact,0))
+			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
+		if (timestamp<lwr || (direction&DBEF_SENT)) {
+			LOG(("FetchMessageThread Adding event"));
+			dbei.szModule=SKYPE_PROTONAME;
+			dbei.cbBlob=msglen;
+			if (pre.flags & PREF_UNICODE)
+				dbei.cbBlob += sizeof(WCHAR)*( (DWORD)wcslen((WCHAR*)&msgptr[dbei.cbBlob])+1);
+			dbei.pBlob=(PBYTE)msgptr;
+			dbei.timestamp=timestamp>0?timestamp:time(NULL);
+			dbei.flags=direction;
+			if (pre.flags & PREF_CREATEREAD) dbei.flags|=DBEF_READ;
+			if (pre.flags & PREF_UTF) dbei.flags|=DBEF_UTF;
+			dbei.eventType=EVENTTYPE_MESSAGE;
+			MsgList_Add (pre.lParam, (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hContact, (LPARAM)&dbei));
+		}
+	}
+
+
+	if (!(direction&DBEF_SENT) && (!QueryMsgDirection || (QueryMsgDirection && timestamp>dbei.timestamp))) {
 		LOG(("FetchMessageThread Normal message add..."));
 		// Normal message received, process it
 	    ccs.szProtoService = PSR_MESSAGE;
@@ -1075,7 +1165,6 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		{
 			pre.szMessage = msgptr;
 		}
-		pre.lParam = 0;
 		CallServiceSync(MS_PROTO_CHAINRECV, 0, (LPARAM) &ccs);
 		if (msg_emoted) free (msg_emoted);
 
@@ -1090,24 +1179,47 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 	free(msg);
 }
 
+void FetchMessageThreadSync(fetchmsg_arg *pargs) {
+	// Secure this thread with a mutex.
+	// This is needed to ensure that we get called after an old msg in the queue has
+	// been added so that MsgList_FindEntry will find it.
+	WaitForSingleObject (FetchMessageEvent, 30000);	// Wait max. 30 sec. for previous message fetch to complete
+	if ((pargs->pMsgEntry = MsgList_FindMessage(strtoul(pargs->msgnum, NULL, 10))) && !pargs->pMsgEntry->tEdited) {
+		// Better don't do this, as we set the msg as read and with this code, we would 
+		// mark messages not opened by user as read which isn't that good
+		/*
+		if (pargs->bIsRead && pMsgEvent->hEvent != INVALID_HANDLE_VALUE)
+		{
+			HANDLE hContact;
+			if ((int)(hContact = (HANDLE)CallService (MS_DB_EVENT_GETCONTACT, (WPARAM)pMsgEntry->hEvent, 0)) != -1)
+				CallService (MS_DB_EVENT_MARKREAD, (WPARAM)hContact, (LPARAM)hDBEvent);
+		}
+		*/
+		free (pargs);
+	}
+	else FetchMessageThread (pargs);
+	SetEvent (FetchMessageEvent);
+}
+
 void MessageListProcessingThread(char *str) {
 	char *token;
 	fetchmsg_arg *args;
 
-	token=strtok(str, ",");
-	while (token) {
-		if (args=(fetchmsg_arg *)malloc(sizeof(*args))) {
+	for ((token=strtok(str, ",")); token; token=strtok(NULL, ",")) {
+		if (args=calloc(1, sizeof(fetchmsg_arg)))
+		{
 			strncpy (args->msgnum, token+1, sizeof(args->msgnum));
 			args->getstatus=TRUE;
+			args->bIsRead=TRUE;
 			FetchMessageThread (args);
 		}
-		token=strtok(NULL, ",");
 	}
 	QueryMsgDirection=FALSE;
 	if (ImportingHistory) {
 		OUTPUT(_T("History import complete!"));
 		ImportingHistory=FALSE;
 	}
+	free (str);
 }
 
 char *GetCallerHandle(char *szSkypeMsg) {
@@ -1420,7 +1532,6 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
-	static BOOL isEdited = FALSE;
 	HANDLE hContact;
 	fetchmsg_arg *args;
 
@@ -1713,8 +1824,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				pthread_create(( pThreadFunc )GetDisplaynameThread, NULL);
 				break;
 			}
-			if ((strstr(szSkypeMsg, "STATUS READ") && !QueryMsgDirection) ||
-				 strstr(szSkypeMsg, "AUTOAWAY") || !strncmp(szSkypeMsg, "OPEN ",5) ||
+			if (strstr(szSkypeMsg, "AUTOAWAY") || !strncmp(szSkypeMsg, "OPEN ",5) ||
 				 (SkypeInitialized && !strncmp (szSkypeMsg, "PONG", 4)) ||
 				 !strncmp (szSkypeMsg, "MINIMIZE", 8)) 
 			{
@@ -1734,7 +1844,6 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					if (ptr=strstr(szSkypeMsg, " MEMBERS")) {					
 						LOG(("WndProc AddMembers"));
 						AddMembers (szSkypeMsg);
-						break;
 					}/*
 					else
 					if (ptr=strstr(szSkypeMsg, " STATUS")) {
@@ -1791,31 +1900,31 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 
 			if (!strncmp(szSkypeMsg, "MESSAGE", 7) || !strncmp(szSkypeMsg, "CHATMESSAGE", 11)) 
 			{
-				if ((ptr=strstr(szSkypeMsg, " EDITED_TIMESTAMP"))!=NULL) {
-					isEdited = TRUE;
-					break;
-				}else
-				if ((ptr=strstr(szSkypeMsg, " EDITED_BY"))!=NULL) {
-					isEdited = TRUE;
-					break;
-				}
-				if ((ptr=strstr(szSkypeMsg, " BODY"))!=NULL) {
-					
-					if(isEdited)
-					{
-						isEdited = FALSE;
+				char *pMsgNum;
+				TYP_MSGLENTRY *pEntry;
+
+				if ((pMsgNum = strchr (szSkypeMsg, ' ')) && (ptr = strchr (++pMsgNum, ' ')))
+				{
+					BOOL bFetchMsg = FALSE;
+
+					if (strncmp(ptr, " EDITED_TIMESTAMP", 17) == 0) {
+						ptr[0]=0;
+						if (pEntry = MsgList_FindMessage(strtoul(pMsgNum, NULL, 10))) {
+							pEntry->tEdited = atol(ptr+18);
+						}
+						bFetchMsg = TRUE;
+					} else bFetchMsg = strncmp(ptr, " STATUS RE", 10) == 0;
+
+					if (bFetchMsg) {
+						// If new message is available, fetch it
+						ptr[0]=0;
+						if (!(args=(fetchmsg_arg *)calloc(1, sizeof(*args)))) break;
+						strncpy (args->msgnum, pMsgNum, sizeof(args->msgnum));
+						args->getstatus=FALSE;
+						args->bIsRead = strncmp(ptr+8, "READ", 4) == 0;
+						pthread_create(( pThreadFunc )FetchMessageThreadSync, args);
 						break;
 					}
-				}
-
-				if ((ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
-					// If new message is available, fetch it
-					ptr[0]=0;
-					if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
-					strncpy (args->msgnum, strchr(szSkypeMsg, ' ')+1, sizeof(args->msgnum));
-					args->getstatus=FALSE;
-					pthread_create(( pThreadFunc )FetchMessageThread, args);
-					break;
 				}
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
@@ -1855,6 +1964,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
         case WM_TIMER:
 			SkypeSend("PING");
 			SkypeMsgCollectGarbage(MAX_MSG_AGE);
+			MsgList_CollectGarbage();
 			if (receivers>1)
 			{
 				LOG(("Watchdog WARNING: there are still %d receivers waiting for MSGs", receivers));
@@ -2291,10 +2401,11 @@ INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
 		  return 0;
 	} else mymsgcmd="MESSAGE";
 		
-	if (wParam & PREF_UTF) {
+
+	if (ccs->wParam & PREF_UTF) {
 		utfmsg = msg;
-	} else if (wParam & PREF_UNICODE) {
-		utfmsg = make_utf8_string((WCHAR*)msg);
+	} else if (ccs->wParam & PREF_UNICODE) {
+		utfmsg = make_utf8_string((WCHAR*)(msg+strlen(msg)+1));
 	} else {
 		if (utf8_encode(msg, &utfmsg)==-1) utfmsg=NULL;
 	}
@@ -2327,7 +2438,7 @@ INT_PTR SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
 	if (pre->flags & PREF_UNICODE)
 		dbei.cbBlob += sizeof( wchar_t )*( (DWORD)wcslen(( wchar_t* )&pre->szMessage[dbei.cbBlob+1] )+1 );
     dbei.pBlob = (PBYTE) pre->szMessage;
-    CallService(MS_DB_EVENT_ADD, (WPARAM)ccs->hContact, (LPARAM)&dbei);
+    MsgList_Add (pre->lParam, (HANDLE)CallService(MS_DB_EVENT_ADD, (WPARAM)ccs->hContact, (LPARAM)&dbei));
     return 0;
 }
 
@@ -2775,7 +2886,8 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 #ifdef SKYPEBUG_OFFLN
 	    !(GotUserstatus=CreateEvent(NULL, TRUE, FALSE, NULL)) ||
 #endif
-		!(hBuddyAdded=CreateEvent(NULL, FALSE, FALSE, NULL))) {
+		!(hBuddyAdded=CreateEvent(NULL, FALSE, FALSE, NULL)) ||
+		!(FetchMessageEvent=CreateEvent(NULL, FALSE, TRUE, NULL))) {
 		 OUTPUT(_T("Unable to create Mutex!"));
 		return 0;
 	}
@@ -2792,6 +2904,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServices();
 	HookEvents();
 	InitVSApi();
+	MsgList_Init();
 
 	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
@@ -2839,6 +2952,7 @@ int __declspec( dllexport ) Unload(void)
 	DestroyHookableEvent(hInitChat);
 	VoiceServiceExit();
 	GCExit();
+	MsgList_Exit();
 
 	CloseHandle(SkypeReady);
 	CloseHandle(SkypeMsgReceived);
@@ -2847,6 +2961,7 @@ int __declspec( dllexport ) Unload(void)
 #endif
 	CloseHandle(MessagePumpReady);
 	CloseHandle(hBuddyAdded);
+	CloseHandle(FetchMessageEvent);
 
 	DeleteCriticalSection(&RingAndEndcallMutex);
 	DeleteCriticalSection(&QueryThreadMutex);

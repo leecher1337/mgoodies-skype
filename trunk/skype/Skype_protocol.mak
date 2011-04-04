@@ -83,8 +83,8 @@ RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG"
 !ELSEIF  "$(CFG)" == "Win64 UNICODE Debug"
 OUTDIR=Debug64-UNICODE
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
-LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
+CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c
+LINK32_FLAGS= $(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
 RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 UNICODE Debug"
@@ -128,6 +128,7 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\voiceservice.obj"
 	-@erase "$(INTDIR)\skype.exp"
+	-@erase "$(INTDIR)\skype.pdb"
 	-@erase "$(INTDIR)\skype.lib"
 	-@erase "$(OUTDIR)\skype.dll"
 
