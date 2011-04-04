@@ -155,11 +155,6 @@ typedef struct {
 	char *MirandaSetting;
 } settings_map;
 
-typedef struct {
-	char msgnum[16];
-	BOOL getstatus;
-} fetchmsg_arg;
-
 // Optional includes
 #ifdef USEPOPUP
   #include "../../include/m_popup.h"

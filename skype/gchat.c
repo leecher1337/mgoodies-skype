@@ -526,15 +526,30 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 					GCDEST gcd = {0};
 					GCEVENT gce = {0};
 					TCHAR *pEnd;
+					char *utfmsg;
 
 					// remove the ending linebreak
 					for (pEnd = &gch->ptszText[_tcslen(gch->ptszText) - 1];
 						 *pEnd==_T('\r') || *pEnd==_T('\n'); pEnd--) *pEnd=0;
                     // Send message to the chat-contact    
+					/*
 					if (ccs.hContact = find_chat(gch->pDest->ptszID)) {
 						ccs.lParam = (LPARAM)gch->ptszText;
-						CallService (SKYPE_PROTONAME PSS_MESSAGE, (WPARAM)PREF_TCHAR, (LPARAM)&ccs);
+						ccs.wParam = PREF_TCHAR;
+						CallService (SKYPE_PROTONAME PSS_MESSAGE, 0, (LPARAM)&ccs);
 					}
+					*/
+					// Just send the stuff to Skype, no need to call PSS_MESSAGE
+#ifdef _UNICODE
+					if (!(utfmsg = make_utf8_string((WCHAR*)gch->ptszText))) break;
+#else
+					if (utf8_encode(gch->ptszText, &utfmsg)==-1) break;
+#endif
+					if (SkypeSend("CHATMESSAGE "STR" %s", gch->pDest->ptszID, utfmsg)) {
+						free (utfmsg);
+						break;
+					}
+					free (utfmsg);
 
 					// Add our line to the chatlog	
 					gcd.pszModule = gch->pDest->pszModule;
