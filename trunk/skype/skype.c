@@ -153,7 +153,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,48),
+	PLUGIN_MAKE_VERSION(0,0,0,49),
 	"Support for Skype network",
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -374,10 +374,12 @@ void GetInfoThread(HANDLE hContact) {
 void BasicSearchThread(char *nick) {
 	PROTOSEARCHRESULT psr={0};
 	char *cmd=NULL, *token=NULL, *ptr=NULL;
+	time_t st;
 
     LOG (("BasicSearchThread started."));
 	EnterCriticalSection (&QueryThreadMutex);
-	if (SkypeSend("SEARCH USERS %s", nick)==0 && (cmd=SkypeRcv("USERS", INFINITE))) {
+	time(&st);
+	if (SkypeSend("SEARCH USERS %s", nick)==0 && (cmd=SkypeRcvTime("USERS", st, INFINITE))) {
 		if (strncmp(cmd, "ERROR", 5)) {
 			psr.cbSize=sizeof(psr);
 			for (token=strtok(cmd+5, ", "); token; token=strtok(NULL, ", ")) {
@@ -479,8 +481,10 @@ INT_PTR ImportHistory(WPARAM wParam, LPARAM lParam) {
 int SearchFriends(void) {
 	char *ptr, *token;
 	int iRet = 0;
+	time_t st;
 
-	if (SkypeSend("SEARCH FRIENDS")!=-1 && (ptr=SkypeRcv("USERS", INFINITE)))
+	time(&st);
+	if (SkypeSend("SEARCH FRIENDS")!=-1 && (ptr=SkypeRcvTime("USERS", st, INFINITE)))
 	{
 		if (strncmp(ptr, "ERROR", 5)) {
 			if (ptr+5) {
@@ -501,14 +505,14 @@ int SearchFriends(void) {
 int SearchUsersWaitingMyAuthorization(void) {
 	char *cmd, *token;
 
-	if (SkypeSend("SEARCH USERSWAITINGMYAUTHORIZATION")) return -1;
-	if (!(cmd=SkypeRcv("USERS", INFINITE))) return -1;
+	if (SkypeSend("#UWA SEARCH USERSWAITINGMYAUTHORIZATION")) return -1;
+	if (!(cmd=SkypeRcv("#UWA USERS", INFINITE))) return -1;
 	if (!strncmp(cmd, "ERROR", 5)) {
 		free(cmd);
 		return -1;
 	}
 
-	token=strtok(cmd+5, ", ");
+	token=strtok(cmd+10, ", ");
 	while (token) {
 		CCSDATA ccs={0};
 		PROTORECVEVENT pre={0};
@@ -599,7 +603,7 @@ void __cdecl SkypeSystemInit(char *dummy) {
 		Initializing=FALSE;
 		return;	
 	}
-	SearchUsersWaitingMyAuthorization();
+	if (protocol>=5) SearchUsersWaitingMyAuthorization();
 	SkypeSend("SEARCH MISSED%sS", cmdMessage);
 // Get my Nickname
 	if (SkypeSend("GET CURRENTUSERHANDLE")==-1
@@ -761,25 +765,31 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		pszEnd = ptr+strlen(ptr);
 		if( !strncmp(pszEnd-6, "EMOTED", 6) ) bEmoted = TRUE;
 		if( !strncmp(pszEnd-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = TRUE;
-		if( !strncmp(pszEnd-15, "CREATEDCHATWITH", 15) || !strncmp(pszEnd-10, "SAWMEMBERS", 10)) {
-			free (ptr);
-			return;
-		}
 
-		if (strncmp(pszEnd-4, "TEXT", 4) && strncmp(pszEnd-4, "SAID", 4) && !bEmoted && isGroupChat) 
+		if (strncmp(pszEnd-4, "TEXT", 4) && strncmp(pszEnd-4, "SAID", 4) && !bEmoted) 
 		{
 			if (bUseGroupChat) 
 			{
-				if (!strncmp(pszEnd-10,"SAWMEMBERS", 10)) 
+				if (!strncmp(pszEnd-10,"SAWMEMBERS", 10) || !strncmp(pszEnd-15, "CREATEDCHATWITH", 15) ||
+					!strncmp(pszEnd-10,"ADDEDMEMBERS", 10)) 
 				{
+					char *ptr2, *pszID;
+
 					// We have a new Groupchat
 					LOG(("FetchMessageThread CHAT SAWMEMBERS"));
 					free(ptr);
 					strcpy(pszProp, "CHATNAME");
 					if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
 						return;
-
-					ChatStart(ptr+strlen(str+4)+1);
+					if (ptr2=SkypeGet("CHAT", (pszID=ptr+strlen(str+4)+1), "STATUS"))
+					{
+						// IF not MULTI_SUBSCRIBED, we can ignore it
+						if (!strcmp(ptr2, "MULTI_SUBSCRIBED"))
+						{
+							ChatStart(pszID);
+						}
+						free (ptr2);
+					}
 					free(ptr);
 					return;
 				}
@@ -800,32 +810,41 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 					gcd.pszID = ptr+strlen(str+4)+1;
 					gcd.iType = GC_EVENT_TOPIC;
 					gce.pDest = &gcd;
-					sprintf (pszProp, "%s_HANDLE", cmdPartner);
-					if (SkypeSend(str)!=-1 && (who=SkypeRcv(str+4, INFINITE))) 
-					{
-						gce.pszUID = who+strlen(str+4)+1;
-						sprintf(str, "CHAT %s TOPIC", gcd.pszID);
-						if (ptr2=SkypeRcv(str, INFINITE)) 
-						{
-							gce.pszText = ptr2+strlen(str);
-#ifdef _UNICODE
-							gcd.ptszID = make_unicode_string(gcd.pszID);
-							gce.ptszUID = make_unicode_string(gce.pszUID);
-							gce.ptszText = make_unicode_string(gce.pszText);
-							gce.dwFlags = GC_TCHAR;
-#else
-							utf8_decode (gce.pszText, (char**)&gce.ptszText);
-#endif
-							CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
-							free(ptr2);
-#ifdef _UNICODE
-							free (gcd.ptszID);
-							free ((void*)gce.ptszUID);
-#endif
-							free ((void*)gce.ptszText);
 
-						}
-						free(who);
+					if (ptr2=SkypeGet("CHAT", gcd.pszID, "STATUS"))
+					{
+						// IF not MULTI_SUBSCRIBED, we can ignore it, but this shouldn't happen
+						if (!strcmp(ptr2, "MULTI_SUBSCRIBED"))
+						{
+							free (ptr2);
+							sprintf (pszProp, "%s_HANDLE", cmdPartner);
+							if (SkypeSend(str)!=-1 && (who=SkypeRcv(str+4, INFINITE))) 
+							{
+								gce.pszUID = who+strlen(str+4)+1;
+								strcpy (pszProp, "BODY");
+								if (SkypeSend(str)!=-1 && (ptr2=SkypeRcv(str+4, INFINITE))) 
+								{
+									gce.pszText = ptr2+strlen(str+4)+1;
+#ifdef _UNICODE
+									gcd.ptszID = make_unicode_string(gcd.pszID);
+									gce.ptszUID = make_unicode_string(gce.pszUID);
+									gce.ptszText = make_unicode_string(gce.pszText);
+									gce.dwFlags = GC_TCHAR;
+#else
+									utf8_decode (gce.pszText, (char**)&gce.ptszText);
+#endif
+									CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+									free(ptr2);
+#ifdef _UNICODE
+									free (gcd.ptszID);
+									free ((void*)gce.ptszUID);
+#endif
+									free ((void*)gce.ptszText);
+
+								}
+								free(who);
+							}
+						} else free(ptr2);
 					}
 					free(ptr);
 					return;
@@ -1006,6 +1025,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 	}
 	if (strncmp(ptr, "ERROR", 5)) {
 		GCDEST gcd = {0};
+		HANDLE hChat;
 
 		chat=memmove(ptr, ptr+strlen(str+4)+1, strlen(ptr+strlen(str+4)));
 #ifdef _UNICODE
@@ -1021,9 +1041,8 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		}
 
 		LOG(("FetchMessageThread Compare the STATUS (%s) to MULTI_SUBSCRIBED", ptr));
-		if (!strcmp(ptr, "MULTI_SUBSCRIBED"))
-			isGroupChat = TRUE;
-		else if (find_chat(gcd.ptszID)) isGroupChat = TRUE;
+		if (!strcmp(ptr, "MULTI_SUBSCRIBED")) isGroupChat = TRUE;
+		if (hChat = find_chat(gcd.ptszID)) isGroupChat = TRUE;
 		free(ptr);
 
 		if (bUseGroupChat) {
@@ -1037,6 +1056,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				HANDLE hContact;
 				CONTACTINFO ci = {0};
 
+				if (!hChat) ChatStart(chat);
 				LOG(("FetchMessageThread This is a group chat message"));
 				gcd.pszModule = SKYPE_PROTONAME;
 				gcd.iType = GC_EVENT_MESSAGE;
@@ -1777,11 +1797,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 							DBWriteContactSettingString(hContact, SKYPE_PROTONAME, "MirVer", "Skype");
 					} else
 					if (!strcmp(ptr, "RICH_MOOD_TEXT")) {
-						if(ptr[15])
-						{
-							SkypeDBWriteContactSettingUTF8String(hContact, "CList", "StatusMsg", ptr+15);
-							DBWriteContactSettingString(hContact, SKYPE_PROTONAME, "MirVer", "Skype 3.0");
-						}
+						DBWriteContactSettingString(hContact, SKYPE_PROTONAME, "MirVer", "Skype 3.0");
 					} else
 					if (!strcmp(ptr, "DISPLAYNAME")) {
 						// Skype Bug? -> If nickname isn't customised in the Skype-App, this won't return anything :-(
@@ -1835,22 +1851,25 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				// Currently we only process these notifications
 				if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseGroupchat", 0)) 
 				{
-					// Throw away old unseen messages to reduce memory-usage
-					if (ptr=strstr(szSkypeMsg, " TOPIC")) {
-						ptr[6]=0;
-						while (testfor(szSkypeMsg, 0));
-						ptr[6]=' ';
-					} else
-					if (ptr=strstr(szSkypeMsg, " MEMBERS")) {					
+					if (ptr=strstr(szSkypeMsg, " MEMBERS")) {
 						LOG(("WndProc AddMembers"));
 						AddMembers (szSkypeMsg);
-					}/*
-					else
-					if (ptr=strstr(szSkypeMsg, " STATUS")) {
-						ptr[7]=0;
-						while (testfor(szSkypeMsg, 0));
-						ptr[7]=' ';
-					} //else break;*/
+					} else 
+					if (ptr=strstr(szSkypeMsg, " FRIENDLYNAME ")) {
+						// Chat session name
+						HANDLE hContact;
+
+						*ptr=0;
+						if (hContact = find_chatA(szSkypeMsg+5))
+						{
+							GCDEST gcdest = {SKYPE_PROTONAME, szSkypeMsg+5, GC_EVENT_CHANGESESSIONAME};
+							GCEVENT gcevent = {sizeof(GCEVENT), &gcdest};
+							gcevent.pszText = ptr+14;
+							CallService(MS_GC_EVENT, 0, (LPARAM)&gcevent);
+							DBWriteContactSettingString (hContact, SKYPE_PROTONAME, "Nick", gcevent.pszText);
+						}
+						*ptr=' ';
+					}
 				}
 			}
 			if (!strncmp(szSkypeMsg, "CALL ",5)) {
