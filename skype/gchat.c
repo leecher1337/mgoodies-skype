@@ -21,6 +21,7 @@
 
 extern HANDLE hInitChat;
 extern HINSTANCE hInst;
+extern char protocol;
 
 static gchat_contacts *chats=NULL;
 static int chatcount=0;
@@ -117,7 +118,7 @@ static int AddChatContact(gchat_contacts *gc, char *who) {
 
 	gce.cbSize = sizeof(GCEVENT);
 	gce.pDest = &gcd;
-	gce.ptszStatus = TranslateT("Others");
+	gce.ptszStatus = _T("USER");		// TODO: Add role support, query role via CHAT MEMBEROBJECTS / ROLE in protocol >=7
 	gce.time = time(NULL);
 	gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
 
@@ -125,6 +126,7 @@ static int AddChatContact(gchat_contacts *gc, char *who) {
 	ci.szProto = SKYPE_PROTONAME;
 	ci.dwFlag = CNF_DISPLAY | CNF_TCHAR;
 	ci.hContact = hContact;
+
 	if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci)) gce.ptszNick=ci.pszVal; 
 	else gce.ptszNick=twho;
         
@@ -177,6 +179,30 @@ HANDLE find_chat(TCHAR *chatname) {
 	}
 	return NULL;
 }
+
+#ifdef _UNICODE
+HANDLE find_chatA(char *chatname) {
+	char *szProto;
+	int tCompareResult;
+	HANDLE hContact;
+	DBVARIANT dbv;
+
+	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
+		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&
+			DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==1)
+		{
+			if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv)) continue;
+            tCompareResult = strcmp(dbv.pszVal, chatname);
+			DBFreeVariant(&dbv);
+			if (tCompareResult) continue;
+			return hContact; // already there, return handle
+		}
+	}
+	return NULL;
+}
+#endif
+
 
 
 int  __cdecl AddMembers(char *szSkypeMsg) {
@@ -311,7 +337,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	GCEVENT gce = {0};
 	GCDEST gcd = {0};
 	DBVARIANT dbv, dbv2;
-	char *szTopic;
+	char *szChatName;
 	int iRet = -1;
 
 	if (!wParam) return -1;
@@ -321,14 +347,14 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	gcw.pszModule = SKYPE_PROTONAME;
 	gcw.dwFlags = GC_TCHAR;
 
-	if (!(szTopic = SkypeGet ("CHAT", (char *)wParam, "TOPIC"))) return -1;
-	if (!szTopic[0]) gcw.ptszName=TranslateT("No Topic"); else {
+	if (!(szChatName = SkypeGet ("CHAT", (char *)wParam, "FRIENDLYNAME")) || !*szChatName)
+		gcw.ptszName=TranslateT("Unknown"); else {
 #ifdef _UNICODE
-		gcw.ptszName=make_unicode_string(szTopic);
-		free (szTopic);
-		szTopic = (char*)gcw.ptszName;
+		gcw.ptszName=make_unicode_string(szChatName);
+		free (szChatName);
+		szChatName = (char*)gcw.ptszName;
 #else
-		gcw.ptszName=szTopic;
+		gcw.ptszName=szChatName;
 #endif
 	}
 #ifdef _UNICODE
@@ -340,19 +366,44 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	gcw.pszStatusbarText = NULL;
 	EnterCriticalSection(&m_GCMutex);
 	if (!CallService(MS_GC_NEWSESSION, 0, (LPARAM)&gcw)) {
+		char *szChatRole;
+
 		gce.cbSize = sizeof(GCEVENT);
 		gcd.pszModule = SKYPE_PROTONAME;
 		gcd.ptszID = (TCHAR*)gcw.ptszID;
 		gcd.iType = GC_EVENT_ADDGROUP;
 		gce.pDest = &gcd;
-		gce.ptszStatus = TranslateT("Me");
+		gce.ptszStatus = _T("CREATOR");
 		gce.dwFlags = GC_TCHAR;
 		// BUG: Groupchat returns nonzero on success here in earlier versions, so we don't check
 		// it here
 		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+		gce.ptszStatus = _T("MASTER");
+		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+		gce.ptszStatus = _T("HELPER");
+		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+		gce.ptszStatus = _T("USER");
+		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+		gce.ptszStatus = _T("LISTENER");
+		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+		gce.ptszStatus = _T("APPLICANT");
+		CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
 
 		gcd.iType = GC_EVENT_JOIN;
-		gce.ptszStatus = TranslateT("Me");
+		gce.ptszStatus = NULL;
+		if (protocol >=7 && (szChatRole = SkypeGet ("CHAT", (char *)wParam, "MYROLE"))) {
+			if (strncmp(szChatRole, "ERROR", 5))
+			{
+#ifdef _UNICODE
+				gce.ptszStatus = make_unicode_string(szChatRole);
+				free (szChatRole);
+#else
+				gce.ptszStatus = szChatRole;
+#endif
+			}
+		}
+		if (!gce.ptszStatus) gce.ptszStatus=_tcsdup(_T("CREATOR"));
+
 		if (!DBGetContactSettingTString(NULL, SKYPE_PROTONAME, "Nick", &dbv)) {
 			if (!DBGetContactSettingTString(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2)) {
 				gce.ptszNick = dbv.ptszVal;
@@ -361,13 +412,6 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 				gce.bIsMe = TRUE;
 				gce.dwFlags |= GCEF_ADDTOLOG;
 				if (!CallServiceSync(MS_GC_EVENT, 0, (LPARAM)&gce)) {
-					gcd.iType = GC_EVENT_ADDGROUP;
-					gce.pDest = &gcd;
-					gce.ptszStatus = TranslateT("Others");
-					// BUG: Groupchat returns nonzero on success here in earlier versions, so we don't check
-					// it here
-					CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
-
 					SkypeSend ("GET CHAT %s MEMBERS", (char *)wParam);
 					gce.cbSize = sizeof(GCEVENT);
 					gcd.iType = GC_EVENT_CONTROL;
@@ -380,9 +424,10 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 			}
 			DBFreeVariant(&dbv2);
 		}
+		free ((void*)gce.ptszStatus);
 		DBFreeVariant(&dbv);
 	}
-	free (szTopic);
+	free (szChatName);
 #ifdef _UNICODE
 	free ((void*)gcw.ptszID);
 #endif

@@ -470,7 +470,7 @@ int SkypeSend(char *szFmt, ...) {
    return __sendMsg(m_szSendBuf);
 }
 
-/* SkypeRcv
+/* SkypeRcvTime
  * 
  * Purpose: Wait, until either the messge "what" is received or maxwait-Time has passed
  *		    or there was an error and return it
@@ -480,18 +480,21 @@ int SkypeSend(char *szFmt, ...) {
  *                    You can tokenize the string by using NULL characters.
  *                    You HAVE TO end the string with a extra \0, otherwise the tokenizer
  *                    will run amok in memory!
+ *			st		- The message timestamp must be newer or equal to st.
+ *					  Set to 0, if you do not need this and want the first message of this 
+ *					  kind in the queue.
  *		    maxwait - Wait this time before returning, if nothing was received,
  *					  can be INFINITE
  * Returns: The received message containing "what" or a ERROR-Message or NULL if 
  *			time is up and nothing was received
  * Warning: Don't forget to free() return value!
  */
-char *SkypeRcv(char *what, DWORD maxwait) {
+char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
     char *msg, *token=NULL;
 	struct MsgQueue *ptr, *ptr_;
 	int j;
 	DWORD dwWaitStat;
-	BOOL bChatMsg = FALSE;
+	BOOL bChatMsg = FALSE, bIsChatMsg = FALSE;
 
 	LOG (("SkypeRcv - Requesting answer: %s", what));
 	if (what) bChatMsg = strncmp(what, "CHATMESSAGE", 11)==0;
@@ -515,14 +518,24 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 					}
 				}
 
-				if (what==NULL || token || 	(what[0] && !strncmp(ptr->message, what, strlen(what))) || 
-					(bChatMsg && !strncmp(ptr->message, what+4, strlen(what+4))) || 
-					(j==1 && !strncmp(ptr->message, "ERROR", 5))) 
+				if ((st == 0 || ptr->tAdded >= st) &&
+					(what==NULL || token || (what[0] && !strncmp(ptr->message, what, strlen(what))) || 
+					(bIsChatMsg = (j==1 && bChatMsg && !strncmp(ptr->message, what+4, strlen(what+4)))) || 
+					(j==1 && !strncmp(ptr->message, "ERROR", 5)))) 
 				{
 					msg=ptr->message;
 					ptr_->next=ptr->next;
 					LOG(("<SkypeRcv: %s", msg));
 					free(ptr);
+					if (bIsChatMsg) {
+						msg=realloc(msg, strlen(msg)+5);
+						memmove (msg+4, msg, strlen(msg)+1);
+						memcpy (msg, "CHAT", 4);
+
+						// This may be a sign that protocol negotiation failed, so we can try to send
+						// our supported protocol version again, just in case... (Skype API bug?)
+						//SkypeSend(SKYPE_PROTO); 
+					}
 					LeaveCriticalSection(&MsgQueueMutex);
 					return msg;
 				}
@@ -540,6 +553,9 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 	InterlockedDecrement ((long *)&receivers);
 	LOG(("<SkypeRcv: (empty)"));	
 	return NULL;
+}
+char *SkypeRcv(char *what, DWORD maxwait) {
+	return SkypeRcvTime(what, 0, maxwait);
 }
 
 char *SkypeRcvMsg(char *what, time_t st, DWORD maxwait) {
@@ -606,12 +622,14 @@ char *SkypeRcvMsg(char *what, time_t st, DWORD maxwait) {
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
   char *str, *ptr;
   int len;
+  time_t st;
 
   str=(char *)_alloca((len=strlen(szWhat)+strlen(szWho)+strlen(szProperty)+(*szWho?2:1))+5);
   sprintf(str, "GET %s%s%s %s", szWhat, *szWho?" ":"", szWho, szProperty);
+  time(&st);
   if (__sendMsg(str)) return NULL;
   if (*szProperty) len++;
-  ptr = SkypeRcv(str+4, INFINITE);
+  ptr = SkypeRcvTime(str+4, st, INFINITE);
   LOG(("SkypeGet - Request %s", str));
   if (ptr && strncmp (ptr, "ERROR", 5)) memmove(ptr, ptr+len, strlen(ptr)-len+1);
   LOG(("SkypeGet - Answer %s", ptr));

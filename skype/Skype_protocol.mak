@@ -108,6 +108,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\skypesvc.obj" \
 	"$(INTDIR)\utf8.obj" \
 	"$(INTDIR)\voiceservice.obj" \
+	"$(INTDIR)\msglist.obj" \
+	"$(INTDIR)\memlist.obj" \
 	"$(INTDIR)\Skript1.res"
 
 ALL : "$(OUTDIR)\skype.dll"
@@ -124,6 +126,8 @@ CLEAN :
 	-@erase "$(INTDIR)\skypeopt.obj"
 	-@erase "$(INTDIR)\skypeprofile.obj"
 	-@erase "$(INTDIR)\skypesvc.obj"
+	-@erase "$(INTDIR)\msglist.obj"
+	-@erase "$(INTDIR)\memlist.obj"
 	-@erase "$(INTDIR)\utf8.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\voiceservice.obj"

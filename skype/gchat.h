@@ -18,6 +18,11 @@ int ChatInit(WPARAM, LPARAM);
 int ChatStart(char*);
 gchat_contacts *GetChat(TCHAR *szChatId);
 HANDLE find_chat(TCHAR *chatname);
+#ifdef _UNICODE
+HANDLE find_chatA(char *chatname);
+#else
+#define find_chatA find_chat
+#endif
 void RemChatContact(gchat_contacts*, HANDLE);
 int AddMembers(char*);
 int GCEventHook (WPARAM, LPARAM);
