@@ -479,7 +479,7 @@ INT_PTR ImportHistory(WPARAM wParam, LPARAM lParam) {
 }
 
 int SearchFriends(void) {
-	char *ptr, *token;
+	char *ptr, *token, *pStat;
 	int iRet = 0;
 	time_t st;
 
@@ -489,11 +489,12 @@ int SearchFriends(void) {
 		if (strncmp(ptr, "ERROR", 5)) {
 			if (ptr+5) {
 				for (token=strtok(ptr+5, ", "); token; token=strtok(NULL, ", ")) {
-					if (SkypeSend("GET USER %s ONLINESTATUS", token)==-1)
+					if (!(pStat = SkypeGet("USER", token, "ONLINESTATUS")))
 					{
 						iRet = -1;
 						break;
 					}
+					free (pStat);
 				}
 			}
 		} else iRet=-1;
@@ -1627,33 +1628,15 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					} 
 
 					if (!strcmp(ptr, "ONLINESTATUS")) {
-						if (SkypeStatus==ID_STATUS_OFFLINE)
+						if (SkypeStatus!=ID_STATUS_OFFLINE)
 						{
-							free (buf);
-							break;
+							DBWriteContactSettingWord(hContact, SKYPE_PROTONAME, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
+							if((WORD)SkypeStatusToMiranda(ptr+13) != ID_STATUS_OFFLINE)
+							{
+								LOG(("WndProc Status is not offline so get user info"));
+								pthread_create(GetInfoThread, hContact);
+							}
 						}
-						DBWriteContactSettingWord(hContact, SKYPE_PROTONAME, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
-						if((WORD)SkypeStatusToMiranda(ptr+13) != ID_STATUS_OFFLINE)
-						{
-							LOG(("WndProc Status is not offline so get user info"));
-							pthread_create(GetInfoThread, hContact);
-						}
-
-							
-	/*						
-							SkypeSend("GET USER %s TIMEZONE", nick);
-							SkypeSend("GET USER %s MOOD_TEXT", nick);
-							SkypeSend("GET USER %s IS_VIDEO_CAPABLE", nick);
-							SkypeSend("GET USER %s AVATAR 1 e:\\skype_%s.jpg", nick, nick);
-	*/
-	/*						free(buf);
-						if (SkypeInitialized==FALSE) { // Prevent flooding on startup
-							SkypeMsgAdd(szSkypeMsg);
-							ReleaseSemaphore(SkypeMsgReceived, receivers, NULL);
-						}
-	*/
-						free (buf);
-						break;
 					}
 
 
@@ -1863,10 +1846,25 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						if (hContact = find_chatA(szSkypeMsg+5))
 						{
 							GCDEST gcdest = {SKYPE_PROTONAME, szSkypeMsg+5, GC_EVENT_CHANGESESSIONAME};
-							GCEVENT gcevent = {sizeof(GCEVENT), &gcdest};
-							gcevent.pszText = ptr+14;
-							CallService(MS_GC_EVENT, 0, (LPARAM)&gcevent);
-							DBWriteContactSettingString (hContact, SKYPE_PROTONAME, "Nick", gcevent.pszText);
+							GCEVENT gcevent = {0};
+
+							gcevent.cbSize = sizeof(GCEVENT);
+							gcevent.pDest = &gcdest;
+#ifdef _UNICODE
+							gcevent.ptszText = make_unicode_string(ptr+14);
+							gcdest.ptszID = make_unicode_string(gcdest.pszID);
+							gcevent.dwFlags = GC_TCHAR;
+#else
+							if (utf8_decode (ptr+14, &gcevent.ptszText) == -1) gcevent.ptszText=NULL;
+#endif
+							if (gcevent.ptszText) {
+								CallService(MS_GC_EVENT, 0, (LPARAM)&gcevent);
+								DBWriteContactSettingTString (hContact, SKYPE_PROTONAME, "Nick", gcevent.ptszText);
+								free((void*)gcevent.ptszText);
+							}
+#ifdef _UNICODE
+							if (gcdest.ptszID) free ((void*)gcdest.ptszID);
+#endif
 						}
 						*ptr=' ';
 					}

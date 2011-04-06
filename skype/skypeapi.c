@@ -57,7 +57,7 @@ status_map status_codes_in[] = { // maps the right string to the left status val
 //status_map 
 
 
-CRITICAL_SECTION MsgQueueMutex, ConnectMutex;
+CRITICAL_SECTION MsgQueueMutex, ConnectMutex, SendMutex;
 BOOL rcvThreadRunning=FALSE; BOOL isConnecting = FALSE;
 SOCKET ClientSocket=INVALID_SOCKET;
 
@@ -262,6 +262,7 @@ int SkypeMsgInit(void) {
 	SkypeMsgs->next=NULL;
 	InitializeCriticalSection(&MsgQueueMutex);
     InitializeCriticalSection(&ConnectMutex);
+	InitializeCriticalSection(&SendMutex);
 	m_szSendBuf = malloc(m_iBufSize=512);
 	return 0;
 }
@@ -325,8 +326,10 @@ void SkypeMsgCleanup(void) {
 	}
 	LeaveCriticalSection(&MsgQueueMutex);
 	LeaveCriticalSection(&ConnectMutex);
+	LeaveCriticalSection(&SendMutex);
 	DeleteCriticalSection(&MsgQueueMutex);
 	DeleteCriticalSection(&ConnectMutex);
+	DeleteCriticalSection(&SendMutex);
 	if (m_szSendBuf)
 	{
 		free (m_szSendBuf);
@@ -356,7 +359,7 @@ char *SkypeMsgGet(void) {
 }
 
 // Message sending routine, for internal use by SkypeSend
-static int __sendMsg(char *szMsg) {
+static int __sendMsgProc(char *szMsg) {
    COPYDATASTRUCT CopyData;
    LRESULT SendResult;
    int oldstatus;
@@ -426,6 +429,15 @@ static int __sendMsg(char *szMsg) {
 //	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
    }
    return 0;
+}
+
+static int __sendMsg(char *szMsg) {
+	int iRet;
+
+	EnterCriticalSection(&SendMutex);
+	iRet = __sendMsgProc(szMsg);
+	LeaveCriticalSection(&SendMutex);
+	return iRet;
 }
 
 
