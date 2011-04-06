@@ -48,6 +48,7 @@ BOOL SkypeInitialized=FALSE, QueryMsgDirection=FALSE, MirandaShuttingDown=FALSE;
 BOOL UseSockets=FALSE, bSkypeOut=FALSE, bProtocolSet=FALSE;
 char skype_path[MAX_PATH], protocol=2, *pszProxyCallout=NULL;
 int SkypeStatus=ID_STATUS_OFFLINE, hSearchThread=-1, receivers=1;
+volatile long sendwatchers = 0;
 UINT ControlAPIAttach, ControlAPIDiscover;
 LONG AttachStatus=-1;
 HINSTANCE hInst;
@@ -153,7 +154,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,49),
+	PLUGIN_MAKE_VERSION(0,0,0,50),
 	"Support for Skype network",
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -1930,7 +1931,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 							pEntry->tEdited = atol(ptr+18);
 						}
 						bFetchMsg = TRUE;
-					} else bFetchMsg = strncmp(ptr, " STATUS RE", 10) == 0;
+					} else bFetchMsg = strncmp(ptr, " STATUS RE", 10) == 0 || 
+						(strncmp(ptr, " STATUS SENT", 12) == 0 && !sendwatchers);
 
 					if (bFetchMsg) {
 						// If new message is available, fetch it
@@ -2394,17 +2396,22 @@ void MessageSendWatchThread(HANDLE hContact) {
 	char *str, *err;
 
 	LOG(("MessageSendWatchThread started."));
-	if (!(str=SkypeRcvMsg("\0MESSAGE\0STATUS SENT\0", time(NULL)-1, DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000))) return;
-	if (err=GetSkypeErrorMsg(str)) {
-		ProtoBroadcastAck(SKYPE_PROTONAME, hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, (HANDLE) 1, (LPARAM)Translate(err));
-		free(err);
+	InterlockedIncrement (&sendwatchers);
+	str=SkypeRcvMsg("\0MESSAGE\0STATUS SENT\0", time(NULL)-1, DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000);
+	InterlockedDecrement (&sendwatchers);
+	if (str)
+	{
+		if (err=GetSkypeErrorMsg(str)) {
+			ProtoBroadcastAck(SKYPE_PROTONAME, hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, (HANDLE) 1, (LPARAM)Translate(err));
+			free(err);
+			free(str);
+			LOG(("MessageSendWatchThread terminated."));
+			return;
+		}
+		ProtoBroadcastAck(SKYPE_PROTONAME, hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE) 1, 0);
 		free(str);
-		LOG(("MessageSendWatchThread terminated."));
-		return;
+		LOG(("MessageSendWatchThread terminated gracefully."));
 	}
-	ProtoBroadcastAck(SKYPE_PROTONAME, hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE) 1, 0);
-	free(str);
-	LOG(("MessageSendWatchThread terminated gracefully."));
 }
 
 INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
