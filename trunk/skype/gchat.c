@@ -4,6 +4,7 @@
 #include "contacts.h"
 #include "debug.h"
 #include "utf8.h"
+#include "pthread.h"
 #include "../../include/m_langpack.h"
 #include "../../include/m_userinfo.h"
 #include "../../include/m_history.h"
@@ -603,6 +604,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 						free (utfmsg);
 						break;
 					}
+					pthread_create(MessageSendWatchThread, find_chat(gch->pDest->ptszID));
 					free (utfmsg);
 
 					// Add our line to the chatlog	
