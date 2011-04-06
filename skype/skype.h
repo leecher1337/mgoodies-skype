@@ -138,6 +138,7 @@ INT_PTR SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeRegisterProxy(WPARAM wParam, LPARAM lParam);
+void MessageSendWatchThread(HANDLE hContact);
 int OkToExit(WPARAM wParam, LPARAM lParam);
 int MirandaExit(WPARAM wParam, LPARAM lParam);
 int __stdcall EnterBitmapFileName( char* szDest );
