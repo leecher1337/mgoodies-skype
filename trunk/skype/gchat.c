@@ -515,6 +515,7 @@ void SetChatTopic (TCHAR *szChatId, TCHAR *szTopic)
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
 	HANDLE hContact = find_chat (szChatId);
+	char *szUTFTopic;
 
 	gce.cbSize = sizeof(GCEVENT);
 	gcd.pszModule = SKYPE_PROTONAME;
@@ -529,7 +530,15 @@ void SetChatTopic (TCHAR *szChatId, TCHAR *szTopic)
 	gcd.iType = GC_EVENT_SETSBTEXT;
 	CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
 
-	SkypeSend ("ALTER CHAT "STR" SETTOPIC "STR, szChatId, szTopic);
+#ifdef _UNICODE
+	szUTFTopic=make_utf8_string(szTopic);
+#else
+	if (utf8_encode(szTopic, &szUTFTopic)==-1) szUTFTopic = NULL;
+#endif
+	if (szUTFTopic) {
+		SkypeSend ("ALTER CHAT "STR" SETTOPIC %s", szChatId, szUTFTopic);
+		free (szUTFTopic);
+	}
 	testfor ("ALTER CHAT SETTOPIC", INFINITE);
 
 	if (hContact)
