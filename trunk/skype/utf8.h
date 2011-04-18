@@ -29,6 +29,16 @@ int utf8_encode(const char *from, char **to);
 int utf8_decode(const char *from, char **to);
 wchar_t *make_unicode_string(const unsigned char *utf8);
 unsigned char *make_utf8_string(const wchar_t *unicode);
+#ifdef _UNICODE
+#define make_tchar_string make_unicode_string
+// Helpers for strings that only can contain 7bit chars to not make unneccessary memory allocation
+#define make_nonutf_tchar_string(x) make_tchar_string(x)
+#define free_nonutf_tchar_string(x) if(x) free(x);
+#else
+char *make_tchar_string(const unsigned char *utf8);
+#define make_nonutf_tchar_string(x) x
+#define free_nonutf_tchar_string(x)
+#endif
 
 #ifdef   __cplusplus
 }

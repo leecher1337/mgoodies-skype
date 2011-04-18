@@ -91,7 +91,6 @@ void UnhookEvents(void)
 	//UnhookEvent(ClistDblClick);
 }
 
-
 INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
     int ret = 0;
     switch (wParam) {        
@@ -101,10 +100,12 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
             break;
 
         case PFLAGNUM_2:
-            ret = PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_INVISIBLE | PF2_HEAVYDND | PF2_FREECHAT; 
+            ret = PF2_ONLINE | PF2_SHORTAWAY | PF2_INVISIBLE | PF2_HEAVYDND; 
 #ifdef MAPDND
 	ret |= PF2_LIGHTDND | PF2_HEAVYDND;
 #endif		
+			if (!DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0))
+				ret |= PF2_LONGAWAY | PF2_FREECHAT;
             break;
 
         case PFLAGNUM_3:

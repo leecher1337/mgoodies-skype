@@ -220,6 +220,14 @@ int utf8_decode(const char *from, char **to)
     return 0;
 }
 
+#ifndef _UNICODE
+char *make_tchar_string(const unsigned char *utf8) {
+	char *ret;
+	if (utf8_decode(utf8, &ret)==-1) return NULL;
+	return ret;
+}
+#endif
+
 #else /* End win32. Rest is for real operating systems */
 
 

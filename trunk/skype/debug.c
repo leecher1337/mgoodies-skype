@@ -2,9 +2,10 @@
 
 #ifdef _DEBUG
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+//#include <windows.h>
 #include <stdio.h>
-#include <time.h>
+//#include <time.h>
+#include "skype.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -61,7 +62,7 @@ void do_log(const char *pszFormat, ...) {
 		  m_iBufSize*=2;
 		}
 	} while (iLen == -1);
-	fprintf (m_fpLogFile, "%s   %s\n", ct, m_szLogBuf);
+	fprintf (m_fpLogFile, "%s (%ld) [%08X]   %s\n", ct, lt, GetCurrentThreadId(), m_szLogBuf);
 	fflush (m_fpLogFile);
 	LeaveCriticalSection(&m_WriteFileMutex);
 }
