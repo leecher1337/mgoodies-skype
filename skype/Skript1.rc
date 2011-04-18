@@ -179,38 +179,44 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
                     IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    14,296,9
+                    15,296,9
     CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
-                    IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,31,
+                    IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,29,
                     296,9
     CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,46,
+                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,43,
                     296,9
     CONTROL         "Use groupchat interface for conversations (requires group chat module)",
                     IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    64,296,9
+                    57,296,9
     CONTROL         "Mark groupchat message as read to avoid notification.",
                     IDC_GROUPCHATREAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,81,296,9
+                    10,71,296,9
     CONTROL         "Keep requested online status on startup under every circumstance",
                     IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    98,296,9
+                    85,296,9
     CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,116,296,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,99,296,9
     CONTROL         "Show default skype avatar for contacts",
                     IDC_SHOWDEFAULTAVATAR,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,150,296,9
+                    WS_TABSTOP,10,127,296,9
     LTEXT           "SkypeOut contacts are in status",IDC_STATIC,11,184,120,
                     8
-    COMBOBOX        IDC_SKYPEOUTSTAT,139,181,79,54,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_SKYPEOUTSTAT,139,183,79,54,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,11,199,80,18,
                     BS_MULTILINE
     CONTROL         "Suppress call summary chat message",
                     IDC_SUPPRESSCALLSUMMARYMESSAGE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,167,296,10
+                    WS_TABSTOP,10,141,296,10
     CONTROL         "Ignore time zones",IDC_IGNTZ,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,9,134,296,9
+                    WS_TABSTOP,10,113,296,9
+    CONTROL         "Disable support for N/A and ""SkypeMe"" status (for Skype4+)",
+                    IDC_NOSKYPE3STATS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,155,296,9
+    CONTROL         "Show Full Name in Contact list instead of Nickname",
+                    IDC_SHOWFULLNAME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,169,296,9
 END
 
 IDD_OPT_POPUP DIALOGEX 0, 0, 313, 230

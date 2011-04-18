@@ -25,6 +25,7 @@ typedef struct {
 struct MsgQueue {
 	char *message;
 	time_t tAdded;
+	time_t tReceived;
 	struct MsgQueue *next;
 };
 
@@ -60,11 +61,16 @@ INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeChatCreate(WPARAM wParam, LPARAM lParam);
 int SkypeSetProfile(char *szProperty, char *szValue);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
+char *SkypeGetID(char *szWhat, char *szWho, char *szProperty);
+char *SkypeGetErr(char *szWhat, char *szWho, char *szProperty);
 #ifdef _UNICODE
 WCHAR *SkypeGetW(char *szWhat, WCHAR *szWho, char *szProperty);
+WCHAR *SkypeGetErrW(char *szWhat, TCHAR *szWho, char *szProperty);
 #define SkypeGetT SkypeGetW
+#define SkypeGetErrT SkypeGetErrW
 #else
 #define SkypeGetT SkypeGet
+#define SkypeGetErrT SkypeGetErr
 #endif
 char *SkypeGetProfile(char *szProperty);
 void SetUserNamePassword();

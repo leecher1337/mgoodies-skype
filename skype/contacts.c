@@ -6,6 +6,7 @@
 #include "skypeapi.h"
 #include "debug.h"
 #include "pthread.h"
+#include "gchat.h"
 #include "voiceservice.h"
 #include "../../include/m_langpack.h"
 
@@ -383,12 +384,20 @@ void logoff_contacts(void) {
 	LOG(("logoff_contacts: Logging off contacts."));
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME) &&	DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0) == 0)
+		if (szProto!=NULL && !strcmp(szProto, SKYPE_PROTONAME))
 		{
 			if (DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE)
 				DBWriteContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE);
 
 			DBDeleteContactSetting(hContact, SKYPE_PROTONAME, "CallId");
+			if (DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==1)
+			{
+				DBVARIANT dbv;
+
+				if (DBGetContactSettingTString(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv)) continue;
+				RemChat (dbv.ptszVal);
+				DBFreeVariant(&dbv);
+			}
 		}
 	}
 }

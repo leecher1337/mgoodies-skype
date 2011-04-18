@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <shlobj.h>
+#include <time.h>
+#include "util.h"
 
 
 // Miranda Includes
@@ -138,6 +140,7 @@ INT_PTR SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeRegisterProxy(WPARAM wParam, LPARAM lParam);
+time_t SkypeTime(time_t *timer);
 void MessageSendWatchThread(HANDLE hContact);
 int OkToExit(WPARAM wParam, LPARAM lParam);
 int MirandaExit(WPARAM wParam, LPARAM lParam);

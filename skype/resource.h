@@ -59,7 +59,9 @@
 #define IDC_HANGUP                      1025
 #define IDC_IGNTZ                       1025
 #define IDC_AVATAR                      1026
+#define IDC_NOSKYPE3STATS               1026
 #define IDC_SETAVATAR                   1027
+#define IDC_SHOWFULLNAME                1027
 #define IDC_DELETEAVATAR                1028
 #define IDC_STARTSKYPE                  1029
 #define IDC_NOTRAY                      1030
@@ -103,7 +105,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        179
+#define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1064
 #define _APS_NEXT_SYMED_VALUE           101

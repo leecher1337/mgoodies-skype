@@ -406,6 +406,8 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			CheckDlgButton(hwndDlg, IDC_IGNTZ, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "IgnoreTimeZones", 0));
 			CheckDlgButton(hwndDlg, IDC_SHOWDEFAULTAVATAR, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "ShowDefaultSkypeAvatar", 0));
 			CheckDlgButton(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", 1));
+			CheckDlgButton(hwndDlg, IDC_NOSKYPE3STATS, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0));
+			CheckDlgButton(hwndDlg, IDC_SHOWFULLNAME, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "ShowFullname", 1));
 
 			if (ServiceExists(MS_GC_NEWSESSION) && (!bProtocolSet || protocol>=5)) {
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseGroupchat", 0));
@@ -450,6 +452,8 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "IgnoreTimeZones", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_IGNTZ), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "ShowDefaultSkypeAvatar", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SHOWDEFAULTAVATAR), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "NoSkype3Stats", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOSKYPE3STATS), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "ShowFullname", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SHOWFULLNAME), BM_GETCHECK,0,0)));
 					return TRUE;
 			}			
 			break; 
