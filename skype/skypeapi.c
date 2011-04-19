@@ -561,7 +561,7 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 	return SkypeRcvTime(what, 0, maxwait);
 }
 
-char *SkypeRcvMsg(char *what, time_t st, DWORD maxwait) {
+char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
     char *msg, *token=NULL, msgid[32]={0}, *pMsg, *pCurMsg;
 	struct MsgQueue *ptr, *ptr_;
 	int iLenWhat = strlen(what);
@@ -602,15 +602,20 @@ char *SkypeRcvMsg(char *what, time_t st, DWORD maxwait) {
 						if (strncmp (pMsg, "STATUS ", 7) == 0) {
 							pMsg+=7;
 							if (strcmp (pMsg, "SENDING") == 0) {
-								// Remove dat shit
-								ptr_->next=ptr->next;
-								free (ptr->message);
-								free (ptr);
-								ptr=ptr_->next;
-								continue;
+								if (DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", 
+									ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE)
+								{
+									// Remove dat shit
+									ptr_->next=ptr->next;
+									free (ptr->message);
+									free (ptr);
+									ptr=ptr_->next;
+									continue;
+								}
 							}
 							bProcess = (strcmp (pMsg, "SENT") == 0 || strcmp (pMsg, "QUEUED") == 0 ||
-								strcmp (pMsg, "FAILED") == 0 || strcmp (pMsg, "IGNORED") == 0);
+								strcmp (pMsg, "FAILED") == 0 || strcmp (pMsg, "IGNORED") == 0 ||
+								strcmp (pMsg, "SENDING") == 0);
 						}
 					}
 				}
@@ -706,7 +711,7 @@ char *SkypeGetErr(char *szWhat, char *szWho, char *szProperty) {
 #ifdef _UNICODE
 WCHAR *SkypeGetErrW(char *szWhat, TCHAR *szWho, char *szProperty) {
 	WCHAR *ret = SkypeGetW(szWhat, szWho, szProperty);
-	if (ret && !_tcscmp(ret, _T("ERROR"), 5)) {
+	if (ret && !_tcsncmp(ret, _T("ERROR"), 5)) {
 		free (ret);
 		return NULL;
 	}
