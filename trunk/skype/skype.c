@@ -167,7 +167,7 @@ PLUGININFOEX pluginInfo = {
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
 	"© 2004-2011 leecher - tweety",
-	"http://dose.0wnz.at - http://developer.berlios.de/projects/mgoodies/",
+	"http://developer.berlios.de/projects/mgoodies/",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 	{ 0xa71f8335, 0x7b87, 0x4432, { 0xb8, 0xa3, 0x81, 0x47, 0x94, 0x31, 0xc6, 0xf5 } } // {A71F8335-7B87-4432-B8A3-81479431C6F5}
@@ -1168,7 +1168,9 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 			} else {	// Older version has to decode either UTF8->ANSI or UTF8->UNICODE
 				// This could be replaced by mir_getUTFI - functions for Miranda 0.5+ builds, but we stay
 				// 0.4 compatible for backwards compatibility. Unfortunately this requires us to link with utf8.c
+#ifdef _UNICODE
 				int wcLen;
+#endif
 
 				if (utf8_decode(msgptr, &msg)==-1) {
 					free(ptr);
@@ -2524,7 +2526,7 @@ void MessageSendWatchThread(msgsendwt_arg *arg) {
 
 	// sendwatchers need to be incremented before starting this thread
 	LOG(("MessageSendWatchThread started."));
-	str=SkypeRcvMsg(arg->szId, SkypeTime(NULL)-1, DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000);
+	str=SkypeRcvMsg(arg->szId, SkypeTime(NULL)-1, arg->hContact, DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000);
 	InterlockedDecrement (&sendwatchers);
 	if (str)
 	{
