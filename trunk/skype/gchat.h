@@ -4,7 +4,10 @@
 #define DWORD_PTR DWORD
 #endif
 
+#pragma warning (push)
+#pragma warning (disable: 4201) // nonstandard extension used : nameless struct/union
 #include "../../include/m_chat.h"
+#pragma warning (pop)
 
 #define MAX_BUF 256    // Buffer for topic-string
 

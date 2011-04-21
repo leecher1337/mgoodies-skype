@@ -2,8 +2,11 @@
 #include "skypeapi.h"
 #include "voiceservice.h"
 #include "sdk/m_voiceservice.h"
-#include "../../include/m_utils.h"
 
+#pragma warning (push)
+#pragma warning (disable: 4100) // unreferenced formal parameter
+#include "../../include/m_utils.h"
+#pragma warning (pop)
 
 HANDLE hVoiceNotify = NULL;
 BOOL has_voice_service = FALSE;
@@ -28,6 +31,9 @@ void NofifyVoiceService(HANDLE hContact, char *callId, int state)
 
 static INT_PTR VoiceGetInfo(WPARAM wParam, LPARAM lParam)
 {
+	UNREFERENCED_PARAMETER(wParam);
+	UNREFERENCED_PARAMETER(lParam);
+
 	return VOICE_SUPPORTED | VOICE_CALL_CONTACT | VOICE_CAN_HOLD;
 }
 
@@ -60,6 +66,8 @@ static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
 
+	UNREFERENCED_PARAMETER(lParam);
+
 	if (!wParam) return -1;
 
 	if (DBGetContactSettingString((HANDLE)wParam, SKYPE_PROTONAME, SKYPE_NAME, &dbv)) 
@@ -74,6 +82,8 @@ static INT_PTR VoiceCall(WPARAM wParam, LPARAM lParam)
 static INT_PTR VoiceAnswer(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
+
+	UNREFERENCED_PARAMETER(lParam);
 
 	if (!wParam) return -1;
 	
@@ -90,6 +100,8 @@ static INT_PTR VoiceDrop(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
 
+	UNREFERENCED_PARAMETER(lParam);
+
 	if (!wParam) return -1;
 
 	if (FindContactByCallId(callId) == NULL)
@@ -103,6 +115,8 @@ static INT_PTR VoiceDrop(WPARAM wParam, LPARAM lParam)
 static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 {
 	char *callId = (char *) wParam;
+
+	UNREFERENCED_PARAMETER(lParam);
 
 	if (!wParam) return -1;
 

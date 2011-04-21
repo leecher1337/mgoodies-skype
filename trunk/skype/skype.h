@@ -20,6 +20,8 @@
 #include <time.h>
 #include "util.h"
 
+#pragma warning (push)
+#pragma warning (disable: 4100) // unreferenced formal parameter
 
 // Miranda Includes
 #include "../../include/newpluginapi.h"
@@ -39,6 +41,8 @@
 #include "../../include/m_avatars.h"
 #include "../../include/m_contacts.h"
 #include "../../include/m_popup.h"
+
+#pragma warning (pop)
 
 // MyDetails defines
 

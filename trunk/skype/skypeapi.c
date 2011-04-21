@@ -2,6 +2,8 @@
  * SkypeAPI - All more or less important functions that deal with Skype
  */
 
+#include <shlwapi.h>
+
 #include "skype.h"
 #include "skypeapi.h"
 #include "utf8.h"
@@ -10,13 +12,18 @@
 #include "skypeproxy.h"
 #include "pthread.h"
 #include "gchat.h"
+#pragma warning (push)
+#pragma warning (disable: 4100) // unreferenced formal parameter
 #include "../../include/m_utils.h"
 #include "../../include/m_langpack.h"
+#pragma warning (push)
 #include "m_toptoolbar.h"
+
+#pragma warning (disable: 4706) // assignment within conditional expression
 
 // Imported Globals
 extern HWND hSkypeWnd, hWnd;
-extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown ;
+extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown;
 extern int SkypeStatus, receivers;
 extern HANDLE SkypeReady, SkypeMsgReceived, httbButton;
 extern UINT ControlAPIAttach, ControlAPIDiscover;
@@ -80,10 +87,11 @@ void rcvThread(char *dummy) {
 
 	if (!UseSockets) return;
 	rcvThreadRunning=TRUE;
+	#pragma warning (suppress: 4127) // conditional expression is constant
 	while (1) {
 		if (ClientSocket==INVALID_SOCKET) {
-			return;
 			rcvThreadRunning=FALSE;
+			return;
 		}
 		LOG(("rcvThread Receiving from socket.."));
 		if ((rcv=recv(ClientSocket, (char *)&length, sizeof(length), 0))==SOCKET_ERROR || rcv==0) {
@@ -474,7 +482,7 @@ int SkypeSend(char *szFmt, ...) {
 
 /* SkypeRcvTime
  * 
- * Purpose: Wait, until either the messge "what" is received or maxwait-Time has passed
+ * Purpose: Wait, until either the message "what" is received or maxwait-Time has passed
  *		    or there was an error and return it
  * Params : what	- Wait for this string-part at the beginning of a received string
  *					  If the first character of the string is NULL, the rest after the NULL
@@ -562,7 +570,7 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 }
 
 char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
-    char *msg, *token=NULL, msgid[32]={0}, *pMsg, *pCurMsg;
+    char *msg, msgid[32]={0}, *pMsg, *pCurMsg;
 	struct MsgQueue *ptr, *ptr_;
 	int iLenWhat = strlen(what);
 	DWORD dwWaitStat;
@@ -687,11 +695,11 @@ char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
 
 #ifdef _UNICODE
 WCHAR *SkypeGetW(char *szWhat, WCHAR *szWho, char *szProperty) {
-	char *ptszWho = make_utf8_string(szWho);
+	char *ptszWho = (char*)make_utf8_string(szWho);
 	char *pRet = SkypeGet (szWhat, ptszWho, szProperty);
 	free (ptszWho);
 	if (pRet) {
-		WCHAR *ptr = make_unicode_string(pRet);
+		WCHAR *ptr = make_unicode_string((const unsigned char*)pRet);
 		free (pRet);
 		return ptr;
 	}
@@ -811,14 +819,14 @@ INT_PTR SkypeCall(WPARAM wParam, LPARAM lParam) {
  *          lParam - Can be NULL
  *
  * Returns: 0 - Success
- *          1 - Failure
+ *          -1 - Failure
  *
  */
 INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
 	char *msg=0;
-	int res;
+	int res = -1;
 
 	if (!DBGetContactSettingString((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
@@ -1102,7 +1110,7 @@ void SkypeOutCallErrorCheck(char *szCallId) {
  */
 INT_PTR SkypeOutCall(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
-	int res;
+	int res = -1;
 
 	if (wParam && !DBGetContactSettingString((HANDLE)wParam, SKYPE_PROTONAME, "CallId", &dbv)) {
 		res=SkypeSend("SET %s STATUS FINISHED", dbv.pszVal);
@@ -1156,14 +1164,14 @@ INT_PTR SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
  *		   -1 - Failure
  */
 INT_PTR SkypeSetNick(WPARAM wParam, LPARAM lParam) {
-	int retval;
+	int retval = -1;
 	char *Nick = NULL;
 	
 	if (wParam & SMNN_UNICODE)
 	{
 		DBWriteContactSettingWString(0, SKYPE_PROTONAME, "Nick", (WCHAR*)lParam);
 		if (AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS &&
-			!(Nick = make_utf8_string((WCHAR*)lParam))) return -1;
+			!(Nick = (char*)make_utf8_string((WCHAR*)lParam))) return -1;
 	}
 	else
 	{
@@ -1205,7 +1213,7 @@ INT_PTR SkypeSetAwayMessageW(WPARAM wParam, LPARAM lParam) {
 	char *Mood = NULL;
 	
 	if (!lParam) lParam=(LPARAM)"";
-	if (!(Mood = make_utf8_string((WCHAR*)lParam))) return -1;
+	if (!(Mood = (char*)make_utf8_string((WCHAR*)lParam))) return -1;
 	DBWriteContactSettingWString(NULL, SKYPE_PROTONAME, "MoodText", (WCHAR*)lParam);
 	 
 	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
@@ -1243,9 +1251,9 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 		return -1;
 
 	ext = &filename[len-4];
-	if (stricmp(ext, ".jpg")==0 || stricmp(ext-1, ".jpeg")==0)
+	if (_stricmp(ext, ".jpg")==0 || _stricmp(ext-1, ".jpeg")==0)
 		ext = "jpg";
-	else if (stricmp(ext, ".png")==0)
+	else if (_stricmp(ext, ".png")==0)
 		ext = "png";
 	else
 		return -2;
@@ -1502,6 +1510,33 @@ int ConnectToSkypeAPI(char *path, BOOL bStart) {
 	return iRet;
 }
 
+void TranslateMirandaRelativePathToAbsolute(LPCSTR cszPath, LPSTR szAbsolutePath, BOOL fQuoteSpaces) {
+	char szMirandaDir[MAX_PATH];
+	const int nMirandaDirSize = sizeof(szMirandaDir)/sizeof(szMirandaDir[0]);
+	LPSTR szFileNameStart;
+
+	if(!PathIsRelativeA(cszPath)) {
+		strcpy(szAbsolutePath, cszPath);
+	}
+	else {
+		GetModuleFileNameA((HINSTANCE)GetModuleHandle(NULL), szMirandaDir, nMirandaDirSize);
+		szFileNameStart = StrRChrA(szMirandaDir, NULL, _T('\\'));
+		if(szFileNameStart != NULL) {
+			*(szFileNameStart+1) = '\0';
+		}
+
+		StrCatBuffA(szMirandaDir, cszPath, nMirandaDirSize);
+
+		PathCanonicalizeA(szAbsolutePath, szMirandaDir);
+	}
+
+	if(fQuoteSpaces){
+		PathQuoteSpacesA(szAbsolutePath);
+	}
+
+	TRACEA(szAbsolutePath);
+}
+
 static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0);
@@ -1509,6 +1544,8 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 	char *args[7], *pFree = NULL;
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:"};
 	const int SkypeDefaults[]={0, 1, 1, 0, 0};
+
+	char szAbsolutePath[MAX_PATH];
 
 	LOG(("ConnectToSkypeAPI started."));
 	if (UseSockets) 
@@ -1600,6 +1637,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 			AttachStatus=SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE;
 			return -1;
 		}
+		#pragma warning (suppress: 4127) // conditional expression is constant
 		while (1) {
 			char *ptr = SkypeRcv ("CONNSTATUS", INFINITE);
 			if (strcmp (ptr+11, "CONNECTING"))
@@ -1653,9 +1691,11 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 								DBVARIANT dbv;
 								if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
 								{
-									size_t paramSize = strlen(SkypeOptions[i]) + strlen(dbv.pszVal);
+									int paramSize;
+									TranslateMirandaRelativePathToAbsolute(dbv.pszVal, szAbsolutePath, TRUE);
+									paramSize = strlen(SkypeOptions[i]) + strlen(szAbsolutePath);
 									pFree = args[j] = malloc(paramSize + 1);
-									sprintf(args[j],"%s%s",SkypeOptions[i],dbv.pszVal);
+									sprintf(args[j],"%s%s",SkypeOptions[i],szAbsolutePath);
 									DBFreeVariant(&dbv);
 								}
 
@@ -1675,17 +1715,12 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 
 						if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"CommandLine",&dbv)) 
 						{
-							args[0] = dbv.pszVal;
+							TranslateMirandaRelativePathToAbsolute(dbv.pszVal, szAbsolutePath, FALSE);
+							args[0] = (LPSTR)szAbsolutePath;
 							LOG(("ConnectToSkypeAPI: Launch skype using command line"));
-							/*for(int i=0;i<j;i++)
-							{
-								if(args[i] != NULL)
-									LOG("ConnectToSkypeAPI", args[i]);
-							}*/
-							pid = *dbv.pszVal?_spawnv(_P_NOWAIT, dbv.pszVal, args):-1;
+							pid = *szAbsolutePath?_spawnv(_P_NOWAIT, szAbsolutePath, args):-1;
 							if (pid == -1)
 							{
-								int i = errno; //EINVAL
 								LOG(("ConnectToSkypeAPI: Failed to launch skype!"));
 							}
 							DBFreeVariant(&dbv);
@@ -1763,6 +1798,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
  */
 int CloseSkypeAPI(char *skypePath)
 {
+	char szAbsolutePath[MAX_PATH];
 
 	if (UseSockets)
 	{
@@ -1779,8 +1815,10 @@ int CloseSkypeAPI(char *skypePath)
 			{
 				// it was crashing when the skype-network-proxy is used (imo2sproxy for imo.im) and skype-path is empty 
 				// now, with the "UseSockets" check and the skypePath[0] != 0 check its fixed
-				if (skypePath != NULL && skypePath[0] != 0)
-					_spawnl(_P_NOWAIT, skypePath, skypePath, "/SHUTDOWN", NULL);
+				if (skypePath != NULL && skypePath[0] != 0) {
+					TranslateMirandaRelativePathToAbsolute(skypePath, szAbsolutePath, FALSE);
+					_spawnl(_P_NOWAIT, szAbsolutePath, szAbsolutePath, "/SHUTDOWN", NULL);
+				}
 			}
 		}
 	}

@@ -1,3 +1,5 @@
+#pragma warning (disable: 4706) // assignment within conditional expression
+
 #include "skypeprofile.h"
 #include "skypeapi.h"
 #include "utf8.h"
@@ -20,8 +22,8 @@ void SkypeProfile_Load(SkypeProfile *pstProf)
 {
 	DBVARIANT dbv;
 
-	pstProf->Sex = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", 0);
-	pstProf->Birthday.wYear = DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", 1900);
+	pstProf->Sex = (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", 0);
+	pstProf->Birthday.wYear = (WORD)DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", 1900);
 	pstProf->Birthday.wMonth = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthMonth", 01);
 	pstProf->Birthday.wDay = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthDay", 01);
 	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Nick",&dbv)) 
@@ -58,8 +60,10 @@ void SkypeProfile_Load(SkypeProfile *pstProf)
 
 static void LoadSaveSkype(SkypeProfile *pstProf, BOOL bSet)
 {
+#pragma warning (push)
+#pragma warning (disable: 4204) // nonstandard extension used : non-constant aggregate initializer
 #define ENTRY(x,y) {x, pstProf->y, sizeof(pstProf->y)/sizeof(pstProf->y[0]), sizeof(pstProf->y[0])}
-	struct {
+	const struct {
 		char *pszSetting;
 		LPVOID lpDest;
 		int iSize;
@@ -72,6 +76,7 @@ static void LoadSaveSkype(SkypeProfile *pstProf, BOOL bSet)
 		ENTRY("CITY", City),
 		ENTRY("PROVINCE", Province)
 	};
+#pragma warning (pop)
 #undef ENTRY
 	char *ptr;
 	int i;
@@ -79,8 +84,8 @@ static void LoadSaveSkype(SkypeProfile *pstProf, BOOL bSet)
 	if (bSet) {
 		char *pBuf, szBirthday[16];
 		for (i=0; i<sizeof(astSettings)/sizeof(astSettings[0]); i++) {
-			if ((astSettings[i].cType == sizeof(char)  && utf8_encode((char*)astSettings[i].lpDest, &pBuf) != -1) ||
-				(astSettings[i].cType == sizeof(WCHAR) && (pBuf = make_utf8_string((WCHAR*)astSettings[i].lpDest)))) {
+			if ((astSettings[i].cType == sizeof(char)  && utf8_encode((const char*)astSettings[i].lpDest, &pBuf) != -1) ||
+				(astSettings[i].cType == sizeof(WCHAR) && (pBuf = (char*)make_utf8_string((const WCHAR*)astSettings[i].lpDest)))) {
 					SkypeSetProfile (astSettings[i].pszSetting, pBuf);
 					free (pBuf);
 			}
@@ -103,7 +108,7 @@ static void LoadSaveSkype(SkypeProfile *pstProf, BOOL bSet)
 					}
 				} else {
 					WCHAR *pBuf;
-					if (pBuf = make_unicode_string(ptr)) {
+					if (pBuf = make_unicode_string((const unsigned char*)ptr)) {
 						wcsncpy ((WCHAR*)astSettings[i].lpDest, pBuf, astSettings[i].iSize);
 						free (pBuf);
 					}

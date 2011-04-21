@@ -36,7 +36,7 @@ unsigned char *make_utf8_string(const wchar_t *unicode);
 #define free_nonutf_tchar_string(x) if(x) free(x);
 #else
 char *make_tchar_string(const unsigned char *utf8);
-#define make_nonutf_tchar_string(x) x
+#define make_nonutf_tchar_string(x) (char*)x
 #define free_nonutf_tchar_string(x)
 #endif
 

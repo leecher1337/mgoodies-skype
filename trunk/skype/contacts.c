@@ -8,10 +8,13 @@
 #include "pthread.h"
 #include "gchat.h"
 #include "voiceservice.h"
+
+#pragma warning (push)
+#pragma warning (disable: 4100) // unreferenced formal parameter
 #include "../../include/m_langpack.h"
+#pragma warning (pop)
 
-// #include <shlwapi.h>
-
+#pragma warning (disable: 4706) // assignment within conditional expression
 
 // Imported Globals
 extern HINSTANCE hInst;
@@ -151,6 +154,8 @@ CLISTMENUITEM ChatInitItem(void) {
 HANDLE add_contextmenu(HANDLE hContact) {
 	CLISTMENUITEM mi;
 	
+	UNREFERENCED_PARAMETER(hContact);
+
 	if (!HasVoiceService()) {
 		mi=CallItem();
 		hMenuCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
@@ -206,6 +211,8 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 	char *szProto;
 	BOOL callAvailable = FALSE;
 	BOOL hangupAvailable = FALSE;
+
+	UNREFERENCED_PARAMETER(lParam);
 
 	if (!(szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0))) return 0;
 

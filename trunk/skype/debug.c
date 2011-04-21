@@ -1,6 +1,8 @@
+#ifndef _DEBUG
+#pragma warning (disable: 4206) // nonstandard extension used : translation unit is empty
+#else
 #include "debug.h"
 
-#ifdef _DEBUG
 #define WIN32_LEAN_AND_MEAN
 //#include <windows.h>
 #include <stdio.h>
@@ -10,6 +12,8 @@
 #include <stdlib.h>
 
 #define INITBUF 1024		/* Initial size of buffer */
+
+#pragma warning (disable: 4706) // assignment within conditional expression
 
 static CRITICAL_SECTION m_WriteFileMutex;
 static FILE *m_fpLogFile = INVALID_HANDLE_VALUE;

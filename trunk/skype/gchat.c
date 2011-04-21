@@ -5,10 +5,14 @@
 #include "debug.h"
 #include "utf8.h"
 #include "pthread.h"
+
+#pragma warning (push)
+#pragma warning (disable: 4100) // unreferenced formal parameter
 #include "../../include/m_langpack.h"
 #include "../../include/m_userinfo.h"
 #include "../../include/m_history.h"
 #include "../../include/m_contacts.h"
+#pragma warning (pop)
 
 #ifndef DWLP_USER
 #define DWLP_USER DWL_USER
@@ -19,6 +23,8 @@
 #else
 #define STR "%s"
 #endif
+
+#pragma warning (disable: 4706) // assignment within conditional expression
 
 extern HANDLE hInitChat;
 extern HINSTANCE hInst;
@@ -115,7 +121,7 @@ static int AddChatContact(gchat_contacts *gc, char *who, TCHAR *pszRole) {
 	if (!(hContact=find_contact(who))) return -1;
 	if ((i=ExistsChatContact(gc, hContact))>=0) return i;
 
-	if (!(twho = make_nonutf_tchar_string(who)))
+	if (!(twho = make_nonutf_tchar_string((const unsigned char*)who)))
 		return -2;
 
 	gcd.pszModule = SKYPE_PROTONAME;
@@ -125,7 +131,7 @@ static int AddChatContact(gchat_contacts *gc, char *who, TCHAR *pszRole) {
 	gce.cbSize = sizeof(GCEVENT);
 	gce.pDest = &gcd;
 	gce.ptszStatus = pszRole?pszRole:_T("USER");
-	gce.time = time(NULL);
+	gce.time = (DWORD)time(NULL);
 	gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
 
 	ci.cbSize = sizeof(ci);
@@ -223,7 +229,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 	if (!(ptr=strstr(szSkypeMsg, " MEMBERS"))) return -1;
 	EnterCriticalSection(&m_GCMutex);
 	ptr[0]=0;
-	szChatId = make_nonutf_tchar_string(szSkypeMsg+5);
+	szChatId = make_nonutf_tchar_string((const unsigned char*)szSkypeMsg+5);
 	ptr+=9;
 	if (find_chat(szChatId) && (gc=GetChat(szChatId)) && 
 		!DBGetContactSettingString(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2))
@@ -239,7 +245,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 					TCHAR *ptszRole = NULL;
 
 					if (pszRole = SkypeGet ("CHATMEMBER", token, "ROLE"))
-						ptszRole = make_nonutf_tchar_string(pszRole);
+						ptszRole = make_nonutf_tchar_string((const unsigned char*)pszRole);
 					i=AddChatContact(gc, who, ptszRole);
 					free_nonutf_tchar_string (ptszRole);
 					if (pszRole) free (pszRole);
@@ -281,7 +287,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 
 			gce.cbSize = sizeof(GCEVENT);
 			gce.pDest = &gcd;
-			gce.time = time(NULL);
+			gce.time = (DWORD)time(NULL);
 			gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
         
 			ci.cbSize = sizeof(ci);
@@ -376,6 +382,8 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	char *szChatName;
 	int iRet = -1;
 
+	UNREFERENCED_PARAMETER(lParam);
+
 	if (!wParam) return -1;
 
 	gcw.cbSize = sizeof(GCSESSION);
@@ -386,14 +394,14 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	if (!(szChatName = SkypeGet ("CHAT", (char *)wParam, "FRIENDLYNAME")) || !*szChatName)
 		gcw.ptszName=TranslateT("Unknown"); else {
 #ifdef _UNICODE
-		gcw.ptszName=make_unicode_string(szChatName);
+		gcw.ptszName=make_unicode_string((const unsigned char*)szChatName);
 		free (szChatName);
 		szChatName = (char*)gcw.ptszName;
 #else
 		gcw.ptszName=szChatName;
 #endif
 	}
-	gcw.ptszID = make_nonutf_tchar_string((char*)wParam);
+	gcw.ptszID = make_nonutf_tchar_string((const unsigned char*)wParam);
 	gcw.pszStatusbarText = NULL;
 	EnterCriticalSection(&m_GCMutex);
 	if (!CallService(MS_GC_NEWSESSION, 0, (LPARAM)&gcw)) {
@@ -426,7 +434,7 @@ int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 			if (strncmp(szChatRole, "ERROR", 5))
 			{
 #ifdef _UNICODE
-				gce.ptszStatus = make_unicode_string(szChatRole);
+				gce.ptszStatus = make_unicode_string((const unsigned char*)szChatRole);
 				free (szChatRole);
 #else
 				gce.ptszStatus = szChatRole;
@@ -558,7 +566,7 @@ static void KickUser (HANDLE hContact, GCHOOK *gch)
 
 				gce.cbSize = sizeof(GCEVENT);
 				gce.pDest = &gcd;
-				gce.time = time(NULL);
+				gce.time = (DWORD)time(NULL);
 				gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
 				gce.ptszUID= gch->ptszUID;
 
@@ -597,7 +605,7 @@ void SetChatTopic (TCHAR *szChatId, TCHAR *szTopic, BOOL bSet)
 	gce.pDest = &gcd;
 	gce.ptszText = szTopic;
 	gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
-	gce.time = time (NULL);
+	gce.time = (DWORD)time (NULL);
 	gce.dwFlags = GC_TCHAR;
 	CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
 	gcd.iType = GC_EVENT_SETSBTEXT;
@@ -605,7 +613,7 @@ void SetChatTopic (TCHAR *szChatId, TCHAR *szTopic, BOOL bSet)
 
 	if (bSet) {
 #ifdef _UNICODE
-		szUTFTopic=make_utf8_string(szTopic);
+		szUTFTopic=(char*)make_utf8_string(szTopic);
 #else
 		if (utf8_encode(szTopic, &szUTFTopic)==-1) szUTFTopic = NULL;
 #endif
@@ -625,8 +633,10 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 	GCHOOK *gch = (GCHOOK*) lParam;
 	gchat_contacts *gc = GetChat(gch->pDest->ptszID);
 
+	UNREFERENCED_PARAMETER(wParam);
+
 	if(gch) {
-		if (!stricmp(gch->pDest->pszModule, SKYPE_PROTONAME)) {
+		if (!_stricmp(gch->pDest->pszModule, SKYPE_PROTONAME)) {
 
 			switch (gch->pDest->iType) {
 			case GC_SESSION_TERMINATE: {
@@ -696,7 +706,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 					else gce.ptszNick = dbv.ptszVal;
 					DBGetContactSettingTString(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2);
 					gce.ptszUID = dbv2.ptszVal;
-					gce.time = time(NULL);
+					gce.time = (DWORD)time(NULL);
 					gce.ptszText = gch->ptszText;
 					gce.dwFlags = GCEF_ADDTOLOG | GC_TCHAR;
 					gce.bIsMe = TRUE;
@@ -777,6 +787,8 @@ int __cdecl  GCMenuHook(WPARAM wParam,LPARAM lParam) {
 		{NULL, 30, MENU_ITEM, FALSE}
 	};
 
+	UNREFERENCED_PARAMETER(wParam);
+
 	Item_log[0].pszDesc  = szInvite;
 	Item_log[1].pszDesc  = szTopic;
 	Item_log[2].pszDesc  = szLeave;
@@ -788,7 +800,7 @@ int __cdecl  GCMenuHook(WPARAM wParam,LPARAM lParam) {
 
 	LOG (("GCMenuHook started."));
 	if(gcmi) {
-		if (!stricmp(gcmi->pszModule, SKYPE_PROTONAME)) {
+		if (!_stricmp(gcmi->pszModule, SKYPE_PROTONAME)) {
 			switch (gcmi->Type)
 			{
 			case MENU_ON_LOG:
@@ -830,6 +842,8 @@ INT_PTR GCOnLeaveChat(WPARAM wParam,LPARAM lParam)
 	HANDLE hContact = (HANDLE)wParam;
 	DBVARIANT dbv;
 
+	UNREFERENCED_PARAMETER(lParam);
+
 	if (DBGetContactSettingTString(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv) == 0)
 	{
 		GCDEST gcd = {0};
@@ -847,6 +861,8 @@ INT_PTR GCOnJoinChat(WPARAM wParam,LPARAM lParam)
 {
 	HANDLE hContact = (HANDLE)wParam;
 	DBVARIANT dbv;
+
+	UNREFERENCED_PARAMETER(lParam);
 
 	if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv) == 0)
 	{

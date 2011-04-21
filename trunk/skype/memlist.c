@@ -3,6 +3,8 @@
 #include <windows.h>
 #include "memlist.h"
 
+#pragma warning (disable: 4706) // assignment within conditional expression
+
 struct _tagLIST
 {
     unsigned int		uiCount;
@@ -195,7 +197,8 @@ BOOL List_BinarySearch(TYP_LIST *hPList,
 		return TRUE;
 	}
 
-	for (;;)
+	#pragma warning (suppress: 4127) // conditional expression is constant
+	while (1)
 	{
 		switch (iEnd-iStart)
 		{
@@ -216,7 +219,7 @@ BOOL List_BinarySearch(TYP_LIST *hPList,
 				LeaveCriticalSection (&hPList->cs);
 				return TRUE;
 			}
-			else if (iRetCompare < 0)
+			if (iRetCompare < 0)
 				iStart = iInd;
 			else
 				iEnd = iInd;
