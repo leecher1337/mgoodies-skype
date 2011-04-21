@@ -93,6 +93,9 @@ void UnhookEvents(void)
 
 INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
     int ret = 0;
+
+	UNREFERENCED_PARAMETER(lParam);
+
     switch (wParam) {        
         case PFLAGNUM_1:
 			ret = PF1_BASICSEARCH | PF1_IM | PF1_MODEMSG; // | PF1_AUTHREQ;
@@ -141,6 +144,8 @@ INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam)
 INT_PTR SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 {
 	UINT id;
+
+	UNREFERENCED_PARAMETER(lParam);
 
 	switch(wParam&0xFFFF) {
 		case PLI_PROTOCOL: id=IDI_SKYPE; break; // IDI_MAIN is the main icon for the protocol

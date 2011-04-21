@@ -65,6 +65,7 @@ unsigned char *make_utf8_string(const wchar_t *unicode)
         if(c < 0x080) {
             out[out_index++] = (unsigned char)c;
         } else if(c < 0x800) {
+			#pragma warning (suppress: 4244) // conversion from 'int' to 'unsigned char', possible loss of data
             out[out_index++] = 0xc0 | (c >> 6);
             out[out_index++] = 0x80 | (c & 0x3f);
         } else {
@@ -168,7 +169,7 @@ int utf8_decode(const char *from, char **to)
 {
     wchar_t *unicode;
     int chars, err;
-	LPCPINFO lpCPInfo;
+//	LPCPINFO lpCPInfo;
    
     /* On NT-based windows systems, we could use MultiByteToWideChar(CP_UTF8), but
      * MS doesn't actually have a consistent API across win32.
@@ -223,7 +224,7 @@ int utf8_decode(const char *from, char **to)
 #ifndef _UNICODE
 char *make_tchar_string(const unsigned char *utf8) {
 	char *ret;
-	if (utf8_decode(utf8, &ret)==-1) return NULL;
+	if (utf8_decode((const char*)utf8, &ret)==-1) return NULL;
 	return ret;
 }
 #endif

@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -18,7 +18,7 @@
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1252)
+#pragma code_page(1251)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -27,238 +27,190 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 IDD_SETAVATAR DIALOGEX 0, 0, 222, 131
-STYLE DS_FIXEDSYS | WS_CHILD
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | 
-                    SS_SUNKEN,9,11,96,96
-    PUSHBUTTON      "Set",IDC_SETAVATAR,9,112,45,13
-    PUSHBUTTON      "Delete",IDC_DELETEAVATAR,61,112,41,13
+    PUSHBUTTON      "Set",IDC_SETAVATAR,10,108,45,13,WS_GROUP
+    PUSHBUTTON      "Delete",IDC_DELETEAVATAR,57,108,45,13
+    CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | SS_SUNKEN | WS_GROUP,10,10,96,93
 END
 
-IDD_OPT_DEFAULT DIALOGEX 0, 0, 310, 228
-STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+IDD_OPT_DEFAULT DIALOGEX 0, 0, 310, 223
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Start Skype with miranda, if it is not running using the following cmdline options:",
-                    IDC_STARTSKYPE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    13,293,11
-    CONTROL         "/NOTRAY - Skype tray icon becomes grey and is therefore ""invisible""",
-                    IDC_NOTRAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,52,
-                    268,11
-    CONTROL         "/NOSPLASH - Don't show Splash screen on startup",
-                    IDC_NOSPLASH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,26,
-                    268,11
+    CONTROL         "Start Skype with Miranda IM using the following command line options:",IDC_STARTSKYPE,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,4,290,10
+    CONTROL         "/NOSPLASH - Don't show splash screen on startup",IDC_NOSPLASH,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,17,264,11
     CONTROL         "/MINIMIZED - Start Skype minimized",IDC_MINIMIZED,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,38,268,12
-    CONTROL         "Shut down Skype when you close Miranda",IDC_SHUTDOWN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,152,296,10
-    CONTROL         "Unload Skype when you change to status ""offline""",
-                    IDC_UNLOADOFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    11,168,296,11
-    LTEXT           "Try at least",IDC_STATIC,10,186,39,8
-    LTEXT           "times to connect to Skype API before giving up",
-                    IDC_STATIC,76,186,231,8
-    EDITTEXT        IDC_CONNATTEMPTS,52,185,19,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Use your custom path",IDC_CUSTOMCOMMAND,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,36,113,268,10
-    EDITTEXT        IDC_COMMANDLINE,47,127,260,12,ES_AUTOHSCROLL
-    CONTROL         "/REMOVEABLE - For running portable skype",
-                    IDC_REMOVEABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,
-                    67,268,11
-    CONTROL         "/DATAPATH - Specify the path for portable skype",
-                    IDC_DATAPATHO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,
-                    81,268,11
-    EDITTEXT        IDC_DATAPATH,47,95,260,12,ES_AUTOHSCROLL
-    LTEXT           "User Name:",IDC_STATIC,11,210,38,8
-    LTEXT           "Password:",IDC_STATIC,149,211,34,8
-    EDITTEXT        IDC_USERNAME,61,209,70,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_PASSWORD,190,209,67,12,ES_PASSWORD | ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,31,264,12
+    CONTROL         "/NOTRAY - Skype tray icon becomes grey and is therefore ""invisible""",IDC_NOTRAY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,46,263,11
+    CONTROL         "/REMOVEABLE - For running portable skype",IDC_REMOVEABLE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,60,264,11
+    CONTROL         "/DATAPATH - Specify Skype data folder*",IDC_DATAPATHO,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,74,264,11
+    EDITTEXT        IDC_DATAPATH,47,88,253,12,ES_AUTOHSCROLL
+    CONTROL         "Use custom Skype executable*",IDC_CUSTOMCOMMAND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,103,264,10
+    EDITTEXT        IDC_COMMANDLINE,47,116,253,12,ES_AUTOHSCROLL
+    CONTROL         "Shutdown Skype when you close Miranda IM",IDC_SHUTDOWN,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,151,290,10
+    CONTROL         "Unload Skype when you change to Offline status",IDC_UNLOADOFFLINE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,164,290,11
+    LTEXT           "Try at least",IDC_STATIC,10,185,39,8
+    EDITTEXT        IDC_CONNATTEMPTS,52,183,19,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "times to connect to Skype API before giving up",IDC_STATIC,76,185,224,8,NOT WS_GROUP
+    LTEXT           "User name:",IDC_STATIC,10,206,38,8
+    EDITTEXT        IDC_USERNAME,52,204,79,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,148,206,34,8
+    EDITTEXT        IDC_PASSWORD,186,204,79,12,ES_PASSWORD | ES_AUTOHSCROLL
+    CTEXT           "* Relative path root is Miranda IM folder",IDC_STATIC,10,136,290,8,NOT WS_GROUP
 END
 
-IDD_DIAL DIALOG DISCARDABLE  0, 0, 146, 52
-STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+IDD_DIAL DIALOGEX 0, 0, 198, 46
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Dial"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "Dial",IDDIAL,16,31,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,77,31,50,14
-    COMBOBOX        IDC_NUMBER,41,7,97,13,CBS_DROPDOWN | WS_VSCROLL | 
-                    WS_TABSTOP
-    LTEXT           "Number:",IDC_STATIC,7,9,32,11
+    LTEXT           "Number:",IDC_STATIC,7,8,30,11
+    COMBOBOX        IDC_NUMBER,41,6,149,13,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "Dial",IDDIAL,88,25,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,141,25,50,14
 END
 
-IDD_CALLSTAT DIALOG DISCARDABLE  0, 0, 214, 69
-STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+IDD_CALLSTAT DIALOGEX 0, 0, 220, 67
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION
 CAPTION "%s is calling"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,49,48,50,14
-    CONTROL         "Join conference with %s",IDC_JOIN,"Button",
-                    BS_AUTORADIOBUTTON,7,7,200,10
-    CONTROL         "Answer call; set call to %s on hold",IDC_HOLD,"Button",
-                    BS_AUTORADIOBUTTON,7,19,200,9
-    CONTROL         "Hang up",IDC_HANGUP,"Button",BS_AUTORADIOBUTTON,7,30,
-                    200,11
+    CONTROL         "Join conference with %s",IDC_JOIN,"Button",BS_AUTORADIOBUTTON | WS_GROUP,7,7,206,10
+    CONTROL         "Answer call; set call to %s on hold",IDC_HOLD,"Button",BS_AUTORADIOBUTTON,7,19,206,10
+    CONTROL         "Hang up",IDC_HANGUP,"Button",BS_AUTORADIOBUTTON,7,31,206,10
+    DEFPUSHBUTTON   "OK",IDOK,163,46,50,14,WS_GROUP
 END
 
-IDD_INPUTBOX DIALOG DISCARDABLE  0, 0, 186, 52
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_INPUTBOX DIALOGEX 0, 0, 221, 46
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Dialog"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    EDITTEXT        IDC_TEXT,7,13,172,13,ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,25,31,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,100,31,50,14
+    EDITTEXT        IDC_TEXT,7,7,207,13,ES_AUTOHSCROLL | WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,112,25,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,165,25,50,14
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 319, 249
-STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
+IDD_OPTIONS DIALOGEX 0, 0, 313, 249
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,0,3,319,246
+    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,0,-1,313,250
 END
 
-IDD_OPT_PROXY DIALOGEX 0, 0, 310, 228
-STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+IDD_OPT_PROXY DIALOGEX 0, 0, 310, 223
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Use Skypeproxy connection over network instead of local Skype API",
-                    IDC_USES2S,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,11,
-                    288,14
-    LTEXT           "Host:",-1,20,29,23,10
-    EDITTEXT        IDC_HOST,48,29,99,12,ES_AUTOHSCROLL
-    LTEXT           "Port:",-1,161,30,24,10
-    EDITTEXT        IDC_PORT,185,30,42,12,ES_AUTOHSCROLL
-    CTEXT           "You must restart Miranda in order to let the settings take effect",
-                    -1,18,64,269,8
-    CONTROL         "This Skypeproxy requires password authentication:",
-                    IDC_REQPASS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,44,
-                    176,15
-    EDITTEXT        IDC_PASSWORD,199,46,54,12,ES_PASSWORD | ES_AUTOHSCROLL | 
-                    NOT WS_BORDER
+    CONTROL         "Use Skype proxy connection over network instead of local Skype API",IDC_USES2S,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,4,290,9
+    LTEXT           "Host:",IDC_STATIC_HOST,20,21,18,10
+    EDITTEXT        IDC_HOST,41,19,133,12,ES_AUTOHSCROLL
+    LTEXT           "Port:",IDC_STATIC_PORT,180,21,16,10,0,WS_EX_RIGHT
+    EDITTEXT        IDC_PORT,200,19,29,12,ES_AUTOHSCROLL | ES_NUMBER
+    CTEXT           "* You must restart Miranda IM in order to let the settings take effect",IDC_STATIC,10,54,290,8,NOT WS_GROUP
+    CONTROL         "This Skype proxy requires password authentication:",IDC_REQPASS,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,20,38,176,9
+    EDITTEXT        IDC_PASSWORD,200,36,82,12,ES_PASSWORD | ES_AUTOHSCROLL
 END
 
 IDD_SETDETAILS DIALOGEX 0, 0, 216, 151
-STYLE DS_FIXEDSYS | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
-BEGIN
-    LTEXT           "Name :",IDC_STATIC,7,6,61,9
-    EDITTEXT        IDC_FULLNAME,73,4,141,12,ES_AUTOHSCROLL
-    LTEXT           "Birthday :",IDC_STATIC,7,20,61,9
-    CONTROL         "DateTimePicker1",IDC_BIRTHDAY,"SysDateTimePick32",
-                    DTS_RIGHTALIGN | DTS_APPCANPARSE | WS_TABSTOP,73,18,62,
-                    12
-    LTEXT           "Sex :",IDC_STATIC,7,34,61,9
-    COMBOBOX        IDC_SEX,73,32,141,12,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
-    LTEXT           "City :",IDC_STATIC,7,48,61,9
-    EDITTEXT        IDC_CITY,73,46,141,12,ES_AUTOHSCROLL
-    LTEXT           "Country",IDC_STATIC,7,62,61,9
-    EDITTEXT        IDC_COUNTRY,73,60,141,12,ES_AUTOHSCROLL
-    LTEXT           "Province :",IDC_STATIC,7,76,61,9
-    EDITTEXT        IDC_PROVINCE,73,74,141,12,ES_AUTOHSCROLL
-    LTEXT           "Home phone :",IDC_STATIC,7,90,61,9
-    EDITTEXT        IDC_HOMEPHONE,73,88,141,12,ES_AUTOHSCROLL
-    LTEXT           "Office phone :",IDC_STATIC,7,104,61,9
-    EDITTEXT        IDC_OFFICEPHONE,73,102,141,12,ES_AUTOHSCROLL
-    LTEXT           "Homepage :",IDC_STATIC,7,118,61,9
-    EDITTEXT        IDC_HOMEPAGE,73,116,141,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "Save",IDC_SAVEDETAILS,169,134,45,14
-END
-
-IDD_OPT_ADVANCED DIALOGEX 0, 0, 310, 228
-STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
-BEGIN
-    CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
-                    IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    15,296,9
-    CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
-                    IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,29,
-                    296,9
-    CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,43,
-                    296,9
-    CONTROL         "Use groupchat interface for conversations (requires group chat module)",
-                    IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    57,296,9
-    CONTROL         "Mark groupchat message as read to avoid notification.",
-                    IDC_GROUPCHATREAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,71,296,9
-    CONTROL         "Keep requested online status on startup under every circumstance",
-                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    85,296,9
-    CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,99,296,9
-    CONTROL         "Show default skype avatar for contacts",
-                    IDC_SHOWDEFAULTAVATAR,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,127,296,9
-    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,11,184,120,
-                    8
-    COMBOBOX        IDC_SKYPEOUTSTAT,139,183,79,54,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,11,199,80,18,
-                    BS_MULTILINE
-    CONTROL         "Suppress call summary chat message",
-                    IDC_SUPPRESSCALLSUMMARYMESSAGE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,141,296,10
-    CONTROL         "Ignore time zones",IDC_IGNTZ,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,113,296,9
-    CONTROL         "Disable support for N/A and ""SkypeMe"" status (for Skype4+)",
-                    IDC_NOSKYPE3STATS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,155,296,9
-    CONTROL         "Show Full Name in Contact list instead of Nickname",
-                    IDC_SHOWFULLNAME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,169,296,9
-END
-
-IDD_OPT_POPUP DIALOGEX 0, 0, 313, 230
-STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Skype Popups",IDC_STATIC,2,0,311,230
-    GROUPBOX        "Incoming Calls",IDC_STATIC,8,18,299,62
-    CONTROL         "Show incoming calls popup",IDC_POPUPINCOMING,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,30,278,8
-    PUSHBUTTON      "Preview",IDC_PREVIEW,263,59,39,12
-    EDITTEXT        IDC_POPUPTIME,18,44,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,42,47,8,8
-    LTEXT           "Popup duration",IDC_STATIC,52,47,82,8
-    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,144,42,
-                    39,12
-    LTEXT           "Background colour",IDC_STATIC,188,44,75,8,
-                    SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,144,56,
-                    39,12
-    LTEXT           "Text colour",IDC_STATIC,188,58,71,8,SS_CENTERIMAGE
-    CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,18,59,
-                    121,8
-    GROUPBOX        "Error Message",IDC_STATIC,8,81,299,62
-    CONTROL         "Display Error Message",IDC_POPUPERROR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,94,278,8
-    PUSHBUTTON      "Preview",IDC_PREVIEWERR,263,123,39,12
-    EDITTEXT        IDC_POPUPTIMEERR,18,108,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,42,110,8,8
-    LTEXT           "Popup duration",IDC_STATIC,52,110,82,8
-    CONTROL         "",IDC_POPUPBACKCOLORERR,"ColourPicker",WS_TABSTOP,144,
-                    105,39,12
-    LTEXT           "Background colour",IDC_STATIC,188,108,75,8,
-                    SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLORERR,"ColourPicker",WS_TABSTOP,144,
-                    120,39,12
-    LTEXT           "Text colour",IDC_STATIC,188,121,71,8,SS_CENTERIMAGE
-    CONTROL         "&Use Windows colours",IDC_USEWINCOLORSERR,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,18,
-                    123,121,8
+    LTEXT           "Name:",IDC_STATIC,7,6,61,9
+    EDITTEXT        IDC_FULLNAME,73,4,141,12,ES_AUTOHSCROLL
+    LTEXT           "Birthday:",IDC_STATIC,7,20,61,9
+    CONTROL         "DateTimePicker1",IDC_BIRTHDAY,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_APPCANPARSE | WS_TABSTOP,73,18,62,12
+    LTEXT           "Sex:",IDC_STATIC,7,34,61,9
+    COMBOBOX        IDC_SEX,73,32,141,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "City:",IDC_STATIC,7,48,61,9
+    EDITTEXT        IDC_CITY,73,46,141,12,ES_AUTOHSCROLL
+    LTEXT           "Country:",IDC_STATIC,7,62,61,9
+    EDITTEXT        IDC_COUNTRY,73,60,141,12,ES_AUTOHSCROLL
+    LTEXT           "Province:",IDC_STATIC,7,76,61,9
+    EDITTEXT        IDC_PROVINCE,73,74,141,12,ES_AUTOHSCROLL
+    LTEXT           "Home phone:",IDC_STATIC,7,90,61,9
+    EDITTEXT        IDC_HOMEPHONE,73,88,141,12,ES_AUTOHSCROLL
+    LTEXT           "Office phone:",IDC_STATIC,7,104,61,9
+    EDITTEXT        IDC_OFFICEPHONE,73,102,141,12,ES_AUTOHSCROLL
+    LTEXT           "Homepage:",IDC_STATIC,7,118,61,9
+    EDITTEXT        IDC_HOMEPAGE,73,116,141,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Save",IDC_SAVEDETAILS,170,134,45,14,WS_GROUP
+END
+
+IDD_OPT_ADVANCED DIALOGEX 0, 0, 310, 223
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "Enable Skype menu options (currently: Find/Add user)",IDC_ENABLEMENU,
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,4,290,9
+    CONTROL         "Use popup plugin for displaying messages ",IDC_USEPOPUP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,19,290,9
+    CONTROL         "Suppress all error messages (not recommended, but if it annoys you... ;)",IDC_NOERRORS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,34,290,9
+    CONTROL         "Use group chat interface for conversations (requires group chat module)",IDC_GROUPCHAT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,49,290,9
+    CONTROL         "Mark group chat message as read to avoid notification",IDC_GROUPCHATREAD,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,64,290,9
+    CONTROL         "Keep requested online status on startup under every circumstance",IDC_KEEPSTATE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,79,290,9
+    CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,94,290,9
+    CONTROL         "Ignore time zones",IDC_IGNTZ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,109,290,9
+    CONTROL         "Show default skype avatar for contacts",IDC_SHOWDEFAULTAVATAR,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,124,290,9
+    CONTROL         "Suppress call summary chat message",IDC_SUPPRESSCALLSUMMARYMESSAGE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,139,290,9
+    CONTROL         "Disable support for N/A and SkypeMe status (for Skype 4+)",IDC_NOSKYPE3STATS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,154,290,9
+    CONTROL         "Show full name in contact list instead of nickname",IDC_SHOWFULLNAME,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,169,290,9
+    LTEXT           "SkypeOut contacts are in status:",IDC_STATIC,10,185,108,8
+    COMBOBOX        IDC_SKYPEOUTSTAT,120,183,79,54,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,9,199,80,14,BS_MULTILINE | WS_GROUP
+END
+
+IDD_OPT_POPUP DIALOGEX 0, 0, 310, 228
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Skype Popups",IDC_STATIC,0,1,309,227
+    GROUPBOX        "Incoming Calls",IDC_STATIC,6,16,297,62,WS_GROUP
+    CONTROL         "Show incoming calls",IDC_POPUPINCOMING,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,28,278,8
+    EDITTEXT        IDC_POPUPTIME,16,41,20,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "seconds",IDC_STATIC,41,43,92,8,NOT WS_GROUP
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_GROUP | WS_TABSTOP,142,40,39,12
+    LTEXT           "Background color",IDC_STATIC,186,42,65,8,SS_CENTERIMAGE | NOT WS_GROUP
+    CONTROL         "Use Windows colors",IDC_USEWINCOLORS,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,16,58,121,8
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,142,55,39,12
+    LTEXT           "Text color",IDC_STATIC,186,56,65,8,SS_CENTERIMAGE | NOT WS_GROUP
+    PUSHBUTTON      "Preview",IDC_PREVIEW,258,57,39,12,WS_GROUP
+    GROUPBOX        "Error Messages",IDC_STATIC,6,81,297,62,WS_GROUP
+    CONTROL         "Display error messages",IDC_POPUPERROR,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,94,278,8
+    EDITTEXT        IDC_POPUPTIMEERR,16,107,20,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "seconds",IDC_STATIC,41,109,92,8,NOT WS_GROUP
+    CONTROL         "",IDC_POPUPBACKCOLORERR,"ColourPicker",WS_GROUP | WS_TABSTOP,142,106,39,12
+    LTEXT           "Background color",IDC_STATIC,186,108,65,8,SS_CENTERIMAGE | NOT WS_GROUP
+    CONTROL         "Use Windows colors",IDC_USEWINCOLORSERR,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,16,124,121,8
+    CONTROL         "",IDC_POPUPTEXTCOLORERR,"ColourPicker",WS_TABSTOP,142,121,39,12
+    LTEXT           "Text color",IDC_STATIC,186,123,65,8,SS_CENTERIMAGE | NOT WS_GROUP
+    PUSHBUTTON      "Preview",IDC_PREVIEWERR,258,123,39,12,WS_GROUP
 END
 
 
@@ -268,49 +220,60 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO MOVEABLE PURE 
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_SETAVATAR, DIALOG
     BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 87
+        LEFTMARGIN, 10
+        RIGHTMARGIN, 212
+        TOPMARGIN, 10
+        BOTTOMMARGIN, 121
+    END
+
+    IDD_OPT_DEFAULT, DIALOG
+    BEGIN
+        LEFTMARGIN, 1
+        VERTGUIDE, 10
+        VERTGUIDE, 300
+        TOPMARGIN, 4
     END
 
     IDD_DIAL, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 138
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 45
+        RIGHTMARGIN, 190
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 39
     END
 
     IDD_CALLSTAT, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 207
+        RIGHTMARGIN, 213
         TOPMARGIN, 7
-        BOTTOMMARGIN, 62
+        BOTTOMMARGIN, 60
     END
 
     IDD_INPUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 179
+        RIGHTMARGIN, 214
         TOPMARGIN, 7
-        BOTTOMMARGIN, 45
+        BOTTOMMARGIN, 39
     END
 
     IDD_OPTIONS, DIALOG
     BEGIN
-        LEFTMARGIN, 2
-        RIGHTMARGIN, 279
+        RIGHTMARGIN, 311
+        BOTTOMMARGIN, 243
     END
 
     IDD_OPT_PROXY, DIALOG
     BEGIN
-        BOTTOMMARGIN, 226
+        LEFTMARGIN, 10
+        RIGHTMARGIN, 300
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 221
     END
 
     IDD_SETDETAILS, DIALOG
@@ -323,23 +286,15 @@ BEGIN
 
     IDD_OPT_ADVANCED, DIALOG
     BEGIN
-        BOTTOMMARGIN, 226
+        LEFTMARGIN, 10
+        RIGHTMARGIN, 300
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 221
+        HORZGUIDE, 4
     END
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Neutral resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Französisch (Belgien) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
-#ifdef _WIN32
-LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
-#pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -348,17 +303,35 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
+IDI_SKYPE               ICON                    "res\\skype.ico"
+IDI_INVITE              ICON                    "res\\Invite.ico"
+IDI_ADD                 ICON                    "res\\add.ico"
+IDI_IMPORT              ICON                    "res\\import.ico"
+IDI_ERRORS              ICON                    "res\\error.ico"
+IDI_MESSAGE             ICON                    "res\\message.ico"
+IDI_CALL                ICON                    "res\\call.ico"
+IDI_CALLSKYPEOUT        ICON                    "res\\skypeout.ico"
+IDI_HOLD                ICON                    "res\\hold.ico"
+IDI_RESUME              ICON                    "res\\resume.ico"
+IDI_HANGUP              ICON                    "res\\hang_up.ico"
+IDI_ONLINE              ICON                    "res\\online.ico"
+IDI_CHAT                ICON                    "res\\chat.ico"
+IDI_AWAY                ICON                    "res\\away.ico"
+IDI_NA                  ICON                    "res\\na.ico"
+IDI_OCCUPIED            ICON                    "res\\occupied.ico"
+IDI_DND                 ICON                    "res\\dnd.ico"
+IDI_INVISIBLE           ICON                    "res\\invisible.ico"
+IDI_OFFLINE             ICON                    "res\\offline.ico"
+IDI_PHONE               ICON                    "res\\phone.ico"
 
-#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,50
- PRODUCTVERSION 0,0,0,50
+ FILEVERSION 0,0,0,51
+ PRODUCTVERSION 0,0,0,51
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -373,18 +346,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "Miranda IM community\0"
-            VALUE "FileDescription", "Skype\0"
-            VALUE "FileVersion", "0, 0, 0, 50\0"
-            VALUE "InternalName", "Skype\0"
-            VALUE "LegalCopyright", "Copyright © 2007-2011 leecher\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "Skype.dll\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "Skype_protocol for Miranda IM\0"
-            VALUE "ProductVersion", "0, 0, 0, 50\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "CompanyName", "Miranda IM community"
+            VALUE "FileDescription", "Skype"
+            VALUE "FileVersion", "0, 0, 0, 51"
+            VALUE "InternalName", "Skype"
+            VALUE "LegalCopyright", "Copyright © 2007-2011 leecher - tweety - jls17"
+            VALUE "OriginalFilename", "Skype.dll"
+            VALUE "ProductName", "Skype Protocol for Miranda IM"
+            VALUE "ProductVersion", "0, 0, 0, 51"
         END
     END
     BLOCK "VarFileInfo"
@@ -393,14 +362,19 @@ BEGIN
     END
 END
 
-#endif    // !_MAC
 
-#endif    // Französisch (Belgien) resources
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_CALL                BITMAP                  "res\\call.bmp"
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Deutsch (Österreich) resources
+// German (Austria) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEA)
 #ifdef _WIN32
@@ -408,51 +382,24 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN_AUSTRIAN
 #pragma code_page(1252)
 #endif //_WIN32
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_SKYPE               ICON    DISCARDABLE     "res\\skype.ico"
-IDI_ADD                 ICON    DISCARDABLE     "res\\add.ico"
-IDI_IMPORT              ICON    DISCARDABLE     "res\\import.ico"
-IDI_ERRORS              ICON    DISCARDABLE     "res\\error.ico"
-IDI_MESSAGE             ICON    DISCARDABLE     "res\\message.ico"
-IDI_CALL                ICON    DISCARDABLE     "res\\call.ico"
-IDI_CALLSKYPEOUT        ICON    DISCARDABLE     "res\\skypeout.ico"
-IDI_HOLD                ICON    DISCARDABLE     "res\\hold.ico"
-IDI_RESUME              ICON    DISCARDABLE     "res\\resume.ico"
-IDI_HANGUP              ICON    DISCARDABLE     "res\\hang_up.ico"
-IDI_ONLINE              ICON    DISCARDABLE     "res\\online.ico"
-IDI_CHAT                ICON    DISCARDABLE     "res\\chat.ico"
-IDI_AWAY                ICON    DISCARDABLE     "res\\away.ico"
-IDI_NA                  ICON    DISCARDABLE     "res\\na.ico"
-IDI_OCCUPIED            ICON    DISCARDABLE     "res\\occupied.ico"
-IDI_DND                 ICON    DISCARDABLE     "res\\dnd.ico"
-IDI_INVISIBLE           ICON    DISCARDABLE     "res\\invisible.ico"
-IDI_OFFLINE             ICON    DISCARDABLE     "res\\offline.ico"
-IDI_PHONE               ICON    DISCARDABLE     "res\\phone.ico"
-
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE MOVEABLE PURE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE MOVEABLE PURE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE MOVEABLE PURE 
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -460,14 +407,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_CALL                BITMAP  MOVEABLE PURE   "res\\call.bmp"
-#endif    // Deutsch (Österreich) resources
+#endif    // German (Austria) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

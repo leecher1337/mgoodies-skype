@@ -7,7 +7,7 @@ char * __cdecl strtok_r (
         )
 {
         unsigned char *str;
-        const unsigned char *ctrl = control;
+        const unsigned char *ctrl = (const unsigned char*)control;
 
         unsigned char map[32];
         int count;
@@ -25,9 +25,9 @@ char * __cdecl strtok_r (
          * pointer (i.e., continue breaking tokens out of the string
          * from the last strtok call) */
         if (string)
-                str = string;
+                str = (unsigned char*)string;
         else
-                str = *nextoken;
+                str = (unsigned char*)(*nextoken);
 
         /* Find beginning of token (skip over leading delimiters). Note that
          * there is no token iff this loop sets str to point to the terminal
@@ -35,7 +35,7 @@ char * __cdecl strtok_r (
         while ( (map[*str >> 3] & (1 << (*str & 7))) && *str )
                 str++;
 
-        string = str;
+        string = (char*)str;
 
         /* Find the end of the token. If it is not the end of the string,
          * put a null there. */
@@ -47,10 +47,10 @@ char * __cdecl strtok_r (
 
         /* Update nextoken (or the corresponding field in the per-thread data
          * structure */
-        *nextoken = str;
+        *nextoken = (char*)str;
 
         /* Determine if a token has been found. */
-        if ( string == str )
+        if ( string == (char*)str )
                 return NULL;
         else
                 return string;
