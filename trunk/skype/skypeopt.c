@@ -481,6 +481,20 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 	return 0;
 }
 
+static int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM lParam,	LPARAM lpData)
+{
+	switch (uMsg)
+	{
+		case BFFM_INITIALIZED:
+		{
+			// set initial directory
+			SendMessage(hWnd, BFFM_SETSELECTION, TRUE, lpData);
+			break;
+		}
+	}
+	return 0;
+}
+
 INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static BOOL initDlg=FALSE;
 	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
@@ -586,6 +600,44 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				case IDC_CUSTOMCOMMAND:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 					break;
+				case IDC_BROWSECMDL:
+				{
+					OPENFILENAMEA ofn={0};
+					char szFileName[MAX_PATH]={0};
+						
+					ofn.lStructSize=sizeof(ofn);
+					ofn.hwndOwner=hwndDlg;
+					ofn.lpstrFilter="Executable files (*.exe)\0*.exe\0All files (*.*)\0*.*\0";
+					ofn.nMaxFile=sizeof(szFileName);
+					ofn.lpstrDefExt="exe";
+					ofn.lpstrFile=szFileName;
+					ofn.Flags=OFN_NOCHANGEDIR;
+					if (!GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,szFileName,sizeof(szFileName)))
+						strcpy (szFileName, "Skype.exe");
+					if (GetOpenFileNameA(&ofn)) 
+						SetWindowTextA(GetDlgItem(hwndDlg, IDC_COMMANDLINE), szFileName);
+					break;
+				}
+				case IDC_BROWSEDP:
+				{
+					BROWSEINFOA bi={0};
+					LPITEMIDLIST pidl;
+					char szFileName[MAX_PATH];
+
+					GetDlgItemTextA (hwndDlg, IDC_DATAPATH, szFileName, MAX_PATH);
+					bi.hwndOwner = hwndDlg;
+					bi.ulFlags   = BIF_RETURNONLYFSDIRS;
+					bi.lpfn      = BrowseCallbackProc;
+					bi.lParam    = (LPARAM)szFileName;
+         
+					if ( (pidl = SHBrowseForFolderA (&bi)) ) {
+						if (SHGetPathFromIDListA (pidl, szFileName))
+							SetDlgItemTextA (hwndDlg, IDC_DATAPATH, szFileName);
+						CoTaskMemFree (pidl);
+					}
+					break;
+				}
+
 #ifdef SKYPE_AUTO_DETECTION
 				case IDC_AUTODETECTION:
 					DoAutoDetect(hwndDlg);

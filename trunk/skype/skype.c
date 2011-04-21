@@ -285,7 +285,7 @@ int ShowMessage(int iconID, TCHAR *lpzText, int mustShow) {
 	else {
 
 		if (mustShow==1) MessageBox(NULL,lpzText,_T("Skype Protocol"), MB_OK | MB_ICONWARNING);
-			return 0;
+		return 0;
 	}
 }
 #ifdef _UNICODE
@@ -746,8 +746,7 @@ void FirstLaunch(char *dummy) {
 	// until it becomes available for receiving messages.
 	// Let's probe this with PINGing
 	LOG(("CheckIfApiIsResponding Entering test loop"));
-	#pragma warning (suppress: 4127) // conditional expression is constant
-	while (1) {
+	for ( ;; ) {
 		LOG(("Test #%d", counter));
 		if (SkypeSend("PING")==-1) counter ++; else break;
 		if (counter>=20) {
@@ -2904,7 +2903,7 @@ void UpgradeName(char *OldName)
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 
-	do {
+	for ( ;; ) {
 		memset(&pdi,0,sizeof(pdi));
 		CallService(MS_DB_CONTACT_ENUMSETTINGS,(WPARAM)hContact,(LPARAM)&cns);
 		// Upgrade Protocol settings to new string
@@ -2933,8 +2932,7 @@ void UpgradeName(char *OldName)
 		}
 		if (!hContact) break;
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
-	#pragma warning (suppress: 4127) // conditional expression is constant
-	} while (1);
+	}
 
 	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "UpgradeDone", (BYTE)1);
 	return;

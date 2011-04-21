@@ -36,7 +36,7 @@ MTL=midl.exe
 RSC=rc.exe
 LINK32=link.exe
 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib comctl32.lib Rpcrt4.lib shlwapi.lib /nologo /dll /pdb:"$(INTDIR)\skype.pdb" /out:"$(OUTDIR)/skype.dll" /implib:"$(INTDIR)\skype.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /pdb:"$(INTDIR)\skype.pdb" /out:"$(OUTDIR)/skype.dll" /implib:"$(INTDIR)\skype.lib" 
 
 !IF  "$(CFG)" == "Win64 Release"
 OUTDIR=.\Release64

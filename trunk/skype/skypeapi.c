@@ -2,8 +2,6 @@
  * SkypeAPI - All more or less important functions that deal with Skype
  */
 
-#include <shlwapi.h>
-
 #include "skype.h"
 #include "skypeapi.h"
 #include "utf8.h"
@@ -87,8 +85,7 @@ void rcvThread(char *dummy) {
 
 	if (!UseSockets) return;
 	rcvThreadRunning=TRUE;
-	#pragma warning (suppress: 4127) // conditional expression is constant
-	while (1) {
+	for ( ;; ) {
 		if (ClientSocket==INVALID_SOCKET) {
 			rcvThreadRunning=FALSE;
 			return;
@@ -1511,27 +1508,12 @@ int ConnectToSkypeAPI(char *path, BOOL bStart) {
 }
 
 void TranslateMirandaRelativePathToAbsolute(LPCSTR cszPath, LPSTR szAbsolutePath, BOOL fQuoteSpaces) {
-	char szMirandaDir[MAX_PATH];
-	const int nMirandaDirSize = sizeof(szMirandaDir)/sizeof(szMirandaDir[0]);
-	LPSTR szFileNameStart;
 
-	if(!PathIsRelativeA(cszPath)) {
-		strcpy(szAbsolutePath, cszPath);
-	}
-	else {
-		GetModuleFileNameA((HINSTANCE)GetModuleHandle(NULL), szMirandaDir, nMirandaDirSize);
-		szFileNameStart = StrRChrA(szMirandaDir, NULL, _T('\\'));
-		if(szFileNameStart != NULL) {
-			*(szFileNameStart+1) = '\0';
-		}
-
-		StrCatBuffA(szMirandaDir, cszPath, nMirandaDirSize);
-
-		PathCanonicalizeA(szAbsolutePath, szMirandaDir);
-	}
-
-	if(fQuoteSpaces){
-		PathQuoteSpacesA(szAbsolutePath);
+	CallService (MS_UTILS_PATHTOABSOLUTE, (WPARAM)cszPath, (LPARAM)szAbsolutePath);
+	if(fQuoteSpaces && strchr((LPCSTR)szAbsolutePath, ' ')){
+		memmove (szAbsolutePath+1, szAbsolutePath, strlen(szAbsolutePath)+1);
+		*szAbsolutePath='"';
+		strcat (szAbsolutePath, "\"");
 	}
 
 	TRACEA(szAbsolutePath);
@@ -1637,8 +1619,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 			AttachStatus=SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE;
 			return -1;
 		}
-		#pragma warning (suppress: 4127) // conditional expression is constant
-		while (1) {
+		for ( ;; ) {
 			char *ptr = SkypeRcv ("CONNSTATUS", INFINITE);
 			if (strcmp (ptr+11, "CONNECTING"))
 			{
