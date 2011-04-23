@@ -1,0 +1,10 @@
+Windows Registry Editor Version 5.00
+
+; [ON] Auto attach to miranda32 process on startup.
+; Works with VS.NET
+; For VC6 specify another debugger.
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\miranda32.exe]
+"Debugger"="vsjitdebugger.exe"
+
+; VS.NET
+;"Debugger"="vsjitdebugger.exe"
