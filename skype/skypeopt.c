@@ -595,6 +595,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				{
 					char text[500];
                     WCHAR wtext[500];
+					char szRelativePath[MAX_PATH];
 
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "StartSkype", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_STARTSKYPE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "nosplash", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOSPLASH), BM_GETCHECK,0,0)));
@@ -606,11 +607,16 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseCustomCommand", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "datapath:", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "removable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
-					GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
-					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "CommandLine", text);
-					GetDlgItemTextA(hwndDlg,IDC_DATAPATH,text,sizeof(text));
-					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "datapath", text);
 
+					GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
+					strncpy(szRelativePath, text, sizeof(szRelativePath)-1);
+					CallService (MS_UTILS_PATHTORELATIVE, (WPARAM)text, (LPARAM)szRelativePath);
+					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "CommandLine", szRelativePath);
+
+					GetDlgItemTextA(hwndDlg,IDC_DATAPATH,text,sizeof(text));
+					strncpy(szRelativePath, text, sizeof(szRelativePath)-1);
+					CallService (MS_UTILS_PATHTORELATIVE, (WPARAM)text, (LPARAM)szRelativePath);
+					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "datapath", szRelativePath);
                    
                     // LoginUserName
                     GetDlgItemTextW(hwndDlg,IDC_USERNAME,wtext,sizeof(wtext)/sizeof(WCHAR));
@@ -643,7 +649,9 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				case IDC_BROWSECMDL:
 				{
 					OPENFILENAMEA ofn={0};
-					char szFileName[MAX_PATH]={0};
+					BOOL gofnResult;
+					char szFileName[MAX_PATH];
+					char szAbsolutePath[MAX_PATH];
 						
 					ofn.lStructSize=sizeof(ofn);
 					ofn.hwndOwner=hwndDlg;
@@ -651,11 +659,20 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					ofn.nMaxFile=sizeof(szFileName);
 					ofn.lpstrDefExt="exe";
 					ofn.lpstrFile=szFileName;
-					ofn.Flags=OFN_NOCHANGEDIR | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
-					if (!GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,szFileName,sizeof(szFileName)))
-						strcpy (szFileName, "Skype.exe");
-					if (GetOpenFileNameA(&ofn)) 
+					ofn.Flags=OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
+
+					GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,szFileName,sizeof(szFileName));
+					TranslateMirandaRelativePathToAbsolute(szFileName, szAbsolutePath, FALSE);
+					strcpy (szFileName, szAbsolutePath);
+
+					if (!(gofnResult = GetOpenFileNameA(&ofn)) && CommDlgExtendedError() == FNERR_INVALIDFILENAME){
+						strcpy(szFileName, "Skype.exe");
+						gofnResult = GetOpenFileNameA(&ofn);
+					}
+
+					if(gofnResult)
 						SetWindowTextA(GetDlgItem(hwndDlg, IDC_COMMANDLINE), szFileName);
+
 					break;
 				}
 				case IDC_BROWSEDP:
