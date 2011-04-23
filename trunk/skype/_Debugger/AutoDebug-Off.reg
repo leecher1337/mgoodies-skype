@@ -1,0 +1,4 @@
+Windows Registry Editor Version 5.00
+
+; [OFF] Auto attach to miranda32 process on startup.
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\miranda32.exe]
