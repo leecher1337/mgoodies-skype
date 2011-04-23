@@ -41,7 +41,6 @@ INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeOutCall(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeHup(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeHoldCall(WPARAM wParam, LPARAM lParam);
-void TranslateMirandaRelativePathToAbsolute(LPCSTR cszPath, LPSTR szAbsolutePath, BOOL fQuoteSpaces);
 void SkypeFlush(void);
 int SkypeStatusToMiranda(char *s);
 char *MirandaStatusToSkype(int id);

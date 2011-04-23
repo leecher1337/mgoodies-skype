@@ -79,7 +79,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -175,7 +175,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -277,7 +277,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -382,7 +382,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -481,7 +481,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -577,7 +577,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -679,7 +679,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -784,7 +784,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -883,7 +883,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -979,7 +979,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -1081,7 +1081,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -1186,7 +1186,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib comctl32.lib shlwapi.lib"
+				AdditionalDependencies="wsock32.lib comctl32.lib"
 				OutputFile="$(OutDir)\skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -2631,11 +2631,11 @@
 				>
 			</File>
 			<File
-				RelativePath="res\call.ico"
+				RelativePath="Call.ico"
 				>
 			</File>
 			<File
-				RelativePath="Call.ico"
+				RelativePath="res\call.ico"
 				>
 			</File>
 			<File

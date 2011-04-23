@@ -197,7 +197,9 @@ BOOL List_BinarySearch(TYP_LIST *hPList,
 		return TRUE;
 	}
 
-	for ( ;; )
+	// Otherwise C4702: unreachable code below
+	#pragma warning (suppress: 4127) // conditional expression is constant
+	while(1)
 	{
 		switch (iEnd-iStart)
 		{

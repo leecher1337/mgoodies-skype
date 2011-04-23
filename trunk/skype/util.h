@@ -3,3 +3,5 @@ char * __cdecl strtok_r (
         const char * control,
 		char **nextoken
         );
+
+void TranslateMirandaRelativePathToAbsolute(LPCSTR cszPath, LPSTR szAbsolutePath, BOOL fQuoteSpaces);

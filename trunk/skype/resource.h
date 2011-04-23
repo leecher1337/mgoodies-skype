@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by Skript1.rc
 //
 #define IDI_SKYPE                       102
@@ -104,6 +104,10 @@
 #define IDC_STATIC_PORT                 1064
 #define IDC_BROWSEDP                    1065
 #define IDC_BROWSECMDL                  1066
+#define IDC_STATIC_POPUPBACKCOLOR       1066
+#define IDC_STATIC_POPUPTEXTCOLOR       1067
+#define IDC_STATIC_POPUPTEXTCOLORERR    1068
+#define IDC_STATIC_POPUPBACKCOLORERR    1069
 
 // Next default values for new objects
 // 
@@ -111,7 +115,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1066
+#define _APS_NEXT_CONTROL_VALUE         1070
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
