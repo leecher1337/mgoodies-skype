@@ -12,6 +12,12 @@
 #include "ezxml/ezxml.c"
 #endif
 
+#ifdef UNICODE
+#include "utf8.h"
+#endif
+
+#pragma warning (disable: 4706) // assignment within conditional expression
+
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char protocol;
@@ -81,12 +87,18 @@ INT_PTR CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 			EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),showPopup);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),showPopup);
+			EnableWindow(GetDlgItem(hwnd,IDC_PREVIEW),showPopup);
 			EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORSERR),showPopupErr);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
 			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIMEERR),showPopupErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_PREVIEWERR),showPopupErr);
 			CheckDlgButton(hwnd, IDC_POPUPINCOMING, (WPARAM) showPopup);
 			CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) popupWindowColor);
 			CheckDlgButton(hwnd, IDC_POPUPERROR, (WPARAM) showPopupErr);
@@ -197,29 +209,39 @@ INT_PTR CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				case IDC_USEWINCOLORS:
 					popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLOR), showPopup && ! popupWindowColor);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLOR), showPopup && ! popupWindowColor);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_POPUPINCOMING:
 					showPopup = (IsDlgButtonChecked(hwnd,IDC_POPUPINCOMING)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),showPopup);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),showPopup);
+					EnableWindow(GetDlgItem(hwnd,IDC_PREVIEW),showPopup);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_USEWINCOLORSERR:
 					popupWindowColorErr = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORSERR)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR), showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLORERR), showPopupErr && ! popupWindowColorErr);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR), showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLORERR), showPopupErr && ! popupWindowColorErr);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_POPUPERROR:
 					showPopupErr = (IsDlgButtonChecked(hwnd,IDC_POPUPERROR)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORSERR),showPopupErr);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_STATIC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIMEERR),showPopupErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_PREVIEWERR),showPopupErr);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}	
@@ -483,12 +505,20 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 
 static int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM lParam,	LPARAM lpData)
 {
+	UNREFERENCED_PARAMETER(lParam);
+
 	switch (uMsg)
 	{
 		case BFFM_INITIALIZED:
 		{
-			// set initial directory
+			// Set initial directory.
+#ifdef UNICODE
+			wchar_t* wszInitFolder = make_unicode_string((const unsigned char*)lpData);
+			SendMessage(hWnd, BFFM_SETSELECTION, TRUE, (LPARAM)wszInitFolder);
+			free(wszInitFolder);
+#else
 			SendMessage(hWnd, BFFM_SETSELECTION, TRUE, lpData);
+#endif
 			break;
 		}
 	}
@@ -516,17 +546,24 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 			CheckDlgButton(hwndDlg, IDC_UNLOADOFFLINE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UnloadOnOffline", 0));
 			
 			CheckDlgButton(hwndDlg, IDC_CUSTOMCOMMAND, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0));
+			SendDlgItemMessage(hwndDlg, IDC_COMMANDLINE, EM_SETLIMITTEXT, MAX_PATH-1, 0L);
 			if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"CommandLine",&dbv)) 
 			{
 				SetWindowTextA(GetDlgItem(hwndDlg, IDC_COMMANDLINE), dbv.pszVal);
 				DBFreeVariant(&dbv);
 			}
+
+			SendDlgItemMessage(hwndDlg, IDC_DATAPATH, EM_SETLIMITTEXT, MAX_PATH-1, 0L);
 			if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
 			{
 				SetWindowTextA(GetDlgItem(hwndDlg, IDC_DATAPATH), dbv.pszVal);
 				DBFreeVariant(&dbv);
 			}
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSECMDL), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSEDP), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 
             // LoginUserName
@@ -543,6 +580,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				DBFreeVariant(&dbv);
 			}
 
+			SendDlgItemMessage(hwndDlg, IDC_CONNATTEMPTS, EM_SETLIMITTEXT, 3, 0L);
 			SetDlgItemInt (hwndDlg, IDC_CONNATTEMPTS, DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "ConnectionAttempts", 10), FALSE);
 			SendMessage(hwndDlg, WM_COMMAND, IDC_STARTSKYPE, 0);
 			initDlg=FALSE;
@@ -596,9 +634,11 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					break;
 				case IDC_DATAPATHO:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSEDP), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 					break;
 				case IDC_CUSTOMCOMMAND:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSECMDL), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 					break;
 				case IDC_BROWSECMDL:
 				{
@@ -611,7 +651,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					ofn.nMaxFile=sizeof(szFileName);
 					ofn.lpstrDefExt="exe";
 					ofn.lpstrFile=szFileName;
-					ofn.Flags=OFN_NOCHANGEDIR;
+					ofn.Flags=OFN_NOCHANGEDIR | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
 					if (!GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,szFileName,sizeof(szFileName)))
 						strcpy (szFileName, "Skype.exe");
 					if (GetOpenFileNameA(&ofn)) 
@@ -623,13 +663,17 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					BROWSEINFOA bi={0};
 					LPITEMIDLIST pidl;
 					char szFileName[MAX_PATH];
+					char szAbsolutePath[MAX_PATH];
 
 					GetDlgItemTextA (hwndDlg, IDC_DATAPATH, szFileName, MAX_PATH);
+
+					TranslateMirandaRelativePathToAbsolute(szFileName, szAbsolutePath, FALSE);
+
 					bi.hwndOwner = hwndDlg;
-					bi.ulFlags   = BIF_RETURNONLYFSDIRS;
+					bi.ulFlags   = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
 					bi.lpfn      = BrowseCallbackProc;
-					bi.lParam    = (LPARAM)szFileName;
-         
+					bi.lParam    = (LPARAM)szAbsolutePath;
+
 					if ( (pidl = SHBrowseForFolderA (&bi)) ) {
 						if (SHGetPathFromIDListA (pidl, szFileName))
 							SetDlgItemTextA (hwndDlg, IDC_DATAPATH, szFileName);
