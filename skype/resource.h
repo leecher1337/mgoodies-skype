@@ -108,6 +108,7 @@
 #define IDC_STATIC_POPUPTEXTCOLOR       1067
 #define IDC_STATIC_POPUPTEXTCOLORERR    1068
 #define IDC_STATIC_POPUPBACKCOLORERR    1069
+#define IDC_STATIC_PATHINFO             1070
 
 // Next default values for new objects
 // 
@@ -115,7 +116,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1070
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

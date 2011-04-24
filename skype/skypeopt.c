@@ -526,16 +526,21 @@ static int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM lParam,	LPAR
 
 INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static BOOL initDlg=FALSE;
-	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
+	static int skypeLaunchControls[]={IDC_NOSPLASH,IDC_MINIMIZED,IDC_NOTRAY,IDC_REMOVEABLE,IDC_DATAPATHO,IDC_CUSTOMCOMMAND,IDC_STATIC_PATHINFO};
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
 		{
 			DBVARIANT dbv;
+			BOOL startSkype;
+			int i;
 
 			initDlg=TRUE;
 			TranslateDialogDefault(hwndDlg);
-			CheckDlgButton(hwndDlg, IDC_STARTSKYPE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "StartSkype", 1));
+
+			startSkype=DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "StartSkype", 1);
+
+			CheckDlgButton(hwndDlg, IDC_STARTSKYPE, (BYTE)startSkype);
 			CheckDlgButton(hwndDlg, IDC_NOSPLASH, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "nosplash", 1));
 			CheckDlgButton(hwndDlg, IDC_MINIMIZED, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "minimized", 1));
 			CheckDlgButton(hwndDlg, IDC_NOTRAY, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "notray", 0));
@@ -559,11 +564,14 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				DBFreeVariant(&dbv);
 			}
 
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSECMDL), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+			for(i=0; i < sizeof(skypeLaunchControls)/sizeof(skypeLaunchControls[0]); i++)
+				EnableWindow(GetDlgItem(hwndDlg, skypeLaunchControls[i]), startSkype);
 
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSEDP), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSECMDL), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSEDP), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 
             // LoginUserName
             if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
@@ -632,7 +640,19 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 		}
 		case WM_COMMAND: {
 			switch (LOWORD(wParam)) {
+				BOOL startSkype;
+				int i;
 				case IDC_STARTSKYPE:
+					startSkype=SendMessage(GetDlgItem(hwndDlg, IDC_STARTSKYPE), BM_GETCHECK,0,0);
+
+					for(i=0; i < sizeof(skypeLaunchControls)/sizeof(skypeLaunchControls[0]); i++)
+						EnableWindow(GetDlgItem(hwndDlg, skypeLaunchControls[i]), startSkype);
+
+					EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSECMDL), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+
+					EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSEDP), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 					break;
 				case IDC_CLEANUP:
 					pthread_create(( pThreadFunc )CleanupNicknames, NULL);
