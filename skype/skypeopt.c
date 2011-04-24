@@ -47,7 +47,7 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.hInstance = hInst;
    odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
    odp.ptszGroup = LPGENT("Network");
-   odp.ptszTitle = LPGENT("Skype");
+   odp.ptszTitle = LPGENT(SKYPE_PROTONAME);
    odp.pfnDlgProc = OptionsDlgProc;
    odp.flags = ODPF_BOLDGROUPS|ODPF_TCHAR;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
@@ -56,7 +56,6 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    {
 	   odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_POPUP);
 	   odp.ptszGroup = LPGENT("Popups");
-	   odp.ptszTitle = LPGENT("Skype");
 	   odp.pfnDlgProc = OptPopupDlgProc;
 	   CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    }
