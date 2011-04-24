@@ -58,7 +58,7 @@ BEGIN
     CONTROL         "Use custom Skype executable*",IDC_CUSTOMCOMMAND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,103,264,10
     EDITTEXT        IDC_COMMANDLINE,47,116,236,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSECMDL,285,115,16,15
-    CTEXT           "* Relative path root is Miranda IM folder",IDC_STATIC,10,136,290,8,NOT WS_GROUP
+    CTEXT           "* Relative path root is Miranda IM folder",IDC_STATIC_PATHINFO,10,136,290,8,NOT WS_GROUP
     CONTROL         "Shutdown Skype when you close Miranda IM",IDC_SHUTDOWN,
                     "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,151,290,10
     CONTROL         "Unload Skype when you change to Offline status",IDC_UNLOADOFFLINE,
