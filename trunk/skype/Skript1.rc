@@ -123,7 +123,7 @@ BEGIN
     EDITTEXT        IDC_HOST,41,19,133,12,ES_AUTOHSCROLL
     LTEXT           "Port:",IDC_STATIC_PORT,180,21,16,10,0,WS_EX_RIGHT
     EDITTEXT        IDC_PORT,200,19,29,12,ES_AUTOHSCROLL | ES_NUMBER
-    CTEXT           "* You must restart Miranda IM in order to let the settings take effect",IDC_STATIC,10,54,290,8,NOT WS_GROUP
+    CTEXT           "* You must restart Miranda IM in order to let the settings take effect",IDC_STATIC_RESTART,10,54,290,8,NOT WS_GROUP
     CONTROL         "This Skype proxy requires password authentication:",IDC_REQPASS,
                     "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,20,38,176,9
     EDITTEXT        IDC_PASSWORD,200,36,82,12,ES_PASSWORD | ES_AUTOHSCROLL
