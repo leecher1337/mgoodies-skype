@@ -41,7 +41,7 @@ STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Start Skype with Miranda IM using the following command line options:",IDC_STARTSKYPE,
+    CONTROL         "Start Skype with Miranda IM if not running using the following command line options:",IDC_STARTSKYPE,
                     "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,4,290,10
     CONTROL         "/NOSPLASH - Don't show splash screen on startup",IDC_NOSPLASH,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,17,264,11
