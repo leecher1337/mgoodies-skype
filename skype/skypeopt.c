@@ -356,7 +356,7 @@ INT_PTR CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 }
 
 INT_PTR CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	const int Skype2SocketControls[]={ IDC_STATIC_HOST, IDC_HOST, IDC_STATIC_PORT, IDC_PORT, IDC_REQPASS, IDC_PASSWORD };
+	const int Skype2SocketControls[]={ IDC_STATIC_HOST, IDC_HOST, IDC_STATIC_PORT, IDC_PORT, IDC_REQPASS, IDC_PASSWORD, IDC_STATIC_RESTART };
 	static BOOL initDlg=FALSE;
 	DBVARIANT dbv;
 	int i;
