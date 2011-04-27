@@ -1,3 +1,4 @@
+#define __SKYPESVC_C__
 #include "skype.h"
 #include "skypesvc.h"
 #include "skypeapi.h"
@@ -5,16 +6,38 @@
 #include "contacts.h"
 #include "m_toptoolbar.h"
 
+// Exports
+SKYPE_SVCNAMES	g_svcNames;
+
 //From skype.c
-extern char protocol;
+extern char protocol, g_szProtoName[];
 extern HINSTANCE hInst;
 extern DWORD mirandaVersion;
 static HANDLE m_hPrebuildCMenu=NULL, m_hStatusHookContact=NULL, m_hContactDeleted=NULL, 
 	m_hHookModulesLoaded=NULL, m_hHookOkToExit=NULL, m_hOptHook=NULL, m_hHookMirandaExit=NULL,
 	m_hTTBModuleLoadedHook = NULL, m_hHookOnUserInfoInit = NULL;
 
+void CreateProtoService(const char* szService, MIRANDASERVICE svc)
+{
+	char str[MAXMODULELABELLENGTH];
+	_snprintf(str, sizeof(str), "%s%s", SKYPE_PROTONAME, szService);
+	CreateServiceFunction(str, svc);
+}
+
+#define CreateServiceName(srvce) _snprintf (g_svcNames.##srvce, sizeof(g_svcNames.##srvce), "%s/"#srvce, SKYPE_PROTONAME);
+
 void CreateServices(void)
 {
+	CreateServiceName(ChatNew);
+	CreateServiceName(SetAvatar);
+	CreateServiceName(SendFile);
+	CreateServiceName(HoldCall);
+	CreateServiceName(AnswerCall);
+	CreateServiceName(ImportHistory);
+	CreateServiceName(AddUser);
+	CreateServiceName(SkypeOutCallUser);
+	CreateServiceName(CallHangupUser);
+	CreateServiceName(CallUser);
 
 	CreateServiceFunction(SKYPE_CALL, SkypeCall);
 	CreateServiceFunction(SKYPE_CALLHANGUP, SkypeCallHangup);
@@ -26,35 +49,36 @@ void CreateServices(void)
 	CreateServiceFunction(SKYPE_SENDFILE, SkypeSendFile);
 	CreateServiceFunction(SKYPE_SETAVATAR, SkypeSetAvatar);
 
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETCAPS, SkypeGetCaps);
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETNAME, SkypeGetName);
-	CreateServiceFunction(SKYPE_PROTONAME PS_LOADICON, SkypeLoadIcon);
-	CreateServiceFunction(SKYPE_PROTONAME PS_SETSTATUS, SkypeSetStatus);
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETSTATUS, SkypeGetStatus);
-	CreateServiceFunction(SKYPE_PROTONAME PS_ADDTOLIST, SkypeAddToList);
-	CreateServiceFunction(SKYPE_PROTONAME PS_ADDTOLISTBYEVENT, SkypeAddToListByEvent);
-	CreateServiceFunction(SKYPE_PROTONAME PS_BASICSEARCH, SkypeBasicSearch);
+	CreateProtoService(PS_GETCAPS, SkypeGetCaps);
+	CreateProtoService(PS_GETNAME, SkypeGetName);
+	CreateProtoService(PS_LOADICON, SkypeLoadIcon);
+	CreateProtoService(PS_SETSTATUS, SkypeSetStatus);
+	CreateProtoService(PS_GETSTATUS, SkypeGetStatus);
+	CreateProtoService(PS_ADDTOLIST, SkypeAddToList);
+	CreateProtoService(PS_ADDTOLISTBYEVENT, SkypeAddToListByEvent);
+	CreateProtoService(PS_BASICSEARCH, SkypeBasicSearch);
 
-	CreateServiceFunction(SKYPE_PROTONAME PSS_GETINFO, SkypeGetInfo);
-	CreateServiceFunction(SKYPE_PROTONAME PSS_MESSAGE, SkypeSendMessage);
-	CreateServiceFunction(SKYPE_PROTONAME PSR_MESSAGE, SkypeRecvMessage);
-	CreateServiceFunction(SKYPE_PROTONAME PSS_AUTHREQUEST, SkypeSendAuthRequest);
-	CreateServiceFunction(SKYPE_PROTONAME PSR_AUTH, SkypeRecvAuth);
-	CreateServiceFunction(SKYPE_PROTONAME PS_AUTHALLOW, SkypeAuthAllow);
-	CreateServiceFunction(SKYPE_PROTONAME PS_AUTHDENY, SkypeAuthDeny);
+	CreateProtoService(PSS_GETINFO, SkypeGetInfo);
+	CreateProtoService(PSS_MESSAGE, SkypeSendMessage);
+	CreateProtoService(PSR_MESSAGE, SkypeRecvMessage);
+	CreateProtoService(PSS_USERISTYPING, SkypeUserIsTyping);
+	CreateProtoService(PSS_AUTHREQUEST, SkypeSendAuthRequest);
+	CreateProtoService(PSR_AUTH, SkypeRecvAuth);
+	CreateProtoService(PS_AUTHALLOW, SkypeAuthAllow);
+	CreateProtoService(PS_AUTHDENY, SkypeAuthDeny);
 
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETAVATARINFO, SkypeGetAvatarInfo);
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETAVATARCAPS, SkypeGetAvatarCaps);
-	CreateServiceFunction(SKYPE_PROTONAME PS_GETMYAVATAR, SkypeGetAvatar);
-	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYAVATAR, SkypeSetAvatar);
+	CreateProtoService(PS_GETAVATARINFO, SkypeGetAvatarInfo);
+	CreateProtoService(PS_GETAVATARCAPS, SkypeGetAvatarCaps);
+	CreateProtoService(PS_GETMYAVATAR, SkypeGetAvatar);
+	CreateProtoService(PS_SETMYAVATAR, SkypeSetAvatar);
 
-	CreateServiceFunction(SKYPE_PROTONAME PS_SETAWAYMSG, SkypeSetAwayMessage);
-	CreateServiceFunction(SKYPE_PROTONAME PS_SETAWAYMSGW, SkypeSetAwayMessageW);
-	CreateServiceFunction(SKYPE_PROTONAME PSS_GETAWAYMSG, SkypeGetAwayMessage);
-	CreateServiceFunction(SKYPE_PROTONAME PS_SETMYNICKNAME, SkypeSetNick);
+	CreateProtoService(PS_SETAWAYMSG, SkypeSetAwayMessage);
+	CreateProtoService(PS_SETAWAYMSGW, SkypeSetAwayMessageW);
+	CreateProtoService(PSS_GETAWAYMSG, SkypeGetAwayMessage);
+	CreateProtoService(PS_SETMYNICKNAME, SkypeSetNick);
 
-	CreateServiceFunction(SKYPE_PROTONAME PSS_SKYPEAPIMSG, SkypeReceivedAPIMessage);
-	CreateServiceFunction(SKYPE_PROTONAME SKYPE_REGPROXY, SkypeRegisterProxy);
+	CreateProtoService(PSS_SKYPEAPIMSG, SkypeReceivedAPIMessage);
+	CreateProtoService(SKYPE_REGPROXY, SkypeRegisterProxy);
 }
 
 void HookEvents(void)
@@ -116,7 +140,7 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
             break;
             
         case PFLAGNUM_4:
-            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS;
+            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS | PF4_SUPPORTTYPING /* Not really, but libgaim compat. */;
 			if (mirandaVersion >= 0x070000) ret |= PF4_IMSENDUTF;
             break;
         case PFLAG_UNIQUEIDTEXT:

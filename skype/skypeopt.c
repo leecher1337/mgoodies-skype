@@ -20,7 +20,7 @@
 
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
-extern char protocol;
+extern char protocol, g_szProtoName[];
 extern BOOL SkypeInitialized, bProtocolSet;
 extern DWORD mirandaVersion;
 
@@ -46,16 +46,16 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.cbSize = sizeof(odp);
    odp.hInstance = hInst;
    odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
-   odp.ptszGroup = LPGENT("Network");
-   odp.ptszTitle = LPGENT(SKYPE_PROTONAME);
+   odp.pszGroup = "Network";
+   odp.pszTitle = SKYPE_PROTONAME;
    odp.pfnDlgProc = OptionsDlgProc;
-   odp.flags = ODPF_BOLDGROUPS|ODPF_TCHAR;
+   odp.flags = ODPF_BOLDGROUPS;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 
    if(PopupServiceExists)
    {
 	   odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_POPUP);
-	   odp.ptszGroup = LPGENT("Popups");
+	   odp.pszGroup = "Popups";
 	   odp.pfnDlgProc = OptPopupDlgProc;
 	   CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    }

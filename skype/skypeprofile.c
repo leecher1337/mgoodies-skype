@@ -4,6 +4,8 @@
 #include "skypeapi.h"
 #include "utf8.h"
 
+extern char g_szProtoName[];
+
 void SkypeProfile_Save(SkypeProfile *pstProf)
 {
 	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", pstProf->Sex);

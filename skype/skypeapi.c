@@ -20,8 +20,8 @@
 #pragma warning (disable: 4706) // assignment within conditional expression
 
 // Imported Globals
-extern HWND hSkypeWnd, hWnd;
-extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown;
+extern HWND hSkypeWnd, g_hWnd;
+extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown, bIsImoproxy;
 extern int SkypeStatus, receivers;
 extern HANDLE SkypeReady, SkypeMsgReceived, httbButton;
 extern UINT ControlAPIAttach, ControlAPIDiscover;
@@ -29,7 +29,7 @@ extern LONG AttachStatus;
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern HANDLE hProtocolAvatarsFolder, hHookSkypeApiRcv;
-extern char DefaultAvatarsFolder[MAX_PATH+1], *pszProxyCallout, protocol;
+extern char DefaultAvatarsFolder[MAX_PATH+1], *pszProxyCallout, protocol, g_szProtoName[];
 
 // -> Skype Message Queue functions //
 
@@ -70,7 +70,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart);
  * Returns: Result from SendMessage
  */
 INT_PTR SkypeReceivedAPIMessage(WPARAM wParam, LPARAM lParam) {
-	return SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, lParam);
+	return SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, lParam);
 }
 
 /*
@@ -111,7 +111,7 @@ void rcvThread(char *dummy) {
 		CopyData.dwData=0; 
 		CopyData.lpData=buf; 
 		CopyData.cbData=(DWORD)strlen(buf)+1;
-		if (!SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
+		if (!SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
 		{
 			LOG(("SendMessage failed: %08X", GetLastError()));
 		}
@@ -372,7 +372,7 @@ static int __sendMsgProc(char *szMsg) {
 		 CopyData.dwData=0; 
 		 CopyData.lpData=buf; 
 		 CopyData.cbData=(DWORD)strlen(buf)+1;
-		 SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
+		 SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
 		 return 0;
 	   } else
 	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
@@ -392,7 +392,7 @@ static int __sendMsgProc(char *szMsg) {
 	   {
 		   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
 	   }
-	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData);
+	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
        LOG(("SkypeSend: SendMessage returned %d", SendResult));
    }
    if (!SendResult) 
@@ -400,11 +400,11 @@ static int __sendMsgProc(char *szMsg) {
 	  SkypeInitialized=FALSE;
       AttachStatus=-1;
 	  ResetEvent(SkypeReady);
-	  if (hWnd) KillTimer (hWnd, 1);
+	  if (g_hWnd) KillTimer (g_hWnd, 1);
   	  if (SkypeStatus!=ID_STATUS_OFFLINE) 
 	  {
 		// Go offline
-		logoff_contacts();
+		logoff_contacts(FALSE);
 		oldstatus=SkypeStatus;
 		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
 		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
@@ -417,11 +417,11 @@ static int __sendMsgProc(char *szMsg) {
 		  	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
 			   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) return -1;
 		  } else
-			if (!SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData)) return -1;
+			if (!SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData)) return -1;
 		  pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 	  } else return -1;
 
-//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
    }
    return 0;
 }
@@ -1640,8 +1640,8 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 			('SkypeControlAPIDiscover') to all windows in the system, specifying its own
 			window handle in wParam parameter.
 		 */
-		LOG(("ConnectToSkypeAPI sending discover message.. hWnd=%08X", (long)hWnd));
-		retval=SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+		LOG(("ConnectToSkypeAPI sending discover message.. hWnd=%08X", (long)g_hWnd));
+		retval=SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
 		LOG(("ConnectToSkypeAPI sent discover message returning %d", retval));
 
 		/*	In response, Skype responds with
@@ -1653,7 +1653,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart) {
 		*/
 		if (WaitForSingleObject(SkypeReady, 3000)==WAIT_TIMEOUT && AttachStatus!=SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) 
 		{
-			if (hWnd==NULL) 
+			if (g_hWnd==NULL) 
 			{
 				LOG(("ConnectToSkypeAPI: hWnd of SkypeDispatchWindow not yet set.."));
 				continue;
@@ -1781,6 +1781,7 @@ int CloseSkypeAPI(char *skypePath)
 {
 	char szAbsolutePath[MAX_PATH];
 
+	logoff_contacts(TRUE);
 	if (UseSockets)
 	{
 		if (ClientSocket != INVALID_SOCKET)
@@ -1803,11 +1804,10 @@ int CloseSkypeAPI(char *skypePath)
 			}
 		}
 	}
-	logoff_contacts();
 	SkypeInitialized=FALSE;
 	ResetEvent(SkypeReady);
 	AttachStatus=-1;
-	if (hWnd) KillTimer (hWnd, 1);
+	if (g_hWnd) KillTimer (g_hWnd, 1);
 	return 0;
 }
 /* ConnectToSkypeAPI

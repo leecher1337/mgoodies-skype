@@ -5,6 +5,7 @@
 #include <time.h>
 #include "resource.h"
 
+void CreateProtoService(const char* szService, MIRANDASERVICE svc);
 void HookEvents(void);
 void HookEventsLoaded(void);
 void UnhookEvents(void);

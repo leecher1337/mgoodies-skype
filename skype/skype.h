@@ -71,7 +71,7 @@
 // Program defines
 #define SKYPE_NAME		"Username"
 #define SKYPE_PROTO		"PROTOCOL 7"
-#define SKYPE_PROTONAME	"SKYPE"	// former pszSkypeProtoName, name of our protocol
+#define SKYPE_PROTONAME	g_szProtoName	// Name of our protocol, taken from .DLL name
 #define MAX_MSGS		128		// Maximum messages in queue
 #define MAX_USERLEN     32      // Maximum length of a username in Skype
 #define PING_INTERVAL	10000	// Ping every 10000 msec to see if Skype is still available
@@ -81,18 +81,33 @@
 #define SKYPEBUG_OFFLN	1		// Activate fix for the SkypeAPI Offline-Bug
 
 // Program hooks
-
-#define SKYPE_CALL "Skype_protocol/CallUser"
-#define SKYPE_CALLHANGUP "Skype_protocol/CallHangupUser"
-#define SKYPEOUT_CALL "Skype_protocol/SkypeOutCallUser"
-#define SKYPE_ADDUSER "Skype_Protocol/AddUser"
-#define SKYPE_IMPORTHISTORY "Skype_Protocol/ImportHistory"
-#define SKYPE_ANSWERCALL "Skype_protocol/AnswerCall"
-#define SKYPE_HOLDCALL "Skype_protocol/HoldCall"
-#define SKYPE_SENDFILE "Skype_protocol/SendFile"
-#define SKYPE_SETAVATAR "Skype_protocol/SetAvatar"
-#define SKYPE_CHATNEW "Skype_protocol/ChatNew"
+typedef struct {
+	char	ChatNew[MAXMODULELABELLENGTH];
+	char	SetAvatar[MAXMODULELABELLENGTH];
+	char	SendFile[MAXMODULELABELLENGTH];
+	char	HoldCall[MAXMODULELABELLENGTH];
+	char	AnswerCall[MAXMODULELABELLENGTH];
+	char	ImportHistory[MAXMODULELABELLENGTH];
+	char	AddUser[MAXMODULELABELLENGTH];
+	char	SkypeOutCallUser[MAXMODULELABELLENGTH];
+	char	CallHangupUser[MAXMODULELABELLENGTH];
+	char	CallUser[MAXMODULELABELLENGTH];
+} SKYPE_SVCNAMES;
+#define SKYPE_CALL g_svcNames.CallUser
+#define SKYPE_CALLHANGUP g_svcNames.CallHangupUser
+#define SKYPEOUT_CALL g_svcNames.SkypeOutCallUser
+#define SKYPE_ADDUSER g_svcNames.AddUser
+#define SKYPE_IMPORTHISTORY g_svcNames.ImportHistory
+#define SKYPE_ANSWERCALL g_svcNames.AnswerCall
+#define SKYPE_HOLDCALL g_svcNames.HoldCall
+#define SKYPE_SENDFILE g_svcNames.SendFile
+#define SKYPE_SETAVATAR g_svcNames.SetAvatar
+#define SKYPE_CHATNEW g_svcNames.ChatNew
 #define EVENTTYPE_CALL 2000
+
+#ifndef __SKYPESVC_C__
+extern SKYPE_SVCNAMES g_svcNames;
+#endif
 
 // Skype API Communication services
 #define PSS_SKYPEAPIMSG	"/SendSkypeAPIMsg"
@@ -138,6 +153,7 @@ INT_PTR SkypeAddToList(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeBasicSearch(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeRecvMessage(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeUserIsTyping(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeRecvAuth(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAuthAllow(WPARAM wParam, LPARAM lParam);

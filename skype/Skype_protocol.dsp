@@ -175,6 +175,10 @@ SOURCE=.\utf8.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\util.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\voiceservice.c
 # End Source File
 # End Group
@@ -236,6 +240,10 @@ SOURCE=.\skypesvc.h
 # Begin Source File
 
 SOURCE=.\utf8.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\util.h
 # End Source File
 # Begin Source File
 
