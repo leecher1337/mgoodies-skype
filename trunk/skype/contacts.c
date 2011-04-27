@@ -18,8 +18,8 @@
 
 // Imported Globals
 extern HINSTANCE hInst;
-extern BOOL bSkypeOut;
-extern char protocol;
+extern BOOL bSkypeOut, bIsImoproxy;
+extern char protocol, g_szProtoName[];
 
 // Handles
 static HANDLE hMenuCallItem, hMenuCallHangup, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem;
@@ -384,9 +384,10 @@ HANDLE add_contact(char *name, DWORD flags) {
 	return hContact;
 }
 
-void logoff_contacts(void) {
+void logoff_contacts(BOOL bCleanup) {
 	HANDLE hContact;
 	char *szProto;
+	DBVARIANT dbv={0};
 
 	LOG(("logoff_contacts: Logging off contacts."));
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
@@ -399,12 +400,18 @@ void logoff_contacts(void) {
 			DBDeleteContactSetting(hContact, SKYPE_PROTONAME, "CallId");
 			if (DBGetContactSettingByte(hContact, SKYPE_PROTONAME, "ChatRoom", 0)==1)
 			{
-				DBVARIANT dbv;
-
 				if (DBGetContactSettingTString(hContact, SKYPE_PROTONAME, "ChatRoomID", &dbv)) continue;
 				RemChat (dbv.ptszVal);
 				DBFreeVariant(&dbv);
 			}
+			if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, "Typing_Stream", &dbv) == 0)
+			{
+				if (bCleanup) SkypeSend ("ALTER APPLICATION libpurple_typing DISCONNECT %s", dbv.pszVal);
+				DBFreeVariant(&dbv);
+				DBDeleteContactSetting(hContact, SKYPE_PROTONAME, "Typing_Stream");
+			}
+
 		}
 	}
+	if (bCleanup && (protocol>=5 || bIsImoproxy)) SkypeSend ("DELETE APPLICATION libpurple_typing");
 }

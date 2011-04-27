@@ -15,6 +15,8 @@
 
 #pragma warning (disable: 4706) // assignment within conditional expression
 
+extern char g_szProtoName[];
+
 static CRITICAL_SECTION m_WriteFileMutex;
 static FILE *m_fpLogFile = INVALID_HANDLE_VALUE;
 static char *m_szLogBuf = NULL;
@@ -27,7 +29,7 @@ void init_debug(void) {
 	ZeroMemory(logfile, sizeof(logfile));
 	p=logfile+GetModuleFileNameA(NULL, logfile, sizeof(logfile));
 	if (!(p=strrchr (logfile, '\\'))) p=logfile; else p++;
-	strcpy (p, "skype_log.txt");
+	sprintf (p, "%s_log.txt", SKYPE_PROTONAME);
 	m_szLogBuf = calloc (1, (m_iBufSize = INITBUF));
 	m_fpLogFile = fopen(logfile, "a");
 	InitializeCriticalSection(&m_WriteFileMutex);

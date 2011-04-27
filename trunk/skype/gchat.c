@@ -28,7 +28,7 @@
 
 extern HANDLE hInitChat;
 extern HINSTANCE hInst;
-extern char protocol;
+extern char protocol, g_szProtoName[];
 extern DWORD mirandaVersion;
 
 static gchat_contacts *chats=NULL;
@@ -677,7 +677,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 						if (mirandaVersion >= 0x070000) {
 							ccs.lParam = (LPARAM)make_utf8_string(gch->ptszText);
 							ccs.wParam = PREF_UTF;
-							CallService (SKYPE_PROTONAME PSS_MESSAGE, 0, (LPARAM)&ccs);
+							CallProtoService (SKYPE_PROTONAME, PSS_MESSAGE, 0, (LPARAM)&ccs);
 							free ((void*)ccs.lParam);
 						} else {
 						// Otherwise create this strange dual miranda-format
@@ -685,13 +685,13 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 							wcstombs ((char*)ccs.lParam, gch->ptszText, _tcslen(gch->ptszText)+1);
 							_tcscpy ((TCHAR*)((char*)ccs.lParam+strlen((char*)ccs.lParam)+1), gch->ptszText);
 							ccs.wParam = PREF_UNICODE;
-							CallService (SKYPE_PROTONAME PSS_MESSAGE, 0, (LPARAM)&ccs);
+							CallProtoService (SKYPE_PROTONAME, PSS_MESSAGE, 0, (LPARAM)&ccs);
 							free ((void*)ccs.lParam);
 						}
 #else
 						ccs.lParam = (LPARAM)gch->ptszText;
 						ccs.wParam = PREF_TCHAR;
-						CallService (SKYPE_PROTONAME PSS_MESSAGE, 0, (LPARAM)&ccs);
+						CallProtoService (SKYPE_PROTONAME, PSS_MESSAGE, 0, (LPARAM)&ccs);
 #endif
 					}
 

@@ -1,5 +1,6 @@
 #include "skype.h"
 #include "skypeapi.h"
+#include "skypesvc.h"
 #include "voiceservice.h"
 #include "sdk/m_voiceservice.h"
 
@@ -10,6 +11,8 @@
 
 HANDLE hVoiceNotify = NULL;
 BOOL has_voice_service = FALSE;
+
+extern char g_szProtoName[];
 
 
 BOOL HasVoiceService()
@@ -131,12 +134,15 @@ static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 void VoiceServiceInit() 
 {
 	// leecher, 26.03.2011: Did this ever work in the old versions?? 
-	hVoiceNotify = CreateHookableEvent( SKYPE_PROTONAME PE_VOICE_CALL_STATE);
-	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_GETINFO, VoiceGetInfo );
-	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_CALL, VoiceCall );
-	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_ANSWERCALL, VoiceAnswer );
-	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_DROPCALL, VoiceDrop );
-	CreateServiceFunction( SKYPE_PROTONAME PS_VOICE_HOLDCALL, VoiceHold );
+	char szEvent[MAXMODULELABELLENGTH];
+
+	_snprintf (szEvent, sizeof(szEvent), "%s%s", SKYPE_PROTONAME, PE_VOICE_CALL_STATE);
+	hVoiceNotify = CreateHookableEvent( szEvent );
+	CreateProtoService( PS_VOICE_GETINFO, VoiceGetInfo );
+	CreateProtoService( PS_VOICE_CALL, VoiceCall );
+	CreateProtoService( PS_VOICE_ANSWERCALL, VoiceAnswer );
+	CreateProtoService( PS_VOICE_DROPCALL, VoiceDrop );
+	CreateProtoService( PS_VOICE_HOLDCALL, VoiceHold );
 }
 
 void VoiceServiceExit()

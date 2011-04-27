@@ -6,6 +6,6 @@ HANDLE add_contact(char *name, DWORD flags);
 HANDLE add_mainmenu(void);
 CLISTMENUITEM HupItem(void);
 CLISTMENUITEM CallItem(void);
-void logoff_contacts(void);
+void logoff_contacts(BOOL bCleanup);
 int PrebuildContactMenu(WPARAM, LPARAM);
 //int ClistDblClick(WPARAM, LPARAM);
