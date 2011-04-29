@@ -17,8 +17,8 @@ public:
 	int ShakeChat(HWND hWnd);
 };
 
-int ShakeClist(WPARAM,LPARAM);
-int ShakeChat(WPARAM,LPARAM);
+INT_PTR ShakeClist(WPARAM,LPARAM);
+INT_PTR ShakeChat(WPARAM,LPARAM);
 /*
 int TriggerShakeChat(WPARAM,LPARAM);
 int TriggerShakeClist(WPARAM,LPARAM);

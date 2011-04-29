@@ -16,9 +16,9 @@ int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 	odp.position					= -790000000;
 	odp.hInstance					= hInst;
 	odp.pszTemplate					= MAKEINTRESOURCEA(IDD_OPTIONS);
-	odp.pszTitle					= "Nudge";
-	odp.pszGroup					= "Events";
-	odp.flags						= ODPF_BOLDGROUPS;
+	odp.ptszTitle					= LPGENT("Nudge");
+	odp.ptszGroup					= LPGENT("Events");
+	odp.flags						= ODPF_BOLDGROUPS|ODPF_TCHAR;
 //	odp.nIDBottomSimpleControl = IDC_STMSNGROUP;
 	odp.pfnDlgProc					= OptionsDlgProc;
 	CallService( MS_OPT_ADDPAGE, wParam,( LPARAM )&odp );
@@ -26,15 +26,18 @@ int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 }
 
 
-
-
-int InitOptions()
+HANDLE hOptionsInit;
+void InitOptions()
 {
-	HookEvent(ME_OPT_INITIALISE, NudgeOptInit);
-	return 0;
+	hOptionsInit = HookEvent(ME_OPT_INITIALISE, NudgeOptInit);
 }
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void UninitOptions()
+{
+	UnhookEvent(hOptionsInit);
+}
+
+static INT_PTR CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static int iInit = TRUE;
    
@@ -125,7 +128,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
    return FALSE;
 }
 
-BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
 	{
@@ -294,7 +297,7 @@ void PopulateProtocolList(HWND hWnd)
 }
 
 
-BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
+INT_PTR CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
 	{
