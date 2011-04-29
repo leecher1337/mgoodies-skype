@@ -4,7 +4,7 @@
 #include "include\m_msg_buttonsbar.h"
 
 
-static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
 int nProtocol = 0;
@@ -100,9 +100,9 @@ void RegisterToUpdate(void)
 		char szVersion[16];
 
 		update.szComponentName = pluginInfo.shortName;
-		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
+		update.pbVersion = (BYTE *)CreateVersionStringPluginEx(&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
-		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2708";
+		update.szUpdateURL = UPDATER_AUTOREGISTER;
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2708";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Nudge ";
 	    update.szBetaUpdateURL = "http://www.miranda-fr.net/tweety/Nudge/Nudge.zip";
@@ -117,7 +117,7 @@ void RegisterToUpdate(void)
 	}
 }
 
-int NudgeShowMenu(WPARAM wParam,LPARAM lParam)
+INT_PTR NudgeShowMenu(WPARAM wParam,LPARAM lParam)
 {	
 
 	NudgeElementList *n;
@@ -131,7 +131,7 @@ int NudgeShowMenu(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int NudgeSend(WPARAM wParam,LPARAM lParam)
+INT_PTR NudgeSend(WPARAM wParam,LPARAM lParam)
 {
 
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);	
@@ -303,14 +303,6 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-
-extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
-{
-	MirVer = mirandaVersion;
-	pluginInfo.cbSize = sizeof(PLUGININFO);
-	return (PLUGININFO *) &pluginInfo;
-}
-
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
@@ -334,7 +326,7 @@ int MainInit(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+static INT_PTR CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     switch (msg) {
 	case WM_INITDIALOG: {
@@ -500,14 +492,15 @@ void LoadIcons(void)
 	{
 		NudgeElementList *n;
 		SKINICONDESC sid;
-		char szFilename[MAX_PATH];
+		TCHAR szFilename[MAX_PATH];
 		char iconName[MAXMODULELABELLENGTH + 10];
 		char iconDesc[MAXMODULELABELLENGTH + 10];
-		strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
+		GetModuleFileName(hInst,szFilename,MAX_PATH);
 
-		sid.cbSize = SKINICONDESC_SIZE_V2;
+		sid.cbSize = SKINICONDESC_SIZE;
+		sid.flags = SIDF_PATH_TCHAR;
 		sid.pszSection = "Nudge";
-		sid.pszDefaultFile = szFilename;
+		sid.ptszDefaultFile = szFilename;
 
 		for(n = NudgeList;n != NULL; n = n->next)
 		{			
@@ -583,10 +576,12 @@ static int TabsrmmButtonInit(WPARAM wParam, LPARAM lParam)
  
 	bbd.cbSize = sizeof(BBButton);
 	bbd.pszModuleName = "Nudge";
-	bbd.pszTooltip = "Nudge";
+	bbd.ptszTooltip = LPGENT("Nudge");
 	bbd.dwDefPos = 300;
-	bbd.bbbFlags = BBBF_ISIMBUTTON|BBBF_ISLSIDEBUTTON|BBBF_CANBEHIDDEN|BBBF_ANSITOOLTIP;
+	bbd.bbbFlags = BBBF_ISIMBUTTON|BBBF_ISLSIDEBUTTON|BBBF_CANBEHIDDEN;
 	bbd.hIcon = g_hIcon;
+	bbd.dwButtonID = 6000;
+	bbd.iButtonWidth = 0;
 	CallService (MS_BB_ADDBUTTON, 0, (LPARAM)&bbd);
 
 	return 0;
@@ -608,7 +603,8 @@ void HideNudgeButton(HANDLE hContact)
       BBButton bbd={0}; 
       bbd.cbSize=sizeof(BBButton); 
       bbd.bbbFlags=BBSF_HIDDEN|BBSF_DISABLED; 
-      bbd.pszModuleName="Nudge"; 
+      bbd.pszModuleName="Nudge";
+	  bbd.dwButtonID = 6000;
       CallService(MS_BB_SETBUTTONSTATE, (WPARAM)hContact, (LPARAM)&bbd); 
     } 
 } 
@@ -640,6 +636,7 @@ int ModulesLoaded(WPARAM,LPARAM)
 	return 0;
 }
 
+HANDLE hShakeClist=NULL,hShakeChat=NULL,hNudgeSend=NULL,hNudgeShowMenu=NULL;
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 { 	
 	pluginLink = link;
@@ -652,10 +649,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	InitVSApi();
 
 	//Create function for plugins
-	CreateServiceFunction(MS_SHAKE_CLIST,ShakeClist);
-	CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
-	CreateServiceFunction(MS_NUDGE_SEND,NudgeSend);
-	CreateServiceFunction(MS_NUDGE_SHOWMENU,NudgeShowMenu);
+	hShakeClist=CreateServiceFunction(MS_SHAKE_CLIST,ShakeClist);
+	hShakeChat=CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
+	hNudgeSend=CreateServiceFunction(MS_NUDGE_SEND,NudgeSend);
+	hNudgeShowMenu=CreateServiceFunction(MS_NUDGE_SHOWMENU,NudgeShowMenu);
 	return 0; 
 }
 
@@ -667,6 +664,13 @@ extern "C" int __declspec(dllexport) Unload(void)
 
 	if(g_hEventModulesLoaded) UnhookEvent(g_hEventModulesLoaded);
 	if(g_hEventIconsChanged) UnhookEvent(g_hEventIconsChanged);
+
+	DestroyServiceFunction(hShakeClist);
+	DestroyServiceFunction(hShakeChat);
+	DestroyServiceFunction(hNudgeSend);
+	DestroyServiceFunction(hNudgeShowMenu);
+
+	UninitOptions();
 
 	FreeVSApi();
 	NudgeElementList* p = NudgeList;
@@ -686,10 +690,15 @@ LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	switch(msg)
 	{
 		case WM_COMMAND:
+		{
+			HANDLE hContact = PUGetContact(hWnd);
+			CallService(MS_MSG_SENDMESSAGET, (WPARAM)hContact, 0);
+			PUDeletePopUp(hWnd);
 			break;
+		}
 
 		case WM_CONTEXTMENU:
-			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			PUDeletePopUp(hWnd);
 			break;			
 		case UM_FREEPLUGINDATA:
 			//Here we'd free our own data, if we had it.
@@ -948,10 +957,10 @@ int Nudge_AddElement(char *protoName, HANDLE hevent)
 	mi.pszContactOwner = protoName;
 	mi.pszPopupName = protoName;
 	mi.cbSize = sizeof( mi );
-	mi.flags = CMIF_NOTOFFLINE & CMIF_HIDDEN;
+	mi.flags = (CMIF_NOTOFFLINE & CMIF_HIDDEN) | CMIF_TCHAR;
 	mi.position = -500050004;
 	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
-	mi.pszName = Translate( "Send &Nudge" );
+	mi.ptszName = LPGENT( "Send &Nudge" );
 	mi.pszService = MS_NUDGE_SEND;
 	
 	

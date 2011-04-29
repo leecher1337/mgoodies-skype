@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Remove button
 //
-// wParam = 0 
+// wParam = 0
 // lParam  = (BBButton *) &description, only button ID and ModuleName used
 #define MS_BB_REMOVEBUTTON "TabSRMM/ButtonsBar/RemoveButton"
 
@@ -36,7 +36,7 @@
 //
 // wParam =  hContact
 // lParam = (BBButton *) &description , only ModuleName and ID used
-// Returns BBButton struct with BBSF_ bbbFlags: 
+// Returns BBButton struct with BBSF_ bbbFlags:
 #define MS_BB_GETBUTTONSTATE	"TabSRMM/ButtonsBar/GetButtonState"
 
 //////////////////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@
 typedef struct {
 	int cbSize;
 	POINT pt;		// screen coordinates for menus
-	char* pszModule;		// button owners name 
+	char* pszModule;		// button owners name
 	DWORD dwButtonId;		// registered button ID
 	HWND hwndFrom;		// button parents HWND
 	HANDLE hContact;	//
@@ -85,7 +85,7 @@ typedef struct {
 
 //button flags
 #define BBBF_DISABLED			(1<<0)
-#define BBBF_HIDDEN				(1<<1) 
+#define BBBF_HIDDEN				(1<<1)
 #define BBBF_ISPUSHBUTTON		(1<<2)
 #define BBBF_ISARROWBUTTON		(1<<3)
 #define BBBF_ISCHATBUTTON		(1<<4)
@@ -102,7 +102,7 @@ typedef struct _tagBBButton
 	{
 	int cbSize;			// size of structure
 
-	DWORD dwButtonID;		 // your button ID, will be combined with pszModuleName for storing settings, etc...  
+	DWORD dwButtonID;		 // your button ID, will be combined with pszModuleName for storing settings, etc...
 
 	char* pszModuleName;		 //module name without spaces and underline symbols (e.g. "tabsrmm")
 	union{

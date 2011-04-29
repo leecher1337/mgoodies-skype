@@ -37,7 +37,7 @@ DWORD WINAPI ShakeClistWindow(LPVOID Param)
 	return 0;
 }
 
-int ShakeClist( WPARAM wParam, LPARAM lParam )
+INT_PTR ShakeClist( WPARAM wParam, LPARAM lParam )
 {
 	DWORD tid;
 	HWND hWnd;
@@ -47,13 +47,13 @@ int ShakeClist( WPARAM wParam, LPARAM lParam )
 	return 0;
 }
 
-int ShakeChat( WPARAM wParam, LPARAM lParam )
+INT_PTR ShakeChat( WPARAM wParam, LPARAM lParam )
 {
     if(((HANDLE) wParam) == NULL) return -1;
         
 	DWORD tid;
 	HWND hWnd;
-	char srmmName[100];
+	//char srmmName[100];
 	MessageWindowData mwd;
 	MessageWindowInputData mwid;
 
@@ -67,7 +67,7 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 
 
 	CallService( MS_MSG_GETWINDOWDATA, (WPARAM)&mwid, (LPARAM)&mwd );
-	CallService(MS_MSG_GETWINDOWCLASS,(WPARAM)srmmName,(LPARAM)100 );
+	//CallService(MS_MSG_GETWINDOWCLASS,(WPARAM)srmmName,(LPARAM)100 );
 
 	HWND parent;
 	hWnd = mwd.hwndWindow;

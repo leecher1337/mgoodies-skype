@@ -1,3 +1,10 @@
+0.0.1.22
+===========
++ 64bit version
++ unhook hooks on exit
++ destroy services on exit
++ open message window on click
+
 0.0.1.21
 ===========
 + Traslation fo icon description
@@ -5,6 +12,7 @@
 0.0.1.20
 ===========
 ! Bug in options layout
+! Fix for crash when no protocol available (based on changed by Ivan)
 
 0.0.1.19
 ===========

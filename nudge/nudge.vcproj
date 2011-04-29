@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="nudge"
 	ProjectGUID="{8190CFAA-3B73-43D8-9101-8368E21F1864}"
+	RootNamespace="nudge"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -105,8 +106,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release Unicode|Win32"
-			OutputDirectory="..\..\tweety_bin9\Release Unicode\Plugins"
-			IntermediateDirectory="..\..\tweety_bin9\Release Unicode\Obj\$(ProjectName)"
+			OutputDirectory="../../tweety_bin9/Release Unicode/Plugins"
+			IntermediateDirectory="../../tweety_bin9/Release Unicode/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
