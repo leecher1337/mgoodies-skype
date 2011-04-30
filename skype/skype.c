@@ -704,7 +704,7 @@ void __cdecl SkypeSystemInit(char *dummy) {
 			if (pszUser = SkypeRcv ("CURRENTUSERHANDLE", INFINITE))
 			{
 				memmove (pszUser, pszUser+18, strlen(pszUser+17));
-				if (stricmp(dbv.pszVal, pszUser))
+				if (_stricmp(dbv.pszVal, pszUser))
 				{
 					char szError[256];
 
@@ -2073,7 +2073,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				DBVARIANT dbv={0};
 
 				if(DBGetContactSettingString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv) ||
-					!*dbv.pszVal || stricmp (szSkypeMsg+18, dbv.pszVal)==0) 
+					!*dbv.pszVal || _stricmp (szSkypeMsg+18, dbv.pszVal)==0) 
 				{
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, SKYPE_NAME, szSkypeMsg+18);
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "Nick", szSkypeMsg+18);
