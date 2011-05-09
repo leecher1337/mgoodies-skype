@@ -3,7 +3,8 @@
 + 64bit version
 + unhook hooks on exit
 + destroy services on exit
-+ open message window on click
++ open message window on popup click
++ open message window on preview
 
 0.0.1.21
 ===========
