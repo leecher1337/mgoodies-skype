@@ -16,6 +16,9 @@ CNudgeElement DefaultNudge;
 CShake shake;
 CNudge GlobalNudge;
 
+MM_INTERFACE mmi;
+int hLangpack = 0;
+
 BOOL     (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 HMODULE hUxTheme = 0;
 
@@ -490,8 +493,7 @@ void LoadIcons(void)
 	//Load icons
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
-		NudgeElementList *n;
-		SKINICONDESC sid;
+		SKINICONDESC sid = {0};
 		TCHAR szFilename[MAX_PATH];
 		char iconName[MAXMODULELABELLENGTH + 10];
 		char iconDesc[MAXMODULELABELLENGTH + 10];
@@ -502,7 +504,7 @@ void LoadIcons(void)
 		sid.pszSection = "Nudge";
 		sid.ptszDefaultFile = szFilename;
 
-		for(n = NudgeList;n != NULL; n = n->next)
+		for(NudgeElementList *n = NudgeList;n != NULL; n = n->next)
 		{			
 			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
 			sid.pszName = iconName;
@@ -527,8 +529,7 @@ void LoadIcons(void)
 	}
 	else // Do not forget people not using IcoLib!!!!
 	{
-		NudgeElementList *n;
-		for(n = NudgeList;n != NULL; n = n->next)
+		for(NudgeElementList *n = NudgeList;n != NULL; n = n->next)
 		{
 			n->item.hIcon = (HICON)CallProtoService(n->item.ProtocolName, PS_LOADICON, PLI_PROTOCOL|PLIF_SMALL, 0);
 			if(n->item.hIcon == NULL || (int)n->item.hIcon == CALLSERVICE_NOTFOUND)
@@ -640,6 +641,8 @@ HANDLE hShakeClist=NULL,hShakeChat=NULL,hNudgeSend=NULL,hNudgeShowMenu=NULL;
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 { 	
 	pluginLink = link;
+	mir_getMMI(&mmi);
+	mir_getLP(&pluginInfo);
 	NudgeList = NULL;
 	g_hEventModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
 	if(ServiceExists(MS_SKIN2_ADDICON))
@@ -718,12 +721,9 @@ int Preview()
 {
 	if( GlobalNudge.useByProtocol )
 	{
-		NudgeElementList *n;
-		HANDLE hContact;
-	
-		hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+		HANDLE hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
 
-		for(n = NudgeList;n != NULL; n = n->next)
+		for(NudgeElementList *n = NudgeList;n != NULL; n = n->next)
 		{
 			if(n->item.enabled)
 			{
@@ -732,6 +732,11 @@ int Preview()
 					Nudge_ShowPopup(n->item, hContact, n->item.recText);
 				if(n->item.shakeClist)
 					ShakeClist(0,0);
+				if(n->item.shakeChat)
+				{
+					CallService(MS_MSG_SENDMESSAGET,(WPARAM)hContact,NULL);
+					ShakeChat((WPARAM)hContact,(LPARAM)time(NULL));
+				}
 			}
 		}
 	}
@@ -739,15 +744,18 @@ int Preview()
 	{
 		if(DefaultNudge.enabled)
 		{
-			HANDLE hContact;
-	
-			hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+			HANDLE hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
 
 			SkinPlaySound( DefaultNudge.NudgeSoundname );
 			if(DefaultNudge.showPopup)
 				Nudge_ShowPopup(DefaultNudge, hContact, DefaultNudge.recText);
 			if(DefaultNudge.shakeClist)
 				ShakeClist(0,0);
+			if(DefaultNudge.shakeChat)
+			{
+				CallService(MS_MSG_SENDMESSAGET,(WPARAM)hContact,NULL);
+				ShakeChat((WPARAM)hContact,(LPARAM)time(NULL));
+			}
 		}
 	}
 	return 0;
