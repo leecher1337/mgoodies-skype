@@ -927,7 +927,7 @@ void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont, DWORD timestamp)
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
+	NudgeEvent.flags = CheckMsgWnd(hContact) ? DBEF_READ : 0;
 	NudgeEvent.timestamp = timestamp;
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
 	#if defined( _UNICODE )
