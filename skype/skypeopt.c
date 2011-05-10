@@ -708,7 +708,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					TranslateMirandaRelativePathToAbsolute(szFileName, szAbsolutePath, FALSE);
 
 					bi.hwndOwner = hwndDlg;
-					bi.ulFlags   = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
+					bi.ulFlags   = BIF_RETURNONLYFSDIRS | BIF_SHAREABLE | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
 					bi.lpfn      = BrowseCallbackProc;
 					bi.lParam    = (LPARAM)szAbsolutePath;
 
