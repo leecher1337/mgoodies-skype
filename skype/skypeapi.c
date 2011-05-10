@@ -1508,7 +1508,7 @@ int ConnectToSkypeAPI(char *path, BOOL bStart) {
 }
 
 void TranslateMirandaRelativePathToAbsolute(LPCSTR cszPath, LPSTR szAbsolutePath, BOOL fQuoteSpaces) {
-
+	*szAbsolutePath = 0;
 	CallService (MS_UTILS_PATHTOABSOLUTE, (WPARAM)cszPath, (LPARAM)szAbsolutePath);
 	if(fQuoteSpaces && strchr((LPCSTR)szAbsolutePath, ' ')){
 		memmove (szAbsolutePath+1, szAbsolutePath, strlen(szAbsolutePath)+1);
