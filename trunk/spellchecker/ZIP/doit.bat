@@ -5,6 +5,7 @@ rem
 rem TODO: Integration with FL
 
 set name=spellchecker
+set version=0.2.6.0
 
 rem To upload, this var must be set here or in other batch
 rem set ftp=ftp://<user>:<password>@<ftp>/<path>
@@ -23,12 +24,12 @@ rd /S /Q Plugins
 rd /S /Q Docs
 rd /S /Q src
 
-copy ..\Release\%name%.pdb
-copy ..\Unicode_Release\%name%W.pdb
+copy "..\bin\Win32\Release\%name%.pdb"
+copy "..\bin\Win32\Unicode Release\%name%W.pdb"
+copy "..\bin\x64\Unicode Release\%name%64.pdb"
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
-copy ..\srmm.spellchecker.patch
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -78,33 +79,41 @@ cd ..
 mkdir Plugins
 cd Plugins
 del /Q *.dll
-copy ..\..\..\..\bin\release\Plugins\%name%.dll
+copy "..\..\bin\Win32\Release\%name%.dll"
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs  
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.FL.zip Plugins Docs Dictionaries Icons
+zip -r -q %name%.%version%.zip Plugins Docs  
+copy %name%.%version%.zip %name%.zip
+zip -r -q %name%.FL.zip Plugins Docs Dictionaries Icons
 
 cd Plugins
 del /Q *.dll
-copy ..\..\..\..\bin\release unicode\Plugins\%name%W.dll
+copy "..\..\bin\Win32\Unicode Release\%name%W.dll"
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.FL.zip Plugins Docs Dictionaries Icons
+zip -r -q %name%W.%version%.zip Plugins Docs
+copy %name%W.%version%.zip %name%W.zip
+zip -r -q %name%W.FL.zip Plugins Docs Dictionaries Icons
+
 
 cd Plugins
 del /Q *.dll
-copy ..\..\..\..\bin\release unicode\Plugins\%name%64.dll
+copy "..\..\bin\x64\Unicode Release\%name%64.dll"
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.zip Plugins Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.FL.zip Plugins Docs Dictionaries Icons
+zip -r -q %name%64.%version%.zip Plugins Docs
+copy %name%64.%version%.zip %name%64.zip
+zip -r -q %name%64.FL.zip Plugins Docs Dictionaries Icons
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.pdb.zip %name%64.pdb
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
+zip -r -q %name%.pdb.%version%.zip %name%.pdb
+copy %name%.pdb.%version%.zip %name%.pdb.zip
+zip -r -q %name%W.pdb.%version%.zip %name%W.pdb
+copy %name%W.pdb.%version%.zip %name%W.pdb.zip
+zip -r -q %name%64.pdb.%version%.zip %name%64.pdb
+copy %name%64.pdb.%version%.zip %name%64.pdb.zip
+
+zip -r -q %name%_src.zip src\*.*
 
 del *.dll
 del *.PDB
@@ -125,7 +134,7 @@ pause
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp% -overwrite -close 
-"C:\Program Files\FileZilla\FileZilla.exe" -u .\srmm.spellchecker.patch %ftp% -overwrite -close 
+rem "C:\Program Files\FileZilla\FileZilla.exe" -u .\srmm.spellchecker.patch %ftp% -overwrite -close 
 
 :END
 
