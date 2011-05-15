@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2010 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -198,12 +198,12 @@ static INT_PTR CALLBACK AddReplacementDlgProc(HWND hwndDlg, UINT msg, WPARAM wPa
 			SendDlgItemMessage(hwndDlg, IDC_OLD, EM_LIMITTEXT, 256, 0);
 			SendDlgItemMessage(hwndDlg, IDC_NEW, EM_LIMITTEXT, 256, 0);
 
-			if (data->find.length() > 0)
+			if (!data->find.empty())
 			{
 				scoped_free<TCHAR> tmp = data->dict->autoReplace->filterText(data->find.c_str());
 				SetDlgItemText(hwndDlg, IDC_OLD, tmp);
 			}
-			if (data->replace.length() > 0)
+			if (!data->replace.empty())
 				SetDlgItemText(hwndDlg, IDC_NEW, data->replace.c_str());
 
 			CheckDlgButton(hwndDlg, IDC_VARIABLES, data->useVariables ? BST_CHECKED : BST_UNCHECKED);

@@ -1,6 +1,6 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spellchecker", "spellchecker.vcproj", "{12B49AFE-9854-488F-8DE8-0D83738C5DEE}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spellchecker", "spellchecker.vcxproj", "{5DB86086-10E9-42E7-AC90-503D2678C2A2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,22 +14,22 @@ Global
 		Unicode Release|x64 = Unicode Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Debug|Win32.ActiveCfg = Debug|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Debug|Win32.Build.0 = Debug|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Debug|x64.ActiveCfg = Debug|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Debug|x64.Build.0 = Debug|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Release|Win32.ActiveCfg = Release|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Release|Win32.Build.0 = Release|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Release|x64.ActiveCfg = Release|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Release|x64.Build.0 = Release|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Debug|Win32.ActiveCfg = Unicode Debug|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Debug|Win32.Build.0 = Unicode Debug|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Debug|x64.ActiveCfg = Unicode Debug|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Debug|x64.Build.0 = Unicode Debug|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Release|Win32.ActiveCfg = Unicode Release|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Release|Win32.Build.0 = Unicode Release|Win32
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Release|x64.ActiveCfg = Unicode Release|x64
-		{12B49AFE-9854-488F-8DE8-0D83738C5DEE}.Unicode Release|x64.Build.0 = Unicode Release|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Debug|Win32.Build.0 = Debug|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Debug|x64.ActiveCfg = Debug|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Debug|x64.Build.0 = Debug|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Release|Win32.ActiveCfg = Release|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Release|Win32.Build.0 = Release|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Release|x64.ActiveCfg = Release|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Release|x64.Build.0 = Release|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Debug|Win32.ActiveCfg = Unicode Debug|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Debug|Win32.Build.0 = Unicode Debug|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Debug|x64.ActiveCfg = Unicode Debug|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Debug|x64.Build.0 = Unicode Debug|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Release|Win32.ActiveCfg = Unicode Release|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Release|Win32.Build.0 = Unicode Release|Win32
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Release|x64.ActiveCfg = Unicode Release|x64
+		{5DB86086-10E9-42E7-AC90-503D2678C2A2}.Unicode Release|x64.Build.0 = Unicode Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

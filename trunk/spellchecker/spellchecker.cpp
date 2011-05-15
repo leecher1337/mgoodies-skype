@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2010 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -26,15 +26,17 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Spell Checker",
-	PLUGIN_MAKE_VERSION(0,2,5,0),
+	PLUGIN_MAKE_VERSION(0,2,6,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
-	"Ricardo Pescuma Domenecci",
+	"Ricardo Pescuma Domenecci, wishmaster51",
 	"pescuma@miranda-im.org",
 	"© 2006-2010 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/spellchecker",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
-#ifdef UNICODE
+#ifdef WIN64
+	{ 0x77c4713f, 0xd544, 0x4b53, { 0xbf, 0x1f, 0xe, 0x47, 0x3e, 0xe9, 0xc4, 0x8c } } // {77C4713F-D544-4b53-BF1F-0E473EE9C48C}
+#elif UNICODE
 	{ 0x36753ae3, 0x840b, 0x4797, { 0x94, 0xa5, 0xfd, 0x9f, 0x58, 0x52, 0xb9, 0x42 } } // {36753AE3-840B-4797-94A5-FD9F5852B942}
 #else
 	{ 0x3cdbcd92, 0x94d7, 0x466a, { 0x94, 0x7f, 0x4e, 0xe0, 0x1c, 0xca, 0xf4, 0x89 } } // {3CDBCD92-94D7-466a-947F-4EE01CCAF489}
@@ -50,9 +52,9 @@ typedef struct
 
 static IconStruct iconList[] =
 {
-	{  _T("Enabled"),       "spellchecker_enabled",       IDI_CHECK         },
-	{  _T("Disabled"),      "spellchecker_disabled",      IDI_NO_CHECK      },
-//	{  _T("Unknown Flag"),  "spellchecker_unknown_flag",  IDI_UNKNOWN_FLAG  },
+	{  LPGENT("Enabled"),       "spellchecker_enabled",       IDI_CHECK         },
+	{  LPGENT("Disabled"),      "spellchecker_disabled",      IDI_NO_CHECK      },
+//	{  LPGENT("Unknown Flag"),  "spellchecker_unknown_flag",  IDI_UNKNOWN_FLAG  },
 };
 
 #define TIMER_ID 17982
@@ -71,19 +73,17 @@ HANDLE hHooks[6];
 HANDLE hServices[3];
 
 HANDLE hDictionariesFolder = NULL;
-TCHAR dictionariesFolder[1024];
+TCHAR *dictionariesFolder;
 
 HANDLE hCustomDictionariesFolder = NULL;
-TCHAR customDictionariesFolder[1024];
+TCHAR *customDictionariesFolder;
 
 HANDLE hFlagsDllFolder = NULL;
-TCHAR flagsDllFolder[1024];
+TCHAR *flagsDllFolder;
 
 HBITMAP hCheckedBmp;
 BITMAP bmpChecked;
 
-char *metacontacts_proto = NULL;
-BOOL uinfoex_enabled = FALSE;
 BOOL variables_enabled = FALSE;
 BOOL loaded = FALSE;
 
@@ -193,20 +193,10 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	if (ServiceExists(MS_MC_GETPROTOCOLNAME) && ServiceExists(MS_MC_GETMETACONTACT))
-		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
-
-	uinfoex_enabled = ServiceExists("UserInfo/vCard/Import");
 	variables_enabled = ServiceExists(MS_VARS_FORMATSTRING);
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
-
-	TCHAR mirandaFolder[1024];
-	GetModuleFileName(GetModuleHandle(NULL), mirandaFolder, MAX_REGS(mirandaFolder));
-	TCHAR *p = _tcsrchr(mirandaFolder, _T('\\'));
-	if (p != NULL)
-		*p = _T('\0');
 
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
@@ -217,17 +207,24 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.cbSize = sizeof(upd);
 		upd.szComponentName = pluginInfo.shortName;
 
-		upd.szUpdateURL = UPDATER_AUTOREGISTER;
-
 		upd.szBetaVersionURL = "http://pescuma.org/miranda/spellchecker_version.txt";
 		upd.szBetaChangelogURL = "http://pescuma.org/miranda/spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = (int)strlen((char *)upd.pbBetaVersionPrefix);
-#ifdef UNICODE
+#ifdef WIN64
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker64.zip";
+#elif UNICODE
+		upd.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3691";
+		upd.szUpdateURL = "http://addons.miranda-im.org/download.php?dlfile=3691";
+		upd.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Spell Checker (Unicode) ";
 		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellcheckerW.zip";
 #else
+		upd.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3690";
+		upd.szUpdateURL = "http://addons.miranda-im.org/download.php?dlfile=3690";
+		upd.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Spell Checker (Ansi) ";
 		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker.zip";
 #endif
+		upd.cpbVersionPrefix = (int)strlen((char *)upd.pbVersionPrefix);
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPluginEx(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = (int)strlen((char *)upd.pbVersion);
@@ -238,45 +235,36 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
     // Folders plugin support
 	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
 	{
-		hDictionariesFolder = FoldersRegisterCustomPathT("Spell Checker", "Dictionaries", 
-					_T(MIRANDA_PATH) _T("\\Dictionaries"));
+		hDictionariesFolder = FoldersRegisterCustomPathT(LPGEN("Spell Checker"), LPGEN("Dictionaries"), DICTIONARIES_FOLDER);
 
-		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
+		dictionariesFolder = (TCHAR *) mir_alloc(sizeof(TCHAR) * MAX_PATH);
+		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_PATH, _T("."));
 
-		hCustomDictionariesFolder = FoldersRegisterCustomPathT("Spell Checker", "Custom Dictionaries", 
-					_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Dictionaries"));
+		hCustomDictionariesFolder = FoldersRegisterCustomPathT(LPGEN("Spell Checker"), LPGEN("Custom Dictionaries"), CUSTOM_DICTIONARIES_FOLDER);
 
-		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
+		customDictionariesFolder = (TCHAR *) mir_alloc(sizeof(TCHAR) * MAX_PATH);
+		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_PATH, _T("."));
 		
-		hFlagsDllFolder = FoldersRegisterCustomPathT("Spell Checker", "Flags DLL", 
-					_T(MIRANDA_PATH) _T("\\Icons"));
+		hFlagsDllFolder = FoldersRegisterCustomPathT(LPGEN("Spell Checker"), LPGEN("Flags DLL"), FLAGS_DLL_FOLDER);
 
-		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
+		flagsDllFolder = (TCHAR *) mir_alloc(sizeof(TCHAR) * MAX_PATH);
+		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_PATH, _T("."));
 	}
 	else
 	{
-		mir_sntprintf(dictionariesFolder, MAX_REGS(dictionariesFolder), _T("%s\\Dictionaries"), mirandaFolder);
-
-		char profileFolder[1024];
-		CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_REGS(customDictionariesFolder), (LPARAM) profileFolder);
-
-#ifdef UNICODE
-		mir_sntprintf(customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("%S\\Dictionaries"), profileFolder);
-#else
-		mir_sntprintf(customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("%s\\Dictionaries"), profileFolder);
-#endif
-
-		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), mirandaFolder);
+		dictionariesFolder = Utils_ReplaceVarsT(DICTIONARIES_FOLDER);
+		customDictionariesFolder = Utils_ReplaceVarsT(CUSTOM_DICTIONARIES_FOLDER);
+		flagsDllFolder = Utils_ReplaceVarsT(FLAGS_DLL_FOLDER);
 	}
 
-	char path[1024];
-	GetModuleFileNameA(hInst, path, MAX_REGS(path));
+	TCHAR path[MAX_PATH];
+	GetModuleFileName(hInst, path, MAX_PATH);
 
 	SKINICONDESC sid = {0};
 	sid.cbSize = sizeof(SKINICONDESC);
-	sid.flags = SIDF_TCHAR;
-	sid.ptszSection = _T("Spell Checker");
-	sid.pszDefaultFile = path;
+	sid.flags = SIDF_ALL_TCHAR;
+	sid.ptszSection = LPGENT("Spell Checker");
+	sid.ptszDefaultFile = path;
 
 	for (unsigned i = 0; i < MAX_REGS(iconList); ++i)
 	{
@@ -299,7 +287,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
 		HMODULE hFlagsDll = LoadLibraryEx(flag_file, NULL, LOAD_LIBRARY_AS_DATAFILE);
 
-		sid.flags = SIDF_TCHAR | SIDF_SORTED;
+		sid.flags = SIDF_ALL_TCHAR | SIDF_SORTED;
 		sid.ptszSection = _T("Languages/Flags");
 
 		// Get language flags
@@ -330,13 +318,13 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			if (hFlag != NULL)
 			{
 				sid.hDefaultIcon = hFlag;
-				sid.pszDefaultFile = NULL;
+				sid.ptszDefaultFile = NULL;
 				sid.iDefaultIndex = 0;
 			}
 			else
 			{
 				sid.hDefaultIcon = NULL;
-				sid.pszDefaultFile = path;
+				sid.ptszDefaultFile = path;
 				sid.iDefaultIndex = - IDI_UNKNOWN_FLAG;
 			}
 
@@ -353,8 +341,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{
 		Dictionary *dict = languages[j];
 
-		TCHAR filename[1024];
-		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.ar"), customDictionariesFolder, dict->language);
+		TCHAR filename[MAX_PATH];
+		mir_sntprintf(filename, MAX_PATH, _T("%s\\%s.ar"), customDictionariesFolder, dict->language);
 		dict->autoReplace = new AutoReplaceMap(filename, dict);
 
 		if (lstrcmp(dict->language, opts.default_language) == 0)
@@ -400,9 +388,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{
 		HOTKEYDESC hkd = {0};
 		hkd.cbSize = sizeof(hkd);
-		hkd.pszName = Translate("Spell Checker/Toggle");
-		hkd.pszSection = "Spell Checker";
-		hkd.pszDescription = "Enable/disable spell checker";
+		hkd.pszName = "Spell Checker/Toggle";
+		hkd.ptszSection = LPGENT("Spell Checker");
+		hkd.ptszDescription = LPGENT("Enable/disable spell checker");
+		hkd.dwFlags = HKD_TCHAR;
+//		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_SHIFT|HOTKEYF_ALT, 'S');
 		hkd.lParam = HOTKEY_ACTION_TOGGLE;
 		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM) &hkd);
 	}
@@ -464,6 +454,10 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		sid.szModule = MODULE_NAME;
 		CallService(MS_MSG_REMOVEICON, 0, (LPARAM) &sid);
 	}
+
+	mir_free(dictionariesFolder);
+	mir_free(customDictionariesFolder);
+	mir_free(flagsDllFolder);
 
 	return 0;
 }
@@ -999,8 +993,9 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			int errors = TimerCheck(dlg, TRUE);
 			if (errors > 0)
 			{
-				if (MessageBox(hwnd, TranslateT("There are spelling errors. Are you sure you want to send this message?"),
-							   TranslateT("Spell Checker"), MB_YESNO) == IDNO)
+				TCHAR text[500];
+				mir_sntprintf(text,MAX_REGS(text),TranslateT("There are %d spelling errors. Are you sure you want to send this message?"),errors);
+				if (MessageBox(hwnd,text,TranslateT("Spell Checker"), MB_ICONQUESTION | MB_YESNO) == IDNO)
 				{
 					return TRUE;
 				}
@@ -1272,7 +1267,11 @@ void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *group, char
 	}
 	else
 	{
-		rc = CallService(MS_DB_CONTACT_GETSETTING_STR, (WPARAM) hContact, (LPARAM) &cgs);
+		rc = CallService(MS_DB_CONTACT_GETSETTING_STR_EX, (WPARAM)hContact, (LPARAM)&cgs);
+		if (rc == CALLSERVICE_NOTFOUND)
+		{
+			rc = CallService(MS_DB_CONTACT_GETSETTING_STR, (WPARAM)hContact, (LPARAM)&cgs);
+		}
 	}
 
 	if (!rc && dbv.type == DBVT_TCHAR && dbv.ptszVal != NULL)
@@ -1301,34 +1300,37 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dlg->hContact, 0);
 	if (proto == NULL)
 		return;
-
-	if (uinfoex_enabled)
-	{
-		GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
-		if (dlg->lang_name[0] != _T('\0'))
-			return;
-	}
 	
 	GetUserProtoLanguageSetting(dlg, dlg->hContact, proto, setting);
 	if (dlg->lang_name[0] != _T('\0'))
 		return;
 
+	GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
+	if (dlg->lang_name[0] != _T('\0'))
+		return;
+
 	// If not found and is inside meta, try to get from the meta
-	if (metacontacts_proto == NULL) 
-		return;
-
-	HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
-	if (hMetaContact == NULL)
-		return;
-
-	if (uinfoex_enabled)
+	INT_PTR mc = CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+	if (mc != CALLSERVICE_NOTFOUND)
 	{
-		GetUserProtoLanguageSetting(dlg, dlg->hContact, "UserInfo", setting, FALSE);
-		if (dlg->lang_name[0] != _T('\0'))
-			return;
-	}
+		char* metacontacts_proto = (char *) mc;
+		if (metacontacts_proto != NULL)
+		{
+			mc = CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
+			if (mc != CALLSERVICE_NOTFOUND)
+			{
+				HANDLE hMetaContact = (HANDLE) mc;
+				if (hMetaContact != NULL)
+				{
+					GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
+					if (dlg->lang_name[0] != _T('\0'))
+						return;
 
-	GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
+					GetUserProtoLanguageSetting(dlg, hMetaContact, "UserInfo", setting, FALSE);
+				}
+			}
+		}
+	}
 }
 
 void GetContactLanguage(Dialog *dlg)
@@ -1360,21 +1362,25 @@ void GetContactLanguage(Dialog *dlg)
 		}
 
 		// Try from metacontact
-		if (dlg->lang_name[0] == _T('\0') && ServiceExists(MS_MC_GETMETACONTACT)) 
+		if (dlg->lang_name[0] == _T('\0')) 
 		{
-			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
-			if (hMetaContact != NULL)
+			INT_PTR mc = CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
+			if (mc != CALLSERVICE_NOTFOUND)
 			{
-				if (!DBGetContactSettingTString(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv))
+				HANDLE hMetaContact = (HANDLE) mc;
+				if (hMetaContact != NULL)
 				{
-					lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
-					DBFreeVariant(&dbv);
-				}
+					if (!DBGetContactSettingTString(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv))
+					{
+						lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
+						DBFreeVariant(&dbv);
+					}
 
-				if (dlg->lang_name[0] == _T('\0') && !DBGetContactSettingTString(hMetaContact, "eSpeak", "TalkLanguage", &dbv))
-				{
-					lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
-					DBFreeVariant(&dbv);
+					if (dlg->lang_name[0] == _T('\0') && !DBGetContactSettingTString(hMetaContact, "eSpeak", "TalkLanguage", &dbv))
+					{
+						lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
+						DBFreeVariant(&dbv);
+					}
 				}
 			}
 		}
@@ -1453,7 +1459,7 @@ void NotifyWrongSRMM()
 		return;
 
 	MessageBox(NULL, 
-		TranslateT("Something is wrong with the message window.\n\nThis usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker).\n   In this case, please install tabSRMM or Scriver."),
+		TranslateT("Your message window does not support SpellChecker Plugin.\nIf you use SRMM, tabSRMM or Scriver, please update them to the latest version,\notherwise ask the author of your message window plugin to add support for Spell Checker."),
 		TranslateT("Spell Checker"), MB_ICONERROR | MB_OK);
 
 	notified = TRUE;
