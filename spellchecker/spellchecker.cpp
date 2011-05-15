@@ -207,22 +207,25 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.cbSize = sizeof(upd);
 		upd.szComponentName = pluginInfo.shortName;
 
-		upd.szBetaVersionURL = "http://pescuma.org/miranda/spellchecker_version.txt";
+		upd.szBetaVersionURL = "http://svn.berlios.de/svnroot/repos/mgoodies/trunk/spellchecker/Docs/spellchecker_version.txt";
 		upd.szBetaChangelogURL = "http://pescuma.org/miranda/spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = (int)strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef WIN64
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker64.zip";
+		upd.szBetaUpdateURL = "http://pescuma.googlecode.com/files/spellchecker64.%VERSION%.zip";
+//		upd.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=";
+//		upd.szUpdateURL = "http://addons.miranda-im.org/download.php?dlfile=";
+		upd.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Spell Checker (x64) ";
 #elif UNICODE
+		upd.szBetaUpdateURL = "http://pescuma.googlecode.com/files/spellcheckerW.%VERSION%.zip";
 		upd.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3691";
 		upd.szUpdateURL = "http://addons.miranda-im.org/download.php?dlfile=3691";
 		upd.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Spell Checker (Unicode) ";
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellcheckerW.zip";
 #else
+		upd.szBetaUpdateURL = "http://pescuma.googlecode.com/files/spellchecker.%VERSION%.zip";
 		upd.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3690";
 		upd.szUpdateURL = "http://addons.miranda-im.org/download.php?dlfile=3690";
 		upd.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Spell Checker (Ansi) ";
-		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker.zip";
 #endif
 		upd.cpbVersionPrefix = (int)strlen((char *)upd.pbVersionPrefix);
 
