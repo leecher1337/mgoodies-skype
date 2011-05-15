@@ -2,9 +2,23 @@ Spell Checker
 
 Changelog:
 
+. 0.2.6.0
+  + improved support for UserInfoEx Plugin
+  + added Updater support for Addons Page (pluginInfo.shortName didnt match Addons name due to separate Unicode/ANSI version)
+    You will have to enable beta Versions in Updater again if you want beta versions
+  + added error count to confirmation message
+  + added support for Miranda IM path API
+    the new default path for custom dictionaries is now %miranda_userdata%\Dictionaries
+    This change allows per-profile-dictionaries
+    IMPORTANT: You may have to move your custom dictionaries, as these are not moved automatically!!
+    IMPORTANT: You also need at least Folders plugin 0.1.5.1 or newer!!
   * Updated some header files
-  * Fixed a bug with translated hotkeys (Fixes issue 115)
+  ! Fixed a bug with translated hotkeys (Fixes issue 115)
   - removed PLUGININFO support, since it is obsolete
+  * internal Unicode transition
+  * increased options dialog size a bit for translators
+  * Fixed lookup of Language in UserInfo module of metacontacts
+  * updated Hunspell library to version 1.3.1
 
 . 0.2.5.0
   * Removed space in frame names in options

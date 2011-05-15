@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006-2009 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2010 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -70,8 +70,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = _T("Message Sessions");
-	odp.ptszTitle = _T("Spell Checker");
+	odp.ptszGroup = LPGENT("Message Sessions");
+	odp.ptszTitle = LPGENT("Spell Checker");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
@@ -84,8 +84,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = _T("Message Sessions");
-	odp.ptszTitle = _T("Auto-replacements");
+	odp.ptszGroup = LPGENT("Message Sessions");
+	odp.ptszTitle = LPGENT("Auto-replacements");
 	odp.pfnDlgProc = AutoreplaceDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_REPLACEMENTS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;

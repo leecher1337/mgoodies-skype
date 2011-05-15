@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="8,00"
 	Name="spellchecker"
-	ProjectGUID="{12B49AFE-9854-488F-8DE8-0D83738C5DEE}"
+	ProjectGUID="{5DB86086-10E9-42E7-AC90-503D2678C2A2}"
 	RootNamespace="spellchecker"
-	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -54,7 +53,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;UNICODE;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;UNICODE;_USRDLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -81,7 +80,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				OutputFile="..\..\bin\release unicode\Plugins\spellcheckerW.dll"
+				OutputFile="..\..\bin\release\Plugins\spellcheckerW.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -89,8 +88,6 @@
 				GenerateMapFile="true"
 				MapFileName=".\Unicode_Release/spellcheckerW.map"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Unicode_Release/spellcheckerW.lib"
 				TargetMachine="1"
 			/>
@@ -115,13 +112,16 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Unicode Release|x64"
-			OutputDirectory="$(ConfigurationName)64"
-			IntermediateDirectory="$(ConfigurationName)64"
+			OutputDirectory=".\Release64"
+			IntermediateDirectory=".\Release64"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -151,22 +151,19 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
+				Optimization="2"
 				InlineFunctionExpansion="0"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="2"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;UNICODE;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN64;WIN32;W32;NDEBUG;_WINDOWS;UNICODE;_USRDLL"
 				StringPooling="true"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				FloatingPointModel="2"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile=".\Unicode_Release/spellchecker.pch"
-				AssemblerListingLocation=".\Unicode_Release/"
-				ObjectFile=".\Unicode_Release/"
-				ProgramDataBaseFileName=".\Unicode_Release/"
+				PrecompiledHeaderFile=".\Release64/spellchecker.pch"
+				AssemblerListingLocation=".\Release64/"
+				ObjectFile=".\Release64/"
+				ProgramDataBaseFileName=".\Release64/"
+				BrowseInformation="2"
+				BrowseInformationFile=".\Release64/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 			/>
@@ -183,18 +180,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\bin\release x64\Plugins\spellcheckerW.dll"
+				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
+				OutputFile="..\..\bin\release\Plugins\spellchecker64.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Unicode_Release/spellcheckerW.pdb"
+				ProgramDatabaseFile=".\Release64/spellchecker64.pdb"
 				GenerateMapFile="true"
-				MapFileName=".\Unicode_Release/spellcheckerW.map"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary=""
+				MapFileName=".\Release64/spellchecker64.map"
+				BaseAddress="0x3EC20000"
+				ImportLibrary=".\Release64/spellchecker64.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -209,13 +204,16 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Unicode_Release/spellchecker.bsc"
+				OutputFile=".\Release64/spellchecker.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -256,7 +254,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;UNICODE;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;UNICODE;_USRDLL"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Unicode_Debug/spellchecker.pch"
 				AssemblerListingLocation=".\Unicode_Debug/"
@@ -287,8 +285,6 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Unicode_Debug/spellcheckerW.pdb"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Unicode_Debug/spellcheckerW.lib"
 				TargetMachine="1"
 			/>
@@ -313,13 +309,16 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Unicode Debug|x64"
-			OutputDirectory="$(ConfigurationName)64"
-			IntermediateDirectory="$(ConfigurationName)64"
+			OutputDirectory=".\Debug64"
+			IntermediateDirectory=".\Debug64"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -351,12 +350,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;UNICODE;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN64;WIN32;W32;_DEBUG;_WINDOWS;UNICODE;_USRDLL"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Unicode_Debug/spellchecker.pch"
-				AssemblerListingLocation=".\Unicode_Debug/"
-				ObjectFile=".\Unicode_Debug/"
-				ProgramDataBaseFileName=".\Unicode_Debug/"
+				PrecompiledHeaderFile=".\Debug64/spellchecker.pch"
+				AssemblerListingLocation=".\Debug64/"
+				ObjectFile=".\Debug64/"
+				ProgramDataBaseFileName=".\Debug64/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -376,15 +375,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
-				OutputFile="..\..\bin\debug unicode\Plugins\spellcheckerW.dll"
+				OutputFile="..\..\bin\debug unicode\Plugins\spellchecker64.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Unicode_Debug/spellcheckerW.pdb"
+				ProgramDatabaseFile=".\Debug64/spellchecker64.pdb"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary=".\Unicode_Debug/spellcheckerW.lib"
+				ImportLibrary=".\Debug64/spellchecker64.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -399,13 +396,16 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Unicode_Debug/spellchecker.bsc"
+				OutputFile=".\Debug64/spellchecker.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -446,7 +446,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/spellchecker.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -477,8 +477,6 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/spellchecker.pdb"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug/spellchecker.lib"
 				TargetMachine="1"
 			/>
@@ -503,18 +501,21 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(ConfigurationName)64"
-			IntermediateDirectory="$(ConfigurationName)64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -541,7 +542,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;_DEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/spellchecker.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -572,8 +573,6 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/spellchecker.pdb"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug/spellchecker.lib"
 				TargetMachine="17"
 			/>
@@ -596,6 +595,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -637,7 +639,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;_USRDLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -672,8 +674,6 @@
 				GenerateMapFile="true"
 				MapFileName=".\Release/spellchecker.map"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Release/spellchecker.lib"
 				TargetMachine="1"
 			/>
@@ -698,18 +698,21 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(ConfigurationName)64"
-			IntermediateDirectory="$(ConfigurationName)64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -737,7 +740,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="0"
 				AdditionalIncludeDirectories="../../include,sdk"
-				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
+				PreprocessorDefinitions="WIN32;W32;NDEBUG;_WINDOWS;_USRDLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -772,8 +775,6 @@
 				GenerateMapFile="true"
 				MapFileName=".\Release/spellchecker.map"
 				BaseAddress="0x3EC20000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Release/spellchecker.lib"
 				TargetMachine="17"
 			/>
@@ -796,6 +797,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2006-2010 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -42,7 +42,7 @@ using namespace std;
 
 
 // Miranda headers
-#define MIRANDA_VER 0x0800
+#define MIRANDA_VER 0x0900
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_system_cpp.h>
@@ -54,15 +54,18 @@ using namespace std;
 #include <m_database.h>
 #include <m_options.h>
 #include <m_utils.h>
-#include <m_updater.h>
-#include <m_metacontacts.h>
 #include <m_popup.h>
 #include <m_history.h>
 #include <m_message.h>
-#include <m_folders.h>
 #include <m_icolib.h>
-#include <m_variables.h>
 #include <m_hotkeys.h>
+
+//own includes
+#include "sdk/m_folders.h"
+#include "sdk/m_updater.h"
+#include "sdk/m_metacontacts.h"
+#include "sdk/m_variables.h"
+#include "sdk/m_userinfoex.h"
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -82,6 +85,9 @@ using namespace std;
 
 #define MODULE_NAME		"SpellChecker"
 
+#define FLAGS_DLL_FOLDER _T("%miranda_path%\\Icons")
+#define CUSTOM_DICTIONARIES_FOLDER _T("%miranda_userdata%\\Dictionaries")
+#define DICTIONARIES_FOLDER _T("%miranda_path%\\Dictionaries")
 
 // Global Variables
 extern HINSTANCE hInst;
