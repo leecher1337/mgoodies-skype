@@ -11,8 +11,8 @@ rem set ftp=ftp://<user>:<password>@<ftp>/<path>
 
 echo Building %name% ...
 
-msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
-msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
+rem msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
+rem msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
 
 echo Generating files for %name% ...
 
@@ -84,17 +84,25 @@ cd ..
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs  
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.FL.zip Plugins Docs Dictionaries Icons
 
-mkdir Plugins
 cd Plugins
 del /Q *.dll
-copy ..\..\..\..\bin\release\Plugins\%name%W.dll
+copy ..\..\..\..\bin\release unicode\Plugins\%name%W.dll
 cd ..
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.FL.zip Plugins Docs Dictionaries Icons
 
+cd Plugins
+del /Q *.dll
+copy ..\..\..\..\bin\release unicode\Plugins\%name%64.dll
+cd ..
+
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.zip Plugins Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.FL.zip Plugins Docs Dictionaries Icons
+
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%64.pdb.zip %name%64.pdb
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
