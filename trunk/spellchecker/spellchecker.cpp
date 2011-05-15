@@ -28,7 +28,7 @@ PLUGININFOEX pluginInfo={
 	"Spell Checker",
 	PLUGIN_MAKE_VERSION(0,2,6,0),
 	"Spell checker for the message windows. Uses Hunspell to do the checking.",
-	"Ricardo Pescuma Domenecci, wishmaster51",
+	"Ricardo Pescuma Domenecci, FREAK_THEMIGHTY",
 	"pescuma@miranda-im.org",
 	"© 2006-2010 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/spellchecker",
