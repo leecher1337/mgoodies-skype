@@ -18,26 +18,36 @@
 		INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_RELOAD  | INTERNET_FLAG_NO_UI | \
 		INTERNET_FLAG_PRAGMA_NOCACHE | INTERNET_FLAG_SECURE
 
-struct _tagIOLAYER
+typedef struct
 {
+	IOLAYER vtbl;
 	HINTERNET hInet;
+	HINTERNET hRequest;
 	TYP_FIFO *hResult;
 	LPVOID lpErrorBuf;
-};
+} IOLAYER_INST;
 
-static void FetchLastError (IOLAYER *hIO);
+static void IoLayer_Exit (IOLAYER *hPIO);
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL);
+static void IoLayer_Cancel(IOLAYER *hIO);
+static char *IoLayer_GetLastError(IOLAYER *hIO);
+static char *IoLayer_EscapeString(IOLAYER *hPIO, char *pszData);
+static void IoLayer_FreeEscapeString(char *pszData);
+static void FetchLastError (IOLAYER_INST *hIO);
 
 // -----------------------------------------------------------------------------
 // Interface
 // -----------------------------------------------------------------------------
 
-IOLAYER *IoLayer_Init(void)
+IOLAYER *IoLayerW32_Init(void)
 {
-	IOLAYER *hIO;
+	IOLAYER_INST *hIO;
 	
-	if (!(hIO = calloc(1, sizeof(IOLAYER))))
+	if (!(hIO = calloc(1, sizeof(IOLAYER_INST))))
 		return NULL;
 		
+	// Init Inet
 	if (!(hIO->hInet = InternetOpen ("Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13",
 		INTERNET_OPEN_TYPE_PRECONFIG, NULL, "<local>", 0)))
 	{
@@ -47,18 +57,29 @@ IOLAYER *IoLayer_Init(void)
 	
 	if (!(hIO->hResult = Fifo_Init(1024)))
 	{
-		IoLayer_Exit(hIO);
+		IoLayer_Exit((IOLAYER*)hIO);
 		return NULL;
 	}
 
 	//InternetSetCookie ("https://o.imo.im/", "proto", "prpl-skype");
 
-	return hIO;
+	// Init Vtbl
+	hIO->vtbl.Exit = IoLayer_Exit;
+	hIO->vtbl.Post = IoLayer_Post;
+	hIO->vtbl.Get = IoLayer_Get;
+	hIO->vtbl.Cancel = IoLayer_Cancel;
+	hIO->vtbl.GetLastError = IoLayer_GetLastError;
+	hIO->vtbl.EscapeString = IoLayer_EscapeString;
+	hIO->vtbl.FreeEscapeString = IoLayer_FreeEscapeString;
+
+	return (IOLAYER*)hIO;
 }
 // -----------------------------------------------------------------------------
 
-void IoLayer_Exit (IOLAYER *hIO)
+static void IoLayer_Exit (IOLAYER *hPIO)
 {
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
+
 	if (hIO->hInet) InternetCloseHandle (hIO->hInet);
 	if (hIO->lpErrorBuf) LocalFree(hIO->lpErrorBuf);
 	if (hIO->hResult) Fifo_Exit(hIO->hResult);
@@ -67,11 +88,11 @@ void IoLayer_Exit (IOLAYER *hIO)
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields)
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields)
 {
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 	URL_COMPONENTS urlInfo = {0};
 	HINTERNET hUrl;
-	HINTERNET hRequest;
 	DWORD dwFlags = 0, cbFlags = sizeof(dwFlags), dwLength = 512, dwRemaining = 0;
 	char szHostName[INTERNET_MAX_HOST_NAME_LENGTH],
 		szURLPath[INTERNET_MAX_URL_LENGTH], *p;
@@ -98,18 +119,18 @@ char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int
 		return NULL;
 	}
 	
-	hRequest = HttpOpenRequest (hUrl, pszPostFields?"POST":"GET", szURLPath, NULL, NULL, NULL, 
+	hIO->hRequest = HttpOpenRequest (hUrl, pszPostFields?"POST":"GET", szURLPath, NULL, NULL, NULL, 
 		INET_FLAGS, 0);
-	if (!hRequest)
+	if (!hIO->hRequest)
 	{
 		FetchLastError (hIO);
 		InternetCloseHandle (hUrl);
 		return NULL;
 	}
 	
-	InternetQueryOption (hRequest, INTERNET_OPTION_SECURITY_FLAGS, (LPVOID)&dwFlags, &cbFlags); 
+	InternetQueryOption (hIO->hRequest, INTERNET_OPTION_SECURITY_FLAGS, (LPVOID)&dwFlags, &cbFlags); 
 	dwFlags |= SECURITY_FLAG_IGNORE_UNKNOWN_CA;
-	InternetSetOption (hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof (dwFlags));
+	InternetSetOption (hIO->hRequest, INTERNET_OPTION_SECURITY_FLAGS, &dwFlags, sizeof (dwFlags));
 
 	/*
 	{
@@ -120,18 +141,19 @@ char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int
 		do
 		{
 			cbCookies=sizeof(szCookies);
-			HttpQueryInfo (hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
 			OutputDebugString (szCookies);
 		} while (GetLastError() == ERROR_SUCCESS);
 	}
 	*/
 
-	if (!(HttpSendRequest (hRequest, "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
+	if (!(HttpSendRequest (hIO->hRequest, "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
 		"X-Requested-With: XMLHttpRequest", -1,
 		pszPostFields, cbPostFields)))
 	{
 		FetchLastError (hIO);
-		InternetCloseHandle (hRequest);
+		InternetCloseHandle (hIO->hRequest);
+		hIO->hRequest = NULL;
 		InternetCloseHandle (hUrl);
 		return NULL;
 	}
@@ -145,21 +167,22 @@ char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int
 		do
 		{
 			cbCookies=sizeof(szCookies);
-			HttpQueryInfo (hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
 			OutputDebugString (szCookies);
 		} while (GetLastError() == ERROR_SUCCESS);
 	}
 	*/
 
 
-	while (InternetQueryDataAvailable (hRequest, &dwRemaining, 0, 0) && dwRemaining > 0)
+	while (InternetQueryDataAvailable (hIO->hRequest, &dwRemaining, 0, 0) && dwRemaining > 0)
 	{
 		if (p = Fifo_AllocBuffer (hIO->hResult, dwRemaining))
-			InternetReadFile (hRequest, p, dwRemaining, &dwRemaining);
+			InternetReadFile (hIO->hRequest, p, dwRemaining, &dwRemaining);
 	}
 	Fifo_Add (hIO->hResult, "", 1);
 	p = Fifo_Get (hIO->hResult, NULL);
-	InternetCloseHandle (hRequest);
+	InternetCloseHandle (hIO->hRequest);
+	hIO->hRequest = NULL;
 	InternetCloseHandle (hUrl);
 OutputDebugString(p);
 OutputDebugString("\n");
@@ -168,22 +191,33 @@ OutputDebugString("\n");
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_Get(IOLAYER *hIO, char *pszURL)
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL)
 {
 	return IoLayer_Post (hIO, pszURL, NULL, 0);
 }
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_GetLastError(IOLAYER *hIO)
+static void IoLayer_Cancel(IOLAYER *hPIO)
 {
-	return (char*)hIO->lpErrorBuf;
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
+
+	if (hIO->hRequest && InternetCloseHandle(hIO->hRequest))
+		hIO->hRequest = NULL;
 }
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData)
+static char *IoLayer_GetLastError(IOLAYER *hIO)
 {
+	return (char*)((IOLAYER_INST*)hIO)->lpErrorBuf;
+}
+
+// -----------------------------------------------------------------------------
+
+static char *IoLayer_EscapeString(IOLAYER *hPIO, char *pszData)
+{
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 	TYP_FIFO *hFifo;
 	char szBuf[8], *pszRet;
 	unsigned char *p;
@@ -206,7 +240,7 @@ char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData)
 
 // -----------------------------------------------------------------------------
 
-void IoLayer_FreeEscapeString(char *pszData)
+static void IoLayer_FreeEscapeString(char *pszData)
 {
 	free (pszData);
 }
@@ -215,7 +249,7 @@ void IoLayer_FreeEscapeString(char *pszData)
 // Static
 // -----------------------------------------------------------------------------
 
-static void FetchLastError (IOLAYER *hIO)
+static void FetchLastError (IOLAYER_INST *hIO)
 {
 	if (hIO->lpErrorBuf) LocalFree(hIO->lpErrorBuf);
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 

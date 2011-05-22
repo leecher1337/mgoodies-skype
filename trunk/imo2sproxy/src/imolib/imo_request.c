@@ -6,6 +6,18 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#define LockMutex(x) EnterCriticalSection (&x)
+#define UnlockMutex(x) LeaveCriticalSection(&x)
+#define InitMutex(x) InitializeCriticalSection(&x)
+#define ExitMutex(x) DeleteCriticalSection(&x)
+#define mutex_t CRITICAL_SECTION
+#else
+#include <pthread.h>
+#define LockMutex(x) pthread_mutex_lock(&x)
+#define UnlockMutex(x) pthread_mutex_unlock(&x)
+#define InitMutex(x)  pthread_mutex_init(&x, NULL);
+#define ExitMutex(x) 
+#define mutex_t pthread_mutex_t
 #endif
 #include <time.h>
 #include <stdlib.h>
@@ -23,7 +35,18 @@ struct _tagIMORQ
 	char szSessId[SSID_LENGTH+2];
     unsigned long send_ack;   // Some Sending ACK number
     unsigned long send_seq;   // Within one ACK there seems to be a SEQ-Number?
+	unsigned long *psend_ack;	// Pointer to send_ack to use
+	unsigned long *psend_seq;	// Pointer to send_seq to use
+	mutex_t mutex;				// Mutex for securing psend_ack and psend_seq read/write
+	BOOL bIsClone;				// Indicates that the current handle is a clone
 };
+
+static IOLAYER *(*IoLayer_Init)(void) =
+#ifdef WIN32
+IoLayerW32_Init;
+#else
+IoLayerCURL_Init;
+#endif
 
 // Forward declaration of private functions
 static size_t add_data(char *data, size_t size, size_t nmemb, void *ctx);
@@ -31,6 +54,13 @@ static IMORQ *Init(void);
 
 // -----------------------------------------------------------------------------
 // Interface
+// -----------------------------------------------------------------------------
+
+void ImoRq_SetIOLayer(IOLAYER *(*fp_Init)(void))
+{
+	IoLayer_Init = fp_Init;
+}
+
 // -----------------------------------------------------------------------------
 
 IMORQ *ImoRq_Init(void)
@@ -43,8 +73,12 @@ IMORQ *ImoRq_Init(void)
 		/* Create session ID */
 		ImoRq_CreateID (hRq->szSessId, SSID_LENGTH+1);
 
+		hRq->psend_seq = &hRq->send_seq;
+		hRq->psend_ack = &hRq->send_ack;
+		InitMutex(hRq->mutex);
+
 		/* Fetch start page to get cookies */
-		if (IoLayer_Get (hRq->hIO, "https://o.imo.im/"))
+		if (hRq->hIO->Get (hRq->hIO, "https://o.imo.im/"))
 
 		/* Get new session ID from system */
 		{
@@ -71,6 +105,10 @@ IMORQ *ImoRq_Clone (IMORQ *hRq)
 
 	if (!(hDup = Init())) return NULL;
 	strcpy (hDup->szSessId, hRq->szSessId);
+	hDup->psend_seq = hRq->psend_seq;
+	hDup->psend_ack = hRq->psend_ack;
+	hDup->mutex = hRq->mutex;
+	hDup->bIsClone = TRUE;
 	return hDup;
 }
 
@@ -78,9 +116,17 @@ IMORQ *ImoRq_Clone (IMORQ *hRq)
 
 void ImoRq_Exit (IMORQ *hRq)
 {
-	if (hRq->hIO) IoLayer_Exit(hRq->hIO);
+	if (hRq->hIO) hRq->hIO->Exit(hRq->hIO);
+	if (!hRq->bIsClone) ExitMutex (hRq->mutex);
 	free (hRq);
 }
+// -----------------------------------------------------------------------------
+
+void ImoRq_Cancel (IMORQ *hRq)
+{
+	if (hRq->hIO) hRq->hIO->Cancel(hRq->hIO);
+}
+
 // -----------------------------------------------------------------------------
 
 char *ImoRq_PostImo(IMORQ *hRq, char *pszMethod, cJSON *data)
@@ -95,20 +141,20 @@ char *ImoRq_PostImo(IMORQ *hRq, char *pszMethod, cJSON *data)
 OutputDebugString (pszData);
 OutputDebugString ("\n");
 #endif
-	pszEscData = IoLayer_EscapeString(hRq->hIO, pszData);
+	pszEscData = hRq->hIO->EscapeString(hRq->hIO, pszData);
 	free (pszData);
 	if (!pszEscData || !(hPostString = Fifo_Init(strlen(pszEscData)+32)))
 	{
-		if (pszEscData) IoLayer_FreeEscapeString (pszEscData);
+		if (pszEscData) hRq->hIO->FreeEscapeString (pszEscData);
 		return NULL;
 	}
 	Fifo_AddString (hPostString, "method=");
 	Fifo_AddString (hPostString, pszMethod);
 	Fifo_AddString (hPostString, "&data=");
 	Fifo_AddString (hPostString, pszEscData);
-	IoLayer_FreeEscapeString (pszEscData);
+	hRq->hIO->FreeEscapeString (pszEscData);
 	pszEscData =  Fifo_Get(hPostString, &uiCount);
-	pszData = IoLayer_Post (hRq->hIO, "https://o.imo.im/imo", pszEscData,
+	pszData = hRq->hIO->Post (hRq->hIO, "https://o.imo.im/imo", pszEscData,
 		uiCount-1);
 	Fifo_Exit(hPostString);
 printf ("<- %s\n", pszData);
@@ -123,7 +169,8 @@ char *ImoRq_PostSystem(IMORQ *hRq, char *pszMethod, char *pszSysTo, char *pszSys
 	char *pszRet;
 
     if (!(root=cJSON_CreateObject())) return NULL;
-    cJSON_AddNumberToObject (root, "ack", hRq->send_ack);
+	LockMutex (hRq->mutex);
+    cJSON_AddNumberToObject (root, "ack", *hRq->psend_ack);
     if (*hRq->szSessId) cJSON_AddStringToObject (root, "ssid", hRq->szSessId);
 	else cJSON_AddNumberToObject (root, "ssid", 0);
     cJSON_AddItemToObject (root, "messages", (msgs = cJSON_CreateArray()));
@@ -139,9 +186,10 @@ char *ImoRq_PostSystem(IMORQ *hRq, char *pszMethod, char *pszSysTo, char *pszSys
 		if (*hRq->szSessId) cJSON_AddStringToObject (from, "ssid", hRq->szSessId);
 		else cJSON_AddNumberToObject (from, "ssid", 0);
 	    cJSON_AddItemToObject(msg, "from", from);
-	    cJSON_AddNumberToObject (msg, "seq", hRq->send_seq++);
+	    cJSON_AddNumberToObject (msg, "seq", (*hRq->psend_seq)++);
 	    cJSON_AddItemToArray (msgs, msg);
 	}
+	UnlockMutex (hRq->mutex);
     pszRet = ImoRq_PostImo (hRq, pszMethod, root);
 	if (data && !bFreeData)
 	{
@@ -166,7 +214,9 @@ char *ImoRq_ResetRPC(IMORQ *hRq)
 	cJSON_AddItemToObject(root, "data", ssid);
 	*hRq->szSessId = 0;
     pszRet = ImoRq_PostSystem (hRq, "rest_rpc", "ssid", "client", root, 1);
-	hRq->send_seq=0;
+	LockMutex (hRq->mutex);
+	*hRq->psend_seq=0;
+	UnlockMutex (hRq->mutex);
 	return pszRet;
 }
 
@@ -246,18 +296,25 @@ char *ImoRq_SessId(IMORQ *hRq)
 
 char *ImoRq_GetLastError(IMORQ *hRq)
 {
-	return IoLayer_GetLastError (hRq->hIO);
+	return hRq->hIO->GetLastError (hRq->hIO);
 }
 
 // -----------------------------------------------------------------------------
 void ImoRq_UpdateAck(IMORQ *hRq, unsigned long lAck)
 {
-	hRq->send_ack = lAck;
+	LockMutex (hRq->mutex);
+	*hRq->psend_ack = lAck;
+	UnlockMutex (hRq->mutex);
 }
 // -----------------------------------------------------------------------------
 unsigned long ImoRq_GetSeq(IMORQ *hRq)
 {
-	return hRq->send_seq;
+	unsigned long lRet;
+
+	LockMutex (hRq->mutex);
+	lRet = *hRq->psend_seq;
+	UnlockMutex (hRq->mutex);
+	return lRet;
 }
 // -----------------------------------------------------------------------------
 

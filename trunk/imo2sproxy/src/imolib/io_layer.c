@@ -10,24 +10,32 @@
 #include "fifo.h"
 #include "io_layer.h"
 
-struct _tagIOLAYER
+typedef struct 
 {
+	IOLAYER vtbl;
 	CURL *hCurl;
 	TYP_FIFO *hResult;
 	char szErrorBuf[CURL_ERROR_SIZE+1];
-};
+} IOLAYER_INST;
 
+static void IoLayer_Exit (IOLAYER *hPIO);
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields);
+static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl);
+static void IoLayer_Cancel(IOLAYER *hIO);
+static char *IoLayer_GetLastError(IOLAYER *hIO);
+static char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData);
+static void IoLayer_FreeEscapeString(char *pszData);
 static size_t add_data(char *data, size_t size, size_t nmemb, void *ctx);
 
 // -----------------------------------------------------------------------------
 // Interface
 // -----------------------------------------------------------------------------
 
-IOLAYER *IoLayer_Init(void)
+IOLAYER *IoLayerCURL_Init(void)
 {
-	IOLAYER *hIO;
+	IOLAYER_INST *hIO;
 	
-	if (!(hIO = calloc(1, sizeof(IOLAYER))))
+	if (!(hIO = calloc(1, sizeof(IOLAYER_INST))))
 		return NULL;
 		
 	if (!(hIO->hCurl = curl_easy_init()))
@@ -38,7 +46,7 @@ IOLAYER *IoLayer_Init(void)
 	
 	if (!(hIO->hResult = Fifo_Init(1024)))
 	{
-		IoLayer_Exit(hIO);
+		IoLayer_Exit((IOLAYER*)hIO);
 		return NULL;
 	}
 
@@ -53,14 +61,25 @@ IOLAYER *IoLayer_Init(void)
 	curl_easy_setopt(hIO->hCurl, CURLOPT_COOKIEJAR, "cookies.txt");
 	curl_easy_setopt(hIO->hCurl, CURLOPT_WRITEFUNCTION, add_data);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_FILE, hIO);
+
+	// Init Vtbl
+	hIO->vtbl.Exit = IoLayer_Exit;
+	hIO->vtbl.Post = IoLayer_Post;
+	hIO->vtbl.Get = IoLayer_Get;
+	hIO->vtbl.Cancel = IoLayer_Cancel;
+	hIO->vtbl.GetLastError = IoLayer_GetLastError;
+	hIO->vtbl.EscapeString = IoLayer_EscapeString;
+	hIO->vtbl.FreeEscapeString = IoLayer_FreeEscapeString;
 	
-	return hIO;
+	return (IOLAYER*)hIO;
 }
 
 // -----------------------------------------------------------------------------
 
-void IoLayer_Exit (IOLAYER *hIO)
+static void IoLayer_Exit (IOLAYER *hPIO)
 {
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
+
 	if (hIO->hCurl) curl_easy_cleanup(hIO->hCurl);
 	if (hIO->hResult) Fifo_Exit(hIO->hResult);
 	free (hIO);
@@ -68,8 +87,10 @@ void IoLayer_Exit (IOLAYER *hIO)
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_Post(IOLAYER *hIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields)
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields)
 {
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
+
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POST, 1);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_URL, pszUrl);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POSTFIELDS, pszPostFields);
@@ -81,8 +102,10 @@ char *IoLayer_Post(IOLAYER *hIO, char *pszUrl, char *pszPostFields, unsigned int
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_Get(IOLAYER *hIO, char *pszUrl)
+static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl)
 {
+	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
+
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POST, 0);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_URL, pszUrl);
 	if (curl_easy_perform(hIO->hCurl)) return NULL;
@@ -92,21 +115,28 @@ char *IoLayer_Get(IOLAYER *hIO, char *pszUrl)
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_GetLastError(IOLAYER *hIO)
+static void IoLayer_Cancel(IOLAYER *hIO)
 {
-	return hIO->szErrorBuf;
+	// FIXME: Currently not implemented
 }
 
 // -----------------------------------------------------------------------------
 
-char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData)
+static char *IoLayer_GetLastError(IOLAYER *hIO)
 {
-	return curl_easy_escape(hIO->hCurl, pszData, 0);
+	return ((IOLAYER_INST*)hIO)->szErrorBuf;
 }
 
 // -----------------------------------------------------------------------------
 
-void IoLayer_FreeEscapeString(char *pszData)
+static char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData)
+{
+	return curl_easy_escape(((IOLAYER_INST*)hIO)->hCurl, pszData, 0);
+}
+
+// -----------------------------------------------------------------------------
+
+static void IoLayer_FreeEscapeString(char *pszData)
 {
 	curl_free(pszData);
 }
@@ -117,7 +147,7 @@ void IoLayer_FreeEscapeString(char *pszData)
 
 static size_t add_data(char *data, size_t size, size_t nmemb, void *ctx) 
 {
-	IOLAYER *hIO = (IOLAYER*)ctx;
+	IOLAYER_INST *hIO = (IOLAYER_INST*)ctx;
 
 	if (Fifo_Add(hIO->hResult, data, size * nmemb)) return size * nmemb;
 	return 0;

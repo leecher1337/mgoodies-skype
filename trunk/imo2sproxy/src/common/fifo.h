@@ -21,5 +21,6 @@ BOOL Fifo_Add(TYP_FIFO *pstHandle, char *acPBytes, unsigned int uiPCount);
 BOOL Fifo_AddString(TYP_FIFO *pstHandle, char *pszString);
 char *Fifo_Get (TYP_FIFO *pstHandle, unsigned int *uiPCount);
 unsigned int Fifo_Count (TYP_FIFO *pstHandle);
+void Fifo_Reset (TYP_FIFO *hFifo);
 
 #endif

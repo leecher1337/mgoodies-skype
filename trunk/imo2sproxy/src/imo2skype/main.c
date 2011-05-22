@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 #endif
 	if (argc<3)
 	{
-		printf ("imo.im Skypeproxy V1.11 - (c) by leecher 2009-2010\n\n"
+		printf ("imo.im Skypeproxy V1.11 - (c) by leecher 2009-2011\n\n"
 			"%s [-d] [-v [-l <Logfile>]] [-t] [-i]\n"
 			"[-m<s|a>] [-h <Bind to IP>] [-p <Port>] <Username> <Password>\n\n"
 			"-d\t- Daemonize (detach from console)\n"

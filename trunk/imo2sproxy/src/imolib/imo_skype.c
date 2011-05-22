@@ -50,10 +50,19 @@ IMOSKYPE *ImoSkype_Init(IMOSTATCB StatusCb, void *pUser)
 
 void ImoSkype_Exit(IMOSKYPE *hSkype)
 {
+	if (!hSkype) return;
 	if (hSkype->hRq) ImoRq_Exit(hSkype->hRq);
 	if (hSkype->hPoll) ImoRq_Exit(hSkype->hPoll);
 	if (hSkype->pszUser) free(hSkype->pszUser);
 	free (hSkype);
+}
+
+// -----------------------------------------------------------------------------
+
+void ImoSkype_CancelPolling(IMOSKYPE *hSkype)
+{
+	if (hSkype->hPoll)
+		ImoRq_Cancel(hSkype->hPoll);
 }
 
 // -----------------------------------------------------------------------------
@@ -157,7 +166,7 @@ int ImoSkype_KeepAlive(IMOSKYPE *hSkype)
 	*/
 
 	if (!hSkype) return 0;
-	pszRet = ImoRq_UserActivity(hSkype->hRq);
+	pszRet = ImoRq_UserActivity(hSkype->hPoll);
 	if (!pszRet) return -1;
 	return CheckReturn (hSkype, pszRet, "ok");
 }
@@ -184,7 +193,7 @@ int ImoSkype_Typing(IMOSKYPE *hSkype, char *pszBuddy, char *pszStatus)
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
 	cJSON_AddStringToObject(root, "buid", pszBuddy);
-	cJSON_AddStringToObject(root, "status", pszStatus);
+	cJSON_AddStringToObject(root, "typing_state", pszStatus);
 	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "im_typing", root))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 	cJSON_Delete(root);
@@ -347,6 +356,20 @@ int ImoSkype_Ping(IMOSKYPE *hSkype)
 // -----------------------------------------------------------------------------
 // Static
 // -----------------------------------------------------------------------------
+static void PostDisconnect(IMOSKYPE *hSkype)
+{
+	cJSON *arr, *root;
+
+	if (arr = cJSON_CreateArray())
+	{
+		if (!(root=cJSON_CreateObject())) return;
+		cJSON_AddStringToObject(root, "name", "disconnect");
+		cJSON_AddItemToArray (arr, root);
+		hSkype->StatusCb(arr, hSkype->pUser);
+		cJSON_Delete(arr);
+	}
+}
+
 // 0	-	Unexpected answer
 // 1	-	Got back JSON data, notified callback
 // 2	-	Received expected message pszExpected [deprecated]
@@ -372,7 +395,14 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 				if ((sys = cJSON_GetObjectItem(data,"ack")) && (unsigned long)sys->valueint >= ImoRq_GetSeq(hSkype->hRq))
 					return 2;	// imoim ACKnowledged this
 				else
+				{
+					if (sys && sys->valueint==0)
+					{
+						// ACK error, reset to 0, better reset the connection
+						PostDisconnect(hSkype);
+					}
 					return 0;	// No ACK, sequence number not incremented :(
+				}
 			}
 			for (i=0; i<iCount; i++)
 			{
@@ -453,6 +483,12 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 										ImoRq_PostToSys (hSkype->hRq, "set", "preference", prefdata, 1);
 									}
 								}
+							}
+							else if (strcmp (pszSys, "reset") == 0)
+							{
+								// System requested to reset connection
+								// Let's issue a "disconnect" to the callback to let it handle 
+								// this situation
 							}
 						}
 					}

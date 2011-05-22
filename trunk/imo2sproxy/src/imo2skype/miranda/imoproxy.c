@@ -15,7 +15,9 @@
 #include <process.h> 
 #pragma comment (lib, "Ws2_32.lib")
 #include <stdio.h>
+#include "io_layer.h"
 #include "imo2sproxy.h"
+#include "imo_request.h"
 #include "socksproxy.h"
 #include "w32skypeemu.h"
 #include "skypepluginlink.h"
@@ -92,7 +94,7 @@ typedef struct _MIB_IPADDRTABLE {
 // Plugin Info
 #define PINFO \
 	"imo2sproxy-Plugin", \
-	PLUGIN_MAKE_VERSION(1,0,0,13), \
+	PLUGIN_MAKE_VERSION(1,0,0,14), \
 	"Tunnelling Skype traffic via imo.im Web service", \
 	"leecher", \
 	"leecher@dose.0wnz.at", \
@@ -792,6 +794,11 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam)
 	if (CheckSkype) CheckSettings(-1);
 	if (CheckSkype == 2) DBWriteContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 0);
 	RegisterToUpdate();
+
+	// On Miranda 0.0.0.8+ NETLIB suppotrs HTTPS, therefore we can use 
+	// Netlib there
+	if (CallService (MS_SYSTEM_GETVERSION, 0, 0) >= 0x080000)
+		ImoRq_SetIOLayer (IoLayerNETLIB_Init);
 	StartProxies(-1);
 
 	return 0;
