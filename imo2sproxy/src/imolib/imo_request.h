@@ -6,8 +6,13 @@
 struct _tagIMORQ;
 typedef struct _tagIMORQ IMORQ;
 
+#ifdef _IOLAYER_H_
+void ImoRq_SetIOLayer(IOLAYER *(*fp_Init)(void));
+#endif
+
 IMORQ *ImoRq_Init(void);
 IMORQ *ImoRq_Clone (IMORQ *hRq);
+void ImoRq_Cancel (IMORQ *hRq);
 void ImoRq_Exit (IMORQ *hRq);
 
 char *ImoRq_SessId(IMORQ *hRq);

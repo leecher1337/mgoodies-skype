@@ -133,6 +133,11 @@ char *Fifo_Get (TYP_FIFO *pstHandle, unsigned int *uiPCount)
 	return pRet;
 }
 
+void Fifo_Reset (TYP_FIFO *pstHandle)
+{
+	pstHandle->uiCount = pstHandle->uiActInd = 0;
+}
+
 unsigned int Fifo_Count (TYP_FIFO *pstHandle)
 {
 	return pstHandle->uiCount;

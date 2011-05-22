@@ -763,14 +763,24 @@ static int Dispatcher_Start(IMOSAPI *pInst)
 
 static int Dispatcher_Stop(IMOSAPI *pInst)
 {
-	int iRet;
+	int iRet, iOldShutdown;
 
 	if (pInst->fpLog)
 	{
 		fprintf (pInst->fpLog, "Imo2S::Dispatcher_Stop()\n");
 		pInst->fpLog = NULL;
 	}
-	iRet = TerminateThread (pInst->hThread, 0);
+
+	// Shutdown polling socket and wait some time if thread terminates
+	// gracefully, otherwise kill it
+	iOldShutdown = pInst->iShuttingDown;
+	pInst->iShuttingDown = 1;
+	ImoSkype_CancelPolling (pInst->hInst);
+	if (WaitForSingleObject (pInst->hThread, 2000) == WAIT_TIMEOUT)
+		iRet = TerminateThread (pInst->hThread, 0);
+	else iRet = 1;
+	pInst->iShuttingDown = iOldShutdown;
+
 	if (iRet) 
 	{
 		CloseHandle (pInst->hThread);
@@ -831,7 +841,7 @@ static void Send(IMOSAPI *pInst, const char *pszMsg, ...)
 			pInst->pszLogBuf = pNewBuf;
 		}
 	} while (iLen == -1);
-	if (pInst->pszCmdID)
+	if (pInst->pszCmdID && iLenCmdID>1)
 	{
 		memcpy (pInst->pszLogBuf, pInst->pszCmdID, iLenCmdID);
 		pInst->pszLogBuf[iLenCmdID-1]=' ';
@@ -1448,6 +1458,89 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 	else
 	if (strcasecmp(pszCmd, "OPEN") == 0)
 	{
+		return;
+	}
+	else
+	if (strcasecmp(pszCmd, "CREATE") == 0)
+	{
+		if (!(pszCmd = strtok(NULL, " ")))
+		{
+			Send (pInst, "ERROR 536 CREATE: no object or type given");
+			return;
+		}
+		if (strcasecmp(pszCmd, "APPLICATION") == 0)
+		{
+			if (!(pszCmd = strtok(NULL, " ")) || strcasecmp(pszCmd, "libpurple_typing"))
+				Send (pInst, "ERROR 540 CREATE APPLICATION: Missing or invalid name");
+			else
+				Send (pInst, "CREATE APPLICATION libpurple_typing");		
+		}
+		else
+			Send (pInst, "ERROR 537 CREATE: Unknown object type given");
+		return;
+	}
+	else
+	if (strcasecmp(pszCmd, "ALTER") == 0)
+	{
+		if (!(pszCmd = strtok(NULL, " ")))
+			Send (pInst, "ERROR 526 ALTER: no object type given");
+		else
+		{
+			if (strcasecmp(pszCmd, "APPLICATION"))
+				Send (pInst, "ERROR 527 ALTER: unknown object type given");
+			else 
+			{
+				if (!(pszCmd = strtok(NULL, " ")) || strcasecmp(pszCmd, "libpurple_typing") ||
+					!(pszCmd = strtok(NULL, " ")))
+					Send (pInst, "ERROR 545 ALTER: missing or invalid action");
+				else
+				{
+					NICKENTRY *pUser;
+
+					if (strcasecmp (pszCmd, "CONNECT") == 0)
+					{
+						if (!(pszCmd = strtok(NULL, " ")) || !(pUser = BuddyList_Find(pInst->hBuddyList, pszCmd)))
+							Send (pInst, "ERROR 547 ALTER APPLICATION CONNECT: Invalid user handle");
+						else
+						{
+							Send (pInst, "ALTER APPLICATION libpurple_typing CONNECT %s", pszCmd);
+							Send (pInst, "APPLICATION CONNECTING %s", pszCmd);
+							Send (pInst, "APPLICATION libpurple_typing STREAMS %s:1", pszCmd);
+							// FIXME: Shouldn't we enumerate all STREAMS here? dunno...
+						}
+					} else
+					if (strcasecmp (pszCmd, "DATAGRAM") == 0)
+					{
+						char *pSep;
+
+						if (!(pszCmd = strtok(NULL, " ")) || !(pSep = strchr(pszCmd, ':')))
+							Send (pInst, "ERROR 551 ALTER APPLICATION DATAGRAM: Missing or invalid stream identifier");
+						else
+						{
+							*pSep=0;
+							if (!(pUser = BuddyList_Find(pInst->hBuddyList, pszCmd)))
+								Send (pInst, "ERROR 551 ALTER APPLICATION DATAGRAM: Missing or invalid stream identifier");
+							else
+							{
+								*pSep=':';
+								if (!(pszCmd = strtok(NULL, " ")))
+									Send (pInst, "ERROR 541 APPLICATION: Operation failed");
+								else
+								{
+									if (!strcmp (pszCmd, "PURPLE_TYPING"))
+										ImoSkype_Typing (pInst->hInst, pUser->pszUser, "typing");
+									else if (!strcmp (pszCmd, "PURPLE_TYPED"))
+										ImoSkype_Typing (pInst->hInst, pUser->pszUser, "typed");
+									else if (!strcmp (pszCmd, "PURPLE_NOT_TYPING"))
+										ImoSkype_Typing (pInst->hInst, pUser->pszUser, "not_typing");
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
 		return;
 	}
 	else

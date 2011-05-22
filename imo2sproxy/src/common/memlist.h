@@ -18,6 +18,7 @@ TYP_LIST *List_Init(unsigned int uiCapacity);
 void List_Exit(TYP_LIST *pstHandle);
 BOOL List_Push(TYP_LIST *pstHandle, void *pItem);
 void *List_Pop (TYP_LIST *pstHandle);
+BOOL List_ReplaceElementAt(TYP_LIST *pstHandle, void *pItem, unsigned int uiPos);
 BOOL List_InsertElementAt(TYP_LIST *pstHandle, void *pItem, unsigned int uiPos);
 void *List_RemoveElementAt(TYP_LIST *pstHandle, unsigned int uiPos);
 unsigned int List_Count(TYP_LIST *pstHandle);

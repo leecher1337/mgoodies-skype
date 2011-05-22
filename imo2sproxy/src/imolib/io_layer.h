@@ -1,11 +1,25 @@
+#ifndef _IOLAYER_H_
+#define _IOLAYER_H_
+
 struct _tagIOLAYER;
 typedef struct _tagIOLAYER IOLAYER;
 
-IOLAYER*IoLayer_Init(void);
-void IoLayer_Exit (IOLAYER *hIO);
+struct _tagIOLAYER
+{
+	void (*Exit) (IOLAYER *hIO);
 
-char *IoLayer_Post(IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
-char *IoLayer_Get(IOLAYER *hIO, char *pszURL);
-char *IoLayer_GetLastError(IOLAYER *hIO);
-char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData);
-void IoLayer_FreeEscapeString(char *pszData);
+	char *(*Post) (IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
+	char *(*Get) (IOLAYER *hIO, char *pszURL);
+	void (*Cancel) (IOLAYER *hIO);
+	char *(*GetLastError) (IOLAYER *hIO);
+	char *(*EscapeString) (IOLAYER *hIO, char *pszData);
+	void (*FreeEscapeString) (char *pszData);
+};
+
+#ifdef WIN32
+IOLAYER *IoLayerW32_Init(void);
+IOLAYER *IoLayerNETLIB_Init(void);
+#endif
+IOLAYER *IoLayerCURL_Init(void);
+
+#endif

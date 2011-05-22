@@ -8,6 +8,7 @@ typedef int(*IMOSTATCB)(cJSON *pMsg, void *pUser);
 
 IMOSKYPE *ImoSkype_Init(IMOSTATCB StatusCb, void *pUser);
 void ImoSkype_Exit(IMOSKYPE *hSkype);
+void ImoSkype_CancelPolling(IMOSKYPE *hSkype);
 char *ImoSkype_GetLastError(IMOSKYPE *hSkype);
 char *ImoSkype_GetUserHandle(IMOSKYPE *hSkype);
 

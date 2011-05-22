@@ -23,6 +23,9 @@ First let's start with a list of files and a short description:
 | w32browser.c   | M | C COM Interface to Internet Explorer for call supp.   |
 | main.c         | X | Commandline interface for imo2sproxy module           |
 | imoproxy.c     | X | Miranda plugin implementation for imo2sproxy          |
+| skypepluginlink| M | Communication layer with Miranda Skype Plugin 0.0.0.46|
+| socksproxy.c   | M | Communication layer with socket protocol.             |
+| w32skypeemu.c  | M | Communication layer via Win32 Skype API emulation     |
 +----------------+---+-------------------------------------------------------+
                   [T]ype is: M...Module, X...Executable (Application)
 
@@ -93,4 +96,7 @@ Now here is the module list with their dependencies divided into layers:
 | Depends on:  memlist.c, imo2skypeapi.c, || Depends on:  memlist.c, imo2skypeapi.c, |
 |              imo2sproxy.c, (libpthread) ||              imo2sproxy.c, (libpthread) |
 +-----------------------------------------++-----------------------------------------+
-
+                         |                   |                |
+                         +-------------------+                |
+                         |                   |                |
+Communication layer:  socksproxy.c      w32skypeemu.c     skypepluginlink.c
