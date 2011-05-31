@@ -39,17 +39,48 @@ Free Software Foundation, Inc.,
 
 #pragma once
 
-class WATrack : public Player
+
+class mRadio : public Player
 {
 protected:
 	virtual void EnableDisable();
 
-	HANDLE			m_hNewStatusHook;	//HookEventObj on ME_WAT_NEWSTATUS
-	int __cdecl		NewStatus(WPARAM wParam, LPARAM lParam);
+	char*	m_proto;
+	DWORD	m_version;
 
-	void			GetData();
+	LPTSTR	m_ptszURL;
+	HANDLE	m_hContact;									//CurrentStation
+	HANDLE	FindContact(LPTSTR ptszURL = NULL);			//Fill
+
+	BOOL	COM_Start();
+	BOOL	COM_Stop();
+	BOOL	COM_infoCache();							//get the listeningTo info
+
+	HANDLE			m_hRadioStatus;						//HookEventObj on ME_RADIO_STATUS
+	int __cdecl		EVT_RadioStatus(WPARAM wParam, LPARAM lParam);
+
+	virtual ~mRadio();
+
+/////////////////////////////////////////////////////////////////////////////
+// only for mradio + 0.0.1.x (never need for + 0.0.2.x)
+
+	BOOL			COM_ConnectServer();				//InitmRadio
+	void			COM_ReleaseServer();				//ClearmRadio
+
+	int __cdecl		EVT_RadioStatus_1x(WPARAM wParam, LPARAM lParam);
+
+	HANDLE			m_hProtoAck;						//HookEventObj on ME_PROTO_ACK
+	int __cdecl		EVT_ProtoAck(WPARAM wParam,LPARAM lParam);
+
+	HANDLE			m_hDbSettingChanged;				//HookEventObj on ME_DB_CONTACT_SETTINGCHANGED
+	int __cdecl		EVT_DbSettingChanged(WPARAM wParam, LPARAM lParam);
+
+/////////////////////////////////////////////////////////////////////////////
 
 public:
-	WATrack(int index);
-	virtual ~WATrack();
+	//common
+	mRadio (int index);
+
+	//Plugin ...
+	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };

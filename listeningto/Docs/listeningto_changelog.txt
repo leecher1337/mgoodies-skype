@@ -1,6 +1,19 @@
 ListeningTo
-
+TODO:
+  * remove watrack (not needet since watrack support jabber-tune) ?
+  * dynamic disable mRadio player on optionspage 'IDD_PLAYERS' 
+    if user disable radio stream on optionspage 'IDD_OPTIONS'
+  + add processing multi-media-keys (to fix some problems with wmp player)
+  
 Changelog:
+. 0.3.1.1 (in work)
+  * update copyright
+  + support Awkward's great mRadio Mod plugin (new player)
+    support mRadio +0.0.1.7 and new beta 0.0.2.1 event system
+  * port latest m_music.inc to m_music.h
+  + add new core langpack support (support new langpack design)
+  * change HookEvent to HookEventObj in watrack class
+  * change min core version from 0x0600 to 0x0800
 
 . 0.3.1.0
   + use precompile header (patch by Merlin_de)

@@ -28,6 +28,10 @@
 #include <m_button.h>
 #endif
 
+#ifndef SIZEOF
+#include <win2k.h>
+#endif
+
 // --------------------------------------------------------------------------
 // Memory management
 // --------------------------------------------------------------------------
@@ -168,6 +172,32 @@ __inline static TCHAR *variables_parse(TCHAR *tszFormat, TCHAR *tszExtraText, HA
 
   return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
 }
+
+__inline static char *variables_parse_char(char *szFormat, char *szExtraText, HANDLE hContact)
+{
+  FORMATINFO fi = {0};
+
+  fi.cbSize = sizeof(fi);
+  fi.szFormat = szFormat;
+  fi.szExtraText = szExtraText;
+  fi.hContact = hContact;
+  fi.flags = 0;
+
+  return (char *) CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+}
+__inline static wchar_t *variables_parse_wchar(wchar_t *wszFormat, wchar_t *wszExtraText, HANDLE hContact)
+{
+  FORMATINFO fi = {0};
+
+  fi.cbSize = sizeof(fi);
+  fi.wszFormat = wszFormat;
+  fi.wszExtraText = wszExtraText;
+  fi.hContact = hContact;
+  fi.flags = FIF_UNICODE;
+
+  return (wchar_t *) CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+}
+
 #endif
 
 __inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact,
@@ -578,41 +608,38 @@ __inline static int variables_skin_helpbutton(HWND hwndDlg, UINT uIDButton) {
 
 	hIcon = NULL;
 	res = 0;
-	if (ServiceExists(MS_VARS_GETSKINITEM)) {
+	if (ServiceExists(MS_VARS_GETSKINITEM))
 		hIcon = (HICON)CallService(MS_VARS_GETSKINITEM, 0, (LPARAM)VSI_HELPICON);
-	}
-	GetClassName(GetDlgItem(hwndDlg, uIDButton), tszClass, sizeof(tszClass));
+
+	GetClassName(GetDlgItem(hwndDlg, uIDButton), tszClass, SIZEOF(tszClass));
 	if (!_tcscmp(tszClass, _T("Button"))) {
 		if (hIcon != NULL) {
-			SetWindowLong(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE, GetWindowLong(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE)|BS_ICON);
+			SetWindowLongPtr(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE, GetWindowLongPtr(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE)|BS_ICON);
 			SendMessage(GetDlgItem(hwndDlg, uIDButton), BM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hIcon);
 		}
 		else {
-			SetWindowLong(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE, GetWindowLong(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE)&~BS_ICON);
+			SetWindowLongPtr(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE, GetWindowLongPtr(GetDlgItem(hwndDlg, uIDButton), GWL_STYLE)&~BS_ICON);
 			SetDlgItemText(hwndDlg, uIDButton, _T("V"));
 		}
 	}
 	else if (!_tcscmp(tszClass, MIRANDABUTTONCLASS)) {
 		if (hIcon != NULL) {
-			char *szTipInfo;
+			char *szTipInfo = NULL;
 
 			SendMessage(GetDlgItem(hwndDlg, uIDButton), BM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hIcon);
-			if (ServiceExists(MS_VARS_GETSKINITEM)) {
+			if (ServiceExists(MS_VARS_GETSKINITEM))
 				szTipInfo = (char *)CallService(MS_VARS_GETSKINITEM, 0, (LPARAM)VSI_HELPTIPTEXT);
-			}
-			if (szTipInfo == NULL) {
+
+			if (szTipInfo == NULL)
 				szTipInfo = Translate("Open String Formatting Help");
-			}
+
 			SendMessage(GetDlgItem(hwndDlg, uIDButton), BUTTONADDTOOLTIP, (WPARAM)szTipInfo, 0);
 			SendDlgItemMessage(hwndDlg, uIDButton, BUTTONSETASFLATBTN, 0, 0);
 		}
-		else {
-			SetDlgItemText(hwndDlg, uIDButton, _T("V"));
-		}
+		else SetDlgItemText(hwndDlg, uIDButton, _T("V"));
 	}
-	else {
-		res = -1;
-	}
+	else res = -1;
+
 	ShowWindow(GetDlgItem(hwndDlg, uIDButton), ServiceExists(MS_VARS_FORMATSTRING));
 
 	return res;

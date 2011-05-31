@@ -64,20 +64,21 @@
 #define IDC_CONTACTS_G                  1093
 #define IDC_FOOBAR                      1093
 #define IDC_LISTENING_G                 1094
-#define IDC_VIDEOLAN                    1094
-#define IDC_WLM                         1094
-#define IDC_XSTATUS_G                   1095
-#define IDC_XSTATUS_L                   1096
-#define IDC_SET_XSTATUS                 1097
-#define IDC_CHECK_XSTATUS               1098
-#define IDC_IGNORE_XSTATUS              1099
-#define IDC_XSTATUS_NAME                1100
-#define IDC_CHECK_XSTATUS_MUSIC         1100
-#define IDC_NAME_L                      1101
-#define IDC_ENABLE_MUSIC                1102
-#define IDC_ENABLE_RADIO                1103
-#define IDC_ENABLE_VIDEO                1104
-#define IDC_ENABLE_OTHERS               1105
+#define IDC_VIDEOLAN                    1095
+#define IDC_WLM                         1096
+#define IDC_XSTATUS_G                   1097
+#define IDC_MRADIO                      1098
+#define IDC_XSTATUS_L                   1099
+#define IDC_SET_XSTATUS                 1100
+#define IDC_CHECK_XSTATUS               1101
+#define IDC_IGNORE_XSTATUS              1102
+#define IDC_XSTATUS_NAME                1103
+#define IDC_CHECK_XSTATUS_MUSIC         1104
+#define IDC_NAME_L                      1105
+#define IDC_ENABLE_MUSIC                1106
+#define IDC_ENABLE_RADIO                1107
+#define IDC_ENABLE_VIDEO                1108
+#define IDC_ENABLE_OTHERS               1109
 #define IDC_POLL_TIMER_SPIN             1625
 #define IDC_STATIC                      -1
 
@@ -89,7 +90,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        124
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1103
+#define _APS_NEXT_CONTROL_VALUE         1110
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

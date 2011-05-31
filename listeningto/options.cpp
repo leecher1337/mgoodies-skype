@@ -1,20 +1,40 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+ListeningTo plugin for Miranda IM
+==========================================================================
+Copyright	(C) 2005-2011 Ricardo Pescuma Domenecci
+			(C) 2010-2011 Merlin_de
 
-This is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+PRE-CONDITION to use this code under the GNU General Public License:
+ 1. you do not build another Miranda IM plugin with the code without written permission
+    of the autor (peace for the project).
+ 2. you do not publish copies of the code in other Miranda IM-related code repositories.
+    This project is already hosted in a SVN and you are welcome to become a contributing member.
+ 3. you do not create listeningTo-derivatives based on this code for the Miranda IM project.
+    (feel free to do this for another project e.g. foobar)
+ 4. you do not distribute any kind of self-compiled binary of this plugin (we want continuity
+    for the plugin users, who should know that they use the original) you can compile this plugin
+    for your own needs, friends, but not for a whole branch of people (e.g. miranda plugin pack).
+ 5. This isn't free beer. If your jurisdiction (country) does not accept
+    GNU General Public License, as a whole, you have no rights to the software
+    until you sign a private contract with its author. !!!
+ 6. you always put these notes and copyright notice at the beginning of your code.
+==========================================================================
+
+in case you accept the pre-condition,
+this is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
 This is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this file; see the file license.txt.  If
-not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc.,
+59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
@@ -68,15 +88,18 @@ static OptPageControl formatControls[] = {
 	{ &opts.nothing,				CONTROL_TEXT,		IDC_NOTHING,			"Nothing", (ULONG_PTR) _T("<Nothing>"), 0, 0, 128 }
 };
 
-static OptPageControl playersControls[] = { 
+static OptPageControl playersControls[] = {
+	//first base class player 
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WATRACK,		"GetInfoFromWATrack", FALSE },
-	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,		"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WINAMP,			"EnableWinamp", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WMP,			"EnableWMP", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WLM,			"EnableWLM", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_FOOBAR,			"EnableFoobar", TRUE },
+	{ NULL/*&opts.enable_radio*/,	CONTROL_CHECKBOX,	IDC_MRADIO,			"EnableMRadio", TRUE },
 //	{ NULL,							CONTROL_CHECKBOX,	IDC_VIDEOLAN,		"EnableVideoLAN", TRUE },
+	//other
+	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,		"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ &opts.enable_other_players,	CONTROL_CHECKBOX,	IDC_OTHER,			"EnableOtherPlayers", TRUE },
 	{ &opts.enable_code_injection,	CONTROL_CHECKBOX,	IDC_CODE_INJECTION,	"EnableCodeInjection", TRUE }
 };
@@ -125,11 +148,12 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 void InitOptions()
 {
 	playersControls[0].var = &players[WATRACK]->m_enabled;
-	playersControls[2].var = &players[WINAMP]->m_enabled;
-	playersControls[3].var = &players[WMP]->m_enabled;
-	playersControls[4].var = &players[WLM]->m_enabled;
-	playersControls[5].var = &players[ITUNES]->m_enabled;
-	playersControls[6].var = &players[FOOBAR]->m_enabled;
+	playersControls[1].var = &players[WINAMP]->m_enabled;
+	playersControls[2].var = &players[WMP]->m_enabled;
+	playersControls[3].var = &players[WLM]->m_enabled;
+	playersControls[4].var = &players[ITUNES]->m_enabled;
+	playersControls[5].var = &players[FOOBAR]->m_enabled;
+	playersControls[6].var = &players[MRADIO]->m_enabled;
 //	playersControls[7].var = &players[VIDEOLAN]->m_enabled;
 
 	LoadOptions();
@@ -320,6 +344,8 @@ int playerDlgs[] = {
 static void PlayersEnableDisableCtrls(HWND hwndDlg)
 {
 	BOOL watrack_found = ServiceExists(MS_WAT_GETMUSICINFO);
+	BOOL mradio_found = ServiceExists(MS_RADIO_EXPORT);		//mRadio 0.0.1.4
+
 	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), watrack_found);
 
 	BOOL enabled = !IsDlgButtonChecked(hwndDlg, IDC_WATRACK) || !watrack_found;
@@ -332,7 +358,7 @@ static void PlayersEnableDisableCtrls(HWND hwndDlg)
 		if (players[playerDlgs[i]]->m_needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
 			needPoll = TRUE;
 	}
-
+	EnableWindow(GetDlgItem(hwndDlg, IDC_MRADIO), enabled && mradio_found /*&& opts.enable_radio*/);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_OTHER), enabled);
 
 	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_L), enabled && needPoll);

@@ -7,6 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
+#include "resource.h"
 #include "winresrc.h"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -63,19 +64,20 @@ BEGIN
     CONTROL         "Get info from WATrack plugin",IDC_WATRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,3,12,282,11
     LTEXT           "Get info from these players:",IDC_PLAYERS_L,3,30,282,11
     CONTROL         "Winamp (*)",IDC_WINAMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,44,265,11
-    CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,59,265,11
-    CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,89,265,11
+    CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,58,265,11
+    CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,86,265,11
     CONTROL         "foobar2000 (need to install the plugin manually)",IDC_FOOBAR,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,104,265,11
-    CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,119,265,11
-    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,143,87,12
-    EDITTEXT        IDC_POLL_TIMER,97,142,34,13,ES_AUTOHSCROLL
-    CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,125,140,11,12
-    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,143,82,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,100,265,11
+    CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,128,265,11
+    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,155,87,12
+    EDITTEXT        IDC_POLL_TIMER,97,154,34,13,ES_AUTOHSCROLL
+    CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,125,152,11,12
+    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,155,82,12
     CONTROL         "Allow auto-loading plugins into players (affect players with *)",IDC_CODE_INJECTION,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,3,159,282,11
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,3,171,282,11
     CONTROL         "Players with Windows Live Messanger support",IDC_WLM,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,74,265,11
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,72,265,11
+    CONTROL         "mRadio plugin",IDC_MRADIO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,114,265,11
 END
 
 IDD_FORMAT DIALOGEX 0, 0, 288, 221
