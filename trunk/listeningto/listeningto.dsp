@@ -272,6 +272,14 @@ SOURCE=.\players\itunes.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\players\mRadio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\mRadio.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\players\mswlm.cpp
 # End Source File
 # Begin Source File

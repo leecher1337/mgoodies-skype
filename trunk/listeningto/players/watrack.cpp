@@ -1,86 +1,84 @@
 /* 
-Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
+ListeningTo plugin for Miranda IM
+==========================================================================
+Copyright	(C) 2005-2011 Ricardo Pescuma Domenecci
+			(C) 2010-2011 Merlin_de
 
-This is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+PRE-CONDITION to use this code under the GNU General Public License:
+ 1. you do not build another Miranda IM plugin with the code without written permission
+    of the autor (peace for the project).
+ 2. you do not publish copies of the code in other Miranda IM-related code repositories.
+    This project is already hosted in a SVN and you are welcome to become a contributing member.
+ 3. you do not create listeningTo-derivatives based on this code for the Miranda IM project.
+    (feel free to do this for another project e.g. foobar)
+ 4. you do not distribute any kind of self-compiled binary of this plugin (we want continuity
+    for the plugin users, who should know that they use the original) you can compile this plugin
+    for your own needs, friends, but not for a whole branch of people (e.g. miranda plugin pack).
+ 5. This isn't free beer. If your jurisdiction (country) does not accept
+    GNU General Public License, as a whole, you have no rights to the software
+    until you sign a private contract with its author. !!!
+ 6. you always put these notes and copyright notice at the beginning of your code.
+==========================================================================
+
+in case you accept the pre-condition,
+this is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
 This is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this file; see the file license.txt.  If
-not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc.,
+59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-
 #include "..\commons.h"
-
-
-static WATrack *instance = NULL;
-
-int NewStatusCallback(WPARAM wParam, LPARAM lParam) 
-{
-	if (!loaded)
-		return 0;
-	if (instance != NULL)
-		instance->NewStatus(wParam, lParam);
-	return 0;
-}
-
 
 WATrack::WATrack(int index)
 : Player(index)
 {
 	m_name = _T("WATrack");
-	instance = this;
 	m_hNewStatusHook = NULL;
 }
 
 WATrack::~WATrack()
 {
-	if (m_hNewStatusHook != NULL) 
-	{
-		UnhookEvent(m_hNewStatusHook);
-		m_hNewStatusHook = NULL;
-	}
-	instance = NULL;
+	EVT_Unhook(&m_hNewStatusHook);
 }
 
 void
 WATrack::EnableDisable()
 {
-	if (!ServiceExists(MS_WAT_GETMUSICINFO))
-	{
+	if (!ServiceExists(MS_WAT_GETMUSICINFO)) {
 		m_enabled = FALSE;
 		return;
 	}
 
-	if (m_hNewStatusHook == NULL)
-		m_hNewStatusHook = HookEvent(ME_WAT_NEWSTATUS, NewStatusCallback);
+	if (!m_hNewStatusHook) {
+		//hook ME_WAT_NEWSTATUS
+		int (__cdecl WATrack::*hookProc)(WPARAM, LPARAM);
+		hookProc = &WATrack::NewStatus;
+		m_hNewStatusHook = HookEventObj(ME_WAT_NEWSTATUS, (MIRANDAHOOKOBJ)*(void **)&hookProc, this);
+	}
 }
 
-void
-WATrack::NewStatus(int event, int value)
+int __cdecl
+WATrack::NewStatus(WPARAM wParam, LPARAM lParam)
 {
+	if (!loaded) return 0;
 	EnterCriticalSection(&cs);
 
-	if (event == WAT_EVENT_PLUGINSTATUS && value != 0)
-	{
-		FreeData();
-	}
-	else
-	{
-		GetData();
-	}
+	(wParam == WAT_EVENT_PLUGINSTATUS && lParam != 0) ? FreeData() : GetData();
 
 	LeaveCriticalSection(&cs);
 
 	NotifyInfoChanged();
+	return 0;
 }
 
 void 

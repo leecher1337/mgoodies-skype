@@ -1,20 +1,40 @@
 /* 
-Copyright (C) 2005-2009 Ricardo Pescuma Domenecci
+ListeningTo plugin for Miranda IM
+==========================================================================
+Copyright	(C) 2005-2011 Ricardo Pescuma Domenecci
+			(C) 2010-2011 Merlin_de
 
-This is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+PRE-CONDITION to use this code under the GNU General Public License:
+ 1. you do not build another Miranda IM plugin with the code without written permission
+    of the autor (peace for the project).
+ 2. you do not publish copies of the code in other Miranda IM-related code repositories.
+    This project is already hosted in a SVN and you are welcome to become a contributing member.
+ 3. you do not create listeningTo-derivatives based on this code for the Miranda IM project.
+    (feel free to do this for another project e.g. foobar)
+ 4. you do not distribute any kind of self-compiled binary of this plugin (we want continuity
+    for the plugin users, who should know that they use the original) you can compile this plugin
+    for your own needs, friends, but not for a whole branch of people (e.g. miranda plugin pack).
+ 5. This isn't free beer. If your jurisdiction (country) does not accept
+    GNU General Public License, as a whole, you have no rights to the software
+    until you sign a private contract with its author. !!!
+ 6. you always put these notes and copyright notice at the beginning of your code.
+==========================================================================
+
+in case you accept the pre-condition,
+this is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
 This is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this file; see the file license.txt.  If
-not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc.,
+59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 
@@ -44,7 +64,7 @@ static TCHAR *wcs[] = {
 		_T("Media Player 2")	//WMP old
 };
 
-//static LRESULT CALLBACK TestWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//static LRESULT CALLBACK WMP_OCXreceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 //static WindowsMediaPlayer *singleton = NULL;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -109,7 +129,7 @@ WindowsMediaPlayer::CreateWnd()
 {
 	// Create windows class
 	WNDCLASS wc				= {0};
-	wc.lpfnWndProc			= DefWindowProc /*TestWndProc*/;
+	wc.lpfnWndProc			= DefWindowProc /*WMP_OCXreceiverWndProc TestWndProc*/;
 	wc.hInstance			= hInst;
 	wc.lpszClassName		= _T("MIMlisteningToWMP");
 
@@ -124,6 +144,7 @@ WindowsMediaPlayer::CreateWnd()
 //		singleton = NULL;
 		return FALSE;
 	}
+
 	// Create a window.
 /*	if (WLM) {
 		m_received[0]			= L'\0';
@@ -135,7 +156,7 @@ WindowsMediaPlayer::CreateWnd()
 	else {   */
 		m_hwndclass = CreateWindow(_T("MIMlisteningToWMP"), _T("Miranda ListeningTo WMP OCX receiver"),
 									WS_OVERLAPPEDWINDOW | WS_DISABLED, CW_USEDEFAULT, CW_USEDEFAULT,
-									CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInst, NULL);
+									CW_USEDEFAULT, CW_USEDEFAULT, NULL/*HWND_MESSAGE*/, NULL, hInst, NULL);
 //		singleton = m_hwndclass ? this : NULL;  
 //	}
 
@@ -400,8 +421,9 @@ WindowsMediaPlayer::COM_IsPlayerDocked()
 		DEBUGOUT("wmp_Player:\tDocked = ","on");
 		return TRUE;		//Player is online (undocket = Full Player)
 	}
-	else if(m_comAppH){
-		m_bFullPlayer = FALSE;
+	else					//Player change from undocket to docked 
+	if(m_comAppH /*&& m_bFullPlayer*/){
+//		m_bFullPlayer = FALSE;
 		IWMPControls *spControls = NULL;
 		hr = m_comAppH->get_controls(&spControls);
 		//This method causes Windows Media Player to release any system resources it is using,
@@ -412,6 +434,7 @@ WindowsMediaPlayer::COM_IsPlayerDocked()
 		RELEASE(spControls, TRUE);
 	}
 	DEBUGOUT("wmp_Player:\tDocked = ","off");
+	m_bFullPlayer = FALSE;
 	return FALSE;			//Player is offline or docked to a other Host
 }
 
@@ -523,7 +546,7 @@ WindowsMediaPlayer::COM_OnEventInvoke(
 			case DISPID_WMPCOREEVENT_OPENSTATECHANGE:
 			{/*	[id(0x00001389), helpstring("Sent when the control changes OpenState")]
 				void OpenStateChange([in] long NewState); */
-			   #if defined(_DEBUG) || defined(DEBUG)
+			   #ifdef DEBUG
  				char* temp;
 				switch(pDispParams->rgvarg[0].lVal){
 					case wmposUndefined:
@@ -576,6 +599,7 @@ WindowsMediaPlayer::COM_OnEventInvoke(
 				DEBUGOUT("wmp_Evt:\tOpenStateChange = ", temp);
 			   #endif
 			//ugly workaround for some wmp version on multimedia key press (if not docked)
+			//TODO: find better way to disable multimedia key press 
 			//COM_IsPlayerDocked() stop play immediately
 				if(!m_bFullPlayer) COM_IsPlayerDocked();
 			}	break;

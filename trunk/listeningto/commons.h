@@ -1,20 +1,40 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+ListeningTo plugin for Miranda IM
+==========================================================================
+Copyright	(C) 2005-2011 Ricardo Pescuma Domenecci
+			(C) 2010-2011 Merlin_de
 
-This is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
-License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+PRE-CONDITION to use this code under the GNU General Public License:
+ 1. you do not build another Miranda IM plugin with the code without written permission
+    of the autor (peace for the project).
+ 2. you do not publish copies of the code in other Miranda IM-related code repositories.
+    This project is already hosted in a SVN and you are welcome to become a contributing member.
+ 3. you do not create listeningTo-derivatives based on this code for the Miranda IM project.
+    (feel free to do this for another project e.g. foobar)
+ 4. you do not distribute any kind of self-compiled binary of this plugin (we want continuity
+    for the plugin users, who should know that they use the original) you can compile this plugin
+    for your own needs, friends, but not for a whole branch of people (e.g. miranda plugin pack).
+ 5. This isn't free beer. If your jurisdiction (country) does not accept
+    GNU General Public License, as a whole, you have no rights to the software
+    until you sign a private contract with its author. !!!
+ 6. you always put these notes and copyright notice at the beginning of your code.
+==========================================================================
+
+in case you accept the pre-condition,
+this is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
 This is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
-License along with this file; see the file license.txt.  If
-not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+Free Software Foundation, Inc.,
+59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef __COMMONS_H__
 # define __COMMONS_H__
@@ -31,12 +51,17 @@ Boston, MA 02111-1307, USA.
 #include <algorithm>
 #include <functional>
 
+// Help out windows:
+#if defined(_DEBUG) && !defined(DEBUG)
+#define DEBUG
+#endif
 
 /***********************************************************************************************************
  * Miranda IM SDK includes and macros
  ***********************************************************************************************************/
 
-#define MIRANDA_VER 0x0600
+#define MIRANDA_VER 0x0800
+#define MIRANDA_CUSTOM_LP		//coz we define MIRANDA_VER < 0x1000
 
 #include <newpluginapi.h>
 #include <win2k.h>
@@ -55,6 +80,7 @@ Boston, MA 02111-1307, USA.
 #include <m_history.h>
 #include <m_proto_listeningto.h>
 #include <m_music.h>
+#include <m_radio.h>
 #include <m_toptoolbar.h>
 #include <m_icolib.h>
 #include <m_icq.h>
@@ -89,6 +115,7 @@ Boston, MA 02111-1307, USA.
 #include "players\itunes.h"
 #include "players\mswmp.h"
 #include "players\mswlm.h"
+#include "players\mRadio.h"
 //#include "players\vlc.h"
 
 #include "version.h"
@@ -116,7 +143,7 @@ static bool IsEmpty(const WCHAR *str)
 #define KILLTIMER(_X_)		{ if (_X_ != NULL) {KillTimer(NULL, _X_); _X_ = NULL; }}
 #define PtrIsValid(p)		(((p)!=0)&&(((HANDLE)(p))!=INVALID_HANDLE_VALUE))
 
-#if defined(_DEBUG) || defined(DEBUG)
+#ifdef DEBUG
 #define DEBUGOUT(_x_,_y_)	{ OutputDebugStringA(_x_); OutputDebugStringA(_y_); OutputDebugStringA("\n");}
 #else
  #define DEBUGOUT(_x_,_y_)

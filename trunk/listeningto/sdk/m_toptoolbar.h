@@ -28,6 +28,24 @@ typedef struct {
 
 } TTBButton, * lpTTBButton;
 
+typedef struct {
+	int cbSize;
+	HBITMAP hbBitmapUp;
+	HBITMAP hbBitmapDown;
+	char *pszServiceUp;
+	char *pszServiceDown;
+	DWORD dwFlags;
+	LPARAM lParamUp;
+	WPARAM wParamUp;
+	LPARAM lParamDown;
+	WPARAM wParamDown;
+	char *name;
+	HICON hIconUp,hIconDn;
+	char *tooltipUp;
+	char *tooltipDn;
+
+} TTBButtonV2, * lpTTBButtonV2;
+
 //=== EVENTS ===
 /*
 toptoolbar/moduleloaded event
