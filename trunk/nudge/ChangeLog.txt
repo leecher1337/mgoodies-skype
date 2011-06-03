@@ -5,6 +5,7 @@
 + destroy services on exit
 + open message window on popup click
 + open message window on preview
++ moved sounds in "Nudge" section
 
 0.0.1.21
 ===========
