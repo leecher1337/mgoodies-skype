@@ -18,6 +18,18 @@
 
 #pragma warning (disable: 4706) // assignment within conditional expression
 
+// VC6 SDK defines
+#ifndef BIF_SHAREABLE
+#define BIF_SHAREABLE          0x8000  // sharable resources displayed (remote shares, requires BIF_USENEWUI)
+#endif
+#ifndef BIF_NEWDIALOGSTYLE
+#define BIF_NEWDIALOGSTYLE     0x0040   // Use the new dialog layout with the ability to resize
+#endif									// Caller needs to call OleInitialize() before using this API
+#ifndef BIF_NONEWFOLDERBUTTON
+#define BIF_NONEWFOLDERBUTTON  0x0200   // Do not add the "New Folder" button to the dialog.  Only applicable with BIF_NEWDIALOGSTYLE.
+#endif
+
+
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char protocol, g_szProtoName[];
@@ -706,7 +718,6 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					GetDlgItemTextA (hwndDlg, IDC_DATAPATH, szFileName, MAX_PATH);
 
 					TranslateMirandaRelativePathToAbsolute(szFileName, szAbsolutePath, FALSE);
-
 					bi.hwndOwner = hwndDlg;
 					bi.ulFlags   = BIF_RETURNONLYFSDIRS | BIF_SHAREABLE | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
 					bi.lpfn      = BrowseCallbackProc;

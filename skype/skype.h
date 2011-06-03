@@ -168,6 +168,7 @@ int __stdcall EnterBitmapFileName( char* szDest );
 void CleanupNicknames(char *dummy);
 int InitVSApi();
 int FreeVSApi();
+HANDLE GetMetaHandle(DWORD dwId);
 
 // Write contact setting as UTF-8 for convenience, if possible. Older Miranda IM versions will store it as ANSI
 INT_PTR SkypeDBWriteContactSettingUTF8String(HANDLE hContact,const char *szModule,const char *szSetting,const char *val);

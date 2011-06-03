@@ -26,7 +26,7 @@ void MsgList_Exit(void)
 	m_hMsgList = NULL;
 }
 
-BOOL MsgList_Add(DWORD uMsgNum, HANDLE hEvent)
+TYP_MSGLENTRY *MsgList_Add(DWORD uMsgNum, HANDLE hEvent)
 {
 	TYP_MSGLENTRY *pEntry;
 	int iListInd;
@@ -37,13 +37,13 @@ BOOL MsgList_Add(DWORD uMsgNum, HANDLE hEvent)
 	bFound = List_BinarySearch(m_hMsgList,CmpProc,(void *)uMsgNum,&iListInd);
 	if (!bFound) pEntry = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TYP_MSGLENTRY));
 	else pEntry = List_ElementAt (m_hMsgList, iListInd);
-	if (!pEntry) return FALSE;
+	if (!pEntry) return NULL;
 	pEntry->uMsgNum = uMsgNum;
 	pEntry->hEvent = hEvent;
 	pEntry->tEdited = 0;
 	time(&pEntry->t);
-	if (!bFound) return List_InsertElementAt (m_hMsgList, pEntry, iListInd);
-	return TRUE;
+	if (!bFound) return List_InsertElementAt (m_hMsgList, pEntry, iListInd)?pEntry:NULL;
+	return pEntry;
 }
 
 
