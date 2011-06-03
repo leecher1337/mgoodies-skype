@@ -418,7 +418,7 @@ void LoadProtocols(void)
 	//Load the default nudge
 	sprintf(DefaultNudge.ProtocolName,"Default");
 	sprintf(DefaultNudge.NudgeSoundname,"Nudge : Default");
-	SkinAddNewSound( DefaultNudge.NudgeSoundname, DefaultNudge.NudgeSoundname, "nudge.wav" );
+	SkinAddNewSoundEx( DefaultNudge.NudgeSoundname, LPGEN("Nudge"),DefaultNudge.NudgeSoundname);
 	DefaultNudge.Load();
 
 	GlobalNudge.Load();
@@ -990,7 +990,7 @@ int Nudge_AddElement(char *protoName, HANDLE hevent)
 
 	newNudge->item.hEvent = hevent;
 	
-	SkinAddNewSound( newNudge->item.NudgeSoundname, newNudge->item.NudgeSoundname, "nudge.wav" );
+	SkinAddNewSoundEx( newNudge->item.NudgeSoundname, LPGEN("Nudge") , newNudge->item.NudgeSoundname);
 	
 	newNudge->next = NudgeList;
 	NudgeList = newNudge;
