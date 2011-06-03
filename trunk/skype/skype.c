@@ -165,7 +165,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype Protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,51),
+	PLUGIN_MAKE_VERSION(0,0,0,52),
 	"Support for Skype network",
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -946,7 +946,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 		if (strcmp(type, "MULTI_SUBSCRIBED")==0) isGroupChat=TRUE;
 
 		// Group chat handling
-		if (strcmp(type, "TEXT") && strcmp(type, "SAID") && strcmp(type, "UNKNOWN") && !bEmoted) {
+		if (isGroupChat && strcmp(type, "TEXT") && strcmp(type, "SAID") && strcmp(type, "UNKNOWN") && !bEmoted) {
 			if (bUseGroupChat) {
 				BOOL bAddedMembers = FALSE;
 
@@ -1337,8 +1337,11 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
 			LOG(("FetchMessageThread timestamp %ld between %ld and %ld", timestamp, lwr, dbei.timestamp));
 			if (timestamp<lwr || (direction&DBEF_SENT)) {
+				TYP_MSGLENTRY *pme;
+
 				LOG(("FetchMessageThread Adding event"));
-				dbei.szModule=SKYPE_PROTONAME;
+				if (!(dbei.szModule=(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0)))
+					dbei.szModule=SKYPE_PROTONAME;
 				dbei.cbBlob=msglen;
 				if (pre.flags & PREF_UNICODE)
 					dbei.cbBlob += sizeof(WCHAR)*( (DWORD)wcslen((WCHAR*)&msgptr[dbei.cbBlob])+1);
@@ -1348,7 +1351,24 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				if (pre.flags & PREF_CREATEREAD) dbei.flags|=DBEF_READ;
 				if (pre.flags & PREF_UTF) dbei.flags|=DBEF_UTF;
 				dbei.eventType=EVENTTYPE_MESSAGE;
-				MsgList_Add (pre.lParam, (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hContact, (LPARAM)&dbei));
+				pme = MsgList_Add (pre.lParam, (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hContact, (LPARAM)&dbei));
+
+				// We could call MS_PROTO_CHAINSEND if we want to have MetaContact adding the history for us,
+				// however we all know that CCSDATA doesn't contain timestamp-information which is
+				// really bad on importing history for example, as all messages would be added with current
+				// timestamp. This would cause unreliable jumbled timestamps in metacontact, so we better do this
+				// ourself.
+				if (DBGetContactSettingByte(hContact, "MetaContacts", "IsSubcontact", 0))
+				{
+					DWORD dwMetaLink = DBGetContactSettingDword(hContact, "MetaContacts", "MetaLink", -1);
+					HANDLE hMetaContact;
+
+					if (dwMetaLink != -1 && (hMetaContact = GetMetaHandle(dwMetaLink)))
+					{
+						dbei.szModule=(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hMetaContact, 0);
+						pme->hMetaEvent = (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hMetaContact, (LPARAM)&dbei);
+					}
+				}
 			}
 		}
 
@@ -1468,6 +1488,19 @@ HANDLE GetCallerContact(char *szSkypeMsg) {
 	free(szHandle);
 	if (!hContact) {LOG(("GetCallerContact Not found!"));}
 	return hContact;
+}
+
+HANDLE GetMetaHandle(DWORD dwId) {
+    HANDLE hContact;
+    char *szProto;
+
+	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
+		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
+		if (szProto!=NULL && !strcmp(szProto, "MetaContacts") &&
+			DBGetContactSettingDword(hContact, "MetaContacts", "MetaID", -1)==dwId)
+				return hContact;
+    }      
+    return 0;
 }
 
 LRESULT CALLBACK InCallPopUpProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam) 
