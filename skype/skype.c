@@ -1360,10 +1360,10 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				// ourself.
 				if (DBGetContactSettingByte(hContact, "MetaContacts", "IsSubcontact", 0))
 				{
-					DWORD dwMetaLink = DBGetContactSettingDword(hContact, "MetaContacts", "MetaLink", -1);
+					DWORD dwMetaLink = DBGetContactSettingDword(hContact, "MetaContacts", "MetaLink", MAXDWORD);
 					HANDLE hMetaContact;
 
-					if (dwMetaLink != -1 && (hMetaContact = GetMetaHandle(dwMetaLink)))
+					if (dwMetaLink != MAXDWORD && (hMetaContact = GetMetaHandle(dwMetaLink)))
 					{
 						dbei.szModule=(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hMetaContact, 0);
 						pme->hMetaEvent = (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hMetaContact, (LPARAM)&dbei);
@@ -1497,7 +1497,7 @@ HANDLE GetMetaHandle(DWORD dwId) {
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
 		if (szProto!=NULL && !strcmp(szProto, "MetaContacts") &&
-			DBGetContactSettingDword(hContact, "MetaContacts", "MetaID", -1)==dwId)
+			DBGetContactSettingDword(hContact, "MetaContacts", "MetaID", MAXDWORD)==dwId)
 				return hContact;
     }      
     return 0;
