@@ -1799,6 +1799,8 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 	int oldStatus=SkypeStatus;
 	static BOOL bLaunching = FALSE;
 
+	UNREFERENCED_PARAMETER(newStatus);
+
 	if (bLaunching) return;
 	bLaunching = TRUE;
 	LOG (("LaunchSkypeAndSetStatusThread started."));

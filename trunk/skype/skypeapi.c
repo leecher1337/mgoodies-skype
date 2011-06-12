@@ -214,8 +214,6 @@ static  BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam)
 DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
 {
 	DWORD dwPid = (DWORD)lpDummy;
-	HWND skype = NULL;
-	int counter = 0;
 	HANDLE mutex = CreateMutex(NULL, TRUE, _T("setUserNamePasswordMutex"));
 
 	// Check double entrance
