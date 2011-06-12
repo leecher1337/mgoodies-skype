@@ -44,7 +44,7 @@ struct MM_INTERFACE   mmi;
 POPUPDATAT MessagePopup;
 
 // Exported Globals
-HWND hSkypeWnd=NULL, g_hWnd=NULL, hSkypeWndSecondary=NULL;
+HWND hSkypeWnd=NULL, g_hWnd=NULL, hSkypeWndSecondary=NULL, hForbiddenSkypeWnd = NULL;
 HANDLE SkypeReady, SkypeMsgReceived, hInitChat=NULL, httbButton=NULL, FetchMessageEvent=NULL;
 BOOL SkypeInitialized=FALSE, MirandaShuttingDown=FALSE, PopupServiceExists=FALSE;
 BOOL UseSockets=FALSE, bSkypeOut=FALSE, bProtocolSet=FALSE, bIsImoproxy=FALSE;
@@ -685,6 +685,8 @@ void __cdecl SkypeSystemInit(char *dummy) {
 	logoff_contacts(FALSE);
 // Add friends
 
+	// Clear currentuserhandle entries from queue
+	while (testfor ("CURRENTUSERHANDLE", 0));
 	if (SkypeSend(SKYPE_PROTO)==-1 || !testfor("PROTOCOL", INFINITE) ||
 		SkypeSend("GET CURRENTUSERHANDLE")==-1 ||
 		SkypeSend("GET PRIVILEGE SKYPEOUT")==-1) {
@@ -711,7 +713,7 @@ void __cdecl SkypeSystemInit(char *dummy) {
 					// Doesn't match, maybe we have a second Skype instance we have to take
 					// care of? If in doubt, let's wait a while for it to report its hWnd to us.
 					LOG (("Userhandle %s doesn't match username %s from settings", pszUser, dbv.pszVal));
-					if (!hSkypeWndSecondary) Sleep(5000);
+					if (!hSkypeWndSecondary) Sleep(3000);
 					if (hSkypeWndSecondary) 
 					{
 						hSkypeWnd = hSkypeWndSecondary;
@@ -723,11 +725,39 @@ void __cdecl SkypeSystemInit(char *dummy) {
 					}
 					else
 					{
-						sprintf (szError, "Username '%s' provided by Skype API doesn't match username '%s' in "
-							"your settings. Please either remove username setting in you configuration or correct "
-							"it. Will not connect!", pszUser, dbv.pszVal);
-						OUTPUTA (szError);
-						Initializing=FALSE;
+						hForbiddenSkypeWnd = hSkypeWnd;
+
+						// If we need to start Skype as secondary instance, we should do it now
+						if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "StartSkype", 1) &&
+							DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "secondary", 0)) 
+						{
+							int oldstatus;
+
+							hSkypeWnd = NULL;
+							AttachStatus=-1;
+							if (g_hWnd) KillTimer (g_hWnd, 1);
+							oldstatus = SkypeStatus;
+							InterlockedExchange((long *)&SkypeStatus, ID_STATUS_CONNECTING);
+							ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+							ConnectToSkypeAPI(skype_path, 1);
+						}
+						if (hForbiddenSkypeWnd == hSkypeWnd && !hSkypeWndSecondary) 
+						{
+							int oldstatus;
+
+							sprintf (szError, "Username '%s' provided by Skype API doesn't match username '%s' in "
+								"your settings. Please either remove username setting in you configuration or correct "
+								"it. Will not connect!", pszUser, dbv.pszVal);
+							OUTPUTA (szError);
+							Initializing=FALSE;
+							AttachStatus=-1;
+							logoff_contacts(FALSE);
+							if (g_hWnd) KillTimer (g_hWnd, 1);
+							hSkypeWnd = NULL;
+							oldstatus = SkypeStatus;
+							InterlockedExchange((long *)&SkypeStatus, ID_STATUS_OFFLINE);
+							ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+						}
 					}
 				}
 				free (pszUser);
@@ -1369,6 +1399,9 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 						pme->hMetaEvent = (HANDLE)CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hMetaContact, (LPARAM)&dbei);
 					}
 				}
+
+				if (!args.QueryMsgDirection && !args.bDontMarkSeen) 
+					SkypeSend("SET %s %s SEEN", cmdMessage, args.msgnum);
 			}
 		}
 
@@ -1764,19 +1797,23 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 	   }
 */
 	int oldStatus=SkypeStatus;
+	static BOOL bLaunching = FALSE;
 
+	if (bLaunching) return;
+	bLaunching = TRUE;
 	LOG (("LaunchSkypeAndSetStatusThread started."));
 	InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_CONNECTING);
 	ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	   
-	if (ConnectToSkypeAPI(skype_path, TRUE)!=-1) {
+	if (ConnectToSkypeAPI(skype_path, 1)!=-1) {
 		pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
-		InterlockedExchange((long *)&SkypeStatus, (int)newStatus);
-		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
+		//InterlockedExchange((long *)&SkypeStatus, (int)newStatus);
+		//ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 		SetUserStatus();
 	}
 
 	LOG (("LaunchSkypeAndSetStatusThread terminated gracefully."));
+	bLaunching = FALSE;
 }
 
 LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam) 
@@ -2294,9 +2331,14 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
         default: 
 		 if(message==ControlAPIAttach) {
 				// Skype responds with Attach to the discover-message
+				 if ((HWND)wParam == hForbiddenSkypeWnd) {
+					 ResetEvent(SkypeReady);
+					 break;
+				 }
 				AttachStatus=lParam;
 				if (lParam==SKYPECONTROLAPI_ATTACH_SUCCESS) {
 					LOG (("AttachStatus success, got hWnd %08X", (HWND)wParam));
+
 					if (hSkypeWnd && (HWND)wParam!=hSkypeWnd && IsWindow(hSkypeWnd))
 						hSkypeWndSecondary = (HWND)wParam;
 					else {
@@ -2334,12 +2376,13 @@ void TellError(DWORD err) {
 // SERVICES //
 INT_PTR SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 {
-	int oldStatus;
+	int oldStatus, iRet;
 	BOOL UseCustomCommand, UnloadOnOffline;
 
 	UNREFERENCED_PARAMETER(lParam);
 
 	if (MirandaShuttingDown) return 0;
+	LOG (("SkypeSetStatus enter"));
 	UseCustomCommand = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0);
 	UnloadOnOffline = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UnloadOnOffline", 0);
 
@@ -2361,11 +2404,13 @@ INT_PTR SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
    RequestedStatus=MirandaStatusToSkype((int)wParam);
 
+   /*
    if (SkypeStatus != ID_STATUS_OFFLINE)
    {
      InterlockedExchange((long*)&SkypeStatus, (int)wParam);
      ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
    }
+   */
    
    if ((int)wParam==ID_STATUS_OFFLINE && UnloadOnOffline) 
    {
@@ -2389,7 +2434,9 @@ INT_PTR SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 	   return 0;
    }
 
-   return SetUserStatus(); 
+   iRet = SetUserStatus(); 
+   LOG (("SkypeSetStatus exit"));
+   return iRet;
 }
 
 int __stdcall SendBroadcast( HANDLE hContact, int type, int result, HANDLE hProcess, LPARAM lParam )
