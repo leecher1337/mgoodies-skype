@@ -538,7 +538,7 @@ static int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM lParam,	LPAR
 
 INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static BOOL initDlg=FALSE;
-	static int skypeLaunchControls[]={IDC_NOSPLASH,IDC_MINIMIZED,IDC_NOTRAY,IDC_REMOVEABLE,IDC_DATAPATHO,IDC_CUSTOMCOMMAND,IDC_STATIC_PATHINFO};
+	static int skypeLaunchControls[]={IDC_NOSPLASH,IDC_MINIMIZED,IDC_NOTRAY,IDC_REMOVEABLE,IDC_SECONDARY,IDC_DATAPATHO,IDC_CUSTOMCOMMAND,IDC_STATIC_PATHINFO};
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
@@ -557,6 +557,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 			CheckDlgButton(hwndDlg, IDC_MINIMIZED, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "minimized", 1));
 			CheckDlgButton(hwndDlg, IDC_NOTRAY, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "notray", 0));
 			CheckDlgButton(hwndDlg, IDC_REMOVEABLE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "removable", 0));
+			CheckDlgButton(hwndDlg, IDC_SECONDARY, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "secondary", 0));
 			CheckDlgButton(hwndDlg, IDC_DATAPATHO, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "datapath:", 0));
 			CheckDlgButton(hwndDlg, IDC_SHUTDOWN, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Shutdown", 0));
 			CheckDlgButton(hwndDlg, IDC_UNLOADOFFLINE, (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UnloadOnOffline", 0));
@@ -626,6 +627,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "UseCustomCommand", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "datapath:", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "removable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "secondary", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SECONDARY), BM_GETCHECK,0,0)));
 
 					GetDlgItemTextA(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
 					strncpy(szRelativePath, text, sizeof(szRelativePath)-1);

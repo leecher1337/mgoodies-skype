@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
+// Microsoft Developer Studio generated include file.
 // Used by Skript1.rc
 //
 #define IDI_SKYPE                       102
@@ -74,6 +74,7 @@
 #define IDC_FULLNAME                    1035
 #define IDC_DATAPATHO                   1035
 #define IDC_BIRTHDAY                    1036
+#define IDC_SECONDARY                   1036
 #define IDC_SEX                         1037
 #define IDC_CITY                        1038
 #define IDC_COUNTRY                     1039
