@@ -360,79 +360,76 @@ char *SkypeMsgGet(void) {
 }
 
 // Message sending routine, for internal use by SkypeSend
-static int __sendMsgProc(char *szMsg) {
-   COPYDATASTRUCT CopyData;
-   LRESULT SendResult;
-   int oldstatus;
-   unsigned int length=(unsigned int)strlen(szMsg);
-
-   LOG(("> %s", szMsg));
-
-   if (UseSockets) {
-
-	   if (ClientSocket==INVALID_SOCKET) return -1;
-	   // Fake PING-PONG, as PING-PONG is not supported by Skype2Socket
-	   if (!strcmp(szMsg, "PING")) {
-		 char *buf="PONG";
-
-		 CopyData.dwData=0; 
-		 CopyData.lpData=buf; 
-		 CopyData.cbData=(DWORD)strlen(buf)+1;
-		 SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
-		 return 0;
-	   } else
-	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-		   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) SendResult=0;
-	   else return 0;
-   } else {
-	   CopyData.dwData=0; 
-	   CopyData.lpData=szMsg; 
-	   CopyData.cbData=(DWORD)strlen(szMsg)+1;
-
-       // Internal comm channel
-	   if (pszProxyCallout)
-		   return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
-
-	   // If this didn't work, proceed with normal Skype API
-       if (!hSkypeWnd) 
-	   {
-		   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
-	   }
-	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
-       LOG(("SkypeSend: SendMessage returned %d", SendResult));
-   }
-   if (!SendResult) 
-   {
-	  SkypeInitialized=FALSE;
-      AttachStatus=-1;
-	  ResetEvent(SkypeReady);
-	  if (g_hWnd) KillTimer (g_hWnd, 1);
-  	  if (SkypeStatus!=ID_STATUS_OFFLINE) 
-	  {
-		// Go offline
-		logoff_contacts(FALSE);
-		oldstatus=SkypeStatus;
-		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
-		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
-	  }
-	  // Reconnect to Skype
-	  ResetEvent(SkypeReady);
-	  pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
-	  return -1;
-//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-   }
-   return 0;
-}
-
 static int __sendMsg(char *szMsg) {
-	int iRet;
+	COPYDATASTRUCT CopyData;
+	LRESULT SendResult;
+	int oldstatus;
+	unsigned int length=(unsigned int)strlen(szMsg);
 
-	EnterCriticalSection(&SendMutex);
-	iRet = __sendMsgProc(szMsg);
-	LeaveCriticalSection(&SendMutex);
-	return iRet;
+	LOG(("> %s", szMsg));
+
+	if (UseSockets) {
+
+		if (ClientSocket==INVALID_SOCKET) return -1;
+		// Fake PING-PONG, as PING-PONG is not supported by Skype2Socket
+		if (!strcmp(szMsg, "PING")) {
+			char *buf="PONG";
+
+			CopyData.dwData=0; 
+			CopyData.lpData=buf; 
+			CopyData.cbData=(DWORD)strlen(buf)+1;
+			SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
+			return 0;
+		} else {
+			BOOL res;
+			EnterCriticalSection(&SendMutex);
+			res = (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR)
+				|| (send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR);
+			LeaveCriticalSection(&SendMutex);
+			if (res)
+				SendResult=0;
+			else 
+				return 0;
+		}
+	} else {
+		CopyData.dwData=0; 
+		CopyData.lpData=szMsg; 
+		CopyData.cbData=(DWORD)strlen(szMsg)+1;
+
+		// Internal comm channel
+		if (pszProxyCallout)
+			return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
+
+		// If this didn't work, proceed with normal Skype API
+		if (!hSkypeWnd) 
+		{
+			LOG(("SkypeSend: DAMN! No Skype window handle! :("));
+		}
+		SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
+		LOG(("SkypeSend: SendMessage returned %d", SendResult));
+	}
+	if (!SendResult) 
+	{
+		SkypeInitialized=FALSE;
+		AttachStatus=-1;
+		ResetEvent(SkypeReady);
+		if (g_hWnd) KillTimer (g_hWnd, 1);
+		if (SkypeStatus!=ID_STATUS_OFFLINE) 
+		{
+			// Go offline
+			logoff_contacts(FALSE);
+			oldstatus=SkypeStatus;
+			InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
+			ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+		}
+		// Reconnect to Skype
+		ResetEvent(SkypeReady);
+		pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
+		return -1;
+		//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+	}
+	return 0;
 }
-
 
 /* SkypeSend
  * 
@@ -1467,12 +1464,16 @@ BOOL testfor(char *what, DWORD maxwait) {
 char SendSkypeproxyCommand(char command) {
 	int length=0;
 	char reply=0;
-
-	if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-		send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR ||
-		recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR)
-			return -1;
-	else return reply;
+	BOOL res;
+	EnterCriticalSection(&SendMutex);
+	res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+		|| send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR
+		|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
+	LeaveCriticalSection(&SendMutex);
+	if (res)
+		return -1;
+	else 
+		return reply;
 }
 
 /* ConnectToSkypeAPI
@@ -1486,19 +1487,16 @@ char SendSkypeproxyCommand(char command) {
  *		   -1 - Something went wrong
  */
 int ConnectToSkypeAPI(char *path, int iStart) {
-	static BOOL isConnecting = FALSE;
-	BOOL isInConnect = isConnecting;
-	int iRet;
+	static int iRet = -1; // last request result
+	static volatile long newRequest = TRUE;
 
-	// Prevent reentrance
-	EnterCriticalSection(&ConnectMutex);
-	if (!isConnecting) 
-		isConnecting = TRUE;
-	LeaveCriticalSection(&ConnectMutex);
-	if (isInConnect) return -1;
-	iRet = _ConnectToSkypeAPI(path, iStart);
-	EnterCriticalSection(&ConnectMutex);
-	isConnecting = FALSE;
+	InterlockedExchange(&newRequest, TRUE); // place new request
+	EnterCriticalSection(&ConnectMutex); // Prevent reentrance
+	if (iRet == -1 || newRequest)
+	{
+		iRet = _ConnectToSkypeAPI(path, iStart);
+		InterlockedExchange(&newRequest, FALSE); // every thread which is waiting for connect mutex will get our result as well.. but subsequent calls will set this value to true and call _Connect again
+	}
 	LeaveCriticalSection(&ConnectMutex);
 	return iRet;
 }
@@ -1595,9 +1593,13 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 					DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0);
 				} else {
 					unsigned int length=(unsigned int)strlen(dbv.pszVal);
-					if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-						send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR ||
-						recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR) 
+					BOOL res;
+					EnterCriticalSection(&SendMutex);
+					res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+						|| send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR
+						|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
+					LeaveCriticalSection(&SendMutex);
+					if (res)
 					{
 							DBFreeVariant(&dbv);
 							return -1;
