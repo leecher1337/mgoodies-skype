@@ -41,11 +41,11 @@ BEGIN
                     273,9
     CONTROL         "Ignore server timestamp and use current time for messages",
                     IDC_CURRTIMESTAMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    7,55,273,10
+                    7,60,273,10
     CONTROL         "Log traffic to file:",IDC_LOG,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,7,68,110,10
-    EDITTEXT        IDC_LOGFILE,119,68,128,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_OPEN,248,68,14,12
+                    WS_TABSTOP,7,71,110,10
+    EDITTEXT        IDC_LOGFILE,119,71,128,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_OPEN,248,71,14,12
     LTEXT           "Status:",IDC_STATIC,126,140,29,10
     LTEXT           "Stopped",IDC_STATUSSOCKS,157,140,54,9,SS_SUNKEN
     GROUPBOX        "Socket Proxy",IDC_STATIC,7,129,273,45
@@ -78,6 +78,9 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,18,113,105,9
     PUSHBUTTON      "Start",IDC_STARTSKYPEPL,216,110,30,12
     PUSHBUTTON      "Stop",IDC_STOPSKYPEPL,246,110,30,12,WS_DISABLED
+    CONTROL         "Use Netlib instead of WinInet (Experimental)",
+                    IDC_USENETLIB,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,7,51,273,9
 END
 
 

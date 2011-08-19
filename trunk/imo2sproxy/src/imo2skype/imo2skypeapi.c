@@ -788,7 +788,7 @@ static int Dispatcher_Stop(IMOSAPI *pInst)
 	if (pInst->fpLog)
 	{
 		fprintf (pInst->fpLog, "Imo2S::Dispatcher_Stop()\n");
-		pInst->fpLog = NULL;
+		fflush(pInst->fpLog);
 	}
 
 	// Shutdown polling socket and wait some time if thread terminates
@@ -806,7 +806,13 @@ static int Dispatcher_Stop(IMOSAPI *pInst)
 		CloseHandle (pInst->hThread);
 		pInst->hThread = 0;
 	}
-		
+
+	if (pInst->fpLog)
+	{
+		fprintf (pInst->fpLog, "Imo2S::Dispatcher_Stop() done.\n");
+		pInst->fpLog = NULL;
+	}
+
 	return iRet;
 }
 
@@ -1046,6 +1052,8 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 					pUser->pszStatusText?pUser->pszStatusText:"");
 			else if (!strcasecmp (pszCmd, "SEX"))
 				Send (pInst, "USER %s SEX UNKNOWN", pUser->pszUser);
+			else if (!strcasecmp (pszCmd, "BIRTHDAY"))
+				Send (pInst, "USER %s BIRTHDAY 0", pUser->pszUser);
 			else if (!strcasecmp (pszCmd, "ONLINESTATUS"))
 			{
 				unsigned int i;
@@ -1071,7 +1079,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 					Send (pInst, "ERROR 116 GET invalid ID");
 					return;
 				}
-				if (!(pszFile = strtok(NULL, " ")))
+				if (!(pszFile = strtok(NULL, "\n")))
 				{
 					Send (pInst, "ERROR 7 GET: invalid WHAT");
 					return;
@@ -1096,7 +1104,13 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 					Send (pInst, "ERROR 122 GET Unable to load avatar");
 					return;
 				}
-				if (!(fp=fopen(pszFile, "w")))
+				if (!(fp=fopen(pszFile, 
+#ifdef WIN32
+					"wb"
+#else
+					"w"
+#endif
+					)))
 				{
 					Send (pInst, "ERROR 121 GET File path doesn't exist");
 					return;
