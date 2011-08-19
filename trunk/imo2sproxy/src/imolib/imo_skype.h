@@ -26,3 +26,4 @@ int ImoSkype_ChangeAlias(IMOSKYPE *hSkype, char *pszBuddy, char *pszNewAlias);
 int ImoSkype_StartVoiceCall(IMOSKYPE *hSkype, char *pszBuddy);
 int ImoSkype_KeepAlive(IMOSKYPE *hSkype);
 int ImoSkype_Ping(IMOSKYPE *hSkype);
+char *ImoSkype_GetAvatar(IMOSKYPE *hSkype, char *pszID, unsigned int *pdwLength);

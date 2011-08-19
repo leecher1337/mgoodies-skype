@@ -87,6 +87,10 @@ LINK32=xilink6.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=\temp\debug\imo.im\src\imo2skype\avatarlist.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\imo2skype\buddylist.c
 # End Source File
 # Begin Source File
@@ -153,6 +157,10 @@ SOURCE=..\src\imo2skype\w32skypeemu.c
 # Begin Group "Header-Dateien"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=\temp\debug\imo.im\src\imo2skype\avatarlist.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\src\imo2skype\buddylist.h

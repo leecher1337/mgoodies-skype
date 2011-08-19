@@ -19,8 +19,8 @@ typedef struct
 } IOLAYER_INST;
 
 static void IoLayer_Exit (IOLAYER *hPIO);
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields);
-static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl);
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength);
+static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl, unsigned int *pdwLength);
 static void IoLayer_Cancel(IOLAYER *hIO);
 static char *IoLayer_GetLastError(IOLAYER *hIO);
 static char *IoLayer_EscapeString(IOLAYER *hIO, char *pszData);
@@ -87,7 +87,7 @@ static void IoLayer_Exit (IOLAYER *hPIO)
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields)
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength)
 {
 	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 
@@ -96,21 +96,41 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszUrl, char *pszPostFields, unsi
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POSTFIELDS, pszPostFields);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POSTFIELDSIZE, cbPostFields);
 	if (curl_easy_perform(hIO->hCurl)) return NULL;
-	Fifo_Add (hIO->hResult, "", 1);
-	return Fifo_Get (hIO->hResult, NULL);
+	if (!pdwLength)
+	{
+		// Get string
+		Fifo_Add (hIO->hResult, "", 1);
+		return Fifo_Get (hIO->hResult, NULL);
+	}
+	else
+	{
+		// Get binary, return size of buffer
+		*pdwLength = (unsigned int)-1;
+		return Fifo_Get (hIO->hResult, pdwLength);
+	}
 }
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl)
+static char *IoLayer_Get(IOLAYER *hPIO, char *pszUrl, unsigned int *pdwLength)
 {
 	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 
 	curl_easy_setopt(hIO->hCurl, CURLOPT_POST, 0);
 	curl_easy_setopt(hIO->hCurl, CURLOPT_URL, pszUrl);
 	if (curl_easy_perform(hIO->hCurl)) return NULL;
-	Fifo_Add (hIO->hResult, "", 1);
-	return Fifo_Get (hIO->hResult, NULL);
+	if (!pdwLength)
+	{
+		// Get string
+		Fifo_Add (hIO->hResult, "", 1);
+		return Fifo_Get (hIO->hResult, NULL);
+	}
+	else
+	{
+		// Get binary, return size of buffer
+		*pdwLength = (unsigned int)-1;
+		return Fifo_Get (hIO->hResult, pdwLength);
+	}
 }
 
 // -----------------------------------------------------------------------------

@@ -78,7 +78,7 @@ IMORQ *ImoRq_Init(void)
 		InitMutex(hRq->mutex);
 
 		/* Fetch start page to get cookies */
-		if (hRq->hIO->Get (hRq->hIO, "https://o.imo.im/"))
+		if (hRq->hIO->Get (hRq->hIO, "https://o.imo.im/", NULL))
 
 		/* Get new session ID from system */
 		{
@@ -155,7 +155,7 @@ OutputDebugString ("\n");
 	hRq->hIO->FreeEscapeString (pszEscData);
 	pszEscData =  Fifo_Get(hPostString, &uiCount);
 	pszData = hRq->hIO->Post (hRq->hIO, "https://o.imo.im/imo", pszEscData,
-		uiCount-1);
+		uiCount-1, NULL);
 	Fifo_Exit(hPostString);
 printf ("<- %s\n", pszData);
 	return pszData;
@@ -333,6 +333,13 @@ void ImoRq_CreateID(char *pszID, int cbID)
 	}
 	pszID[i]=0;
 	return;
+}
+
+// -----------------------------------------------------------------------------
+
+char *ImoRq_HTTPGet(IMORQ *hRq, char *pszURL, unsigned int *pdwLength)
+{
+	return hRq->hIO->Get (hRq->hIO, pszURL, pdwLength);
 }
 
 // -----------------------------------------------------------------------------

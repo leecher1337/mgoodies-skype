@@ -37,8 +37,8 @@ typedef struct
 static IOLAYER_SINGLETON *m_hNL = NULL;
 
 static void IoLayer_Exit (IOLAYER *hPIO);
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
-static char *IoLayer_Get(IOLAYER *hIO, char *pszURL);
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength);
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL, unsigned int *pdwLength);
 static void IoLayer_Cancel(IOLAYER *hIO);
 static char *IoLayer_GetLastError(IOLAYER *hIO);
 static char *IoLayer_EscapeString(IOLAYER *hPIO, char *pszData);
@@ -125,7 +125,7 @@ static void IoLayer_Exit (IOLAYER *hPIO)
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields)
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength)
 {
 	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 	NETLIBHTTPREQUEST nlhr={0};
@@ -206,14 +206,15 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 	LeaveCriticalSection (&m_hNL->cs);
 
 	// Return reply
+	if (pdwLength) *pdwLength = hIO->nlhrReply->dataLength;
 	return hIO->nlhrReply->pData;
 }
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Get(IOLAYER *hIO, char *pszURL)
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL, unsigned int *pdwLength)
 {
-	return IoLayer_Post (hIO, pszURL, NULL, 0);
+	return IoLayer_Post (hIO, pszURL, NULL, 0, pdwLength);
 }
 
 // -----------------------------------------------------------------------------
@@ -322,7 +323,7 @@ static HANDLE *OpenConnection(NETLIBHTTPREQUEST *nlhr)
 	nloc.cbSize = sizeof(NETLIBOPENCONNECTION);
 	if (phost) phost+=3; else phost=nlhr->szUrl;
 	nloc.szHost = _alloca (strlen(phost)+1);
-	strcpy (nloc.szHost, phost);
+	strcpy ((char*)nloc.szHost, phost);
 	if (ppath = strchr(nloc.szHost, '/')) *ppath = '\0';
 	if (pcolon = strrchr(nloc.szHost, ':')) 
 	{

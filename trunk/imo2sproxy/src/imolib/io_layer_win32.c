@@ -28,8 +28,8 @@ typedef struct
 } IOLAYER_INST;
 
 static void IoLayer_Exit (IOLAYER *hPIO);
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
-static char *IoLayer_Get(IOLAYER *hIO, char *pszURL);
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength);
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL, unsigned int *pdwLength);
 static void IoLayer_Cancel(IOLAYER *hIO);
 static char *IoLayer_GetLastError(IOLAYER *hIO);
 static char *IoLayer_EscapeString(IOLAYER *hPIO, char *pszData);
@@ -88,12 +88,12 @@ static void IoLayer_Exit (IOLAYER *hPIO)
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields)
+static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength)
 {
 	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 	URL_COMPONENTS urlInfo = {0};
 	HINTERNET hUrl;
-	DWORD dwFlags = 0, cbFlags = sizeof(dwFlags), dwLength = 512, dwRemaining = 0;
+	DWORD dwFlags = 0, cbFlags = sizeof(dwFlags), dwRemaining = 0;
 	char szHostName[INTERNET_MAX_HOST_NAME_LENGTH],
 		szURLPath[INTERNET_MAX_URL_LENGTH], *p;
 
@@ -179,8 +179,18 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 		if (p = Fifo_AllocBuffer (hIO->hResult, dwRemaining))
 			InternetReadFile (hIO->hRequest, p, dwRemaining, &dwRemaining);
 	}
-	Fifo_Add (hIO->hResult, "", 1);
-	p = Fifo_Get (hIO->hResult, NULL);
+	if (!pdwLength)
+	{
+		// Get string
+		Fifo_Add (hIO->hResult, "", 1);
+		p = Fifo_Get (hIO->hResult, NULL);
+	}
+	else
+	{
+		// Get binary, return size of buffer
+		*pdwLength = (unsigned int)-1;
+		p = Fifo_Get (hIO->hResult, pdwLength);
+	}
 	InternetCloseHandle (hIO->hRequest);
 	hIO->hRequest = NULL;
 	InternetCloseHandle (hUrl);
@@ -191,9 +201,9 @@ OutputDebugString("\n");
 
 // -----------------------------------------------------------------------------
 
-static char *IoLayer_Get(IOLAYER *hIO, char *pszURL)
+static char *IoLayer_Get(IOLAYER *hIO, char *pszURL, unsigned int *pdwLength)
 {
-	return IoLayer_Post (hIO, pszURL, NULL, 0);
+	return IoLayer_Post (hIO, pszURL, NULL, 0, pdwLength);
 }
 
 // -----------------------------------------------------------------------------
