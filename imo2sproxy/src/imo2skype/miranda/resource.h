@@ -25,6 +25,7 @@
 #define IDC_USESKYPEPL                  1020
 #define IDC_STARTSKYPEPL                1021
 #define IDC_STOPSKYPEPL                 1022
+#define IDC_USENETLIB                   1023
 
 // Next default values for new objects
 // 

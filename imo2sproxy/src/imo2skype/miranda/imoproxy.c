@@ -455,6 +455,12 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				lstrcpyn (szOldLog, dbv.pszVal, sizeof(szOldLog));
 				DBFreeVariant(&dbv); 
 			}
+			if (CallService (MS_SYSTEM_GETVERSION, 0, 0) >= 0x080000)
+			{
+				EnableWindow (GetDlgItem (hWnd, IDC_USENETLIB), TRUE);
+				if (DBGetContactSettingByte (NULL, "IMOPROXY", "UseNetlib", 0))
+					CheckDlgButton (hWnd, IDC_USENETLIB, BST_CHECKED);
+			}
 			SetDlgItemText (hWnd, IDC_LOGFILE, szOldLog);
 			if (bOldVerbose = DBGetContactSettingByte(NULL, "IMOPROXY", "Verbose", 0))
 				CheckDlgButton (hWnd, IDC_LOG, BST_CHECKED);
@@ -532,6 +538,8 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						iProxies|=(1<<PROXY_W32SKYPEEMU);
 					if (IsDlgButtonChecked (hWnd, IDC_USESKYPEPL)==BST_CHECKED)
 						iProxies|=(1<<PROXY_SKYPEPLUGIN);
+					DBWriteContactSettingByte(NULL, "IMOPROXY", "UseNetlib", 
+						(char)(IsDlgButtonChecked (hWnd, IDC_USENETLIB)==BST_CHECKED));
 					DBWriteContactSettingByte(NULL, "IMOPROXY", "Proxies", (char)iProxies);
 					iProxies^=iOldProxies;
 					if (sPort != sOldPort || lstrcmp (szOldHost, szHost))
@@ -797,7 +805,8 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	// On Miranda 0.0.0.8+ NETLIB suppotrs HTTPS, therefore we can use 
 	// Netlib there
-	if (CallService (MS_SYSTEM_GETVERSION, 0, 0) >= 0x080000)
+	if (CallService (MS_SYSTEM_GETVERSION, 0, 0) >= 0x080000 &&
+		DBGetContactSettingByte (NULL, "IMOPROXY", "UseNetlib", 0))
 		ImoRq_SetIOLayer (IoLayerNETLIB_Init);
 	StartProxies(-1);
 

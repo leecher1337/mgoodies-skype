@@ -142,7 +142,8 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 
 	// Build basic request
 	nlhr.cbSize = sizeof(nlhr);
-	nlhr.flags = NLHRF_GENERATEHOST | NLHRF_DUMPASTEXT | NLHRF_SMARTREMOVEHOST | NLHRF_REDIRECT;
+	nlhr.flags = NLHRF_GENERATEHOST | NLHRF_SMARTREMOVEHOST | NLHRF_REDIRECT;
+	if (!pdwLength) nlhr.flags |= NLHRF_DUMPASTEXT;	// pdwLength needed -> Binary data
 	nlhr.requestType = pszPostFields?REQUEST_POST:REQUEST_GET;
 	nlhr.szUrl = pszURL;
 	nlhr.pData = pszPostFields;
