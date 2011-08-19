@@ -8,8 +8,8 @@ struct _tagIOLAYER
 {
 	void (*Exit) (IOLAYER *hIO);
 
-	char *(*Post) (IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields);
-	char *(*Get) (IOLAYER *hIO, char *pszURL);
+	char *(*Post) (IOLAYER *hIO, char *pszURL, char *pszPostFields, unsigned int cbPostFields, unsigned int *pdwLength);
+	char *(*Get) (IOLAYER *hIO, char *pszURL, unsigned int *pdwLength);
 	void (*Cancel) (IOLAYER *hIO);
 	char *(*GetLastError) (IOLAYER *hIO);
 	char *(*EscapeString) (IOLAYER *hIO, char *pszData);

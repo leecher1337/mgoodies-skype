@@ -27,4 +27,5 @@ char *ImoRq_UserActivity(IMORQ *hRq);
 char *ImoRq_ResetRPC(IMORQ *hRq);
 char *ImoRq_Reui_Session(IMORQ *hRq);
 char *ImoRq_Echo(IMORQ *hRq);
+char *ImoRq_HTTPGet(IMORQ *hRq, char *pszURL, unsigned int *pdwLength);
 #endif

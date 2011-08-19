@@ -34,6 +34,7 @@
 #include "fifo.h"
 #include "memlist.h"
 #include "buddylist.h"
+#include "avatarlist.h"
 #include "msgqueue.h"
 #include "callqueue.h"
 #include "imo2skypeapi.h"
@@ -53,6 +54,7 @@ struct _tagIMOSAPI
 	char *pszClientName;
     int cbBuf;
     TYP_LIST *hBuddyList;
+	TYP_LIST *hAvatarList;
     TYP_LIST *hMsgQueue;
     TYP_LIST *hCallQueue;
     int iProtocol;
@@ -100,6 +102,7 @@ IMOSAPI *Imo2S_Init(IMO2SCB Callback, void *pUser, int iFlags)
 	if (!(pInst->pszLogBuf = malloc(pInst->cbBuf=512)) ||
 	    !(pInst->hInst = ImoSkype_Init(StatusCallback, pInst)) ||
 	    !(pInst->hBuddyList = BuddyList_Init()) ||
+		!(pInst->hAvatarList = AvatarList_Init()) ||
 	    !(pInst->hMsgQueue = MsgQueue_Init()) ||
 #ifdef WIN32
 		((iFlags & IMO2S_FLAG_ALLOWINTERACT) && W32Browser_Init(0)==-1) ||
@@ -135,6 +138,7 @@ void Imo2S_Exit (IMOSAPI *pInst)
 	if (pInst->iLoginStat == 1) Imo2S_Logout(pInst);
 	if (pInst->hInst) ImoSkype_Exit(pInst->hInst);
 	if (pInst->hBuddyList) BuddyList_Exit(pInst->hBuddyList);
+	if (pInst->hAvatarList) AvatarList_Exit(pInst->hAvatarList);
 	if (pInst->hMsgQueue) MsgQueue_Exit(pInst->hMsgQueue);
 	if (pInst->hCallQueue) CallQueue_Exit(pInst->hCallQueue);
 	if (pInst->pszPass) free (pInst->pszPass);
@@ -302,6 +306,22 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 				pInst->myUser.pszAlias = strdup(pszAlias);
 			}
 			Send(pInst, "CURRENTUSERHANDLE %s", cJSON_GetObjectItem(pContent, "uid")->valuestring);
+		}
+		else if (!strcmp(pszName, "buddy_icon"))
+		{
+			// Here are the Avatars for the buddies
+			//We have to track them in a seperate list as the buddies may get populated lateron
+			cJSON *pArray = cJSON_GetObjectItem(pContent,"edata"), *pItem;
+			int i, iCount;
+
+			if (pArray)
+			{
+				for (i=0, iCount = cJSON_GetArraySize(pArray); i<iCount; i++)
+				{
+					if (pItem = cJSON_GetArrayItem(pArray, i))
+						AvatarList_Insert(pInst->hAvatarList, pItem);
+				}
+			}
 		}
 		else if (!strcmp(pszName, "disconnect"))
 		{
@@ -1039,6 +1059,52 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 					}
 				}
 			}
+			else if (!strcasecmp (pszCmd, "AVATAR"))
+			{
+				char *pszFile, *pAvatarBuf;
+				unsigned int dwLength;
+				AVATARENTRY *pAvatar;
+				FILE *fp;
+
+				if (!(pszFile = strtok(NULL, " ")) || strcasecmp (pszFile, "1"))
+				{
+					Send (pInst, "ERROR 116 GET invalid ID");
+					return;
+				}
+				if (!(pszFile = strtok(NULL, " ")))
+				{
+					Send (pInst, "ERROR 7 GET: invalid WHAT");
+					return;
+				}
+				if (fp=fopen(pszFile, "r"))
+				{
+					fseek (fp, 0, SEEK_END);
+					if (ftell(fp))
+					{
+						fclose(fp);
+						Send (pInst, "ERROR 124 GET Destination file is not empty");
+						return;
+					}
+					fclose(fp);
+				}
+				if (!(pAvatar = AvatarList_Find(pInst->hAvatarList, pUser->pszUser)) ||
+					!(pAvatarBuf = ImoSkype_GetAvatar (pInst->hInst, pAvatar->pszIcon, &dwLength)))
+				{
+					// FIXME: Normally we should return default avatar if pAvatar is NULL.
+					// Default avatar from imo.im is PNG, but JPEG is expected, so we 
+					// return an error here
+					Send (pInst, "ERROR 122 GET Unable to load avatar");
+					return;
+				}
+				if (!(fp=fopen(pszFile, "w")))
+				{
+					Send (pInst, "ERROR 121 GET File path doesn't exist");
+					return;
+				}
+				fwrite (pAvatarBuf, dwLength, 1, fp);
+				fclose (fp);
+				Send (pInst, "USER %s AVATAR 1 %s", pUser->pszUser, pszFile);
+			}
 			else
 			{
 				Send(pInst, "ERROR 10 Invalid propery");
@@ -1181,6 +1247,11 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			else
 				Send (pInst, "ERROR 10 Invalid property / not implemented");
 			return;					
+		}
+		else
+		if (strcasecmp(pszCmd, "SKYPEVERSION") == 0)
+		{
+			Send (pInst, "SKYPEVERSION 3.8.0.188"); // Fake
 		}
 		else
 		{

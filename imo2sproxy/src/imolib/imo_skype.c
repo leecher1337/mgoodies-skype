@@ -4,6 +4,7 @@
    Date:    30.08.2009
 */
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "imo_request.h"
 #include "imo_skype.h"
@@ -351,6 +352,16 @@ int ImoSkype_Ping(IMOSKYPE *hSkype)
 	if (pszRet = ImoRq_Echo(hSkype->hRq))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+char *ImoSkype_GetAvatar(IMOSKYPE *hSkype, char *pszID, unsigned int *pdwLength)
+{
+	char szURL[256];
+
+	sprintf (szURL, "https://o.imo.im/b/%s", pszID);
+	return ImoRq_HTTPGet (hSkype->hRq, szURL, pdwLength);
 }
 
 // -----------------------------------------------------------------------------
