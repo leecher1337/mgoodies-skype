@@ -382,10 +382,15 @@ void GetInfoThread(HANDLE hContact) {
 	}
 
 
-	for (i=0; i<sizeof(pszProps)/sizeof(pszProps[0]); i++)
-		if (ptr=SkypeGet ("USER", dbv.pszVal, pszProps[i])) free (ptr);
+	if (!bIsImoproxy)
+	{
+		for (i=0; i<sizeof(pszProps)/sizeof(pszProps[0]); i++)
+			if (ptr=SkypeGet ("USER", dbv.pszVal, pszProps[i])) free (ptr);
+	} else {
+		if (ptr=SkypeGet ("USER", dbv.pszVal, "MOOD_TEXT")) free (ptr);
+	}
 
-	if (protocol >= 7) {
+	if (protocol >= 7 || bIsImoproxy) {
 		// Notify about the possibility of an avatar
 		ACKDATA ack = {0};
 		ack.cbSize = sizeof( ACKDATA );
@@ -398,8 +403,11 @@ void GetInfoThread(HANDLE hContact) {
 		//if (ptr=SkypeGet ("USER", dbv.pszVal, "RICH_MOOD_TEXT")) free (ptr);
 	}
 
-	for (i=0; i<sizeof(m_settings)/sizeof(m_settings[0]); i++)
-		if (ptr=SkypeGet ("USER", dbv.pszVal, m_settings[i].SkypeSetting)) free (ptr);
+	if (!bIsImoproxy)
+	{
+		for (i=0; i<sizeof(m_settings)/sizeof(m_settings[0]); i++)
+			if (ptr=SkypeGet ("USER", dbv.pszVal, m_settings[i].SkypeSetting)) free (ptr);
+	}
 
 	ProtoBroadcastAck(SKYPE_PROTONAME, hContact, ACKTYPE_GETINFO, ACKRESULT_SUCCESS, (HANDLE) 1, 0);
 	LeaveCriticalSection(&QueryThreadMutex);
@@ -2314,7 +2322,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
         break; 
 
         case WM_TIMER:
-			SkypeSend("PING");
+			if (!bIsImoproxy) SkypeSend("PING");
 			SkypeMsgCollectGarbage(MAX_MSG_AGE);
 			MsgList_CollectGarbage();
 			if (receivers>1)
@@ -2635,7 +2643,7 @@ INT_PTR SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 		DBVARIANT dbv;
 		char AvatarFile[MAX_PATH+1];
 
-		if (protocol < 7)
+		if (protocol < 7 && !bIsImoproxy)
 			return GAIR_NOAVATAR;
 
 		if (wParam & GAIF_FORCE)
@@ -2858,7 +2866,7 @@ INT_PTR SkypeUserIsTyping(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv={0};
 	HANDLE hContact = (HANDLE)wParam;
 
-	if (protocol<5) return 0;
+	if (protocol<5 && !bIsImoproxy) return 0;
 	if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, "Typing_Stream", &dbv)) {
 		if (DBGetContactSettingString(hContact, SKYPE_PROTONAME, SKYPE_NAME, &dbv) == 0) {
 			char szCmd[256];
@@ -2869,7 +2877,7 @@ INT_PTR SkypeUserIsTyping(WPARAM wParam, LPARAM lParam) {
 			testfor (szCmd, 2000);
 			// TODO: We should somehow cache the typing notify result and send it
 			// after we got a connection, but in the meantime this notification won't
-			// get send on first run
+			// get sent on first run
 		}
 		return 0;
 	}

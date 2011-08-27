@@ -33,7 +33,7 @@
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char protocol, g_szProtoName[];
-extern BOOL SkypeInitialized, bProtocolSet;
+extern BOOL SkypeInitialized, bProtocolSet, bIsImoproxy;
 extern DWORD mirandaVersion;
 
 BOOL showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
@@ -761,7 +761,7 @@ int OnDetailsInit( WPARAM wParam, LPARAM lParam )
 		
 		char szTitle[256];
 		
-		if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 7, 0, 27))
+		if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 7, 0, 27) && !bIsImoproxy)
 		{
 			mir_snprintf( szTitle, sizeof( szTitle ), "%s %s", SKYPE_PROTONAME, Translate( "Avatar" ));
 
