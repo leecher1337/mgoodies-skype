@@ -360,76 +360,79 @@ char *SkypeMsgGet(void) {
 }
 
 // Message sending routine, for internal use by SkypeSend
-static int __sendMsg(char *szMsg) {
-	COPYDATASTRUCT CopyData;
-	LRESULT SendResult;
-	int oldstatus;
-	unsigned int length=(unsigned int)strlen(szMsg);
+static int __sendMsgProc(char *szMsg) {
+   COPYDATASTRUCT CopyData;
+   LRESULT SendResult;
+   int oldstatus;
+   unsigned int length=(unsigned int)strlen(szMsg);
 
-	LOG(("> %s", szMsg));
+   LOG(("> %s", szMsg));
 
-	if (UseSockets) {
+   // Fake PING-PONG, as PING-PONG is not supported by Skype2Socket
+   if ((UseSockets || bIsImoproxy) && !strcmp(szMsg, "PING")) {
+	 CopyData.dwData=0; 
+	 CopyData.lpData="PONG"; 
+	 CopyData.cbData=5;
+	 SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
+	 return 0;
+   }
 
-		if (ClientSocket==INVALID_SOCKET) return -1;
-		// Fake PING-PONG, as PING-PONG is not supported by Skype2Socket
-		if (!strcmp(szMsg, "PING")) {
-			char *buf="PONG";
+   if (UseSockets) {
 
-			CopyData.dwData=0; 
-			CopyData.lpData=buf; 
-			CopyData.cbData=(DWORD)strlen(buf)+1;
-			SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
-			return 0;
-		} else {
-			BOOL res;
-			EnterCriticalSection(&SendMutex);
-			res = (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR)
-				|| (send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR);
-			LeaveCriticalSection(&SendMutex);
-			if (res)
-				SendResult=0;
-			else 
-				return 0;
-		}
-	} else {
-		CopyData.dwData=0; 
-		CopyData.lpData=szMsg; 
-		CopyData.cbData=(DWORD)strlen(szMsg)+1;
+	   if (ClientSocket==INVALID_SOCKET) return -1;
+	   
+	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
+		   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) SendResult=0;
+	   else return 0;
+   } else {
+	   CopyData.dwData=0; 
+	   CopyData.lpData=szMsg; 
+	   CopyData.cbData=(DWORD)strlen(szMsg)+1;
 
-		// Internal comm channel
-		if (pszProxyCallout)
-			return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
+       // Internal comm channel
+	   if (pszProxyCallout)
+		   return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
 
-		// If this didn't work, proceed with normal Skype API
-		if (!hSkypeWnd) 
-		{
-			LOG(("SkypeSend: DAMN! No Skype window handle! :("));
-		}
-		SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
-		LOG(("SkypeSend: SendMessage returned %d", SendResult));
-	}
-	if (!SendResult) 
-	{
-		SkypeInitialized=FALSE;
-		AttachStatus=-1;
-		ResetEvent(SkypeReady);
-		if (g_hWnd) KillTimer (g_hWnd, 1);
-		if (SkypeStatus!=ID_STATUS_OFFLINE) 
-		{
-			// Go offline
-			logoff_contacts(FALSE);
-			oldstatus=SkypeStatus;
-			InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
-			ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
-		}
-		// Reconnect to Skype
-		ResetEvent(SkypeReady);
-		pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
-		return -1;
-		//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-	}
-	return 0;
+	   // If this didn't work, proceed with normal Skype API
+       if (!hSkypeWnd) 
+	   {
+		   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
+	   }
+	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
+       LOG(("SkypeSend: SendMessage returned %d", SendResult));
+   }
+   if (!SendResult) 
+   {
+	  SkypeInitialized=FALSE;
+      AttachStatus=-1;
+	  ResetEvent(SkypeReady);
+	  if (g_hWnd) KillTimer (g_hWnd, 1);
+  	  if (SkypeStatus!=ID_STATUS_OFFLINE) 
+	  {
+		// Go offline
+		logoff_contacts(FALSE);
+		oldstatus=SkypeStatus;
+		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
+		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+	  }
+	  // Reconnect to Skype
+	  ResetEvent(SkypeReady);
+	  pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
+	  return -1;
+//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+   }
+   return 0;
 }
+
+static int __sendMsg(char *szMsg) {
+	int iRet;
+
+	EnterCriticalSection(&SendMutex);
+	iRet = __sendMsgProc(szMsg);
+	LeaveCriticalSection(&SendMutex);
+	return iRet;
+}
+
 
 /* SkypeSend
  * 
@@ -673,7 +676,7 @@ char *SkypeGetID(char *szWhat, char *szWho, char *szProperty) {
 	char szID[16]={0};
 	static DWORD dwId = 0;
 
-	if (protocol>=4) sprintf (szID, "#G%d ", dwId++);
+	if (protocol>=4 || bIsImoproxy) sprintf (szID, "#G%d ", dwId++);
 	return __SkypeGet (szID, szWhat, szWho, szProperty);
 }
 
@@ -1464,16 +1467,12 @@ BOOL testfor(char *what, DWORD maxwait) {
 char SendSkypeproxyCommand(char command) {
 	int length=0;
 	char reply=0;
-	BOOL res;
-	EnterCriticalSection(&SendMutex);
-	res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
-		|| send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR
-		|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
-	LeaveCriticalSection(&SendMutex);
-	if (res)
-		return -1;
-	else 
-		return reply;
+
+	if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
+		send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR ||
+		recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR)
+			return -1;
+	else return reply;
 }
 
 /* ConnectToSkypeAPI
@@ -1593,13 +1592,9 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 					DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0);
 				} else {
 					unsigned int length=(unsigned int)strlen(dbv.pszVal);
-					BOOL res;
-					EnterCriticalSection(&SendMutex);
-					res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
-						|| send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR
-						|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
-					LeaveCriticalSection(&SendMutex);
-					if (res)
+					if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
+						send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR ||
+						recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR) 
 					{
 							DBFreeVariant(&dbv);
 							return -1;
@@ -1694,9 +1689,11 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 					j=1;
 					for (i=0; i<sizeof(SkypeOptions)/sizeof(SkypeOptions[0]); i++)
 						if (DBGetContactSettingByte(NULL, SKYPE_PROTONAME, SkypeOptions[i]+1, SkypeDefaults[i])) {
-							if( i == 4)
+							DBVARIANT dbv;
+
+							switch (i)
 							{
-								DBVARIANT dbv;
+							case 4:
 								if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"datapath",&dbv)) 
 								{
 									int paramSize;
@@ -1706,10 +1703,13 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 									sprintf(args[j],"%s%s",SkypeOptions[i],szAbsolutePath);
 									DBFreeVariant(&dbv);
 								}
-
-							}
-							else
+								break;
+							case 2:
+								args[j++]="/legacylogin";
+							default:
 								args[j]=SkypeOptions[i];
+								break;
+							}
 							LOG(("Using Skype parameter: %s", args[j]));
 							//MessageBox(NULL,"Using Skype parameter: ",args[j],0);
 							j++;
