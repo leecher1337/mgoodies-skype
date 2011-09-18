@@ -360,7 +360,7 @@ char *SkypeMsgGet(void) {
 }
 
 // Message sending routine, for internal use by SkypeSend
-static int __sendMsgProc(char *szMsg) {
+static int __sendMsg(char *szMsg) {
    COPYDATASTRUCT CopyData;
    LRESULT SendResult;
    int oldstatus;
@@ -378,12 +378,17 @@ static int __sendMsgProc(char *szMsg) {
    }
 
    if (UseSockets) {
-
+		 BOOL res;
 	   if (ClientSocket==INVALID_SOCKET) return -1;
 	   
-	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-		   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) SendResult=0;
-	   else return 0;
+		 EnterCriticalSection(&SendMutex);
+	   res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+			 || send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR;
+		 LeaveCriticalSection(&SendMutex);
+		 if (res)
+			 SendResult = 0;
+	   else 
+			 return 0;
    } else {
 	   CopyData.dwData=0; 
 	   CopyData.lpData=szMsg; 
@@ -423,16 +428,6 @@ static int __sendMsgProc(char *szMsg) {
    }
    return 0;
 }
-
-static int __sendMsg(char *szMsg) {
-	int iRet;
-
-	EnterCriticalSection(&SendMutex);
-	iRet = __sendMsgProc(szMsg);
-	LeaveCriticalSection(&SendMutex);
-	return iRet;
-}
-
 
 /* SkypeSend
  * 
@@ -1467,12 +1462,17 @@ BOOL testfor(char *what, DWORD maxwait) {
 char SendSkypeproxyCommand(char command) {
 	int length=0;
 	char reply=0;
-
-	if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-		send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR ||
-		recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR)
-			return -1;
-	else return reply;
+	BOOL res;
+	
+	EnterCriticalSection(&SendMutex);
+	res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+		|| send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR
+		|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
+	LeaveCriticalSection(&SendMutex);
+	if (res)
+		return -1;
+	else
+		return reply;
 }
 
 /* ConnectToSkypeAPI
@@ -1592,9 +1592,13 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 					DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "RequiresPassword", 0);
 				} else {
 					unsigned int length=(unsigned int)strlen(dbv.pszVal);
-					if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
-						send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR ||
-						recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR) 
+					BOOL res;
+					EnterCriticalSection(&SendMutex);
+					res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+						|| send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR
+						|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
+					LeaveCriticalSection(&SendMutex);
+					if (res)
 					{
 							DBFreeVariant(&dbv);
 							return -1;
