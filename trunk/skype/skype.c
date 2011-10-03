@@ -57,6 +57,7 @@ HINSTANCE hInst;
 HANDLE hProtocolAvatarsFolder;
 char DefaultAvatarsFolder[MAX_PATH+1];
 DWORD mirandaVersion;
+int hLangpack = 0;
 
 CRITICAL_SECTION RingAndEndcallMutex, QueryThreadMutex, TimeMutex;
 
@@ -3275,6 +3276,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink = link;
 	mir_getMMI( &mmi ); 
+	mir_getLP(&pluginInfo);
 
 	GetModuleFileNameA( hInst, path, sizeof( path ));
 	_splitpath (path, NULL, NULL, SKYPE_PROTONAME, NULL);
