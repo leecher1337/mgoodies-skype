@@ -5,6 +5,7 @@
 #define CP_ACP		0 
 
 #define code_page CP_ACP;
+#define MIRANDA_CUSTOM_LP
 
 
 // System includes
