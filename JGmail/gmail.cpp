@@ -57,7 +57,7 @@ Last change by : $Author$
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
 	TCHAR *username;
-//	char *url;
+	char *url;
 	char *password;
 	__int64 tid;
 } POPUP_ACCINFO;
@@ -480,7 +480,9 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				__int64 gtstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "tid" ));
 				if (gtstamp>maxtid)maxtid=gtstamp;
 				__int64 gmstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "date" ));
-//				char *url = t2a(JabberXmlGetAttrValue( threadNode, "url" ));
+				//char *url = t2a(JabberXmlGetAttrValue( threadNode, "url" ));
+				char url[1024];
+				mir_snprintf(url,1023,"https://mail.google.com/mail/#all/%x%x",(DWORD)(gtstamp>>32),(DWORD)gtstamp);
 				if (gmstamp>maxtime)maxtime=gmstamp;
 				int numMesg = _ttoi(JabberXmlGetAttrValue( threadNode, "messages" ));
 				TCHAR mesgs[10];
@@ -542,7 +544,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 							ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
 							acci->username = info->username;
 							acci->password = info->password;
-//							acci->url;
+							acci->url = url;
 							acci->tid = gtstamp;
 							ppd.PluginData = (void *)acci;
 					}	}
@@ -560,6 +562,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 
 int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam )
 {
+	/*
 	char url[MAX_PATH];
 	DBVARIANT dbv;
 	url[0] = '\0';
@@ -577,8 +580,9 @@ int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam )
 		mir_free(passwdUrlEncoded);
 	} else return 0;
 	strcat(url,"&continue=http%3A%2F%2Fmail.google.com%2Fmail%2F");
-
 	CallService(MS_UTILS_OPENURL,1,(LPARAM)url);
+	*/
+	CallService(MS_UTILS_OPENURL,1,(LPARAM)"https://mail.google.com/mail/");
 	return 0;
 }
 
@@ -587,9 +591,10 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	switch(message) {
 		case WM_COMMAND:
 			if (HIWORD(wParam) == STN_CLICKED) { //It was a click on the Popup.
-				char url[MAX_PATH];
+				//char url[MAX_PATH];
 				mpd = (POPUP_ACCINFO * )PUGetPluginData(hWnd);
 				if ((mpd) && (int)mpd!=-1){
+					/*
 #ifdef _UNICODE
 					char *tempusername = u2a(mpd->username);
 #endif
@@ -613,7 +618,10 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 					mir_free(tempusername);
 #endif
 //					JabberLog("Redir: %s",url);
+					
 					CallService(MS_UTILS_OPENURL,1,(LPARAM)url);
+					*/
+					CallService(MS_UTILS_OPENURL,1,(LPARAM)mpd->url);
 				}
 				PUDeletePopUp(hWnd);
 				return TRUE;

@@ -380,9 +380,29 @@ char* SSL_OpenSsl::getSslToken( char* data )
 				//JabberLog( "Sending SSL query:\n%s", buf );
 				pfn_SSL_write( ssl, buf, nBytes);
 
-				nBytes = pfn_SSL_read( ssl, buf, SSL_BUF_SIZE-1 );
+				int nread=0;
+				nBytes=0;
+				boolean inhead=true;
+				int datastart=0;
+				int datalength=SSL_BUF_SIZE-1;
+				while(nBytes<datastart+datalength &&
+					(nread=pfn_SSL_read( ssl, &buf[nBytes], min(SSL_BUF_SIZE-1,datalength+datastart)-nBytes ))>0
+					){
+					nBytes+=nread;
+					buf[nBytes]=0;
+					//JabberLog( "Received %d: Total %d: %s",nread, nBytes, &buf[nBytes-nread] );
+					if (!datastart){
+						char *temp=strstr(buf,"\r\n\r\n");
+						if (temp){
+							datastart=temp-buf+4;
+							temp=strstr(buf,"Content-Length:");
+							if (temp) datalength=atoi(&temp[15]);
+						}
+					}
+				}
+				//JabberLog( "Received %d: %s",nBytes,buf );
+				//JabberLog( "Datalength %d, DataStart %d, Data: %s", datalength, datastart, &buf[datastart] );
 				if ( nBytes > 0 ) {
-					buf[nBytes] = '\0'; //just in case
 					char * responce = strchr(buf,' ')+1;
 					char * temp = strchr(buf,'\n');
 					temp[0] = '\0'; if (temp[-1] == '\r') temp[-1] = '\0'; // awful code!
@@ -411,9 +431,29 @@ char* SSL_OpenSsl::getSslToken( char* data )
 							mir_free(secondStage);
 							//JabberLog( "Sending SSL query:\n%s", buf );
 							pfn_SSL_write( ssl, buf, nBytes);
-							nBytes = pfn_SSL_read( ssl, buf, SSL_BUF_SIZE-1 );
+							nread=0;
+							nBytes=0;
+							boolean inhead=true;
+							datastart=0;
+							datalength=SSL_BUF_SIZE-1;
+							while(nBytes<datastart+datalength &&
+								(nread=pfn_SSL_read( ssl, &buf[nBytes], min(SSL_BUF_SIZE-1,datalength+datastart)-nBytes ))>0
+								){
+								nBytes+=nread;
+								buf[nBytes]=0;
+								//JabberLog( "Received %d: Total %d: %s",nread, nBytes, &buf[nBytes-nread] );
+								if (!datastart){
+									char *temp=strstr(buf,"\r\n\r\n");
+									if (temp){
+										datastart=temp-buf+4;
+										temp=strstr(buf,"Content-Length:");
+										if (temp) datalength=atoi(&temp[15]);
+									}
+								}
+							}
+							//JabberLog( "Received %d: %s",nBytes,buf );
+							//JabberLog( "Datalength %d, DataStart %d, Data: %s", datalength, datastart, &buf[datastart] );
 							if ( nBytes > 0 ) {
-								buf[nBytes] = '\0'; //just in case
 								if (buf[nBytes-1] == '\n') {buf[nBytes-1] = '\0'; nBytes--;}
 								if (buf[nBytes-1] == '\r') {buf[nBytes-1] = '\0'; nBytes--;}
 								responce = strchr(buf,' ')+1;
@@ -421,12 +461,10 @@ char* SSL_OpenSsl::getSslToken( char* data )
 								temp[0] = '\0'; if (temp[-1] == '\r') temp[-1] = '\0'; // awful code!
 								if (!strncmp(responce,"200",3)){
 									JabberLog(respString,2,"posi",responce);
-									temp++;
-									temp = strrchr(temp,'\n');
-									temp++;
 									//JabberLog( "SSL result:\n%s", temp );
-									result = ( char* )mir_alloc( strlen(temp)+1 );
-									strcpy(result,temp);
+									result = ( char* )mir_alloc( datalength+1 );
+									memcpy(result,&buf[datastart],datalength);
+									result[datalength]=0;
 								} else JabberLog(respString,2,"nega",responce);
 							} else JabberLog( "SSL read failed: %d",nBytes);
 						} else JabberLog("Server did not return SID and LSID");

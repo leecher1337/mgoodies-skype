@@ -178,7 +178,7 @@ static void xmlStreamInitialize(char *which) {
 static void xmlStreamInitializeNow(ThreadData* info) {
 	JabberLog("Stream is initializing %s",xmlStreamToBeInitialized?xmlStreamToBeInitialized:"after connect");
 	if (xmlStreamToBeInitialized) {
-		free(xmlStreamToBeInitialized);
+		//free(xmlStreamToBeInitialized);
 		xmlStreamToBeInitialized = NULL;
 		JabberXmlDestroyState(&xmlState);
 	}
@@ -400,7 +400,7 @@ LBL_FatalError:
 	}
 
 	BOOL sslMode = FALSE;
-	if ( info->port==443){ //fake ssl session - Client Hello
+	/*if ( info->port==443){ //fake ssl session - Client Hello
 		if ( JGetByte( "EnableGmail", 1 )&1 ) {
 			unsigned int fake[] = {//Long Live Ethereal!
 				0x03014680, 0x002D0001, 0x01100000, 0x00038000,
@@ -418,7 +418,7 @@ LBL_FatalError:
 			}
 			info->useSSL = FALSE; // prevent using SSL in gmail -> port 443. 
 		}
-	} else if ( info->useSSL ) {
+	} else */if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
 		if (
 #ifndef STATICSSL
