@@ -1023,7 +1023,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 							else gce.ptszNick=gce.ptszUID;
     
 							CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
-							RemChatContact (GetChat(gcd.ptszID), ci.hContact);
+							RemChatContact (GetChat(gcd.ptszID), gce.ptszUID);
 							free_nonutf_tchar_string((void*)gce.ptszStatus);
 							if (ci.pszVal) miranda_sys_free (ci.pszVal);
 						}
@@ -1070,7 +1070,7 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 							if (ci.hContact && !CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci)) gce.ptszNick=ci.pszVal; 
 							else gce.ptszNick=gce.ptszUID;
 
-							if (gcContact = GetChatContact(GetChat(gcd.ptszID), ci.hContact))
+							if (gcContact = GetChatContact(GetChat(gcd.ptszID), gce.ptszUID))
 							{
 								gce.ptszStatus = gcContact->szRole;
 								CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
@@ -1836,7 +1836,9 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 	int sstat, oldstatus, flag;
 	HANDLE hContact;
 	fetchmsg_arg *args;
+	static int iReentranceCnt = 0;
 
+	iReentranceCnt++;
     switch (message) 
     { 
         case WM_COPYDATA: 
@@ -2323,6 +2325,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
         break; 
 
         case WM_TIMER:
+			if (iReentranceCnt>1) break;
 			if (!bIsImoproxy) SkypeSend("PING");
 			SkypeMsgCollectGarbage(MAX_MSG_AGE);
 			MsgList_CollectGarbage();
@@ -2366,10 +2369,12 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				AttachStatus=lParam;
 				break;
 		 }
+		 --iReentranceCnt;
 		 return (DefWindowProc(hWndDlg, message, wParam, lParam)); 
     }
 	LOG(("WM_COPYDATA exit (%08X)", message));
 	if (szSkypeMsg) free(szSkypeMsg);
+	--iReentranceCnt;
 	return 1;
 } 
 
@@ -3276,7 +3281,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink = link;
 	mir_getMMI( &mmi ); 
-	mir_getLP(&pluginInfo);
+	//mir_getLP(&pluginInfo);
 
 	GetModuleFileNameA( hInst, path, sizeof( path ));
 	_splitpath (path, NULL, NULL, SKYPE_PROTONAME, NULL);
