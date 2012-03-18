@@ -13,6 +13,7 @@
 
 typedef struct {
 	HANDLE hContact;
+	TCHAR who[33];
 	TCHAR szRole[12];
 } gchat_contact;
 
@@ -31,8 +32,8 @@ HANDLE find_chatA(char *chatname);
 #else
 #define find_chatA find_chat
 #endif
-void RemChatContact(gchat_contacts*, HANDLE);
-gchat_contact *GetChatContact(gchat_contacts *gc, HANDLE hContact);
+void RemChatContact(gchat_contacts*, const TCHAR*);
+gchat_contact *GetChatContact(gchat_contacts *gc, const TCHAR *who);
 int AddMembers(char*);
 void AddMembersThread(char *szSkypeMsg);
 void RemChat(TCHAR *szChatId);
