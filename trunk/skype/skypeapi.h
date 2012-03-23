@@ -20,13 +20,6 @@ typedef struct {
 	char *szStat;
 } status_map;
 
-struct MsgQueue {
-	char *message;
-	time_t tAdded;
-	time_t tReceived;
-	struct MsgQueue *next;
-};
-
 // Prototypes
 int SkypeMsgInit(void);
 int SkypeMsgAdd(char *msg);

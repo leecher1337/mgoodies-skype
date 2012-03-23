@@ -111,6 +111,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\msglist.obj" \
 	"$(INTDIR)\memlist.obj" \
 	"$(INTDIR)\util.obj" \
+	"$(INTDIR)\msgq.obj" \
+	"$(INTDIR)\alogon.obj" \
 	"$(INTDIR)\Skript1.res"
 
 ALL : "$(OUTDIR)\skype.dll"
@@ -130,6 +132,8 @@ CLEAN :
 	-@erase "$(INTDIR)\msglist.obj"
 	-@erase "$(INTDIR)\memlist.obj"
 	-@erase "$(INTDIR)\util.obj"
+	-@erase "$(INTDIR)\msgq.obj" \
+	-@erase "$(INTDIR)\alogon.obj" \
 	-@erase "$(INTDIR)\utf8.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\voiceservice.obj"
@@ -162,6 +166,11 @@ CLEAN :
 !ENDIF 
 
 
+SOURCE=.\alogon.c
+
+"$(INTDIR)\alogon.obj" : $(SOURCE) "$(INTDIR)"
+
+
 SOURCE=.\contacts.c
 
 "$(INTDIR)\contacts.obj" : $(SOURCE) "$(INTDIR)"
@@ -175,6 +184,11 @@ SOURCE=.\debug.c
 SOURCE=.\gchat.c
 
 "$(INTDIR)\gchat.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\msgq.c
+
+"$(INTDIR)\msgq.obj" : $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\pthread.c

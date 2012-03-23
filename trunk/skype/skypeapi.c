@@ -10,6 +10,8 @@
 #include "skypeproxy.h"
 #include "pthread.h"
 #include "gchat.h"
+#include "alogon.h"
+#include "msgq.h"
 #pragma warning (push)
 #pragma warning (disable: 4100) // unreferenced formal parameter
 #include "../../include/m_utils.h"
@@ -33,7 +35,7 @@ extern char DefaultAvatarsFolder[MAX_PATH+1], *pszProxyCallout, protocol, g_szPr
 
 // -> Skype Message Queue functions //
 
-struct MsgQueue *SkypeMsgs=NULL; 
+static TYP_MSGQ SkypeMsgs, SkypeSendQueue;
 
 status_map status_codes[] = {
 	{ID_STATUS_AWAY, "AWAY"},
@@ -50,9 +52,10 @@ status_map status_codes[] = {
 //status_map 
 
 
-CRITICAL_SECTION MsgQueueMutex, ConnectMutex, SendMutex;
-BOOL rcvThreadRunning=FALSE; BOOL isConnecting = FALSE;
-SOCKET ClientSocket=INVALID_SOCKET;
+static CRITICAL_SECTION ConnectMutex;
+static BOOL rcvThreadRunning=FALSE, isConnecting = FALSE;
+static SOCKET ClientSocket=INVALID_SOCKET;
+static HANDLE SkypeMsgToSend=NULL;
 
 static char *m_szSendBuf = NULL;
 static DWORD m_iBufSize = 0;
@@ -119,129 +122,67 @@ void rcvThread(char *dummy) {
 	}
 }
 
-/**
- * Purpose: Retrieves class name from window
- *
- * Note: This is some sort of hack to return static local variable,
- * but it works :)
- */
-const TCHAR* getClassName(HWND wnd)
-{
-    static TCHAR className[256];
+void sendThread(char *dummy) {
+	COPYDATASTRUCT CopyData;
+	LRESULT SendResult;
+	int oldstatus;
+	unsigned int length;
+	char *szMsg;
 	
-	*className=0;
-	GetClassName(wnd, &className[0], sizeof(className)/sizeof(className[0]));
-	return className;
-}
+	while (SkypeMsgToSend) {
+		if (WaitForSingleObject(SkypeMsgToSend, INFINITE) != WAIT_OBJECT_0) return;
+		if (!(szMsg = MsgQ_Get(&SkypeSendQueue))) continue;
+		length=(unsigned int)strlen(szMsg);
 
-/**
- * Purpose: Finds a window
- *
- * Note: This function relies on Skype window placement.
- * It should work for Skype 3.x
- */
-HWND findWindow(HWND parent, const TCHAR* childClassName)
-{
-    // Get child window
-    // This window is not combo box or edit box
-	HWND wnd = GetWindow(parent, GW_CHILD);
-	while(wnd != NULL && _tcscmp(getClassName(wnd), childClassName) != 0)
-		wnd = GetWindow(wnd, GW_HWNDNEXT);
-    
-    return wnd;
-}
-
-static  BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam)
-{
-	DWORD dwPID;
-	const TCHAR *lpszClassName;
-
-
-	GetWindowThreadProcessId(hWnd,&dwPID);
-	if (lParam != 0 && dwPID != (DWORD)lParam) return TRUE;
-	lpszClassName = getClassName(hWnd);
-	if(_tcscmp(lpszClassName, _T("tSkMainForm.UnicodeClass")) == 0 ||
-		_tcscmp(lpszClassName, _T("TLoginForm.UnicodeClass")) == 0)
-	{
-		HWND loginControl = GetWindow(hWnd, GW_CHILD);
-
-		LOG(("setUserNamePasswordThread: Skype window found!"));
-
-		// Sleep for some time, while Skype is loading
-		// It loads slowly :(
-		//Sleep(5000);
-		LOG (("TLoginControl = %S", getClassName(loginControl)));
-
-		// Check for login control
-		if(_tcscmp(getClassName(loginControl), _T("TLoginControl")) == 0)
-		{
-			// Find user name window
-			HWND userName = findWindow(loginControl, _T("TNavigableTntComboBox.UnicodeClass"));
-			HWND password = findWindow(loginControl, _T("TNavigableTntEdit.UnicodeClass"));
-
-			LOG (("userName=%08X; password=%08X", userName, password));
-			if (userName && password)
-			{
-				// Set user name and password
-				DBVARIANT dbv;
-
-				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
-				{
-					SendMessageW(userName, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
-					DBFreeVariant(&dbv);    
-				}
-
-				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
-				{
-					SendMessageW(password, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
-					DBFreeVariant(&dbv);
-					SendMessageW(password, WM_CHAR, 13, 0);
-				}
-
-
-				SendMessageW(hWnd,
-							 WM_COMMAND,
-							 0x4a8,  // sign-in button; WARNING: This ID can change during newer Skype versions
-							 (LPARAM)findWindow(loginControl, _T("TTntButton.UnicodeClass")));
+		if (UseSockets) {
+			if (send(ClientSocket, (char *)&length, sizeof(length), 0) != SOCKET_ERROR &&
+				send(ClientSocket, szMsg, length, 0) != SOCKET_ERROR) {
+				free (szMsg);
+				continue;
 			}
-			return FALSE;
+			SendResult = 0;
+		} else {
+			CopyData.dwData=0; 
+			CopyData.lpData=szMsg; 
+			CopyData.cbData=length+1;
+
+			// Internal comm channel
+			if (pszProxyCallout) {
+			   CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
+			   free(szMsg);
+			   continue;
+			}
+
+			// If this didn't work, proceed with normal Skype API
+			if (!hSkypeWnd) 
+			{
+			   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
+			}
+			SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
+			LOG(("SkypeSend: SendMessage returned %d", SendResult));
+			free(szMsg);
 		}
-
+		if (!SendResult) {
+			SkypeInitialized=FALSE;
+			AttachStatus=-1;
+			ResetEvent(SkypeReady);
+			if (g_hWnd) KillTimer (g_hWnd, 1);
+			if (SkypeStatus!=ID_STATUS_OFFLINE) {
+				// Go offline
+				logoff_contacts(FALSE);
+				oldstatus=SkypeStatus;
+				InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
+				ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
+			}
+			// Reconnect to Skype
+			ResetEvent(SkypeReady);
+			pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
+			WaitForSingleObject (SkypeReady, 10000);
+			//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+		}
 	}
-	return TRUE;
 }
 
-DWORD WINAPI setUserNamePasswordThread(LPVOID lpDummy)
-{
-	DWORD dwPid = (DWORD)lpDummy;
-	HANDLE mutex = CreateMutex(NULL, TRUE, _T("setUserNamePasswordMutex"));
-
-	// Check double entrance
-	if(GetLastError() == ERROR_ALREADY_EXISTS)
-		return 0;
-
-	WaitForSingleObject(SkypeReady, 5000);
-	EnumWindows (EnumWindowsProc, dwPid);
-
-	ReleaseMutex(mutex);
-	CloseHandle(mutex);
-	return 0;
-}
-
-/**
- * Purpose: Finds Skype window and sets user name and password.
- *
- * Note: This function relies on Skype window placement.
- * It should work for Skype 3.x
- */
-void setUserNamePassword(int dwPid)
-{
-	DWORD threadId;
-	CreateThread(NULL, 0, &setUserNamePasswordThread, (LPVOID)dwPid, 0, &threadId);
-
-	// Give time to thread
-	Sleep(100);
-}
 
 /*
  * Skype Messagequeue - Implemented as a linked list 
@@ -254,16 +195,19 @@ void setUserNamePassword(int dwPid)
  *         -1 - Memory allocation failure
  */
 int SkypeMsgInit(void) {
-	
-	if ((SkypeMsgs=(struct MsgQueue*)malloc(sizeof(struct MsgQueue)))==NULL) return -1;
-	SkypeMsgs->message=NULL;
-	SkypeMsgs->tAdded=SkypeMsgs->tReceived=0;
-	SkypeMsgs->next=NULL;
-	InitializeCriticalSection(&MsgQueueMutex);
+
+	MsgQ_Init(&SkypeMsgs);
+	MsgQ_Init(&SkypeSendQueue);
     InitializeCriticalSection(&ConnectMutex);
-	InitializeCriticalSection(&SendMutex);
-	m_szSendBuf = malloc(m_iBufSize=512);
-	return 0;
+	if (SkypeMsgToSend=CreateSemaphore(NULL, 0, MAX_MSGS, NULL)) {
+		if (m_szSendBuf = malloc(m_iBufSize=512)) {
+			if (_beginthread(( pThreadFunc )sendThread, 0, NULL)!=-1)
+				return 0;
+			free(m_szSendBuf);
+		}
+		CloseHandle (SkypeMsgToSend);
+	}
+	return -1;
 }
 
 /* SkypeMsgAdd
@@ -274,27 +218,7 @@ int SkypeMsgInit(void) {
  *         -1 - Memory allocation failure
  */
 int SkypeMsgAdd(char *msg) {
-	struct MsgQueue *ptr;
-
-	EnterCriticalSection(&MsgQueueMutex);
-	ptr=SkypeMsgs;
-	if (!ptr) {
-		LeaveCriticalSection(&MsgQueueMutex);
-		return -1;
-	}
-	while (ptr->next!=NULL) ptr=ptr->next;
-	if ((ptr->next=(struct MsgQueue*)malloc(sizeof(struct MsgQueue)))==NULL) {
-		LeaveCriticalSection(&MsgQueueMutex);
-		return -1;
-	}
-	ptr=ptr->next;
-	ptr->message = _strdup(msg); // Don't forget to free!
-	ptr->tAdded = SkypeTime(NULL);
-	SkypeTime(&ptr->tReceived);
-	ptr->next=NULL;
-	LOG (("SkypeMsgAdd (%s) @%lu/%ld", msg, ptr->tReceived, ptr->tAdded));
-	LeaveCriticalSection(&MsgQueueMutex);
-	return 0;
+	return MsgQ_Add(&SkypeMsgs, msg)?0:-1;
 }
 
 /* SkypeMsgCleanup
@@ -302,7 +226,6 @@ int SkypeMsgAdd(char *msg) {
  * Purpose: Clean up the whole MESSagequeue - free() all
  */
 void SkypeMsgCleanup(void) {
-	struct MsgQueue *ptr;
 	int i;
 
 	LOG(("SkypeMsgCleanup Cleaning up message queue.."));
@@ -316,21 +239,13 @@ void SkypeMsgCleanup(void) {
 		ReleaseSemaphore (SkypeMsgReceived, receivers, NULL);	
 	}
 
-	EnterCriticalSection(&MsgQueueMutex);
 	EnterCriticalSection(&ConnectMutex);
-	if (SkypeMsgs) SkypeMsgs->message=NULL; //First message is free()d by user
-	while (SkypeMsgs) {
-		ptr=SkypeMsgs;
-		if (ptr->message) free(ptr->message);
-		SkypeMsgs=ptr->next;
-		free(ptr);
-	}
-	LeaveCriticalSection(&MsgQueueMutex);
+	MsgQ_Exit(&SkypeMsgs);
 	LeaveCriticalSection(&ConnectMutex);
-	LeaveCriticalSection(&SendMutex);
-	DeleteCriticalSection(&MsgQueueMutex);
 	DeleteCriticalSection(&ConnectMutex);
-	DeleteCriticalSection(&SendMutex);
+	CloseHandle(SkypeMsgToSend);
+	SkypeMsgToSend=NULL;
+	MsgQ_Exit(&SkypeSendQueue);
 	if (m_szSendBuf)
 	{
 		free (m_szSendBuf);
@@ -347,24 +262,12 @@ void SkypeMsgCleanup(void) {
  * Warning: Don't forget to free() return value!
  */
 char *SkypeMsgGet(void) {
-	struct MsgQueue *ptr;
-	char *msg;
-
-	if (!SkypeMsgs || !((ptr=SkypeMsgs)->next)) return NULL;
-	EnterCriticalSection(&MsgQueueMutex);
-	msg=ptr->next->message;
-	SkypeMsgs=ptr->next;
-	free(ptr);
-	LeaveCriticalSection(&MsgQueueMutex);
-	return msg;
+	return MsgQ_Get(&SkypeMsgs);
 }
 
 // Message sending routine, for internal use by SkypeSend
 static int __sendMsg(char *szMsg) {
    COPYDATASTRUCT CopyData;
-   LRESULT SendResult;
-   int oldstatus;
-   unsigned int length=(unsigned int)strlen(szMsg);
 
    LOG(("> %s", szMsg));
 
@@ -377,55 +280,9 @@ static int __sendMsg(char *szMsg) {
 	 return 0;
    }
 
-   if (UseSockets) {
-		 BOOL res;
-	   if (ClientSocket==INVALID_SOCKET) return -1;
-	   
-		 EnterCriticalSection(&SendMutex);
-	   res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
-			 || send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR;
-		 LeaveCriticalSection(&SendMutex);
-		 if (res)
-			 SendResult = 0;
-	   else 
-			 return 0;
-   } else {
-	   CopyData.dwData=0; 
-	   CopyData.lpData=szMsg; 
-	   CopyData.cbData=(DWORD)strlen(szMsg)+1;
-
-       // Internal comm channel
-	   if (pszProxyCallout)
-		   return CallService (pszProxyCallout, 0, (LPARAM)&CopyData);
-
-	   // If this didn't work, proceed with normal Skype API
-       if (!hSkypeWnd) 
-	   {
-		   LOG(("SkypeSend: DAMN! No Skype window handle! :("));
-	   }
-	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&CopyData);
-       LOG(("SkypeSend: SendMessage returned %d", SendResult));
-   }
-   if (!SendResult) 
-   {
-	  SkypeInitialized=FALSE;
-      AttachStatus=-1;
-	  ResetEvent(SkypeReady);
-	  if (g_hWnd) KillTimer (g_hWnd, 1);
-  	  if (SkypeStatus!=ID_STATUS_OFFLINE) 
-	  {
-		// Go offline
-		logoff_contacts(FALSE);
-		oldstatus=SkypeStatus;
-		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
-		ProtoBroadcastAck(SKYPE_PROTONAME, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
-	  }
-	  // Reconnect to Skype
-	  ResetEvent(SkypeReady);
-	  pthread_create(LaunchSkypeAndSetStatusThread, (void *)ID_STATUS_ONLINE);
-	  return -1;
-//	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)g_hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-   }
+   if (UseSockets && ClientSocket==INVALID_SOCKET) return -1;
+   if (!MsgQ_Add(&SkypeSendQueue, szMsg) || !ReleaseSemaphore(SkypeMsgToSend, 1, NULL))
+	   return -1;
    return 0;
 }
 
@@ -491,7 +348,7 @@ int SkypeSend(char *szFmt, ...) {
  */
 char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
     char *msg, *token=NULL;
-	struct MsgQueue *ptr, *ptr_;
+	struct MsgQueue *ptr;
 	int j;
 	DWORD dwWaitStat;
 	BOOL bChatMsg = FALSE, bIsChatMsg = FALSE;
@@ -499,13 +356,11 @@ char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
 	LOG (("SkypeRcv - Requesting answer: %s", what));
 	if (what) bChatMsg = strncmp(what, "CHATMESSAGE", 11)==0;
 	do {
-		EnterCriticalSection(&MsgQueueMutex);
+		EnterCriticalSection(&SkypeMsgs.cs);
 		// First, search for the requested message. On second run, also accept an ERROR
 		for (j=0; j<2; j++)
 		{
-			ptr_=SkypeMsgs;
-			ptr=ptr_->next;
-			while (ptr!=NULL) {
+			for (ptr=SkypeMsgs.l.tqh_first; ptr; ptr=ptr->l.tqe_next) {
 				if (what && what[0]==0) {
 					// Tokenizer syntax active
 					token=what+1;
@@ -524,10 +379,8 @@ char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
 					(bIsChatMsg = (j==1 && bChatMsg && !strncmp(ptr->message, what+4, strlen(what+4)))) || 
 					(j==1 && !strncmp(ptr->message, "ERROR", 5)))) 
 				{
-					msg=ptr->message;
-					ptr_->next=ptr->next;
+					msg=MsgQ_RemoveMsg(&SkypeMsgs, ptr);
 					LOG(("<SkypeRcv: %s", msg));
-					free(ptr);
 					if (bIsChatMsg) {
 						msg=realloc(msg, strlen(msg)+5);
 						memmove (msg+4, msg, strlen(msg)+1);
@@ -537,14 +390,12 @@ char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
 						// our supported protocol version again, just in case... (Skype API bug?)
 						//SkypeSend(SKYPE_PROTO); 
 					}
-					LeaveCriticalSection(&MsgQueueMutex);
+					LeaveCriticalSection(&SkypeMsgs.cs);
 					return msg;
 				}
-				ptr_=ptr;
-				ptr=ptr_->next;
 			}
 		}
-		LeaveCriticalSection(&MsgQueueMutex);
+		LeaveCriticalSection(&SkypeMsgs.cs);
 		InterlockedIncrement ((long *)&receivers); //receivers++;
 		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
 		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
@@ -561,17 +412,16 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 
 char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
     char *msg, msgid[32]={0}, *pMsg, *pCurMsg;
-	struct MsgQueue *ptr, *ptr_;
+	struct MsgQueue *ptr;
 	int iLenWhat = strlen(what);
 	DWORD dwWaitStat;
 	BOOL bIsError, bProcess;
 
 	LOG (("SkypeRcvMsg - Requesting answer: %s ", what));
 	do {
-		EnterCriticalSection(&MsgQueueMutex);
-		ptr_=SkypeMsgs;
-		ptr=ptr_->next;
-		while (ptr!=NULL) {
+		EnterCriticalSection(&SkypeMsgs.cs);
+		ptr=SkypeMsgs.l.tqh_first;
+		while(ptr) {
 			//LOG (("SkypeRcvMsg - msg: %s -- %s", ptr->message, what));
 			pCurMsg = ptr->message;
 			bIsError = FALSE;
@@ -601,10 +451,10 @@ char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
 							pMsg+=7;
 							if (strcmp (pMsg, "SENDING") == 0) {
 								// Remove dat shit
-								ptr_->next=ptr->next;
-								free (ptr->message);
-								free (ptr);
-								ptr=ptr_->next;
+								struct MsgQueue *ptr_=ptr->l.tqe_next;
+
+								free(MsgQ_RemoveMsg(&SkypeMsgs, ptr));
+								ptr=ptr_;
 								continue;
 							}
 							bProcess = (strcmp (pMsg, "SENT") == 0 || strcmp (pMsg, "QUEUED") == 0 ||
@@ -614,20 +464,15 @@ char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
 					}
 				}
 				if (bProcess) {
-					msg=ptr->message;
-					ptr_->next=ptr->next;
+					msg=MsgQ_RemoveMsg(&SkypeMsgs, ptr);
 					LOG(("<SkypeRcv: %s", msg));
-					free(ptr);
-					LeaveCriticalSection(&MsgQueueMutex);
+					LeaveCriticalSection(&SkypeMsgs.cs);
 					return msg;
 				}
 			}
-
-			ptr_=ptr;
-			ptr=ptr_->next;
-			
+			ptr=ptr->l.tqe_next;
 		}
-		LeaveCriticalSection(&MsgQueueMutex);
+		LeaveCriticalSection(&SkypeMsgs.cs);
 		InterlockedIncrement ((long *)&receivers); //receivers++;
 		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
 		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
@@ -744,26 +589,7 @@ int SkypeSetProfile(char *szProperty, char *szValue) {
  *			>0 - n messages were thrown out
  */
 int SkypeMsgCollectGarbage(time_t age) {
-	struct MsgQueue *ptr, *ptr_;
-	int i=0;
-
-	EnterCriticalSection(&MsgQueueMutex);
-	ptr_=SkypeMsgs;
-	ptr=ptr_->next;
-	while (ptr!=NULL) {
-		if (ptr->tAdded && SkypeTime(NULL)-ptr->tAdded>age) {
-			LOG(("GarbageCollector throwing out message: %s", ptr->message));
-			free(ptr->message);
-			ptr_->next=ptr->next;
-			free(ptr);
-			ptr=ptr_;
-			i++;
-		}
-		ptr_=ptr;
-		ptr=ptr_->next;
-	}
-	LeaveCriticalSection(&MsgQueueMutex);
-	return i;
+	return MsgQ_CollectGarbage(&SkypeMsgs, age);
 }
 
 
@@ -839,7 +665,7 @@ INT_PTR SkypeCallHangup(WPARAM wParam, LPARAM lParam)
  * Purpose: Eliminates all non-numeric chars from the given phonenumber
  * Params : p	- Pointer to the buffer with the number
  */
-void FixNumber(char *p) {
+static void FixNumber(char *p) {
 	unsigned int i;
 
 	for (i=0;i<=strlen(p);i++)
@@ -1464,11 +1290,9 @@ char SendSkypeproxyCommand(char command) {
 	char reply=0;
 	BOOL res;
 	
-	EnterCriticalSection(&SendMutex);
 	res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
 		|| send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR
 		|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
-	LeaveCriticalSection(&SendMutex);
 	if (res)
 		return -1;
 	else
@@ -1593,11 +1417,9 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 				} else {
 					unsigned int length=(unsigned int)strlen(dbv.pszVal);
 					BOOL res;
-					EnterCriticalSection(&SendMutex);
 					res = send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
 						|| send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR
 						|| recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR;
-					LeaveCriticalSection(&SendMutex);
 					if (res)
 					{
 							DBFreeVariant(&dbv);
