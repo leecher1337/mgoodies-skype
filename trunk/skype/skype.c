@@ -688,7 +688,11 @@ void __cdecl SkypeSystemInit(char *dummy) {
 	UNREFERENCED_PARAMETER(dummy);
 
     LOG (("SkypeSystemInit thread started."));
-	if (SkypeInitialized || Initializing) return;
+	if (SkypeInitialized || Initializing)
+	{
+		LOG (("SkypeSystemInit terminated, nothing to do."));
+		return;
+	}
 	Initializing=TRUE;
 // Do initial Skype-Tasks
 	logoff_contacts(FALSE);
@@ -3219,7 +3223,7 @@ void __cdecl MsgPump (char *dummy)
   SetEvent(MessagePumpReady);
 
   LOG (("Messagepump started."));
-  while (GetMessage (&msg, g_hWnd, 0, 0) > 0 && !Miranda_Terminated()) {
+  while (GetMessage (&msg, NULL, 0, 0) > 0 && !Miranda_Terminated()) {
 	  TranslateMessage (&msg);
 	  DispatchMessage (&msg);
   }
