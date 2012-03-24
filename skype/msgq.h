@@ -1,6 +1,8 @@
 #include <time.h>
 
+// ----------------------------------------------------------------------
 // Stolen from *nix sys/queue.h
+// ----------------------------------------------------------------------
 /*
  * Tail queue definitions.
  */
@@ -40,9 +42,6 @@ struct {                                                                \
                 (head)->tqh_last = (elm)->field.tqe_prev;               \
         *(elm)->field.tqe_prev = (elm)->field.tqe_next;                 \
 }
-
-
-
 // ----------------------------------------------------------------------
 
 struct MsgQueue {

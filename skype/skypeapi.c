@@ -449,7 +449,8 @@ char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
 						pMsg++;
 						if (strncmp (pMsg, "STATUS ", 7) == 0) {
 							pMsg+=7;
-							if (strcmp (pMsg, "SENDING") == 0) {
+							if (strcmp (pMsg, "SENDING") == 0 &&
+								DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE) {
 								// Remove dat shit
 								struct MsgQueue *ptr_=ptr->l.tqe_next;
 
@@ -1352,7 +1353,7 @@ static int my_spawnv(const char *cmdname, const char *const *argv, PROCESS_INFOR
 	}
 	si.cb = sizeof(si);
 
-	bRet = CreateProcessA( cmdname,CommandLine,NULL,NULL,TRUE,0,NULL,NULL,&si,pi);
+	bRet = CreateProcessA( cmdname,CommandLine,NULL,NULL,FALSE,0,NULL,NULL,&si,pi);
 	free(CommandLine);
 	if (!bRet) return -1;
 	return (DWORD)pi->hProcess;
