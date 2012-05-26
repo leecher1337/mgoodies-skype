@@ -23,6 +23,7 @@ struct _tagIMOSKYPE
 	IMOSTATCB StatusCb;
 	char *pszLastRes;
 	void *pUser;
+	int request_id;
 };
 
 static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected);
@@ -94,10 +95,14 @@ int ImoSkype_Login(IMOSKYPE *hSkype, char *pszUser, char *pszPass)
 	char *pszRet;
 	int iRet = -1;
 
-	if (!hSkype || !(root=cJSON_CreateObject())) return 0;
-	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
-	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "cookie_login", "session", root, 1))
-		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	if (!hSkype) return 0;
+	if (IMO_API_VERSION == 0)
+	{
+		if (!(root=cJSON_CreateObject())) return 0;
+		cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+		if (pszRet = ImoRq_PostToSys(hSkype->hRq, "cookie_login", "session", root, 1, NULL))
+			iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	}
 
 	if (!(root=cJSON_CreateObject())) return 0;
 	if (hSkype->pszUser) free (hSkype->pszUser);
@@ -126,7 +131,7 @@ int ImoSkype_Logout(IMOSKYPE *hSkype)
 
 	if (!hSkype  || !(root=cJSON_CreateObject())) return 0;
 	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
-	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "signoff_all", "session", root, 1))
+	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "signoff_all", "session", root, 1, NULL))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 	return iRet;
 }
@@ -206,7 +211,7 @@ int ImoSkype_Typing(IMOSKYPE *hSkype, char *pszBuddy, char *pszStatus)
 // -1	-	Error
 // 0 	-	Sending failed
 // 1	-	Send pending
-int ImoSkype_SendMessage(IMOSKYPE *hSkype, char *pszBuddy, char *pszMessage)
+int ImoSkype_SendMessage(IMOSKYPE *hSkype, char *pszBuddy, char *pszMessage, int *prequest_id)
 {
 	cJSON *root;
 	char *pszRet;
@@ -218,8 +223,10 @@ int ImoSkype_SendMessage(IMOSKYPE *hSkype, char *pszBuddy, char *pszMessage)
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "buid", pszBuddy);
 	cJSON_AddStringToObject(root, "msg", pszMessage);
-	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "send_im", root))
+	if (pszRet = (IMO_API_VERSION==0?ImoRq_PostAmy(hSkype->hRq, "send_im", root):ImoRq_PostToSys (hSkype->hRq, "send_im", "im", root, 0, &hSkype->request_id)))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	if (prequest_id) *prequest_id = hSkype->request_id;
+	hSkype->request_id++;
 	cJSON_Delete(root);
 	return iRet;
 }
@@ -259,7 +266,8 @@ int ImoSkype_SetStatus(IMOSKYPE *hSkype, char *pszStatus, char *pszStatusMsg)
 	cJSON_AddStringToObject(root, "ad", "");
 	cJSON_AddStringToObject(root, "primitive", pszStatus);
 	cJSON_AddStringToObject(root, "status", pszStatusMsg);
-	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "set_status", "session", root, 0))
+	cJSON_AddFalseToObject (root, "auto_away");
+	if (pszRet = ImoRq_PostToSys(hSkype->hRq, "set_status", "session", root, 0, NULL))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 
 	cJSON_Delete(root);
@@ -337,7 +345,7 @@ int ImoSkype_StartVoiceCall(IMOSKYPE *hSkype, char *pszBuddy)
 	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
 	cJSON_AddStringToObject(root, "proto", PROTO);
 	cJSON_AddStringToObject(root, "buid", pszBuddy);
-	if (pszRet = ImoRq_PostToSys (hSkype->hRq, "start_audio_chat", "av", root, 1))
+	if (pszRet = ImoRq_PostToSys (hSkype->hRq, "start_audio_chat", "av", root, 1, NULL))
 		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
 	return iRet;
 }
@@ -360,8 +368,153 @@ char *ImoSkype_GetAvatar(IMOSKYPE *hSkype, char *pszID, unsigned int *pdwLength)
 {
 	char szURL[256];
 
-	sprintf (szURL, "https://o.imo.im/b/%s", pszID);
+	sprintf (szURL, "%sb/%s", ImoRq_GetHost(hSkype->hRq), pszID);
 	return ImoRq_HTTPGet (hSkype->hRq, szURL, pdwLength);
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GetUnreadMsgs(IMOSKYPE *hSkype)
+{
+	cJSON *root;
+	char *pszRet;
+	int iRet = -1;
+
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "get_unread_msgs", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	cJSON_Delete(root);
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GetAlpha(IMOSKYPE *hSkype)
+{
+	cJSON *root;
+	char *pszRet;
+	int iRet = -1;
+
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	if (pszRet = ImoRq_PostToSys (hSkype->hRq, "get_alpha_for_user", "alpha", root, 1, NULL))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+
+int ImoSkype_CreateSharedGroup(IMOSKYPE *hSkype, char *pszName)
+{
+	cJSON *root;
+	char *pszRet;
+	int iRet = -1;
+
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddFalseToObject(root, "is_native");	// TRUE would be great, but not yet supported?
+	cJSON_AddStringToObject(root, "name", pszName);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "create_shared_group", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	cJSON_Delete(root);
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GroupInvite(IMOSKYPE *hSkype, char *pszGroup, char *pszUser)
+{
+	cJSON *root;
+	char *pszRet, *p, *pszGroupDup = strdup(pszGroup);
+	int iRet = -1;
+
+	if (p=strrchr(pszGroupDup, ';')) *p=0;
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddStringToObject(root, "gid", pszGroupDup);
+	cJSON_AddStringToObject(root, "iproto", PROTO);
+	cJSON_AddStringToObject(root, "iuid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "ibuid", pszUser);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "invite_to_group", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	free (pszGroupDup);
+	cJSON_Delete(root);
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GroupKick(IMOSKYPE *hSkype, char *pszGroup, char *pszUser)
+{
+	cJSON *root;
+	char *pszRet, *p, *pszGroupDup = strdup(pszGroup), szBUID[256];
+	int iRet = -1;
+
+	if (p=strrchr(pszGroupDup, ';')) *p=0;
+	sprintf (szBUID, "%s;%s;"PROTO, pszGroupDup, pszUser);
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddStringToObject(root, "buid", szBUID);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "kick_member", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	free (pszGroupDup);
+	cJSON_Delete(root);
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GroupTopic(IMOSKYPE *hSkype, char *pszGroup, char *pszTopic)
+{
+	cJSON *root;
+	char *pszRet, *p, *pszGroupDup = strdup(pszGroup);
+	int iRet = -1;
+
+	if (p=strrchr(pszGroupDup, ';')) *p=0;
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddStringToObject(root, "gid", pszGroupDup);
+	cJSON_AddStringToObject(root, "topic", pszTopic);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "set_group_topic", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	free (pszGroupDup);
+	cJSON_Delete(root);
+	return iRet;
+}
+
+// -----------------------------------------------------------------------------
+
+int ImoSkype_GroupLeave(IMOSKYPE *hSkype, char *pszGroup)
+{
+	cJSON *root;
+	char *pszRet, *p, *pszGroupDup = strdup(pszGroup);
+	int iRet = -1;
+
+	if (p=strrchr(pszGroupDup, ';')) *p=0;
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddStringToObject(root, "gid", pszGroupDup);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, "leave_group", root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	free (pszGroupDup);
+	cJSON_Delete(root);
+	return iRet;
 }
 
 // -----------------------------------------------------------------------------
@@ -449,6 +602,22 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 								data->next = next;
 								free(arr);
 							}
+							else if (strcmp (pszSys, "internal") == 0 &&
+							(data = cJSON_GetObjectItem(msg,"data")) &&
+							(arr = cJSON_CreateArray()))
+							{
+								// Pack ACK msgs into a fake "ack" method so that callback 
+								// function can dispatch them without interface change
+								cJSON *next, *obj;
+
+								cJSON_AddStringToObject (data, "name", "ack");
+								next = data->next;
+								data->next = NULL;
+								cJSON_AddItemToArray (arr, data);
+								hSkype->StatusCb(arr, hSkype->pUser);
+								data->next = next;
+								free(arr);
+							}
 							// Ensure to disable annoying autoaway
 							else if (strcmp (pszSys, "preference") == 0 && 
 								(data = cJSON_GetObjectItem(msg,"data")) &&
@@ -491,7 +660,7 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 											}
 											cJSON_AddItemToObject(prefdata, "preferences", setprefs);
 										}
-										ImoRq_PostToSys (hSkype->hRq, "set", "preference", prefdata, 1);
+										ImoRq_PostToSys (hSkype->hRq, "set", "preference", prefdata, 1, NULL);
 									}
 								}
 							}

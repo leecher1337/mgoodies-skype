@@ -119,7 +119,7 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 		return NULL;
 	}
 	
-	hIO->hRequest = HttpOpenRequest (hUrl, pszPostFields?"POST":"GET", szURLPath, NULL, NULL, NULL, 
+	hIO->hRequest = HttpOpenRequest (hUrl, pszPostFields?"POST":"GET", szURLPath, NULL, "https://imo.im/", NULL, 
 		INET_FLAGS, 0);
 	if (!hIO->hRequest)
 	{
@@ -141,9 +141,11 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 		do
 		{
 			cbCookies=sizeof(szCookies);
-			HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			if (!HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex) ||
+				GetLastError() != ERROR_SUCCESS)
+				break;
 			OutputDebugString (szCookies);
-		} while (GetLastError() == ERROR_SUCCESS);
+		} while (1);
 	}
 	*/
 
@@ -167,9 +169,11 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 		do
 		{
 			cbCookies=sizeof(szCookies);
-			HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex);
+			if (!HttpQueryInfo (hIO->hRequest, HTTP_QUERY_FLAG_REQUEST_HEADERS|HTTP_QUERY_RAW_HEADERS_CRLF, szCookies, &cbCookies, &dwIndex) ||
+				GetLastError() != ERROR_SUCCESS)
+				break;
 			OutputDebugString (szCookies);
-		} while (GetLastError() == ERROR_SUCCESS);
+		} while (1);
 	}
 	*/
 
