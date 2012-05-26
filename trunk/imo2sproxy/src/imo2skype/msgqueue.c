@@ -38,6 +38,7 @@ void MsgQueue_Exit(TYP_LIST *hList)
 MSGENTRY *MsgQueue_Insert(TYP_LIST *hList, cJSON *pNick)
 {
 	MSGENTRY *pEntry;
+	cJSON *pVal;
 
 	if (!(pEntry = Queue_InsertEntry(hList, sizeof(MSGENTRY), ++m_uMsgNr, 
 		FreeEntry))) return NULL;
@@ -45,7 +46,9 @@ MSGENTRY *MsgQueue_Insert(TYP_LIST *hList, cJSON *pNick)
 	pEntry->pszAlias = strdup(cJSON_GetObjectItem(pNick, "alias")->valuestring);
 	pEntry->pszMessage = strdup(cJSON_GetObjectItem(pNick, "msg")->valuestring);
 	pEntry->timestamp = cJSON_GetObjectItem(pNick, "timestamp")->valueint;
+	if (pVal = cJSON_GetObjectItem(pNick, "author")) pEntry->pszAuthor=strdup(pVal->valuestring);
 	strcpy (pEntry->szStatus, "RECEIVED");
+	strcpy (pEntry->szType, "TEXT");
 	return pEntry;
 }
 
@@ -94,6 +97,21 @@ MSGENTRY *MsgQueue_AddSent(TYP_LIST *hList, char *pszUser, char *pszAlias, char 
 
 // -----------------------------------------------------------------------------
 
+MSGENTRY *MsgQueue_AddEvent(TYP_LIST *hList, char *pszUser, char *pszType)
+{
+	MSGENTRY *pEntry;
+
+	if (!(pEntry = Queue_InsertEntry(hList, sizeof(MSGENTRY), ++m_uMsgNr,
+		FreeEntry))) return NULL;
+	pEntry->pszUser = strdup(pszUser);
+	time (&pEntry->timestamp);
+	strcpy (pEntry->szStatus, "RECEIVED");
+	strcpy (pEntry->szType, pszType);
+	return pEntry;
+}
+
+// -----------------------------------------------------------------------------
+
 BOOL MsgQueue_Remove(TYP_LIST *hList, unsigned int uMsgNr)
 {
 	return Queue_Remove(hList, uMsgNr, FreeEntry);
@@ -107,6 +125,22 @@ MSGENTRY *MsgQueue_Find(TYP_LIST *hList, unsigned int uMsgNr)
 }
 
 // -----------------------------------------------------------------------------
+
+MSGENTRY *MsgQueue_FindByRqId(TYP_LIST *hList, unsigned int uRqId)
+{
+	unsigned int i;
+	MSGENTRY *pEntry;
+
+	for (i=List_Count(hList)-1; (int)i!=-1; i--)
+	{
+		pEntry = (MSGENTRY*)List_ElementAt (hList, i);
+		if (pEntry->uRqId == uRqId)
+			return pEntry;
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------------
 // Static
 // -----------------------------------------------------------------------------
 
@@ -116,6 +150,7 @@ static void FreeEntry(void *pPEntry)
 	
 	if (pEntry->pszAlias) free (pEntry->pszAlias);
 	free (pEntry->pszUser);
-	free (pEntry->pszMessage);
+	if (pEntry->pszMessage) free (pEntry->pszMessage);
+	if (pEntry->pszAuthor) free (pEntry->pszAuthor);
 }
 

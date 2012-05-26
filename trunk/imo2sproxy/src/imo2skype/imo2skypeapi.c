@@ -68,6 +68,7 @@ struct _tagIMOSAPI
 	int iShuttingDown;
 	volatile time_t tSetMoodText;
 	char *pszCmdID;
+	char *pszBuddiesToAdd;
 };
 
 static STATMAP m_stMap[] =
@@ -147,7 +148,7 @@ void Imo2S_Exit (IMOSAPI *pInst)
 #ifdef WIN32
 	if (pInst->iFlags & IMO2S_FLAG_ALLOWINTERACT) W32Browser_Exit();
 #endif
-	BuddyList_FreeEntry(&pInst->myUser);
+	BuddyList_FreeEntry(&pInst->myUser, TRUE);
 	memset (pInst, 0, sizeof(IMOSAPI));
 	free (pInst);
 }
@@ -171,7 +172,11 @@ int Imo2S_Login (IMOSAPI *pInst, char *pszUser, char *pszPass, char **ppszError)
 	Send(pInst, "CONNSTATUS CONNECTING");
 	pInst->iLoginStat = ImoSkype_Login(pInst->hInst, pszLocalUser, pszLocalPass);
 	if (pInst->iLoginStat == 1)
+	{
+		ImoSkype_GetUnreadMsgs(pInst->hInst);
+		if (IMO_API_VERSION > 0) ImoSkype_GetAlpha(pInst->hInst);
 		Dispatcher_Start(pInst);
+	}
 	else
 		if (ppszError) *ppszError = ImoSkype_GetLastError(pInst->hInst);
 	return pInst->iLoginStat;
@@ -355,16 +360,50 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 					if (pItem = cJSON_GetArrayItem(pArray, i))
 					{
 						char szQuery[256];
+						char *pszBUID = cJSON_GetObjectItem(pItem, "buid")->valuestring;
 
 						if (bAdded) BuddyList_Insert(pInst->hBuddyList, pItem);
 						else BuddyList_SetStatus(pInst->hBuddyList, pItem);
 
-						sprintf (szQuery, "GET USER %s ONLINESTATUS", 
-							cJSON_GetObjectItem(pItem, "buid")->valuestring);
-						HandleMessage (pInst, szQuery);
-						sprintf (szQuery, "GET USER %s MOOD_TEXT", 
-							cJSON_GetObjectItem(pItem, "buid")->valuestring);
-						HandleMessage (pInst, szQuery);
+						if (!cJSON_GetObjectItem(pItem, "display"))
+						{
+							// Normal user, not groupchat, so output this
+							sprintf (szQuery, "GET USER %s ONLINESTATUS", pszBUID);
+							HandleMessage (pInst, szQuery);
+							sprintf (szQuery, "GET USER %s MOOD_TEXT", pszBUID);
+							HandleMessage (pInst, szQuery);
+						}
+						else
+						{
+							// Groupchat created/added
+							MSGENTRY * pMsg;
+
+							if (bAdded && pInst->pszBuddiesToAdd)
+							{
+								// Process pending ADDs
+								char *pTok, szQuery[256];
+
+								for (pTok = strtok(pInst->pszBuddiesToAdd, ", "); pTok; pTok=strtok(NULL, ", "))
+									ImoSkype_GroupInvite(pInst->hInst, pszBUID, pTok);
+								free (pInst->pszBuddiesToAdd);
+								pInst->pszBuddiesToAdd = NULL;
+								sprintf (szQuery, "GET CHAT %s STATUS", pszBUID);
+								HandleMessage (pInst, szQuery);
+							}
+							else
+							{
+								if (bAdded)
+								{
+									pMsg = MsgQueue_AddEvent (pInst->hMsgQueue, pszBUID, "MULTI_SUBSCRIBED");
+								}
+								else
+								{
+									pMsg = MsgQueue_AddEvent (pInst->hMsgQueue, pszBUID, "SETTOPIC");
+								}
+								Send(pInst, "%sMESSAGE %d STATUS %s", pInst->iProtocol>=3?"CHAT":"", 
+									pMsg->hdr.uMsgNr, pMsg->szStatus);
+							}
+						}
 					}
 				}
 				if (bAdded && pInst->bFriendsPending)
@@ -394,7 +433,16 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 					{
 						NICKENTRY *pNick = BuddyList_Find (pInst->hBuddyList, pszUser);
 
-						Send (pInst, "USER %s BUDDYSTATUS 1", pszUser);
+						if (pNick && pNick->pGroup)
+						{
+							MSGENTRY *pMsg = MsgQueue_AddEvent (pInst->hMsgQueue, pszUser, "KICKED");
+							cJSON *pUid = cJSON_GetObjectItem(pContent,"uid");
+							if (pUid) pMsg->pszAuthor = strdup(pUid->valuestring);
+							Send(pInst, "%sMESSAGE %d STATUS %s", pInst->iProtocol>=3?"CHAT":"", 
+								pMsg->hdr.uMsgNr, pMsg->szStatus);
+						}
+						else
+							Send (pInst, "USER %s BUDDYSTATUS 1", pszUser);
 						if (pNick)
 							BuddyList_Remove (pInst->hBuddyList, pNick);
 					}
@@ -521,6 +569,23 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 			Dispatcher_Stop(pInst);
 			if (pInst->myUser.pszUser && pInst->pszPass)
 				Imo2S_Login(pInst, pInst->myUser.pszUser, pInst->pszPass, NULL);
+		}
+		else
+		if (!strcmp(pszName, "ack"))
+		{
+			MSGENTRY *pMsg;
+			cJSON 	*pRqId = cJSON_GetObjectItem(pContent,"request_id");
+
+			if (pRqId && (pMsg = MsgQueue_FindByRqId(pInst->hMsgQueue, pRqId->valueint)))
+			{
+				cJSON 	*pResp, *pTS;
+
+				strcpy (pMsg->szStatus, "SENT");
+				if ((pResp = cJSON_GetObjectItem(pContent,"response")) &&
+					(pTS   = cJSON_GetObjectItem(pResp,"timestamp")))
+					pMsg->timestamp = pTS->valueint;
+				Send (pInst, "MESSAGE %d STATUS %s", pMsg->hdr.uMsgNr, pMsg->szStatus);
+			}
 		}
 		else
 		{
@@ -936,14 +1001,21 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			if(hFifo=Fifo_Init(512))
 			{
 				unsigned int i;
+				char *pszUsers;
 
 				for (i=0; i<nCount; i++)
 				{
 					NICKENTRY *pEntry = List_ElementAt(pInst->hBuddyList, i);
-					if (i>0) Fifo_AddString (hFifo, ", ");
-					Fifo_AddString (hFifo, pEntry->pszUser);
+					if (!pEntry->pGroup && !pEntry->hGCMembers)
+					{
+						if (i>0) Fifo_AddString (hFifo, ", ");
+						Fifo_AddString (hFifo, pEntry->pszUser);
+					}
 				}
-				Send (pInst, "USERS %s", Fifo_Get(hFifo, NULL));
+				if (pszUsers = Fifo_Get(hFifo, NULL))
+					Send (pInst, "USERS %s", pszUsers);				
+				else
+					pInst->bFriendsPending = 1;
 				Fifo_Exit(hFifo);
 			}
 		}
@@ -999,6 +1071,26 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			}
 			Send (pInst, szCalls);
 		}
+		else if (strcasecmp(pszCmd, "RECENTCHATS") == 0)
+		{
+			char szChats[2056];
+			int i, nCount, iOffs=0, j=0;
+
+			iOffs = sprintf (szChats, "CHATS");
+			for (i=0, nCount=List_Count(pInst->hBuddyList); i<nCount; i++)
+			{
+				NICKENTRY *pChat = (NICKENTRY*)List_ElementAt (pInst->hBuddyList, i);
+
+				if (BuddyList_IsGroupchat(pChat))
+				{
+					if (j) iOffs+=sprintf(&szChats[iOffs], ", ");
+					iOffs+=sprintf(&szChats[iOffs], "%s", pChat->pszUser);
+					if (iOffs+6>=sizeof(szChats)) break;
+					j++;
+				}
+			}
+			Send (pInst, szChats);
+		}
 		return;
 	}
 	else
@@ -1045,8 +1137,8 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				Send (pInst, "USER %s HASCALLEQUIPMENT TRUE", pUser->pszUser);
 			else if (!strcasecmp (pszCmd, "BUDDYSTATUS"))
 				Send (pInst, "USER %s BUDDYSTATUS %d", pUser->pszUser, pUser->iBuddyStatus);
-			else if (!strcasecmp (pszCmd, "ISAUTHROIZED"))
-				Send (pInst, "USER %s ISAUTHROIZED TRUE", pUser->pszUser);
+			else if (!strcasecmp (pszCmd, "ISAUTHORIZED"))
+				Send (pInst, "USER %s ISAUTHORIZED TRUE", pUser->pszUser);
 			else if (!strcasecmp (pszCmd, "MOOD_TEXT"))
 				Send (pInst, "USER %s MOOD_TEXT %s", pUser->pszUser, 
 					pUser->pszStatusText?pUser->pszStatusText:"");
@@ -1154,14 +1246,12 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			}
 			if (!strcasecmp (pszCmd, "TIMESTAMP"))
 				Send (pInst, "%s %d TIMESTAMP %ld", pszMessage, pEntry->hdr.uMsgNr, pEntry->timestamp);
-			else if (!strcasecmp (pszCmd, "PARTNER_HANDLE"))
-				Send (pInst, "%s %d PARTNER_HANDLE %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
-			else if (!strcasecmp (pszCmd, "FROM_HANDLE"))
-				Send (pInst, "%s %d FROM_HANDLE %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
+			else if (!strcasecmp (pszCmd, "PARTNER_HANDLE") || !strcasecmp (pszCmd, "FROM_HANDLE"))
+				Send (pInst, "%s %d %s %s", pszMessage, pEntry->hdr.uMsgNr, pszCmd, pEntry->pszAuthor?pEntry->pszAuthor:pEntry->pszUser);
 			else if (!strcasecmp (pszCmd, "PARTNER_DISPNAME"))
 				Send (pInst, "%s %d PARTNER_DISPNAME %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszAlias);
 			else if (!strcasecmp (pszCmd, "TYPE"))
-				Send (pInst, "%s %d TYPE TEXT", pszMessage, pEntry->hdr.uMsgNr);
+				Send (pInst, "%s %d TYPE %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->szType);
 			else if (!strcasecmp (pszCmd, "STATUS"))
 				Send (pInst, "%s %d STATUS %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->szStatus);
 			else if (!strcasecmp (pszCmd, "FAILUREREASON"))
@@ -1169,7 +1259,15 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			else if (!strcasecmp (pszCmd, "BODY"))
 				Send (pInst, "%s %d BODY %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszMessage);
 			else if (!strcasecmp (pszCmd, "CHATNAME"))
-				Send (pInst, "%s %d CHATNAME #%s/$%s", pszMessage, pEntry->hdr.uMsgNr, pInst->myUser.pszUser, pEntry->pszUser);
+			{
+				if (pEntry->pszAuthor || !pEntry->pszMessage) // Groupchat
+					Send (pInst, "%s %d CHATNAME %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
+				else
+					Send (pInst, "%s %d CHATNAME #%s/$%s", pszMessage, pEntry->hdr.uMsgNr, pInst->myUser.pszUser, pEntry->pszUser);
+			}
+			else if (!strcasecmp (pszCmd, "USERS"))
+				// On KICK, this is the user who GOT kicked
+				Send (pInst, "%s %d USERS %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
 			else
 				Send (pInst, "ERROR 10 Invalid property / not implemented");
 			return;		
@@ -1192,12 +1290,17 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 		if (strcasecmp(pszCmd, "CHAT") == 0)
 		{
 			char *pszChat;
+			NICKENTRY *pChat=NULL;
 
-			if (!(pszChat = strtok(NULL, " ")))
+			// A $ sign is in the name of a dialog, otherwise it's a groupchat ID
+			if (!(pszChat = strtok(NULL, " ")) ||
+				(!strchr(pszChat, '$') && !(pChat=BuddyList_Find(pInst->hBuddyList, pszChat))))
 			{
 				Send (pInst, "ERROR 14 Invalid message id");
 				return;
 			}
+			
+
 			if (!(pszCmd = strtok(NULL, " ")))
 			{
 				Send (pInst, "ERROR 10 Invalid property");
@@ -1207,11 +1310,38 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			if (strcasecmp(pszCmd, "NAME") == 0)
 				Send (pInst, "CHAT %s NAME %s", pszChat, pszChat);
 			else if (strcasecmp(pszCmd, "STATUS") == 0)
-				Send (pInst, "CHAT %s STATUS LEGACY_DIALOG", pszChat);
+				// A $ sign is in the name of a dialog, otherwise it's a groupchat ID
+				Send (pInst, "CHAT %s STATUS %s", pszChat, pChat?"MULTI_SUBSCRIBED":"LEGACY_DIALOG");
 			else if (strcasecmp(pszCmd, "ADDER") == 0)
 				Send (pInst, "CHAT %s ADDER %s", pszChat, pInst->myUser.pszUser);
 			else if (strcasecmp(pszCmd, "TYPE") == 0)
-				Send (pInst, "CHAT %s TYPE DIALOG", pszChat);
+				Send (pInst, "CHAT %s TYPE %s", pszChat, pChat?"MULTICHAT":"DIALOG");
+			else if (strcasecmp(pszCmd, "MYROLE") == 0)
+				Send (pInst, "CHAT %s MYROLE USER", pszChat);
+			else if (strcasecmp(pszCmd, "MYSTATUS") == 0)
+				Send (pInst, "CHAT %s MYSTATUS SUBSCRIBED", pszChat);
+			else if ((strcasecmp(pszCmd, "TOPIC") == 0 || strcasecmp(pszCmd, "FRIENDLYNAME") == 0) && pChat)
+				Send (pInst, "CHAT %s %s %s", pszChat, pszCmd, pChat->pszDisplay);
+			else if ((strcasecmp(pszCmd, "ACTIVEMEMBERS") == 0 || strcasecmp(pszCmd, "MEMBERS") == 0) && pChat)
+			{
+				char szMembers[1024]={0};
+				int i, nCount, iOffs=0;
+
+				iOffs = sprintf (szMembers, "CHAT %s %s ", pszChat, pszCmd);
+				for (i=0, nCount=List_Count(pChat->hGCMembers); i<nCount; i++)
+				{
+					NICKENTRY *pMemb = (NICKENTRY*)List_ElementAt (pChat->hGCMembers, i);
+					char szUser[512], *pTok;
+
+					if (i) iOffs+=sprintf(&szMembers[iOffs], " ");
+					strcpy (szUser, pMemb->pszUser);
+					pTok=strtok(szUser, ";");
+					pTok=strtok(NULL, ";");
+					iOffs+=sprintf(&szMembers[iOffs], "%s", pTok);
+					if (iOffs+6>=sizeof(szMembers)) break;
+				}
+				Send (pInst, szMembers);
+			}
 			else
 				Send(pInst, "ERROR 7 Invalid property / not implemented");
 			return;
@@ -1494,7 +1624,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 		}
 	}
 	else
-	if (strcasecmp(pszCmd, "MESSAGE") == 0)
+	if (strcasecmp(pszCmd, "MESSAGE") == 0 || strcasecmp(pszCmd, "CHATMESSAGE") == 0)
 	{
 		NICKENTRY *pUser;
 		unsigned int uMsgId;
@@ -1516,9 +1646,11 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			Send (pInst, "ERROR 9901 Internal error");
 			return;
 		}
-		Send (pInst, "MESSAGE %d STATUS SENDING", uMsgId);
-		if (ImoSkype_SendMessage(pInst->hInst, pUser->pszUser, pszCmd)>0)
-			strcpy (pMsg->szStatus, "SENT");
+		if (IMO_API_VERSION == 0) Send (pInst, "MESSAGE %d STATUS SENDING", uMsgId);
+		if (ImoSkype_SendMessage(pInst->hInst, pUser->pszUser, pszCmd, &pMsg->uRqId)>0)
+		{
+			if (IMO_API_VERSION == 0) strcpy (pMsg->szStatus, "SENT");
+		}
 		else
 		{
 			strcpy (pMsg->szStatus, "FAILED");
@@ -1526,7 +1658,37 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 		}
 		Send (pInst, "MESSAGE %d STATUS %s", uMsgId, pMsg->szStatus);
 	}
+	else
+	if (strcasecmp(pszCmd, "CHAT") == 0)
+	{
+		if (!(pszCmd = strtok(NULL, " ")))
+		{
+			Send (pInst, "ERROR 536 CREATE: no object or type given");
+			return;
+		}
+		if (strcasecmp(pszCmd, "CREATE") == 0)
+		{
+			char szName[128];	// No name given here, so make up a name
+			time_t t;
+
+			time(&t);
+			sprintf (szName, "%d", t);
+			if (ImoSkype_CreateSharedGroup(pInst->hInst, szName)<1) return;
+
+			// Now buddy_added should be called which gives us the ID of the new groupchat 
+			// where we can then add members to. However this is not known here yet, so feed 
+			// list with users to add to instance and let it be processed by buddy_added handler
+			if (pszCmd = strtok(NULL, "\n"))
+			{
+				if (pInst->pszBuddiesToAdd) free(pInst->pszBuddiesToAdd);
+				pInst->pszBuddiesToAdd = strdup(pszCmd);
+			}
+		}
 		else
+			Send (pInst, "ERROR 503 CHAT: Invalid or unknown action");
+		return;
+	}
+	else
 	if (strcasecmp(pszCmd, "CALL") == 0)
 	{
 		NICKENTRY *pUser;
@@ -1565,15 +1727,32 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 		return;
 	}
 	else
+	if (strcasecmp(pszCmd, "DELETE") == 0)
+	{
+		if (!(pszCmd = strtok(NULL, " ")))
+		{
+			Send (pInst, "ERROR 538 DELETE: no object or type given");
+			return;
+		}
+		if (strcasecmp(pszCmd, "APPLICATION") == 0)
+		{
+			if (!(pszCmd = strtok(NULL, " ")) || strcasecmp(pszCmd, "libpurple_typing"))
+				Send (pInst, "ERROR 542 DELETE APPLICATION: Missing or invalid application name");
+			else
+				Send (pInst, "DELETE APPLICATION libpurple_typing");		
+		}
+		else
+			Send (pInst, "ERROR 539 DELETE: Unknown object type given");
+		return;
+	}
+	else
 	if (strcasecmp(pszCmd, "ALTER") == 0)
 	{
 		if (!(pszCmd = strtok(NULL, " ")))
 			Send (pInst, "ERROR 526 ALTER: no object type given");
 		else
 		{
-			if (strcasecmp(pszCmd, "APPLICATION"))
-				Send (pInst, "ERROR 527 ALTER: unknown object type given");
-			else 
+			if (strcasecmp(pszCmd, "APPLICATION") == 0)
 			{
 				if (!(pszCmd = strtok(NULL, " ")) || strcasecmp(pszCmd, "libpurple_typing") ||
 					!(pszCmd = strtok(NULL, " ")))
@@ -1625,6 +1804,57 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				}
 
 			}
+			else 
+			if (strcasecmp(pszCmd, "CHAT") == 0)
+			{
+				char *pszChat;
+				NICKENTRY *pChat;
+
+				if (!(pszChat = strtok(NULL, " ")) ||
+					!(pChat=BuddyList_Find(pInst->hBuddyList, pszChat)))
+				{
+					Send (pInst, "ERROR 14 Invalid message id");
+					return;
+				}
+				
+
+				if (!(pszCmd = strtok(NULL, " ")))
+				{
+					Send (pInst, "ERROR 503 CHAT: Invalid or unknown action");
+					return;
+				}
+
+				if (strcasecmp (pszCmd, "ADDMEMBERS") == 0)
+				{
+					while(pszCmd = strtok(NULL, ", "))
+					{
+						ImoSkype_GroupInvite (pInst->hInst, pChat->pszUser, pszCmd);
+					}
+				}
+				else if (strcasecmp (pszCmd, "KICK") == 0)
+				{
+					while(pszCmd = strtok(NULL, ", "))
+					{
+						ImoSkype_GroupKick (pInst->hInst, pChat->pszUser, pszCmd);
+					}
+				}
+				else if (strcasecmp (pszCmd, "SETTOPIC") == 0)
+				{
+					if(pszCmd = strtok(NULL, ""))
+					{
+						ImoSkype_GroupTopic (pInst->hInst, pChat->pszUser, pszCmd);
+					}
+				}
+				else if (strcasecmp (pszCmd, "LEAVE") == 0)
+				{
+					if(pszCmd = strtok(NULL, ""))
+					{
+						ImoSkype_GroupLeave (pInst->hInst, pChat->pszUser);
+					}
+				}
+				else Send (pInst, "ERROR 503 CHAT: Invalid or unknown action");
+			} else
+				Send (pInst, "ERROR 527 ALTER: unknown object type given");
 		}
 		return;
 	}
