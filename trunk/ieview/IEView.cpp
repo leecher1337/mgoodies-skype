@@ -40,22 +40,22 @@ struct MM_INTERFACE   mmi;
 
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    IEView *view = IEView::get(GetParent(GetParent(hwnd)));
+	IEView *view = IEView::get(GetParent(GetParent(hwnd)));
 	if (view != NULL) {
 		switch (message) {
 		case WM_KEYUP:
 			if (LOWORD(wParam) == VK_ESCAPE && !(GetKeyState(VK_SHIFT) & 0x8000)
-			&& !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
+				&& !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
 				//if (view->getBuilder() != NULL) {
 					SendMessage(GetParent(GetParent(GetParent(hwnd))), WM_COMMAND, IDCANCEL, 0);
 //				} else {
 
-	//			}
+//			}
 			}
 			break;
 		case WM_KEYDOWN:
 			view->translateAccelerator(message, wParam, lParam);
-		   	break;
+			break;
 		case WM_SETFOCUS:
 			{
 				RECT rcWindow;
@@ -73,43 +73,43 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 			}
 			break;
 		case WM_LBUTTONDOWN:
-		    POINT pt;
-		    pt.x = LOWORD(lParam);
-		    pt.y = HIWORD(lParam);
-	   		if (view->mouseClick(pt)) {
-	   		    return TRUE;
-       		}
-		    break;
+			POINT pt;
+			pt.x = LOWORD(lParam);
+			pt.y = HIWORD(lParam);
+			if (view->mouseClick(pt)) {
+				return TRUE;
+			}
+			break;
 		}
 		return CallWindowProc(view->getServerWndProc(), hwnd, message, wParam, lParam);
-    }
-    return DefWindowProc (hwnd, message, wParam, lParam);
+	}
+	return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-   	IEView *view = IEView::get(GetParent(hwnd));
-   	if (view!=NULL) {
+	IEView *view = IEView::get(GetParent(hwnd));
+	if (view!=NULL) {
 		WNDPROC oldWndProc = view->getDocWndProc();
-    	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
-			SetWindowLong(hwnd, GWLP_WNDPROC, (LONG_PTR) oldWndProc);
-			view->setServerWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWLP_WNDPROC, (LONG_PTR) IEViewServerWindowProcedure));
+		if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
+			SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR) oldWndProc);
+			view->setServerWndProc((WNDPROC) SetWindowLongPtr((HWND)lParam, GWLP_WNDPROC, (LONG_PTR) IEViewServerWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
-    }
-    return DefWindowProc (hwnd, message, wParam, lParam);
+	}
+	return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-   	IEView *view = IEView::get(hwnd);
-   	if (view!=NULL) {
+	IEView *view = IEView::get(hwnd);
+	if (view!=NULL) {
 		WNDPROC oldWndProc = view->getMainWndProc();
-    	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
-			SetWindowLong(hwnd, GWLP_WNDPROC, (LONG_PTR) oldWndProc);
-			view->setDocWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWLP_WNDPROC, (LONG_PTR) IEViewDocWindowProcedure));
+		if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
+			SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR) oldWndProc);
+			view->setDocWndProc((WNDPROC) SetWindowLongPtr((HWND)lParam, GWLP_WNDPROC, (LONG_PTR) IEViewDocWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
-    }
-    return DefWindowProc (hwnd, message, wParam, lParam);
+	}
+	return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 IEViewSink::IEViewSink(IEView *smptr) {
@@ -151,20 +151,20 @@ STDMETHODIMP IEViewSink::GetTypeInfo(UINT iTInfo, LCID lcid, LPTYPEINFO* ppTInfo
 STDMETHODIMP IEViewSink::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames, LCID lcid, DISPID* rgDispId) { return S_OK; }
 
 STDMETHODIMP IEViewSink::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WORD wFlags,
-							DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
-	if (!pDispParams) return E_INVALIDARG;
- 	switch (dispIdMember) {
+	DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
+		if (!pDispParams) return E_INVALIDARG;
+		switch (dispIdMember) {
 		case DISPID_BEFORENAVIGATE2:
-            BeforeNavigate2(pDispParams->rgvarg[6].pdispVal,
-							pDispParams->rgvarg[5].pvarVal,
-							pDispParams->rgvarg[4].pvarVal,
-            				pDispParams->rgvarg[3].pvarVal,
-            				pDispParams->rgvarg[2].pvarVal,
-            				pDispParams->rgvarg[1].pvarVal,
-            				pDispParams->rgvarg[0].pboolVal);
-	    	return S_OK;
-	}
-	return DISP_E_MEMBERNOTFOUND;
+			BeforeNavigate2(pDispParams->rgvarg[6].pdispVal,
+				pDispParams->rgvarg[5].pvarVal,
+				pDispParams->rgvarg[4].pvarVal,
+				pDispParams->rgvarg[3].pvarVal,
+				pDispParams->rgvarg[2].pvarVal,
+				pDispParams->rgvarg[1].pvarVal,
+				pDispParams->rgvarg[0].pboolVal);
+			return S_OK;
+		}
+		return DISP_E_MEMBERNOTFOUND;
 }
 // DWebBrowserEvents2
 
@@ -176,21 +176,21 @@ void IEViewSink::DownloadComplete() {}
 void IEViewSink::TitleChange(BSTR text) {}
 void IEViewSink::PropertyChange(BSTR text) {}
 void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, VARIANT* targetFrameName,
-								VARIANT* postData, VARIANT* headers, VARIANT_BOOL* cancel) {
-   	int i = (int)wcslen(url->bstrVal);
-   	char *tTemp = new char[i+1];
-   	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
+	VARIANT* postData, VARIANT* headers, VARIANT_BOOL* cancel) {
+		int i = (int)wcslen(url->bstrVal);
+		char *tTemp = new char[i+1];
+		WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
 #ifndef GECKO
-	if (strcmp(tTemp, "about:blank")) {
-//		if (smileyWindow==NULL) {
-      		CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
-  // 		} else {
-	//		smileyWindow->choose(tTemp);
-	//	}
-    	*cancel = VARIANT_TRUE;
-	}
+		if (strcmp(tTemp, "about:blank")) {
+			//		if (smileyWindow==NULL) {
+			CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
+			// 		} else {
+			//		smileyWindow->choose(tTemp);
+			//	}
+			*cancel = VARIANT_TRUE;
+		}
 #endif
-   	delete tTemp;
+		delete tTemp;
 }
 
 void IEViewSink::NewWindow2(IDispatch** ppDisp, VARIANT_BOOL* cancel) {}
@@ -247,14 +247,14 @@ void IEView::setBorder() {
 		SetWindowLong(hwnd,GWL_EXSTYLE,style);
 		SetWindowPos(getHWND(), NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
-//	RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_FRAME | RDW_UPDATENOW);
+	//	RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_FRAME | RDW_UPDATENOW);
 }
 
 IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) {
 	MSG msg;
 	IOleObject*   pOleObject = NULL;
-    IOleInPlaceObject *pOleInPlace;
-    isContactSet = false;
+	IOleInPlaceObject *pOleInPlace;
+	isContactSet = false;
 	this->parent = parent;
 	this->builder = builder;
 	prev = next = NULL;
@@ -274,54 +274,54 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 #else
 	if (SUCCEEDED(CoCreateInstance(CLSID_WebBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #endif
-//		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
+		//		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
-    		pOleObject->SetClientSite(this);
-    		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, this->parent, &rcClient);
-    		pOleObject->Release();
-   		} else {
-  			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
-   		}
+			pOleObject->SetClientSite(this);
+			pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, this->parent, &rcClient);
+			pOleObject->Release();
+		} else {
+			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
+		}
 
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void**)&pOleInPlace))) {
-    		pOleInPlace->GetWindow(&hwnd);
-    		pOleInPlace->Release();
+			pOleInPlace->GetWindow(&hwnd);
+			pOleInPlace->Release();
 		} else {
-  			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
+			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
 		}
 
 		setBorder();
-   		IConnectionPointContainer* pCPContainer;
-	   // Step 1: Get a pointer to the connection point container.
-   		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IConnectionPointContainer,
-                                      		(void**)&pCPContainer))) {
-	      // m_pConnectionPoint is defined like this:
-	      // Step 2: Find the connection point.
-      		if (SUCCEEDED(pCPContainer->FindConnectionPoint(DIID_DWebBrowserEvents2,
-	                                             &m_pConnectionPoint))) {
-	         // Step 3: Advise the connection point that you
-	         // want to sink its events.
-	            sink = new IEViewSink(this);
-	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
-	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
-	         	}
-	      	}
-      		pCPContainer->Release();
-   		}
+		IConnectionPointContainer* pCPContainer;
+		// Step 1: Get a pointer to the connection point container.
+		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IConnectionPointContainer,
+			(void**)&pCPContainer))) {
+				// m_pConnectionPoint is defined like this:
+				// Step 2: Find the connection point.
+				if (SUCCEEDED(pCPContainer->FindConnectionPoint(DIID_DWebBrowserEvents2,
+					&m_pConnectionPoint))) {
+						// Step 3: Advise the connection point that you
+						// want to sink its events.
+						sink = new IEViewSink(this);
+						if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
+							MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
+						}
+				}
+				pCPContainer->Release();
+		}
 #ifndef GECKO
-		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWLP_WNDPROC, (LONG_PTR) IEViewWindowProcedure));
+		setMainWndProc((WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR) IEViewWindowProcedure));
 #else
-//		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWLP_WNDPROC, (LONG_PTR) MozillaWindowProcedure));
+//		setMainWndProc((WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR) MozillaWindowProcedure));
 #endif
-    }
-    EnterCriticalSection(&mutex);
+	}
+	EnterCriticalSection(&mutex);
 	next = list;
 	if (next != NULL) {
-	    next->prev = this;
+		next->prev = this;
 	}
 	list = this;
 	LeaveCriticalSection(&mutex);
-//	clear();
+	//	clear();
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 }
 
@@ -350,8 +350,8 @@ IEView::~IEView() {
 		builder = NULL;
 	}
 	if (m_pConnectionPoint != NULL) {
-        m_pConnectionPoint->Unadvise(m_dwCookie);
-        m_pConnectionPoint->Release();
+		m_pConnectionPoint->Unadvise(m_dwCookie);
+		m_pConnectionPoint->Release();
 	}
 	if (sink != NULL) {
 		delete sink;
@@ -377,7 +377,7 @@ void IEView::init() {
 void IEView::release() {
 	EnterCriticalSection(&mutex);
 	while (list != NULL) {
-	    delete list;
+		delete list;
 	}
 	LeaveCriticalSection(&mutex);
 	DeleteCriticalSection(&mutex);
@@ -459,17 +459,17 @@ STDMETHODIMP IEView::GetTypeInfo(UINT iTInfo, LCID lcid, LPTYPEINFO* ppTInfo) { 
 STDMETHODIMP IEView::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames, LCID lcid, DISPID* rgDispId) { return S_OK; }
 
 STDMETHODIMP IEView::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WORD wFlags,
-							DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
- 	switch (dispIdMember) {
+	DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
+		switch (dispIdMember) {
 		case  DISPID_AMBIENT_DLCONTROL:
 			break;
-	}
-	return DISP_E_MEMBERNOTFOUND;
+		}
+		return DISP_E_MEMBERNOTFOUND;
 }
 
 // IOleWindow
 STDMETHODIMP IEView::GetWindow(HWND *phwnd) {
-   *phwnd = parent;
+	*phwnd = parent;
 	return S_OK;
 }
 
@@ -479,7 +479,7 @@ STDMETHODIMP IEView::ContextSensitiveHelp(BOOL fEnterMode) {
 
 // IOleInPlace
 STDMETHODIMP IEView::CanInPlaceActivate(void) {
-   return S_OK;
+	return S_OK;
 }
 
 STDMETHODIMP IEView::OnInPlaceActivate(void) {
@@ -492,18 +492,18 @@ STDMETHODIMP IEView::OnUIActivate(void) {
 }
 
 STDMETHODIMP IEView::GetWindowContext(IOleInPlaceFrame **ppFrame, IOleInPlaceUIWindow **ppDoc,
-							LPRECT lprcPosRect, LPRECT lprcClipRect,
-						   LPOLEINPLACEFRAMEINFO lpFrameInfo) {
+	LPRECT lprcPosRect, LPRECT lprcClipRect,
+	LPOLEINPLACEFRAMEINFO lpFrameInfo) {
 
-	lprcPosRect->left = rcClient.left;
-	lprcPosRect->top = rcClient.top;
-	lprcPosRect->right = rcClient.right;
-	lprcPosRect->bottom = rcClient.bottom;
-	lprcClipRect->left = rcClient.left;
-	lprcClipRect->top = rcClient.top;
-	lprcClipRect->right = rcClient.right;
-	lprcClipRect->bottom = rcClient.bottom;
-	return S_OK;
+		lprcPosRect->left = rcClient.left;
+		lprcPosRect->top = rcClient.top;
+		lprcPosRect->right = rcClient.right;
+		lprcPosRect->bottom = rcClient.bottom;
+		lprcClipRect->left = rcClient.left;
+		lprcClipRect->top = rcClient.top;
+		lprcClipRect->right = rcClient.right;
+		lprcClipRect->bottom = rcClient.bottom;
+		return S_OK;
 }
 
 STDMETHODIMP IEView::Scroll(SIZE scrollExtant) {
@@ -553,10 +553,10 @@ STDMETHODIMP IEView::RequestNewObjectLayout(void) {
 // IDocHostUIHandler
 STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarget, IDispatch *pdispReserved) {
 	IOleCommandTarget * pOleCommandTarget;
-    IOleWindow * pOleWindow;
+	IOleWindow * pOleWindow;
 	HWND hSPWnd;
 	if (builder == NULL) {
-   //     return S_OK;
+//     return S_OK;
 	}
 #ifdef GECKO
 	{
@@ -576,12 +576,12 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 
 		}
 		int iSelection = TrackPopupMenu(hMenu,
-										  TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
-										  ppt->x,
-										  ppt->y,
-										  0,
-										  hwnd,
-										  (RECT*)NULL);
+			TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
+			ppt->x,
+			ppt->y,
+			0,
+			hwnd,
+			(RECT*)NULL);
 		DestroyMenu(hMenu);
 		if (iSelection == ID_MENU_CLEARLOG) {
 			clear(NULL);
@@ -596,7 +596,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			pOleWindow->GetWindow(&hSPWnd);
 			HMENU hMenu;
 			hMenu = GetSubMenu(LoadMenu(hInstance, MAKEINTRESOURCE(IDR_CONTEXTMENU)),0);
-		 	CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
+			CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
 			if (dwID == 5) { // anchor
 				EnableMenuItem(hMenu, ID_MENU_COPYLINK, MF_BYCOMMAND | MF_ENABLED);
 			} else if (dwID == 4) { // text select
@@ -607,13 +607,13 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			if (builder!=NULL) {
 
 			}
-		 	int iSelection = TrackPopupMenu(hMenu,
-		                                      TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
-		                                      ppt->x,
-		                                      ppt->y,
-		                                      0,
-		                                      hwnd,
-		                                      (RECT*)NULL);
+			int iSelection = TrackPopupMenu(hMenu,
+				TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
+				ppt->x,
+				ppt->y,
+				0,
+				hwnd,
+				(RECT*)NULL);
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				clear(NULL);
@@ -628,15 +628,15 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 	return S_OK;
 }
 STDMETHODIMP IEView::GetHostInfo(DOCHOSTUIINFO *pInfo) {
- 	pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;// | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE;
+	pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;// | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE;
 	if (builder == NULL) {
 		pInfo->dwFlags |= DOCHOSTUIFLAG_DIALOG;
 	}
- 	return S_OK;
+	return S_OK;
 }
 STDMETHODIMP IEView::ShowUI(DWORD dwID, IOleInPlaceActiveObject *pActiveObject, IOleCommandTarget *pCommandTarget,
-		    				IOleInPlaceFrame *pFrame, IOleInPlaceUIWindow *pDoc) {
- 	return S_OK;
+	IOleInPlaceFrame *pFrame, IOleInPlaceUIWindow *pDoc) {
+		return S_OK;
 }
 
 STDMETHODIMP IEView::HideUI(void) {return S_OK;}
@@ -655,7 +655,7 @@ STDMETHODIMP IEView::GetDropTarget(IDropTarget *pDropTarget, IDropTarget **ppDro
 
 STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 	*ppDispatch = NULL;
-    return S_FALSE;
+	return S_FALSE;
 }
 STDMETHODIMP IEView::TranslateUrl(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut) { return E_NOTIMPL; }
 STDMETHODIMP IEView::FilterDataObject(IDataObject *pDO, IDataObject **ppDORet) { return E_NOTIMPL; }
@@ -684,7 +684,7 @@ STDMETHODIMP IEView::GetSecuritySite(IInternetSecurityMgrSite **ppSite) {
 STDMETHODIMP IEView::MapUrlToZone(LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
 	if (pdwZone!=NULL && pwszUrl!=NULL && !wcscmp(pwszUrl, L"about:blank")) {
 		*pdwZone = URLZONE_LOCAL_MACHINE;
-        return S_OK;
+		return S_OK;
 	}
 	return INET_E_DEFAULT_ACTION;
 }
@@ -753,20 +753,20 @@ void IEView::setWindowPos(int x, int y, int cx, int cy) {
 	rcClient.top = y;
 	rcClient.right = cx;
 	rcClient.bottom = cy;//y + cy;
- 	if (builder == NULL) {
+	if (builder == NULL) {
 		//scrollToTop();
 	} else {
 //		scrollToBottomSoft();
 	}
 	SetWindowPos(getHWND(), HWND_TOP, x, y, cx, cy, 0);
-	/*
-    IOleInPlaceObject * inPlaceObject;
-   	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void **)&inPlaceObject))) {
-   		inPlaceObject->SetObjectRects(&rcClient, &rcClient);
-   		inPlaceObject->Release();
+/*
+	IOleInPlaceObject * inPlaceObject;
+	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void **)&inPlaceObject))) {
+	inPlaceObject->SetObjectRects(&rcClient, &rcClient);
+	inPlaceObject->Release();
 	}
- 	*/
- 	if (builder == NULL) {
+*/
+	if (builder == NULL) {
 		//scrollToTop();
 	} else {
 //		scrollToBottomSoft();
@@ -798,44 +798,44 @@ void IEView::scrollToBottomSoft() {
 }
 
 void IEView::scrollToBottom() {/*
-	IHTMLDocument2 *document = getDocument();
-	if (document != NULL) {
-		wchar_t *p = NULL;
-		if (SUCCEEDED(document->get_readyState(&p))) {
-		    int licznik = 0;
-    		do {
-          		if (FAILED(document->get_readyState(&p))) {
-          		    break;
-                }
-                licznik++;
-                if (licznik == 1) break;
-                Sleep(10);
-    		} while (!wcscmp(p, L"loading"));
-		}
-		IHTMLWindow2* pWindow = NULL;
-		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && pWindow != NULL) {
-			pWindow->scrollBy( 0, 0x01FFFFFF );
-		}
-		document->Release();
-	}*/
+							   IHTMLDocument2 *document = getDocument();
+							   if (document != NULL) {
+							   wchar_t *p = NULL;
+							   if (SUCCEEDED(document->get_readyState(&p))) {
+							   int licznik = 0;
+							   do {
+							   if (FAILED(document->get_readyState(&p))) {
+							   break;
+							   }
+							   licznik++;
+							   if (licznik == 1) break;
+							   Sleep(10);
+							   } while (!wcscmp(p, L"loading"));
+							   }
+							   IHTMLWindow2* pWindow = NULL;
+							   if (SUCCEEDED(document->get_parentWindow( &pWindow )) && pWindow != NULL) {
+							   pWindow->scrollBy( 0, 0x01FFFFFF );
+							   }
+							   document->Release();
+							   }*/
 
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-        IHTMLElementCollection *collection;
-        IHTMLElement *element;
+		IHTMLElementCollection *collection;
+		IHTMLElement *element;
 		IDispatch *dispatch;
 		if (SUCCEEDED(document->get_all(&collection)) && (collection != NULL)) {
-            long len;
+			long len;
 			if (SUCCEEDED(collection->get_length(&len))) {
 				VARIANT	variant;
 				variant.vt = VT_I4;
 				variant.lVal = len-1;
 				if (SUCCEEDED(collection->item(variant, variant, &dispatch)) && (dispatch != NULL)) {
 					if (SUCCEEDED(dispatch->QueryInterface(IID_IHTMLElement,(void**)&element)) && (element != NULL)) {
- 						variant.vt = VT_BOOL;
+						variant.vt = VT_BOOL;
 						variant.boolVal = VARIANT_FALSE;
 						if (SUCCEEDED(element->scrollIntoView(variant))) {
-							}
+						}
 						element->Release();
 					}
 					dispatch->Release();
@@ -910,9 +910,9 @@ void IEView::documentClose() {
 	/*
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-		//write("</body></html>");
-		document->close();
-		document->Release();
+	//write("</body></html>");
+	document->close();
+	document->Release();
 	}
 	*/
 #endif
@@ -942,7 +942,7 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 
 void IEView::clear(IEVIEWEVENT *event) {
 #ifdef GECKO
-    pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
+	pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
 	Utils::forkThread((void (__cdecl *)(void *))StartThread, 0, (void *) this);
 	MSG msg;
 	BOOL bRet;
@@ -973,12 +973,12 @@ void IEView::clear(IEVIEWEVENT *event) {
 			VariantInit(&open_replace);
 
 			HRESULT hr = document->open(SysAllocString(L"text/html"),
-								open_name,
-									open_features,
-									open_replace,
-									&open_window);
+				open_name,
+				open_features,
+				open_replace,
+				&open_window);
 			if (hr == S_OK) {
-			//	pWebBrowser->Refresh();
+				//	pWebBrowser->Refresh();
 			}
 			if (open_window != NULL) {
 				open_window->Release();
@@ -992,7 +992,7 @@ void IEView::clear(IEVIEWEVENT *event) {
 		getFocus = false;
 
 	}
-    return;
+	return;
 #endif
 	IHTMLDocument2 *document = getDocument();
 	if (document == NULL) {
@@ -1023,12 +1023,12 @@ void IEView::clear(IEVIEWEVENT *event) {
 		VariantInit(&open_replace);
 
 		HRESULT hr = document->open(SysAllocString(L"text/html"),
-		                    open_name,
-			                    open_features,
-			                    open_replace,
-			                    &open_window);
+			open_name,
+			open_features,
+			open_replace,
+			&open_window);
 		if (hr == S_OK) {
-		//	pWebBrowser->Refresh();
+			//	pWebBrowser->Refresh();
 		}
 		if (open_window != NULL) {
 			open_window->Release();
@@ -1071,30 +1071,30 @@ void IEView::setContact(HANDLE hContact) {
 }
 
 void IEView::translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    IOleInPlaceActiveObject* pIOIPAO;
-    if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceActiveObject, (void**)&pIOIPAO))) {
-       MSG msg;
-       msg.message = uMsg;
-       msg.wParam = wParam;
-       msg.lParam = lParam;
-       pIOIPAO->TranslateAccelerator(&msg);
-       pIOIPAO->Release();
+	IOleInPlaceActiveObject* pIOIPAO;
+	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceActiveObject, (void**)&pIOIPAO))) {
+		MSG msg;
+		msg.message = uMsg;
+		msg.wParam = wParam;
+		msg.lParam = lParam;
+		pIOIPAO->TranslateAccelerator(&msg);
+		pIOIPAO->Release();
 	}
 }
 
 /**
- * Returns the selected text within the active document
- **/
+* Returns the selected text within the active document
+**/
 BSTR IEView::getSelection() {
 	BSTR text = NULL;
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-        IHTMLSelectionObject *pSelection = NULL;
+		IHTMLSelectionObject *pSelection = NULL;
 		if (SUCCEEDED(document->get_selection( &pSelection )) && pSelection != NULL) {
 			IDispatch *pDisp = NULL;
 			if (SUCCEEDED(pSelection->createRange( &pDisp )) &&  pDisp != NULL) {
-                IHTMLTxtRange *pRange = NULL;
-			    if (SUCCEEDED(pDisp->QueryInterface(IID_IHTMLTxtRange, (void**)&pRange))) {
+				IHTMLTxtRange *pRange = NULL;
+				if (SUCCEEDED(pDisp->QueryInterface(IID_IHTMLTxtRange, (void**)&pRange))) {
 					if (SUCCEEDED(pRange->get_text(&text))) {
 						text = Utils::dupString(text);
 					}
@@ -1111,77 +1111,77 @@ BSTR IEView::getSelection() {
 
 
 /**
- * Returns the destination url (href) of the given anchor element (or parent anchor element)
- **/
+* Returns the destination url (href) of the given anchor element (or parent anchor element)
+**/
 BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
-    if (element != NULL) {
-    	IHTMLAnchorElement * pAnchor;
-        if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
+	if (element != NULL) {
+		IHTMLAnchorElement * pAnchor;
+		if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
 			VARIANT	variant;
-            BSTR url;
-            if (SUCCEEDED(element->getAttribute(L"href", 2, &variant) && variant.vt == VT_BSTR)) {
+			BSTR url;
+			if (SUCCEEDED(element->getAttribute(L"href", 2, &variant) && variant.vt == VT_BSTR)) {
 				url = Utils::dupString(variant.bstrVal);
 				SysFreeString(variant.bstrVal);
 			}
-            //pAnchor->get_href( &url );
-//            if (url!=NULL) {
-  //          	url2 = Utils::dupString(url);
-  //          	SysFreeString(url);
-    //        	url = url2;
-      //     	}
-            pAnchor->Release();
-            return url;
-        } else {
-            IHTMLElement * parent;
-            if (SUCCEEDED(element->get_parentElement(&parent)) && (parent!=NULL)) {
-            	BSTR url = getHrefFromAnchor(parent);
-            	parent->Release();
-            	return url;
-           	}
-        }
-    }
-    return NULL;
+//			pAnchor->get_href( &url );
+//			if (url!=NULL) {
+//				url2 = Utils::dupString(url);
+//				SysFreeString(url);
+//				url = url2;
+//     	}
+			pAnchor->Release();
+			return url;
+		} else {
+			IHTMLElement * parent;
+			if (SUCCEEDED(element->get_parentElement(&parent)) && (parent!=NULL)) {
+				BSTR url = getHrefFromAnchor(parent);
+				parent->Release();
+				return url;
+			}
+		}
+	}
+	return NULL;
 }
 
 bool IEView::mouseActivate() {
-    if (GetFocus() != hwnd) {
+	if (GetFocus() != hwnd) {
 		getFocus = true;
 	}
 	return false;
 }
 
 bool IEView::mouseClick(POINT pt) {
-    bool result = false;
-    if (GetFocus() != hwnd) {
+	bool result = false;
+	if (GetFocus() != hwnd) {
 		getFocus = true;
 	}
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-        IHTMLElement *element;
-  		if (SUCCEEDED(document->elementFromPoint( pt.x, pt.y, &element ))&& element!=NULL) {
+		IHTMLElement *element;
+		if (SUCCEEDED(document->elementFromPoint( pt.x, pt.y, &element ))&& element!=NULL) {
 //		IHTMLAnchorElement * pAnchor;
 //			if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
 //				element->click();
 //				result = true;
 //				pAnchor->Release();
 //			}
-  			BSTR url = getHrefFromAnchor(element);
-  			if (url != NULL) {
+			BSTR url = getHrefFromAnchor(element);
+			if (url != NULL) {
 				if ((GetKeyState(VK_SHIFT) & 0x8000) && !(GetKeyState(VK_CONTROL) & 0x8000)
-				&& !(GetKeyState(VK_MENU) & 0x8000)) {
-					SendMessage(GetParent(hwnd), WM_COMMAND, IDCANCEL, 0);
+					&& !(GetKeyState(VK_MENU) & 0x8000)) {
+						SendMessage(GetParent(hwnd), WM_COMMAND, IDCANCEL, 0);
 				}
-  			    int i = (int)wcslen(url);
-  			    char *tTemp = new char[i+1];
-  			    WideCharToMultiByte(CP_ACP, 0, url, -1, tTemp, i+1, NULL, NULL);
-		    	CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
-                delete tTemp;
-                delete url;
-                result = true;
-  			}
-  			element->Release();
-  		}
-	    document->Release();
+				int i = (int)wcslen(url);
+				char *tTemp = new char[i+1];
+				WideCharToMultiByte(CP_ACP, 0, url, -1, tTemp, i+1, NULL, NULL);
+				CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
+				delete tTemp;
+				delete url;
+				result = true;
+			}
+			element->Release();
+		}
+		document->Release();
 	}
 	return result;
 }
@@ -1189,7 +1189,7 @@ bool IEView::mouseClick(POINT pt) {
 bool IEView::setFocus(HWND prevFocus) {
 	if (GetFocus() != hwnd && !getFocus) { // && IsChild(prevFocus, hwnd
 		SetFocus(GetParent(getHWND()));
-//		SetFocus(prevFocus);
+		//		SetFocus(prevFocus);
 		return true;
 	}
 	getFocus = false;
@@ -1200,13 +1200,13 @@ void IEView::saveDocument() {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
 		BSTR bCmd = SysAllocString(L"SaveAs");
-    	VARIANT_BOOL vb;
-    	VARIANT      vValue;
-    	vValue.vt = VT_BOOL;
-    	vValue.boolVal = TRUE;
-        document->execCommand(bCmd, VARIANT_FALSE, vValue, &vb);
-    	SysFreeString(bCmd);
-	    document->Release();
+		VARIANT_BOOL vb;
+		VARIANT      vValue;
+		vValue.vt = VT_BOOL;
+		vValue.boolVal = TRUE;
+		document->execCommand(bCmd, VARIANT_FALSE, vValue, &vb);
+		SysFreeString(bCmd);
+		document->Release();
 	}
 }
 

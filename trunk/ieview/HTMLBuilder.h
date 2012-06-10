@@ -41,15 +41,15 @@ private:
 protected:
 	DWORD lastEventTime;
 	int iLastEventType;
-    enum ENCODEFLAGS {
-        ENF_NONE = 0,
-        ENF_SMILEYS = 1,
-        ENF_NAMESMILEYS = 2,
-        ENF_BBCODES = 4,
-        ENF_LINKS = 8,
-        ENF_ALL = 255,
-        ENF_CHAT_FORMATTING = 256
-    };
+	enum ENCODEFLAGS {
+		ENF_NONE = 0,
+		ENF_SMILEYS = 1,
+		ENF_NAMESMILEYS = 2,
+		ENF_BBCODES = 4,
+		ENF_LINKS = 8,
+		ENF_ALL = 255,
+		ENF_CHAT_FORMATTING = 256
+	};
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *text, int flags, bool isSent);
 	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags, bool isSent);

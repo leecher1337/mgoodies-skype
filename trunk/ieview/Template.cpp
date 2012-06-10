@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 TokenDef::TokenDef(const char *tokenString) {
 	this->tokenString = tokenString;
-	this->tokenLen = strlen(tokenString);
+	this->tokenLen = (int)strlen(tokenString);
 	this->token = 0;
 	this->escape = 0;
 }
@@ -31,7 +31,7 @@ TokenDef::TokenDef(const char *tokenString) {
 TokenDef::TokenDef(const char *tokenString, int token, int escape) {
 	this->tokenString = tokenString;
 	this->token = token;
-	this->tokenLen = strlen(tokenString);
+	this->tokenLen = (int)strlen(tokenString);
 	this->escape = escape;
 }
 
@@ -159,7 +159,7 @@ void Template::tokenize() {
 		Token *lastToken = NULL;
 		int lastTokenType = Token::PLAIN;
 		int lastTokenEscape = 0;
-		int l = strlen(str);
+		int l = (int)strlen(str);
 		for (int i=0, lastTokenStart=0; i<=l;) {
 			Token *newToken;
 			int newTokenType = 0, newTokenSize = 0, newTokenEscape = 0;

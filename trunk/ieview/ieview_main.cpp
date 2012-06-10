@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ieview_services.h"
 #include "Options.h"
 #include "Utils.h"
+#include "Version.h"
 
 char *ieviewModuleName;
 HINSTANCE hInstance;
@@ -30,16 +31,17 @@ PLUGINLINK *pluginLink;
 char *workingDirUtf8;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
+int hLangpack;
 
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
-	"IEView",
-	PLUGIN_MAKE_VERSION(1,3,0,3),
-	"IE Based Chat Log (1.3.0.3 "__DATE__")",
-	"Piotr Piastucki, Francois Mean",
-	"the_leech@users.berlios.de",
-	"(c) 2005-2011 Piotr Piastucki, Francois Mean",
-	"http://developer.berlios.de/projects/mgoodies",
+	__PLUGIN_NAME,
+	PLUGIN_MAKE_VERSION(__MAJOR_VERSION, __MINOR_VERSION, __RELEASE_NUM, __BUILD_NUM),
+	__DESCRIPTION,
+	__AUTHOR,
+	__AUTHOREMAIL,
+	__COPYRIGHT,
+	__AUTHORWEB,
 	UNICODE_AWARE,
 	0,
 	{0x0495171b,   0x7137,   0x4ded,    {0x97, 0xf8, 0xce, 0x6f, 0xed, 0x67, 0xd6, 0x91}}
@@ -88,14 +90,15 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink = link;
 	mir_getMMI( &mmi );
+	mir_getLP(&pluginInfoEx);
 
 	Utils::hookEvent_Ex(ME_OPT_INITIALISE, IEViewOptInit);
 	Utils::hookEvent_Ex(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	Utils::hookEvent_Ex(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	Utils::createServiceFunction_Ex(MS_IEVIEW_WINDOW, (MIRANDASERVICE)HandleIEWindow);
-	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, (MIRANDASERVICE)HandleIEEvent);
-	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT,(MIRANDASERVICE) HandleIENavigate);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_WINDOW, HandleIEWindow);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, HandleIEEvent);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_NAVIGATE, HandleIENavigate);
 	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
 	return 0;
 }

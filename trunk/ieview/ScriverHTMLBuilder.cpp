@@ -75,7 +75,7 @@ bool ScriverHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
         case EVENTTYPE_MESSAGE:
             return 1;
         case EVENTTYPE_STATUSCHANGE:
-          //  if (dbei->flags & DBEF_READ) return 0;
+        //  if (dbei->flags & DBEF_READ) return 0;
             return 1;
         case EVENTTYPE_URL:
             return 1;
@@ -289,8 +289,8 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 		int outputSize;
 		char *output;
 		output = NULL;
-		int isSent = eventData->dwFlags & IEEDF_SENT;
-		int isRTL = eventData->dwFlags & IEEDF_RTL;
+		bool isSent = (eventData->dwFlags & IEEDF_SENT) != 0;
+		bool isRTL = (eventData->dwFlags & IEEDF_RTL) != 0;
 		showColon = false;
 		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE
 			|| eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_FILE) {

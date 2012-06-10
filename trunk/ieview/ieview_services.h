@@ -23,9 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ieview_common.h"
 
-extern int HandleIEWindow(WPARAM wParam, LPARAM lParam);
-extern int HandleIEEvent(WPARAM wParam, LPARAM lParam);
-extern int HandleIENavigate(WPARAM wParam, LPARAM lParam);
+extern INT_PTR HandleIEWindow(WPARAM wParam, LPARAM lParam);
+extern INT_PTR HandleIEEvent(WPARAM wParam, LPARAM lParam);
+extern INT_PTR HandleIENavigate(WPARAM wParam, LPARAM lParam);
 
 #endif
 
