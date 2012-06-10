@@ -232,6 +232,8 @@ public:
 
 	static void     		setGeneralFlags(int flags);
 	static int				getGeneralFlags();
+	static void     		setEmbedsize(int size);
+	static int				getEmbedsize();
 
 	static bool             isMathModule();
 	static bool             isSmileyAdd();

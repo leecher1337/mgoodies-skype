@@ -28,12 +28,12 @@ class ChatHTMLBuilder;
 class ChatHTMLBuilder:public HTMLBuilder
 {
 protected:
-    void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
+	void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
 	char *timestampToString(time_t time);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 	bool isDbEventShown(DBEVENTINFO * dbei);
 public:
-    ChatHTMLBuilder();
+	ChatHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
 };

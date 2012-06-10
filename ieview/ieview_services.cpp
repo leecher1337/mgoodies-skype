@@ -31,35 +31,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Options.h"
 #include "ieview_common.h"
 
-int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
+INT_PTR HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	IEVIEWWINDOW *window = (IEVIEWWINDOW *) lParam;
 	IEView::init();
 	Options::init();
 	if (window->iType == IEW_CREATE) {
 		HTMLBuilder *builder = NULL;
 		switch (window->dwMode) {
-			case IEWM_MUCC:
-				builder = new MUCCHTMLBuilder();
-				break;
-			case IEWM_CHAT:
-				builder = new ChatHTMLBuilder();
-				break;
-			case IEWM_TABSRMM:
-				builder = new TabSRMMHTMLBuilder();
-				break;
-			case IEWM_SCRIVER:
-//				builder = new HistoryHTMLBuilder();
-				builder = new ScriverHTMLBuilder();
-				break;
-			case IEWM_HISTORY:
-				builder = new HistoryHTMLBuilder();
-				break;
-			case IEWM_BROWSER:
-				builder = NULL;
-				break;
-			default:
-				builder = new ScriverHTMLBuilder();
-				break;
+		case IEWM_MUCC:
+			builder = new MUCCHTMLBuilder();
+			break;
+		case IEWM_CHAT:
+			builder = new ChatHTMLBuilder();
+			break;
+		case IEWM_TABSRMM:
+			builder = new TabSRMMHTMLBuilder();
+			break;
+		case IEWM_SCRIVER:
+			//				builder = new HistoryHTMLBuilder();
+			builder = new ScriverHTMLBuilder();
+			break;
+		case IEWM_HISTORY:
+			builder = new HistoryHTMLBuilder();
+			break;
+		case IEWM_BROWSER:
+			builder = NULL;
+			break;
+		default:
+			builder = new ScriverHTMLBuilder();
+			break;
 		}
 		IEView * view = new IEView(window->parent, builder, window->x, window->y, window->cx, window->cy);
 		window->hwnd = view->getHWND();
@@ -82,7 +82,7 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
+INT_PTR HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	IEVIEWEVENT *event = (IEVIEWEVENT *) lParam;
 	IEView::init();
 	Options::init();
@@ -103,7 +103,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 
-int HandleIENavigate(WPARAM wParam, LPARAM lParam) {
+INT_PTR HandleIENavigate(WPARAM wParam, LPARAM lParam) {
 	IEVIEWNAVIGATE *navigate = (IEVIEWNAVIGATE *) lParam;
 	IEView::init();
 	Options::init();

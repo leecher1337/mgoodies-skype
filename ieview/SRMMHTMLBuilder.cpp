@@ -104,8 +104,8 @@ char *SRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check) {
     dbtts.cbDest = 70;;
     dbtts.szDest = str;
     szResult[0] = '\0';
-    if(!(dwFlags & SMF_LOG_SHOWDATES)) {
-        dbtts.szFormat = (char *)"s";
+	if (!(dwFlags & SMF_LOG_SHOWDATES)) {
+		dbtts.szFormat = (char *)"s";
     }
     else {
         dbtts.szFormat = (char *)"d t";

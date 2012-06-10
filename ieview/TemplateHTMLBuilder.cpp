@@ -48,51 +48,57 @@ TemplateHTMLBuilder::~TemplateHTMLBuilder() {
 
 char *TemplateHTMLBuilder::getAvatar(HANDLE hContact, const char * szProto) {
 	DBVARIANT dbv;
-	char tmpPath[MAX_PATH];
+	TCHAR tmpPath[MAX_PATH], *tmpRes = NULL;
 	char *result = NULL;
 
 	if (Options::getAvatarServiceFlags() == Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace  = NULL;
+		AVATARCACHEENTRY *ace;
 		if (hContact == NULL) {
-			ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szProto);
+			ace = (AVATARCACHEENTRY *)CallService(MS_AV_GETMYAVATAR, 0, (LPARAM)szProto);
 		} else {
-			ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)hContact, (LPARAM)0);
+			ace = (AVATARCACHEENTRY *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)hContact, 0);
 		}
-		if (ace!=NULL) {
-			result = ace->szFilename;
+		if (ace != NULL) {
+			tmpRes = ace->szFilename;
+
+#ifdef _UNICODE
+			if (ace->cbSize == sizeof(AVATARCACHEENTRYA)) {
+				MultiByteToWideChar(CP_ACP, 0, (char*)ace->szFilename, -1, tmpPath, SIZEOF(tmpPath));
+				tmpRes = tmpPath;
+			}
+#endif
 		}
 	}
-	if (!DBGetContactSetting(hContact, "ContactPhoto", "File",&dbv)) {
-		if (strlen(dbv.pszVal) > 0) {
-			char* ext = strrchr(dbv.pszVal, '.');
-			if (ext && strcmpi(ext, ".xml") == 0) {
-				result = (char *)getFlashAvatar(dbv.pszVal, (hContact == NULL) ? 1 : 0);
-			} else {
-				if (result == NULL) {
-					/* relative -> absolute */
-					strcpy (tmpPath, dbv.pszVal);
-					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-					}
-					result = tmpPath;
+	if (!DBGetContactSettingTString(hContact, "ContactPhoto", "File", &dbv)) {
+		if (*dbv.ptszVal) {
+			TCHAR* ext = _tcsrchr(dbv.ptszVal, '.');
+			if (ext && _tcsicmp(ext, _T(".xml")) == 0) {
+				result = (char *)getFlashAvatar(dbv.ptszVal, hContact == NULL);
+			} else if (tmpRes == NULL) {
+				/* relative -> absolute */
+				if (_tcsncmp(dbv.ptszVal, _T("http://"), 7)) {
+					CallService(MS_UTILS_PATHTOABSOLUTET, (WPARAM)dbv.ptszVal, (LPARAM)tmpPath);
+				} else {
+					_tcscpy (tmpPath, dbv.ptszVal);
 				}
+				tmpRes = tmpPath;
 			}
 		}
 		DBFreeVariant(&dbv);
 	}
-	result = Utils::UTF8Encode(result);
+	if (!result) result = Utils::UTF8Encode(tmpRes);
 	Utils::convertPath(result);
 	return result;
 }
 
-const char *TemplateHTMLBuilder::getFlashAvatar(const char *file, int index) {
+const char *TemplateHTMLBuilder::getFlashAvatar(const TCHAR *file, int index) {
 	if (time(NULL) - flashAvatarsTime[index] > 600 || flashAvatars[index] == NULL) {
 		if (flashAvatars[index] != NULL) {
 			delete flashAvatars[index];
 			flashAvatars[index] = NULL;
 		}
 		flashAvatarsTime[index] = time(NULL);
-		int src = _open(file, _O_BINARY | _O_RDONLY);
+		int src = _topen(file, _O_BINARY | _O_RDONLY);
 		if (src != -1) {
 			char pBuf[2048];
 			char *urlBuf;
@@ -160,10 +166,10 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	char *szProto = NULL;
 	char *szNameIn = NULL;
 	char *szNameOut = NULL;
-	char *szUINIn = NULL;
-	char *szUINOut = NULL;
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;
+	char *szUINIn = NULL;
+	char *szUINOut = NULL;
 	char *szNickIn = NULL;
 	char *szNickOut = NULL;
 	char *szStatusMsg = NULL;
@@ -175,14 +181,12 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->pszProto, event->hContact);
 	tempBase[0]='\0';
-	if (protoSettings == NULL) {
+	if (protoSettings == NULL)
 		return;
-	}
 
 	TemplateMap *tmpm = getTemplateMap(protoSettings);
-	if (tmpm==NULL) {
+	if (tmpm==NULL)
 		return;
-	}
 
 	strcpy(tempBase, "file://");
 	strcat(tempBase, tmpm->getFilename());
@@ -414,9 +418,9 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		char *output;
 		output = NULL;
 		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_SYSTEM) {
-			int isSent = (eventData->dwFlags & IEEDF_SENT);
-			int isRTL = (eventData->dwFlags & IEEDF_RTL) && tmpm->isRTL();
-			int isHistory = (eventData->time < (DWORD)getStartedTime() && (eventData->dwFlags & IEEDF_READ || eventData->dwFlags & IEEDF_SENT));
+			bool isSent = (eventData->dwFlags & IEEDF_SENT) != 0;
+			bool isRTL = (eventData->dwFlags & IEEDF_RTL) && tmpm->isRTL();
+			bool isHistory = (eventData->time < (DWORD)getStartedTime() && (eventData->dwFlags & IEEDF_READ || eventData->dwFlags & IEEDF_SENT));
 			int isGroupBreak = TRUE;
  		  	if ((getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES) && eventData->dwFlags == LOWORD(getLastEventType())
 			  && eventData->iType == IEED_EVENT_MESSAGE && HIWORD(getLastEventType()) == IEED_EVENT_MESSAGE

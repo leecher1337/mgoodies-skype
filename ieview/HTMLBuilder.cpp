@@ -64,16 +64,16 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 	case 2:
 		if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_MATHMODULE) && Options::isMathModule()) {
 			token = TextToken::tokenizeMath(text);
-            break;
-    	}
+			break;
+		}
 		level++;
 	case 3:
 		token = TextToken::tokenizeLinks(text);
 		break;
 	case 4:
 		if ((flags & ENF_SMILEYS) ||
-      			((Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
-			token = TextToken::tokenizeSmileys(hContact, proto, text, isSent);
+			((Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
+				token = TextToken::tokenizeSmileys(hContact, proto, text, isSent);
 		}
 		break;
 	}
@@ -95,14 +95,13 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 }
 
 wchar_t * HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags, bool isSent) {
- 	int outputSize;
+	int outputSize;
 	wchar_t *output = NULL;
 	if (text != NULL) {
 		encode(hContact, proto, text, &output, &outputSize, 0, flags, isSent);
 	}
 	return output;
 }
-
 
 char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *wtext, int flags, bool isSent) {
 	char *outputStr = NULL;
@@ -173,13 +172,12 @@ char *HTMLBuilder::getRealProto(HANDLE hContact, const char *szProto) {
 }
 
 HANDLE HTMLBuilder::getRealContact(HANDLE hContact) {
-    char *szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	char *szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 	if (szProto != NULL && !strcmp(szProto,"MetaContacts")) {
 		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
 	}
 	return hContact;
 }
-
 
 int HTMLBuilder::getLastEventType() {
 	return iLastEventType;
@@ -198,12 +196,12 @@ void HTMLBuilder::setLastEventTime(DWORD t) {
 }
 
 bool HTMLBuilder::isSameDate(time_t time1, time_t time2) {
-    struct tm tm_t1, tm_t2;
-    tm_t1 = *localtime((time_t *)(&time1));
-    tm_t2 = *localtime((time_t *)(&time2));
-    if (tm_t1.tm_year == tm_t2.tm_year && tm_t1.tm_mon == tm_t2.tm_mon
+	struct tm tm_t1, tm_t2;
+	tm_t1 = *localtime((time_t *)(&time1));
+	tm_t2 = *localtime((time_t *)(&time2));
+	if (tm_t1.tm_year == tm_t2.tm_year && tm_t1.tm_mon == tm_t2.tm_mon
 		&& tm_t1.tm_mday == tm_t2.tm_mday) {
-		return true;
+			return true;
 	}
 	return false;
 }
@@ -212,8 +210,8 @@ void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
 	CONTACTINFO ci;
 	char buf[128];
 	char *szProto;
-    hContact = getRealContact(hContact);
-    szProto = getProto(hContact);
+	hContact = getRealContact(hContact);
+	szProto = getProto(hContact);
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
@@ -255,39 +253,39 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
-    ci.szProto = (char *)szProto;
+	ci.szProto = (char *)szProto;
 	ci.dwFlag = CNF_DISPLAY | CNF_UNICODE;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
-				if(!wcscmp((wchar_t *)ci.pszVal, TranslateW(L"'(Unknown Contact)'"))) {
+				if (!wcscmp((wchar_t *)ci.pszVal, TranslateW(L"'(Unknown Contact)'"))) {
 					ci.dwFlag &= ~CNF_UNICODE;
 					if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        	szName = Utils::convertToWCS((char *)ci.pszVal);
+						szName = Utils::convertToWCS((char *)ci.pszVal);
 					}
 				} else {
-		        	szName = Utils::dupString((wchar_t *)ci.pszVal);
+					szName = Utils::dupString((wchar_t *)ci.pszVal);
 				}
 				miranda_sys_free(ci.pszVal);
 			}
 		}
 	}
-    if (szName != NULL) return szName;
+	if (szName != NULL) return szName;
 	ci.dwFlag = CNF_UNIQUEID;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
-        	    szName = Utils::convertToWCS((char *)ci.pszVal);
+				szName = Utils::convertToWCS((char *)ci.pszVal);
 				miranda_sys_free(ci.pszVal);
 			}
 		}
 	}
-    if (szName != NULL) return szName;
+	if (szName != NULL) return szName;
 	char *szNameStr = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
 	if (szNameStr != NULL) {
-   	    return Utils::convertToWCS(szNameStr);
+		return Utils::convertToWCS(szNameStr);
 	}
-    return Utils::dupString(TranslateT("(Unknown Contact)"));
+	return Utils::dupString(TranslateT("(Unknown Contact)"));
 }
 
 char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
@@ -298,7 +296,7 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
 		delete name;
 		return szName;
 	}
-    return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS, true);
+	return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS, true);
 }
 
 void HTMLBuilder::appendEventNew(IEView *view, IEVIEWEVENT *event) {
@@ -323,7 +321,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		szProto = Utils::dupString(event->pszProto);
 	} else {
 		szProto = getProto(event->hContact);
- 	}
+	}
 	newEvent.pszProto = szProto;
 	newEvent.count = 0;
 	newEvent.dwFlags = event->dwFlags;
@@ -347,14 +345,14 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 		}
 		if (!isDbEventShown(&dbei)) {
-		    free(dbei.pBlob);
-	   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-		    continue;
+			free(dbei.pBlob);
+			hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+			continue;
 		}
 		eventData = new IEVIEWEVENTDATA;
 		eventData->cbSize = sizeof(IEVIEWEVENTDATA);
 		eventData->dwFlags = IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK | IEEDF_UNICODE_TEXT2 |
-							(dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0) | (dbei.flags & DBEF_RTL ? IEEDF_RTL : 0);
+			(dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0) | (dbei.flags & DBEF_RTL ? IEEDF_RTL : 0);
 		if (event->dwFlags & IEEF_RTL) {
 			eventData->dwFlags  |= IEEDF_RTL;
 		}
@@ -395,7 +393,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			}
 			eventData->iType = IEED_EVENT_FILE;
 		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
-		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
+			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
 			eventData->ptszText = Utils::dupString(TranslateT(" requested authorisation"));
 			TCHAR *tStr = DbGetEventStringT(&dbei, (char *)dbei.pBlob + 8);
 			eventData->ptszNick = Utils::dupString(tStr);
@@ -419,7 +417,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		prevEventData = eventData;
 		newEvent.count++;
 		event->hDbEventFirst = hDbEvent;
-   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 	}
 	appendEventNew(view, &newEvent);
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
@@ -451,7 +449,7 @@ ProtocolSettings* HTMLBuilder::getSRMMProtocolSettings(const char *protocolName)
 ProtocolSettings* HTMLBuilder::getSRMMProtocolSettings(HANDLE hContact) {
 	char *szRealProto = getRealProto(hContact);
 	ProtocolSettings *protoSettings =  getSRMMProtocolSettings(szRealProto);
-    delete szRealProto;
+	delete szRealProto;
 	return protoSettings;
 }
 
@@ -486,7 +484,7 @@ ProtocolSettings* HTMLBuilder::getChatProtocolSettings(const char *protocolName)
 ProtocolSettings* HTMLBuilder::getChatProtocolSettings(HANDLE hContact) {
 	char *szRealProto = getRealProto(hContact);
 	ProtocolSettings *protoSettings =  getChatProtocolSettings(szRealProto);
-    delete szRealProto;
+	delete szRealProto;
 	return protoSettings;
 }
 
@@ -509,7 +507,7 @@ void HTMLBuilder::setLastIEViewEvent(IEVIEWEVENT *event) {
 		lastIEViewEvent.pszProto = Utils::dupString(event->pszProto);
 	} else {
 		lastIEViewEvent.pszProto = getProto(event->hContact);
- 	}
+	}
 }
 
 void HTMLBuilder::clear(IEView *view, IEVIEWEVENT *event) {
