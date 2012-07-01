@@ -435,7 +435,7 @@ int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 	odp.pszTemplate = MAKEINTRESOURCEA(tabPages[0].dlgId);
 	odp.pfnDlgProc = tabPages[0].dlgProc;
 	odp.ptszTab = (TCHAR*)tabPages[0].tabName;
-		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
 	odp.ptszGroup = LPGENT("Skins");
 	odp.ptszTitle = LPGENT("IEView");
 	for (i = 1; i < SIZEOF(tabPages); i++) {
@@ -504,7 +504,7 @@ static INT_PTR CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MATHMODULE), Options::isMathModule());
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), Options::isSmileyAdd());
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EMBED_SIZE), IsDlgButtonChecked(hwndDlg, IDC_ENABLE_EMBED));
-			TCHAR* size[] = {  _T("320õ205"), _T("480 x 385") , _T("560 x 349"), _T("640 x 390")};
+			TCHAR* size[] = {  _T("320 x 205"), _T("480 x 385") , _T("560 x 349"), _T("640 x 390")};
 			for (i = 0; i < SIZEOF(size); ++i){
 				int item=SendDlgItemMessage(hwndDlg,IDC_EMBED_SIZE,CB_ADDSTRING,0,(LPARAM)TranslateTS(size[i]));
 				SendDlgItemMessage(hwndDlg,IDC_EMBED_SIZE,CB_SETITEMDATA,item,(LPARAM)0);
@@ -558,8 +558,8 @@ static INT_PTR CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 					i |= Options::GENERAL_ENABLE_EMBED;
 				}
 				Options::setGeneralFlags(i);
-				ApplyChanges(1);
 				Options::setEmbedsize(SendDlgItemMessage(hwndDlg,IDC_EMBED_SIZE,CB_GETCURSEL,0,0));
+				ApplyChanges(1);
 				return TRUE;
 			}
 		}
