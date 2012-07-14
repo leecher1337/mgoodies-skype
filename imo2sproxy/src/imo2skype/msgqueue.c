@@ -49,6 +49,8 @@ MSGENTRY *MsgQueue_Insert(TYP_LIST *hList, cJSON *pNick)
 	if (pVal = cJSON_GetObjectItem(pNick, "author")) pEntry->pszAuthor=strdup(pVal->valuestring);
 	strcpy (pEntry->szStatus, "RECEIVED");
 	strcpy (pEntry->szType, "TEXT");
+	// imo.im somehow sets group topic via recv_im??
+	if (strcmp(pEntry->pszAlias, pEntry->pszMessage) == 0) strcpy (pEntry->szType, "SETTOPIC");
 	return pEntry;
 }
 
