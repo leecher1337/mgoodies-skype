@@ -608,7 +608,7 @@ static int CheckReturn (IMOSKYPE *hSkype, char *pszMsg, char *pszExpected)
 							{
 								// Pack ACK msgs into a fake "ack" method so that callback 
 								// function can dispatch them without interface change
-								cJSON *next, *obj;
+								cJSON *next;
 
 								cJSON_AddStringToObject (data, "name", "ack");
 								next = data->next;

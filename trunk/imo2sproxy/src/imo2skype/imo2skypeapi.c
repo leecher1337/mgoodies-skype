@@ -351,21 +351,35 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 		{
 			// Here comes the contact list
 			cJSON *pArray = cJSON_GetObjectItem(pContent,"edata"), *pItem;
+			char *pszLastBUID = NULL, *pszLastGroup = NULL;
 			int i, iCount;
 
 			if (pArray)
 			{
+				TYP_LIST *hListMemToAdd = NULL;
+
 				for (i=0, iCount = cJSON_GetArraySize(pArray); i<iCount; i++)
 				{
 					if (pItem = cJSON_GetArrayItem(pArray, i))
 					{
 						char szQuery[256];
 						char *pszBUID = cJSON_GetObjectItem(pItem, "buid")->valuestring;
+						cJSON *pGroup = cJSON_GetObjectItem(pItem, "group");
+						cJSON *pDisplay = cJSON_GetObjectItem(pItem, "display");
 
-						if (bAdded) BuddyList_Insert(pInst->hBuddyList, pItem);
+						if (bAdded) 
+						{
+							/*
+							if (BuddyList_Find (pInst->hBuddyList, cJSON_GetObjectItem(pItem, "buid")->valuestring))
+								bAdded=FALSE;
+							else
+							*/
+							BuddyList_Insert(pInst->hBuddyList, pItem);
+						}
 						else BuddyList_SetStatus(pInst->hBuddyList, pItem);
 
-						if (!cJSON_GetObjectItem(pItem, "display"))
+						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0) &&
+							!pDisplay)
 						{
 							// Normal user, not groupchat, so output this
 							sprintf (szQuery, "GET USER %s ONLINESTATUS", pszBUID);
@@ -376,7 +390,7 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 						else
 						{
 							// Groupchat created/added
-							MSGENTRY * pMsg;
+							MSGENTRY * pMsgEntry = NULL;
 
 							if (bAdded && pInst->pszBuddiesToAdd)
 							{
@@ -392,19 +406,65 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 							}
 							else
 							{
-								if (bAdded)
+								if (bAdded || !pDisplay)
 								{
-									pMsg = MsgQueue_AddEvent (pInst->hMsgQueue, pszBUID, "MULTI_SUBSCRIBED");
+									char szQuery[256], szGroup[256]={0};
+									NICKENTRY *pChat;
+
+									if (pGroup) sprintf (szGroup, "%s;", pGroup->valuestring);
+									if (pGroup && (pChat=BuddyList_Find(pInst->hBuddyList, szGroup)) && 
+										pChat->hGCMembers)
+									{
+										sprintf (szQuery, "GET CHAT %s MEMBERS", szGroup);
+										HandleMessage (pInst, szQuery);
+									}
+									else
+									{
+										if ((bAdded || !pChat) && (!pszLastBUID || strcmp(pszLastBUID, pszBUID)) &&
+											(!pszLastGroup || (pGroup && strcmp(pszLastGroup, pGroup->valuestring))))
+										{
+											if (!hListMemToAdd) hListMemToAdd=List_Init(0);
+											List_Push(hListMemToAdd, pItem);
+											pszLastBUID = pszBUID;
+											if (pGroup) pszLastGroup = pGroup->valuestring;
+										}
+									}
 								}
+								/*
 								else
 								{
-									pMsg = MsgQueue_AddEvent (pInst->hMsgQueue, pszBUID, "SETTOPIC");
+									pMsgEntry = MsgQueue_AddEvent (pInst->hMsgQueue, pszBUID, "SETTOPIC");
+									if (pDisplay->valuestring) pMsgEntry->pszMessage = strdup(pDisplay->valuestring);
 								}
-								Send(pInst, "%sMESSAGE %d STATUS %s", pInst->iProtocol>=3?"CHAT":"", 
-									pMsg->hdr.uMsgNr, pMsg->szStatus);
+								*/
+								if (pMsgEntry)
+									Send(pInst, "%sMESSAGE %d STATUS %s", pInst->iProtocol>=3?"CHAT":"", 
+										pMsgEntry->hdr.uMsgNr, pMsgEntry->szStatus);
+								
 							}
 						}
 					}
+				}
+				if (hListMemToAdd)
+				{
+					int nCount;
+
+					for (i=0, nCount=List_Count(hListMemToAdd); i<nCount; i++)
+					{
+						cJSON *pItem = List_ElementAt(hListMemToAdd, i);
+						cJSON *pInviter = cJSON_GetObjectItem(pItem, "inviter");
+						MSGENTRY *pMsgEntry;
+
+						if (pMsgEntry = MsgQueue_AddEvent (pInst->hMsgQueue, cJSON_GetObjectItem(pItem, "buid")->valuestring, "ADDEDMEMBERS")) // MULTI_SUBSCRIBED
+						{
+							if (pInviter) pMsgEntry->pszAuthor = strdup(pInviter->valuestring);
+							Send(pInst, "%sMESSAGE %d STATUS %s", pInst->iProtocol>=3?"CHAT":"", 
+								pMsgEntry->hdr.uMsgNr, pMsgEntry->szStatus);
+						}
+					}
+
+					List_Exit(hListMemToAdd);
+					hListMemToAdd = NULL;
 				}
 				if (bAdded && pInst->bFriendsPending)
 				{
@@ -1076,7 +1136,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			char szChats[2056];
 			int i, nCount, iOffs=0, j=0;
 
-			iOffs = sprintf (szChats, "CHATS");
+			iOffs = sprintf (szChats, "CHATS ");
 			for (i=0, nCount=List_Count(pInst->hBuddyList); i<nCount; i++)
 			{
 				NICKENTRY *pChat = (NICKENTRY*)List_ElementAt (pInst->hBuddyList, i);
@@ -1247,7 +1307,16 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			if (!strcasecmp (pszCmd, "TIMESTAMP"))
 				Send (pInst, "%s %d TIMESTAMP %ld", pszMessage, pEntry->hdr.uMsgNr, pEntry->timestamp);
 			else if (!strcasecmp (pszCmd, "PARTNER_HANDLE") || !strcasecmp (pszCmd, "FROM_HANDLE"))
-				Send (pInst, "%s %d %s %s", pszMessage, pEntry->hdr.uMsgNr, pszCmd, pEntry->pszAuthor?pEntry->pszAuthor:pEntry->pszUser);
+			{
+				char *pszUser = strdup(pEntry->pszAuthor?pEntry->pszAuthor:pEntry->pszUser), *p, *pszRealUser=pszUser;
+
+				if (p=strtok(pszUser, ";")) 
+				{
+					if (!(pszRealUser=strtok(NULL, ";"))) pszRealUser=p;
+				}
+				Send (pInst, "%s %d %s %s", pszMessage, pEntry->hdr.uMsgNr, pszCmd, pszRealUser);
+				free (pszUser);
+			}
 			else if (!strcasecmp (pszCmd, "PARTNER_DISPNAME"))
 				Send (pInst, "%s %d PARTNER_DISPNAME %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszAlias);
 			else if (!strcasecmp (pszCmd, "TYPE"))
@@ -1260,14 +1329,24 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				Send (pInst, "%s %d BODY %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszMessage);
 			else if (!strcasecmp (pszCmd, "CHATNAME"))
 			{
-				if (pEntry->pszAuthor || !pEntry->pszMessage) // Groupchat
-					Send (pInst, "%s %d CHATNAME %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
+				if (pEntry->pszAuthor || !pEntry->pszMessage || strchr(pEntry->pszUser, ';')) // Groupchat
+				{
+					char *pszUser = strdup(pEntry->pszUser), *p;
+
+					if (p=strchr(pszUser, ';')) p[1]=0;
+					Send (pInst, "%s %d CHATNAME %s", pszMessage, pEntry->hdr.uMsgNr, pszUser);
+					free (pszUser);
+				}
 				else
 					Send (pInst, "%s %d CHATNAME #%s/$%s", pszMessage, pEntry->hdr.uMsgNr, pInst->myUser.pszUser, pEntry->pszUser);
 			}
 			else if (!strcasecmp (pszCmd, "USERS"))
+			{
 				// On KICK, this is the user who GOT kicked
-				Send (pInst, "%s %d USERS %s", pszMessage, pEntry->hdr.uMsgNr, pEntry->pszUser);
+				char *pszUser = strchr(pEntry->pszUser, ';');
+				if (pszUser) pszUser++; else pszUser=pEntry->pszUser;
+				Send (pInst, "%s %d USERS %s", pszMessage, pEntry->hdr.uMsgNr, pszUser);
+			}
 			else
 				Send (pInst, "ERROR 10 Invalid property / not implemented");
 			return;		

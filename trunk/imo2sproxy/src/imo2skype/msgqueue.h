@@ -13,7 +13,7 @@ typedef struct
 	char szStatus[16];
 	char szFailure[256];
 	char szType[20];	// TEXT, SETTOPIC, ADDEDMEMBERS, CREATEDCHATWITH, LEFT, KICKED, ...
-	int uRqId;
+	unsigned int uRqId;
 } MSGENTRY;
 
 TYP_LIST *MsgQueue_Init(void);
