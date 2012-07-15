@@ -12,6 +12,14 @@
 #include "fifo.h"
 #include "io_layer.h"
 
+/* Set this to use asynchronous I/O
+   This is needed as synchronous WININET functions tend to block forever on connection
+   loss or other occasions leading to a deadlock of the whole application
+ */
+#define ASYNC
+#define ASYNC_CONN_TIMEOUT	5000	// Connection timeout in ms
+#define ASYNC_REQ_TIMEOUT	40000	// HttpSendRequest timeout in ms in async mode (Should be at least 30 sec!)
+
 #pragma comment(lib,"wininet.lib")
 
 #define INET_FLAGS INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID | \
@@ -23,6 +31,11 @@ typedef struct
 	IOLAYER vtbl;
 	HINTERNET hInet;
 	HINTERNET hRequest;
+#ifdef ASYNC
+	INTERNET_ASYNC_RESULT stAsyncRes;
+	HANDLE hConnectedEvent;
+	HANDLE hRequestCompleteEvent;
+#endif
 	TYP_FIFO *hResult;
 	LPVOID lpErrorBuf;
 } IOLAYER_INST;
@@ -35,6 +48,10 @@ static char *IoLayer_GetLastError(IOLAYER *hIO);
 static char *IoLayer_EscapeString(IOLAYER *hPIO, char *pszData);
 static void IoLayer_FreeEscapeString(char *pszData);
 static void FetchLastError (IOLAYER_INST *hIO);
+#ifdef ASYNC
+static void __stdcall Callback(HINTERNET hInternet, DWORD dwContext, DWORD dwInternetStatus,
+              LPVOID lpStatusInfo, DWORD dwStatusInfoLen);
+#endif
 
 // -----------------------------------------------------------------------------
 // Interface
@@ -49,7 +66,13 @@ IOLAYER *IoLayerW32_Init(void)
 		
 	// Init Inet
 	if (!(hIO->hInet = InternetOpen ("Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13",
-		INTERNET_OPEN_TYPE_PRECONFIG, NULL, "<local>", 0)))
+		INTERNET_OPEN_TYPE_PRECONFIG, NULL, "<local>", 
+#ifdef ASYNC
+		INTERNET_FLAG_ASYNC
+#else
+		0
+#endif
+		)))
 	{
 		free (hIO);
 		return NULL;
@@ -60,6 +83,17 @@ IOLAYER *IoLayerW32_Init(void)
 		IoLayer_Exit((IOLAYER*)hIO);
 		return NULL;
 	}
+
+#ifdef ASYNC
+    if (InternetSetStatusCallback(hIO->hInet, (INTERNET_STATUS_CALLBACK)&Callback) == INTERNET_INVALID_STATUS_CALLBACK)
+	{
+		IoLayer_Exit((IOLAYER*)hIO);
+		return NULL;
+	}
+
+    hIO->hConnectedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    hIO->hRequestCompleteEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+#endif
 
 	//InternetSetCookie ("https://o.imo.im/", "proto", "prpl-skype");
 
@@ -83,6 +117,11 @@ static void IoLayer_Exit (IOLAYER *hPIO)
 	if (hIO->hInet) InternetCloseHandle (hIO->hInet);
 	if (hIO->lpErrorBuf) LocalFree(hIO->lpErrorBuf);
 	if (hIO->hResult) Fifo_Exit(hIO->hResult);
+
+#ifdef ASYNC
+	if (hIO->hConnectedEvent) CloseHandle (hIO->hConnectedEvent);
+	if (hIO->hRequestCompleteEvent) CloseHandle (hIO->hRequestCompleteEvent);
+#endif
 	free (hIO);
 }
 
@@ -96,6 +135,13 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 	DWORD dwFlags = 0, cbFlags = sizeof(dwFlags), dwRemaining = 0;
 	char szHostName[INTERNET_MAX_HOST_NAME_LENGTH],
 		szURLPath[INTERNET_MAX_URL_LENGTH], *p;
+#ifdef ASYNC
+    INTERNET_BUFFERS InetBuff={0};
+    InetBuff.dwStructSize = sizeof(InetBuff);
+
+	ResetEvent (hIO->hConnectedEvent);
+	ResetEvent (hIO->hRequestCompleteEvent);
+#endif
 
 //OutputDebugString(pszPostFields);
 	urlInfo.dwStructSize = sizeof (URL_COMPONENTS);
@@ -111,21 +157,48 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 			cbPostFields = strlen(pszPostFields);
 	}
 	*/
-
 	if (!(hUrl = InternetConnect (hIO->hInet, szHostName, 
-		INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0)))
+		INTERNET_DEFAULT_HTTPS_PORT, NULL, NULL, INTERNET_SERVICE_HTTP, 0, (DWORD_PTR)hIO)))
 	{
-		FetchLastError (hIO);
-		return NULL;
+#ifdef ASYNC
+		if (GetLastError() == ERROR_IO_PENDING)
+		{
+			if (WaitForSingleObject(hIO->hConnectedEvent, ASYNC_CONN_TIMEOUT) == WAIT_OBJECT_0)
+			{
+				hUrl = (HINTERNET)hIO->stAsyncRes.dwResult;
+				hIO->stAsyncRes.dwResult = 0;
+				SetLastError(hIO->stAsyncRes.dwError);
+			}
+		}
+		if (!hUrl)
+#endif
+		{
+			FetchLastError (hIO);
+			return NULL;
+		}
 	}
 	
 	hIO->hRequest = HttpOpenRequest (hUrl, pszPostFields?"POST":"GET", szURLPath, NULL, "https://imo.im/", NULL, 
-		INET_FLAGS, 0);
+		INET_FLAGS, (DWORD_PTR)hIO);
 	if (!hIO->hRequest)
 	{
-		FetchLastError (hIO);
-		InternetCloseHandle (hUrl);
-		return NULL;
+#ifdef ASYNC
+		if (GetLastError() == ERROR_IO_PENDING)
+		{
+			if (WaitForSingleObject(hIO->hConnectedEvent, ASYNC_CONN_TIMEOUT) == WAIT_OBJECT_0)
+			{
+				hIO->hRequest = (HINTERNET)hIO->stAsyncRes.dwResult;
+				hIO->stAsyncRes.dwResult = 0;
+				SetLastError(hIO->stAsyncRes.dwError);
+			}
+		}
+		if (!hUrl)
+#endif
+		{
+			FetchLastError (hIO);
+			InternetCloseHandle (hUrl);
+			return NULL;
+		}
 	}
 	
 	InternetQueryOption (hIO->hRequest, INTERNET_OPTION_SECURITY_FLAGS, (LPVOID)&dwFlags, &cbFlags); 
@@ -149,16 +222,36 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 	}
 	*/
 
+// ASYNC: This needs to block for at least 30 seconds on poll!
 	if (!(HttpSendRequest (hIO->hRequest, "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
 		"X-Requested-With: XMLHttpRequest", -1,
 		pszPostFields, cbPostFields)))
 	{
-		FetchLastError (hIO);
-		InternetCloseHandle (hIO->hRequest);
-		hIO->hRequest = NULL;
-		InternetCloseHandle (hUrl);
-		return NULL;
+#ifdef ASYNC
+		BOOL bRes = FALSE;
+
+		if (GetLastError() == ERROR_IO_PENDING)
+		{
+			if (WaitForSingleObject(hIO->hRequestCompleteEvent, ASYNC_REQ_TIMEOUT) == WAIT_OBJECT_0)
+			{
+				bRes = hIO->stAsyncRes.dwResult;
+				hIO->stAsyncRes.dwResult = 0;
+				SetLastError(hIO->stAsyncRes.dwError);
+			}
+		}
+		if (!bRes)
+#endif
+		{
+			FetchLastError (hIO);
+			InternetCloseHandle (hIO->hRequest);
+			hIO->hRequest = NULL;
+			InternetCloseHandle (hUrl);
+			return NULL;
+		}
 	}
+#ifdef ASYNC
+	else WaitForSingleObject(hIO->hRequestCompleteEvent, ASYNC_REQ_TIMEOUT);
+#endif
 
 	/*
 	{
@@ -177,12 +270,53 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 	}
 	*/
 
+#ifdef ASYNC
+	do
+	{
+		if (!InternetQueryDataAvailable (hIO->hRequest, &InetBuff.dwBufferLength, 0, 0))
+		{
+			BOOL bRes = FALSE;
 
+			if (GetLastError() == ERROR_IO_PENDING)
+			{
+				if (WaitForSingleObject(hIO->hRequestCompleteEvent, ASYNC_REQ_TIMEOUT) == WAIT_OBJECT_0)
+				{
+					bRes = hIO->stAsyncRes.dwResult;
+					hIO->stAsyncRes.dwResult = 0;
+					SetLastError(hIO->stAsyncRes.dwError);
+				}
+			}
+			if (!bRes) break;
+		}
+		if (InetBuff.dwBufferLength == 0) break;
+		if (InetBuff.lpvBuffer = Fifo_AllocBuffer (hIO->hResult, InetBuff.dwBufferLength))
+		{
+			if (!InternetReadFileEx (hIO->hRequest, &InetBuff, 0, (DWORD_PTR)hIO))
+			{
+				BOOL bRes=FALSE;
+
+				if (GetLastError() == ERROR_IO_PENDING)
+				{
+					if (WaitForSingleObject(hIO->hRequestCompleteEvent, ASYNC_REQ_TIMEOUT) == WAIT_OBJECT_0)
+					{
+						bRes = hIO->stAsyncRes.dwResult;
+						hIO->stAsyncRes.dwResult = 0;
+						SetLastError(hIO->stAsyncRes.dwError);
+					}
+				}
+				if (!bRes) break;
+			}
+		}
+	}
+	while(InetBuff.dwBufferLength);
+#else
 	while (InternetQueryDataAvailable (hIO->hRequest, &dwRemaining, 0, 0) && dwRemaining > 0)
 	{
 		if (p = Fifo_AllocBuffer (hIO->hResult, dwRemaining))
 			InternetReadFile (hIO->hRequest, p, dwRemaining, &dwRemaining);
 	}
+#endif
+
 	if (!pdwLength)
 	{
 		// Get string
@@ -216,8 +350,17 @@ static void IoLayer_Cancel(IOLAYER *hPIO)
 {
 	IOLAYER_INST *hIO = (IOLAYER_INST*)hPIO;
 
+#ifdef ASYNC
+	if (hIO->hRequest)
+	{
+		hIO->stAsyncRes.dwResult = 0;
+		hIO->stAsyncRes.dwError = ERROR_CANCELLED;
+		SetEvent(hIO->hRequestCompleteEvent);
+	}
+#else
 	if (hIO->hRequest && InternetCloseHandle(hIO->hRequest))
 		hIO->hRequest = NULL;
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -271,3 +414,23 @@ static void FetchLastError (IOLAYER_INST *hIO)
 		GetLastError(), MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
 		(LPTSTR)&hIO->lpErrorBuf, 0, NULL);
 }
+
+#ifdef ASYNC
+static void __stdcall Callback(HINTERNET hInternet, DWORD dwContext, DWORD dwInternetStatus,
+              LPVOID lpStatusInfo, DWORD dwStatusInfoLen)
+{
+	IOLAYER_INST *hIO = (IOLAYER_INST*)dwContext;
+
+
+    switch(dwInternetStatus)
+    {
+    case INTERNET_STATUS_HANDLE_CREATED:
+        SetEvent (hIO->hConnectedEvent);
+		break;
+    case INTERNET_STATUS_REQUEST_COMPLETE:
+		hIO->stAsyncRes = *((INTERNET_ASYNC_RESULT *)lpStatusInfo);
+        SetEvent(hIO->hRequestCompleteEvent);
+        break;
+    }
+}
+#endif
