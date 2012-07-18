@@ -96,11 +96,11 @@ IMORQ *ImoRq_Init(void)
 
 		/* Get new session ID from system */
 		{
-			char *pszRPC = ImoRq_ResetRPC (hRq);
+			char *pszRPC = ImoRq_ResetRPC (hRq), *pszRPCRes;
 			if (pszRPC)
 			{
-				if ((pszRPC = strstr(pszRPC, "ssid\":\"")) || (pszRPC = strstr(pszRPC, "ssid\": \"")))
-					strcpy (hRq->szSessId, strtok (pszRPC+7, "\""));
+				if ((pszRPCRes = strstr(pszRPC, "ssid\":\"")) || (pszRPCRes = strstr(pszRPC, "ssid\": \"")))
+					strcpy (hRq->szSessId, strtok (pszRPCRes+7, "\""));
 			}
 		} else {
 			ImoRq_Exit(hRq);
