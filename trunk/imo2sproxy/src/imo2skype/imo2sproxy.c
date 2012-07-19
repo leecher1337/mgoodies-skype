@@ -50,6 +50,13 @@
 					   - Added a few features to be compatible with libpurple. i.e. we now support
 					     message numbering, even tough this is only supported in PROTOCOL 4.
 					   - Added Keepalive packet sending to circumvent imo.im AutoAway.
+	1.15  - 18.07.2012 - Avatar support
+					   - Support for new imo.im protocol, can now be compiled to use old or new
+					     protocol, in case there are troubles. New protocol enables participation
+						 in groupchats generated with native Skype client with at least 3 
+						 participants (still a bit experimental)
+					   - WININET HTTPS communication layer now uses async calls to try to prevent
+					     lockups on connection loss.
 */
 
 #include <memory.h>
