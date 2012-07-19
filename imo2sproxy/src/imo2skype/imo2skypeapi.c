@@ -378,7 +378,8 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 						}
 						else BuddyList_SetStatus(pInst->hBuddyList, pItem);
 
-						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0) &&
+						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0 ||
+							strcmp(pGroup->valuestring, "Offline")==0) &&
 							!pDisplay)
 						{
 							// Normal user, not groupchat, so output this

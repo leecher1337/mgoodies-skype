@@ -94,11 +94,11 @@ typedef struct _MIB_IPADDRTABLE {
 // Plugin Info
 #define PINFO \
 	"imo2sproxy-Plugin", \
-	PLUGIN_MAKE_VERSION(1,0,0,14), \
+	PLUGIN_MAKE_VERSION(1,0,0,15), \
 	"Tunnelling Skype traffic via imo.im Web service", \
 	"leecher", \
 	"leecher@dose.0wnz.at", \
-	"© 2010-2011 leecher", \
+	"© 2010-2012 leecher", \
 	"http://dose.0wnz.at", \
 	0,	\
 	0		//doesn't replace anything built-in

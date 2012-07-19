@@ -12,6 +12,10 @@
 #include "fifo.h"
 #include "io_layer.h"
 
+#ifndef LongToPtr
+#define DWORD_PTR DWORD
+#endif
+
 /* Set this to use asynchronous I/O
    This is needed as synchronous WININET functions tend to block forever on connection
    loss or other occasions leading to a deadlock of the whole application

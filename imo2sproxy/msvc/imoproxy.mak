@@ -4,20 +4,20 @@ CFG=Win32 Debug
 !ENDIF 
 
 !IF "$(CFG)" != "Win32 Release" && "$(CFG)" != "Win32 Debug" && "$(CFG)" != "Win64 Release" && "$(CFG)" != "Win64 Debug"
-!MESSAGE UngÅltige Konfiguration "$(CFG)" angegeben.
-!MESSAGE Sie kînnen beim AusfÅhren von NMAKE eine Konfiguration angeben
+!MESSAGE Ung¸ltige Konfiguration "$(CFG)" angegeben.
+!MESSAGE Sie kˆnnen beim Ausf¸hren von NMAKE eine Konfiguration angeben
 !MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
 !MESSAGE 
-!MESSAGE NMAKE /f "imoskype.mak" CFG="Win32 Debug"
+!MESSAGE NMAKE /f "imoproxy.mak" CFG="Win32 Debug"
 !MESSAGE 
-!MESSAGE FÅr die Konfiguration stehen zur Auswahl:
+!MESSAGE F¸r die Konfiguration stehen zur Auswahl:
 !MESSAGE 
 !MESSAGE "Win32 Release"
 !MESSAGE "Win32 Debug"
 !MESSAGE "Win64 Release"
 !MESSAGE "Win64 Debug"
 !MESSAGE 
-!ERROR Eine ungÅltige Konfiguration wurde angegeben.
+!ERROR Eine ung¸ltige Konfiguration wurde angegeben.
 !ENDIF 
 
 !IF "$(OS)" == "Windows_NT"
@@ -27,32 +27,41 @@ NULL=nul
 !ENDIF 
 
 CPP=cl.exe
+MTL=midl.exe
 RSC=rc.exe
 LINK32=link.exe
 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib ws2_32.lib /nologo /subsystem:console /pdb:"$(INTDIR)\imo2sproxy.pdb" /out:"$(OUTDIR)/imo2sproxy.exe" 
-INCLUDES=/I "../src/common" /I "../src/imo2skype" /I "../src/imolib"
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /dll /pdb:"$(INTDIR)\imoproxy.pdb" /out:"$(OUTDIR)\imoproxy.dll" /implib:"$(INTDIR)\imoproxy.lib" 
+INCLUDES=/I "../src/common" /I "../src/imo2skype" /I "../src/imolib" /I "F:\miranda09_src\miranda" 
 
 !IF  "$(CFG)" == "Win64 Release"
 OUTDIR=..\bin64
 INTDIR=.\Release64
-CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /Fp"$(INTDIR)\imoproxy.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\res.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 Release"
 OUTDIR=..\bin
 INTDIR=.\Release
-CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /O2 $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /Fp"$(INTDIR)\imoproxy.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\res.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win64 Debug"
 OUTDIR=.\Debug64
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoproxy.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\res.res" /d "_DEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 Debug"
 OUTDIR=.\Debug
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\imoskype.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od $(INCLUDES) /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\imoproxy.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\res.res" /d "_DEBUG" 
 !ENDIF
 
 LINK32_OBJS= \
@@ -65,16 +74,21 @@ LINK32_OBJS= \
 	"$(INTDIR)\imo2sproxy.obj" \
 	"$(INTDIR)\imo_request.obj" \
 	"$(INTDIR)\imo_skype.obj" \
+	"$(INTDIR)\imoproxy.obj" \
 	"$(INTDIR)\io_layer_win32.obj" \
-	"$(INTDIR)\main.obj" \
+	"$(INTDIR)\io_layer_netlib.obj" \
 	"$(INTDIR)\memlist.obj" \
 	"$(INTDIR)\msgqueue.obj" \
 	"$(INTDIR)\queue.obj" \
 	"$(INTDIR)\socksproxy.obj" \
 	"$(INTDIR)\w32browser.obj" \
-	"$(INTDIR)\w32skypeemu.obj"
+	"$(INTDIR)\w32skypeemu.obj" \
+	"$(INTDIR)\res.res" \
+	"$(INTDIR)\skypepluginlink.obj"
 
-ALL : "$(OUTDIR)\imo2sproxy.exe"
+
+ALL : "$(OUTDIR)\imoproxy.dll"
+
 
 CLEAN :
 	-@erase "$(INTDIR)\avatarlist.obj"
@@ -86,24 +100,26 @@ CLEAN :
 	-@erase "$(INTDIR)\imo2sproxy.obj"
 	-@erase "$(INTDIR)\imo_request.obj"
 	-@erase "$(INTDIR)\imo_skype.obj"
+	-@erase "$(INTDIR)\imoproxy.obj"
 	-@erase "$(INTDIR)\io_layer_win32.obj"
-	-@erase "$(INTDIR)\main.obj"
+	-@erase "$(INTDIR)\io_layer_netlib.obj"
 	-@erase "$(INTDIR)\memlist.obj"
 	-@erase "$(INTDIR)\msgqueue.obj"
 	-@erase "$(INTDIR)\queue.obj"
+	-@erase "$(INTDIR)\res.res"
+	-@erase "$(INTDIR)\skypepluginlink.obj"
 	-@erase "$(INTDIR)\socksproxy.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\w32browser.obj"
 	-@erase "$(INTDIR)\w32skypeemu.obj"
-	-@erase "$(INTDIR)\imo2sproxy.ilk" 
-	-@erase "$(INTDIR)\imo2sproxy.pdb" 
-	-@erase "$(OUTDIR)\imo2sproxy.exe"
-
+	-@erase "$(OUTDIR)\imoproxy.dll"
+	-@erase "$(OUTDIR)\imoproxy.exp"
+	-@erase "$(OUTDIR)\imoproxy.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-"$(OUTDIR)\imo2sproxy.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\imoproxy.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -114,10 +130,10 @@ CLEAN :
 <<
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
-!IF EXISTS("imoskype.dep")
-!INCLUDE "imoskype.dep"
+!IF EXISTS("imoproxy.dep")
+!INCLUDE "imoproxy.dep"
 !ELSE 
-!MESSAGE Warning: cannot find "imoskype.dep"
+!MESSAGE Warning: cannot find "imoproxy.dep"
 !ENDIF 
 !ENDIF 
 
@@ -158,12 +174,12 @@ SOURCE=..\src\imolib\imo_skype.c
 "$(INTDIR)\imo_skype.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-SOURCE=..\src\imolib\io_layer_win32.c
-"$(INTDIR)\io_layer_win32.obj" : $(SOURCE) "$(INTDIR)"
+SOURCE=..\src\imo2skype\miranda\imoproxy.c
+"$(INTDIR)\imoproxy.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-SOURCE=..\src\imo2skype\main.c
-"$(INTDIR)\main.obj" : $(SOURCE) "$(INTDIR)"
+SOURCE=..\src\imolib\io_layer_win32.c
+"$(INTDIR)\io_layer_win32.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 SOURCE=..\src\common\memlist.c
@@ -178,6 +194,14 @@ SOURCE=..\src\imo2skype\queue.c
 "$(INTDIR)\queue.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=..\src\imo2skype\miranda\skypepluginlink.c
+"$(INTDIR)\skypepluginlink.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+SOURCE=..\src\imo2skype\miranda\io_layer_netlib.c
+"$(INTDIR)\io_layer_netlib.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 SOURCE=..\src\imo2skype\socksproxy.c
 "$(INTDIR)\socksproxy.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
@@ -190,4 +214,8 @@ SOURCE=..\src\imo2skype\w32skypeemu.c
 "$(INTDIR)\w32skypeemu.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+
+SOURCE=..\src\imo2skype\miranda\res.rc
+"$(INTDIR)\res.res" : $(SOURCE) "$(INTDIR)"
+	$(RSC) /l 0xc07 /fo"$(INTDIR)\res.res" /i "..\src\imo2skype\miranda" /d "NDEBUG" $(SOURCE)
 
