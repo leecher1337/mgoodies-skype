@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Quellcodedateien">
+      <UniqueIdentifier>{611796ce-4528-47d4-872f-4744f22bd19d}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header-Dateien">
+      <UniqueIdentifier>{4d6279cf-842d-458b-95b8-c0cebb4a5d71}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{eb3a2f1b-05b7-4a39-b7d9-41be6256999e}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="contacts.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="gchat.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="memlist.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="msglist.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="pthread.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skype.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skypeapi.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skypeopt.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skypeprofile.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skypesvc.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="utf8.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="util.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="voiceservice.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="alogon.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="msgq.c">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="contacts.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="gchat.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="m_popup.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="m_toptoolbar.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="memlist.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="msglist.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="pthread.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skype.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skypeapi.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skypeopt.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skypeprofile.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skypesvc.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="utf8.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="voiceservice.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="alogon.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="msgq.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\add.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\away.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\call.bmp">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\call.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\chat.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\DND.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\error.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\hang_up.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\hold.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\import.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\invisible.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\Invite.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\message.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\NA.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\occupied.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\offline.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\online.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\phone.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\resume.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\skype.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="res\skypeout.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="changelog.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Skript1.rc">
+      <Filter>Ressourcendateien</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
