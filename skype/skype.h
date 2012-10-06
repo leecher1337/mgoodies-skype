@@ -77,7 +77,7 @@
 #define MAX_USERLEN     32      // Maximum length of a username in Skype
 #define PING_INTERVAL	10000	// Ping every 10000 msec to see if Skype is still available
 #define USEPOPUP		1		// Use the popup-plugin?
-#define TIMEOUT_MSGSEND 9000	// Stolen from msgdialog.c
+#define TIMEOUT_MSGSEND 60000	// Stolen from msgdialog.c
 #define MAX_MSG_AGE		30		// Maximum age in seconds before a Message from queue gets trashed
 #define SKYPEBUG_OFFLN	1		// Activate fix for the SkypeAPI Offline-Bug
 
