@@ -1363,7 +1363,7 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "UseCustomCommand", 0);
 	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "ConnectionAttempts", 10);
-	char *args[7], *pFree = NULL;
+	char *args[16], *pFree = NULL;
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:", "/secondary"};
 	const int SkypeDefaults[]={0, 1, 1, 0, 0};
 
