@@ -405,7 +405,7 @@ BEGIN
             VALUE "FileDescription", "Skype\0"
             VALUE "FileVersion", "0, 0, 0, 54\0"
             VALUE "InternalName", "Skype\0"
-            VALUE "LegalCopyright", "Copyright © 2007-2011 leecher - tweety - jls17\0"
+            VALUE "LegalCopyright", "Copyright © 2007-2012 leecher - tweety - jls17\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Skype.dll\0"
             VALUE "PrivateBuild", "\0"
