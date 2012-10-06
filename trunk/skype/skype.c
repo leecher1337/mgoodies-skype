@@ -34,7 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
 #endif
 #ifdef _WIN64
-#pragma comment (lib, "bufferoverflowU.lib")
+	#if (_MSC_VER < 1500)
+		#pragma comment (lib, "bufferoverflowU.lib")
+	#endif
 #endif
 
 #pragma warning (disable: 4706) // assignment within conditional expression
@@ -166,11 +168,11 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype Protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,52),
+	PLUGIN_MAKE_VERSION(0,0,0,54),
 	"Support for Skype network",
 	"leecher - tweety - jls17",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
-	"© 2004-2011 leecher - tweety",
+	"© 2004-2012 leecher - tweety",
 	"http://developer.berlios.de/projects/mgoodies/",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -1494,7 +1496,7 @@ void MessageListProcessingThread(char *str) {
 			args->bIsRead=TRUE;
 			args->bDontMarkSeen=TRUE;
 			args->QueryMsgDirection=TRUE;
-			(char*)args->pMsgEntry = SkypeGet ("CHATMESSAGE", token, "TIMESTAMP"); // Bad abuse of pointer
+			args->pMsgEntry = (TYP_MSGLENTRY*) SkypeGet ("CHATMESSAGE", token, "TIMESTAMP");
 			if (!chat) chat=SkypeGet ("CHATMESSAGE", token, "CHATNAME");
 			if (args->pMsgEntry) List_InsertSort (hListMsgs, MsglCmpProc, args);
 			else free(args);
@@ -2777,9 +2779,9 @@ INT_PTR SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
 void MessageSendWatchThread(msgsendwt_arg *arg) {
 	char *str, *err;
 
-	// sendwatchers need to be incremented before starting this thread
 	LOG(("MessageSendWatchThread started."));
-	str=SkypeRcvMsg(arg->szId, SkypeTime(NULL)-1, arg->hContact, DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000);
+
+	str=SkypeRcvMsg(arg->szId, SkypeTime(NULL)-1, arg->hContact, DBGetContactSettingDword(NULL, "SRMsg", "MessageTimeout", TIMEOUT_MSGSEND));
 	InterlockedDecrement (&sendwatchers);
 	if (str)
 	{
