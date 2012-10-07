@@ -48,7 +48,9 @@ char *MsgQ_RemoveMsg(TYP_MSGQ *q, struct MsgQueue *ptr)
 	char *msg;
 
 	if (!ptr) return NULL;
+	EnterCriticalSection(&q->cs);
 	TAILQ_REMOVE(&q->l, ptr, l);
+	LeaveCriticalSection(&q->cs);
 	msg=ptr->message;
 	free(ptr);
 	return msg;
@@ -58,9 +60,7 @@ char *MsgQ_Get(TYP_MSGQ *q)
 {
 	char *msg;
 
-	EnterCriticalSection(&q->cs);
 	msg=MsgQ_RemoveMsg(q, q->l.tqh_first);
-	LeaveCriticalSection(&q->cs);
 	return msg;
 }
 
