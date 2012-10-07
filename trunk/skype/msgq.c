@@ -21,7 +21,7 @@ void MsgQ_Exit(TYP_MSGQ *q)
 	struct MsgQueue *ptr;
 
 	EnterCriticalSection(&q->cs);
-	while (ptr=q->l.tqh_first)
+	while ((ptr=q->l.tqh_first) != NULL)
 		free(MsgQ_RemoveMsg(q, ptr));
 	LeaveCriticalSection(&q->cs);
 	DeleteCriticalSection (&q->cs);
@@ -31,7 +31,7 @@ BOOL MsgQ_Add(TYP_MSGQ *q, char *msg)
 {
 	struct MsgQueue *ptr;
 
-	if (!(ptr=(struct MsgQueue*)malloc(sizeof(struct MsgQueue))))
+	if ((ptr=(struct MsgQueue*)malloc(sizeof(struct MsgQueue))) == NULL)
 		return FALSE;
 	ptr->message = _strdup(msg); // Don't forget to free!
 	ptr->tAdded = SkypeTime(NULL);

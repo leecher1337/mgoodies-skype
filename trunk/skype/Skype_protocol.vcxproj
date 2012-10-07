@@ -53,6 +53,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5F9243AE-C6C9-4F42-B670-67A97767A50B}</ProjectGuid>
     <RootNamespace>Skype_protocol</RootNamespace>
+    <ProjectName>Skype</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'" Label="Configuration">
