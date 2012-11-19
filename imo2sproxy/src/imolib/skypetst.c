@@ -17,6 +17,7 @@
 #include <pthread.h>
 #endif
 #include "imo_skype.h"
+#include "imo_request.h"
 
 static IMOSKYPE *m_hInst = NULL;
 
@@ -70,10 +71,14 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 			{
 				if (pItem = cJSON_GetArrayItem(pArray, i))
 				{
+					cJSON *pAlias = cJSON_GetObjectItem(pItem, "alias"), 
+						*pBuid = cJSON_GetObjectItem(pItem, "buid"), 
+						*pPrimitive = cJSON_GetObjectItem(pItem, "primitive");
+
 					printf ("%s (%s)\t-\t%s\n",
-						cJSON_GetObjectItem(pItem, "alias")->valuestring,
-						cJSON_GetObjectItem(pItem, "buid")->valuestring,
-						cJSON_GetObjectItem(pItem, "primitive")->valuestring);
+						pAlias?pAlias->valuestring:"",
+						pBuid?pBuid->valuestring:"",
+						pPrimitive?pPrimitive->valuestring:"");
 				}
 			}
 		}
@@ -159,6 +164,7 @@ int main(int argc, char **argv)
 		/* Dispatch loop */
 		char szLine[4096]={0};
 
+		if (IMO_API_VERSION > 0) ImoSkype_GetAlpha(m_hInst);
 		Dispatcher_Start();
 		printf ("> ");
 		fflush(stdout);
@@ -175,7 +181,7 @@ int main(int argc, char **argv)
 
 				if (pszBuddy = strtok (szLine+4, " "))
 				{
-					if (ImoSkype_SendMessage(m_hInst, pszBuddy, pszBuddy+strlen(pszBuddy)+1))
+					if (ImoSkype_SendMessage(m_hInst, pszBuddy, pszBuddy+strlen(pszBuddy)+1, NULL))
 						printf ("Sent.\n");
 					else
 						printf ("Sending failed: %s.\n", ImoSkype_GetLastError(m_hInst));

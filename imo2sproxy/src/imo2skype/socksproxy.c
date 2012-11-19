@@ -502,7 +502,7 @@ static void Imo2sproxy_Loop(IMO2SPROXY *hInst)
 		FD_ZERO(&fdListen);
 		FD_SET(hProxy->listen_fd, &fdListen);
 		socklen = sizeof(sock);
-		if (select (0, &fdListen, NULL, NULL, NULL) != SOCKET_ERROR && FD_ISSET(hProxy->listen_fd, &fdListen))
+		if (select (hProxy->listen_fd+1, &fdListen, NULL, NULL, NULL) != SOCKET_ERROR && FD_ISSET(hProxy->listen_fd, &fdListen))
 		{
 			new_fd = accept(hProxy->listen_fd, (struct sockaddr *) &sock, &socklen); 
 			if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
