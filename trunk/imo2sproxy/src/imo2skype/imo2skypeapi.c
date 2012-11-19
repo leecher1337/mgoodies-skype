@@ -921,7 +921,7 @@ static int Dispatcher_Stop(IMOSAPI *pInst)
 	// gracefully, otherwise kill it
 	iOldShutdown = pInst->iShuttingDown;
 	pInst->iShuttingDown = 1;
-	ImoSkype_CancelPolling (pInst->hInst);
+	if (pInst->hInst) ImoSkype_CancelPolling (pInst->hInst);
 	if (WaitForSingleObject (pInst->hThread, 2000) == WAIT_TIMEOUT)
 		iRet = TerminateThread (pInst->hThread, 0);
 	else iRet = 1;
