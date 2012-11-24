@@ -366,6 +366,7 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 						char *pszBUID = cJSON_GetObjectItem(pItem, "buid")->valuestring;
 						cJSON *pGroup = cJSON_GetObjectItem(pItem, "group");
 						cJSON *pDisplay = cJSON_GetObjectItem(pItem, "display");
+						cJSON *pType = cJSON_GetObjectItem(pItem, "type");
 
 						if (bAdded) 
 						{
@@ -379,8 +380,7 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 						else BuddyList_SetStatus(pInst->hBuddyList, pItem);
 
 						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0 ||
-							strcmp(pGroup->valuestring, "Offline")==0) &&
-							!pDisplay)
+							strcmp(pGroup->valuestring, "Offline")==0) && !pType)
 						{
 							// Normal user, not groupchat, so output this
 							sprintf (szQuery, "GET USER %s ONLINESTATUS", pszBUID);
