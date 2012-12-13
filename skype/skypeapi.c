@@ -73,7 +73,7 @@ static int _ConnectToSkypeAPI(char *path, BOOL bStart);
  * Returns: Result from SendMessage
  */
 INT_PTR SkypeReceivedAPIMessage(WPARAM wParam, LPARAM lParam) {
-	return SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, lParam);
+	return SendMessage(g_hWnd, WM_COPYDATALOCAL, (WPARAM)hSkypeWnd, lParam);
 }
 
 /*
@@ -114,7 +114,7 @@ void rcvThread(char *dummy) {
 		CopyData.dwData=0; 
 		CopyData.lpData=buf; 
 		CopyData.cbData=(DWORD)strlen(buf)+1;
-		if (!SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
+		if (!SendMessage(g_hWnd, WM_COPYDATALOCAL, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
 		{
 			LOG(("SendMessage failed: %08X", GetLastError()));
 		}
@@ -276,7 +276,7 @@ static int __sendMsg(char *szMsg) {
 	 CopyData.dwData=0; 
 	 CopyData.lpData="PONG"; 
 	 CopyData.cbData=5;
-	 SendMessage(g_hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
+	 SendMessage(g_hWnd, WM_COPYDATALOCAL, (WPARAM)hSkypeWnd, (LPARAM)&CopyData);
 	 return 0;
    }
 
@@ -449,8 +449,7 @@ char *SkypeRcvMsg(char *what, time_t st, HANDLE hContact, DWORD maxwait) {
 						pMsg++;
 						if (strncmp (pMsg, "STATUS ", 7) == 0) {
 							pMsg+=7;
-							if (strcmp (pMsg, "SENDING") == 0 &&
-								DBGetContactSettingWord(hContact, SKYPE_PROTONAME, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE) {
+							if (strcmp (pMsg, "SENDING") == 0) {
 								// Remove dat shit
 								struct MsgQueue *ptr_=ptr->l.tqe_next;
 
@@ -1072,6 +1071,7 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 		return -2;
 	
 	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
+	if (!*AvatarFile) strcpy (AvatarFile, DefaultAvatarsFolder);
 	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s avatar.%s", AvatarFile, SKYPE_PROTONAME, ext);
 
 	// Backup old file

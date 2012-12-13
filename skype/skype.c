@@ -2352,6 +2352,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 		case WM_DESTROY:
 			KillTimer (hWndDlg, 1);
 			break; 
+		case WM_COPYDATALOCAL:
+			return WndProc (hWndDlg, WM_COPYDATA, wParam, lParam);
 
         default: 
 		 if(message==ControlAPIAttach) {
@@ -2583,6 +2585,7 @@ void RetrieveUserAvatar(void *param)
 		{
 			// Get filename
 			FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
+			if (!*AvatarFile) strcpy (AvatarFile, DefaultAvatarsFolder);
 			mir_snprintf(AvatarTmpFile, sizeof(AvatarTmpFile), "AVATAR 1 %s\\%s_tmp.jpg", AvatarFile, dbv.pszVal);
 			pszTempFile = AvatarTmpFile+9;
 			mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s.jpg", AvatarFile, dbv.pszVal);

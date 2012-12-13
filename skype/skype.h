@@ -106,6 +106,8 @@ typedef struct {
 #define SKYPE_CHATNEW g_svcNames.ChatNew
 #define EVENTTYPE_CALL 2000
 
+#define WM_COPYDATALOCAL	WM_USER+100		// WM_COPYDATA for local window communication, needed due to Win98 bug
+
 #ifndef __SKYPESVC_C__
 extern SKYPE_SVCNAMES g_svcNames;
 #endif
