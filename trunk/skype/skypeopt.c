@@ -587,16 +587,16 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), startSkype && SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 
             // LoginUserName
-            if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
+            if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
 			{
-				SetWindowTextW(GetDlgItem(hwndDlg, IDC_USERNAME), dbv.pwszVal);
+				SetWindowText(GetDlgItem(hwndDlg, IDC_USERNAME), dbv.ptszVal);
 				DBFreeVariant(&dbv);
 			}
 
             // LoginPassword
-            if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
+            if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
 			{
-				SetWindowTextW(GetDlgItem(hwndDlg, IDC_PASSWORD), dbv.pwszVal);
+				SetWindowText(GetDlgItem(hwndDlg, IDC_PASSWORD), dbv.ptszVal);
 				DBFreeVariant(&dbv);
 			}
 
@@ -614,7 +614,7 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				case PSN_KILLACTIVE:
 				{
 					char text[500];
-                    WCHAR wtext[500];
+                    TCHAR wtext[500];
 					char szRelativePath[MAX_PATH];
 
 					DBWriteContactSettingByte (NULL, SKYPE_PROTONAME, "StartSkype", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_STARTSKYPE), BM_GETCHECK,0,0)));
@@ -640,12 +640,12 @@ INT_PTR CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 					DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "datapath", szRelativePath);
                    
                     // LoginUserName
-                    GetDlgItemTextW(hwndDlg,IDC_USERNAME,wtext,sizeof(wtext)/sizeof(WCHAR));
-					DBWriteContactSettingWString(NULL, SKYPE_PROTONAME, "LoginUserName", wtext);
+                    GetDlgItemText(hwndDlg,IDC_USERNAME,wtext,sizeof(wtext)/sizeof(TCHAR));
+					DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "LoginUserName", wtext);
 
                     // LoginPassword
-                    GetDlgItemTextW(hwndDlg,IDC_PASSWORD,wtext,sizeof(wtext)/sizeof(WCHAR));
-					DBWriteContactSettingWString(NULL, SKYPE_PROTONAME, "LoginPassword", wtext);
+                    GetDlgItemText(hwndDlg,IDC_PASSWORD,wtext,sizeof(wtext)/sizeof(TCHAR));
+					DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "LoginPassword", wtext);
 
 					return TRUE;
 				}
