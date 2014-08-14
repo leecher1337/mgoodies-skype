@@ -1239,7 +1239,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="contacts.c"
+				RelativePath="src\contacts.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1339,7 +1339,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug.c"
+				RelativePath="src\debug.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1439,7 +1439,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="gchat.c"
+				RelativePath="src\gchat.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1539,7 +1539,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="memlist.c"
+				RelativePath="src\memlist.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1639,7 +1639,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="msglist.c"
+				RelativePath="src\msglist.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1739,7 +1739,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pthread.c"
+				RelativePath="src\pthread.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1839,7 +1839,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skype.c"
+				RelativePath="src\skype.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1939,7 +1939,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="msgq.c"
+				RelativePath="src\msgq.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2039,7 +2039,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="alogon.c"
+				RelativePath="src\alogon.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2139,7 +2139,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skypeapi.c"
+				RelativePath="src\skypeapi.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2239,7 +2239,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skypeopt.c"
+				RelativePath="src\skypeopt.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2339,7 +2339,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skypeprofile.c"
+				RelativePath="src\skypeprofile.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2439,7 +2439,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="skypesvc.c"
+				RelativePath="src\skypesvc.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2539,7 +2539,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="utf8.c"
+				RelativePath="src\utf8.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2639,11 +2639,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\util.c"
+				RelativePath="src\util.c"
 				>
 			</File>
 			<File
-				RelativePath="voiceservice.c"
+				RelativePath="src\voiceservice.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -2748,79 +2748,79 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="msgq.h"
+				RelativePath="src\msgq.h"
 				>
 			</File>
 			<File
-				RelativePath="alogon.h"
+				RelativePath="src\alogon.h"
 				>
 			</File>
 			<File
-				RelativePath="contacts.h"
+				RelativePath="src\contacts.h"
 				>
 			</File>
 			<File
-				RelativePath="debug.h"
+				RelativePath="src\debug.h"
 				>
 			</File>
 			<File
-				RelativePath="gchat.h"
+				RelativePath="src\gchat.h"
 				>
 			</File>
 			<File
-				RelativePath="m_popup.h"
+				RelativePath="src\m_popup.h"
 				>
 			</File>
 			<File
-				RelativePath="m_toptoolbar.h"
+				RelativePath="src\sdk\m_toptoolbar.h"
 				>
 			</File>
 			<File
-				RelativePath="memlist.h"
+				RelativePath="src\memlist.h"
 				>
 			</File>
 			<File
-				RelativePath="msglist.h"
+				RelativePath="src\msglist.h"
 				>
 			</File>
 			<File
-				RelativePath="pthread.h"
+				RelativePath="src\pthread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
+				RelativePath="src\resource.h"
 				>
 			</File>
 			<File
-				RelativePath="skype.h"
+				RelativePath="src\skype.h"
 				>
 			</File>
 			<File
-				RelativePath="skypeapi.h"
+				RelativePath="src\skypeapi.h"
 				>
 			</File>
 			<File
-				RelativePath="skypeopt.h"
+				RelativePath="src\skypeopt.h"
 				>
 			</File>
 			<File
-				RelativePath="skypeprofile.h"
+				RelativePath="src\skypeprofile.h"
 				>
 			</File>
 			<File
-				RelativePath="skypesvc.h"
+				RelativePath="src\skypesvc.h"
 				>
 			</File>
 			<File
-				RelativePath="utf8.h"
+				RelativePath="src\utf8.h"
 				>
 			</File>
 			<File
-				RelativePath=".\util.h"
+				RelativePath="src\util.h"
 				>
 			</File>
 			<File
-				RelativePath="voiceservice.h"
+				RelativePath="src\voiceservice.h"
 				>
 			</File>
 		</Filter>
@@ -2905,7 +2905,7 @@
 				>
 			</File>
 			<File
-				RelativePath="Skript1.rc"
+				RelativePath="res\Resource.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

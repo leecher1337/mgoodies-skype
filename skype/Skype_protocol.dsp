@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "ng-compat\\" /I "..\..\include" /I "sdk\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "src\ng-compat\\" /I "..\..\include" /I "src\sdk\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -71,7 +71,7 @@ LINK32=xilink6.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "ng-compat\\" /I "..\..\include" /I "sdk\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "src\ng-compat\\" /I "..\..\include" /I "src\sdk\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /GZ /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -101,7 +101,7 @@ LINK32=xilink6.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /GZ /c
 # SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "ng-compat\\" /I "..\..\include" /I "sdk\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "src\ng-compat\\" /I "..\..\include" /I "src\sdk\\" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc07 /d "_DEBUG"
@@ -127,67 +127,67 @@ LINK32=xilink6.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\alogon.c
+SOURCE=.\src\alogon.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\contacts.c
+SOURCE=.\src\contacts.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.c
+SOURCE=.\src\debug.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\gchat.c
+SOURCE=.\src\gchat.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\memlist.c
+SOURCE=.\src\memlist.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\msglist.c
+SOURCE=.\src\msglist.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\msgq.c
+SOURCE=.\src\msgq.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pthread.c
+SOURCE=.\src\pthread.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skype.c
+SOURCE=.\src\skype.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeapi.c
+SOURCE=.\src\skypeapi.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeopt.c
+SOURCE=.\src\skypeopt.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeprofile.c
+SOURCE=.\src\skypeprofile.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypesvc.c
+SOURCE=.\src\skypesvc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\utf8.c
+SOURCE=.\src\utf8.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\util.c
+SOURCE=.\src\util.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\voiceservice.c
+SOURCE=.\src\voiceservice.c
 # End Source File
 # End Group
 # Begin Group "Header-Dateien"
@@ -195,79 +195,79 @@ SOURCE=.\voiceservice.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\alogon.h
+SOURCE=.\src\alogon.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\contacts.h
+SOURCE=.\src\contacts.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.h
+SOURCE=.\src\debug.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\gchat.h
+SOURCE=.\src\gchat.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\m_popup.h
+SOURCE=.\src\m_popup.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\m_toptoolbar.h
+SOURCE=.\src\m_toptoolbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\memlist.h
+SOURCE=.\src\memlist.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\msglist.h
+SOURCE=.\src\msglist.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\msgq.h
+SOURCE=.\src\msgq.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pthread.h
+SOURCE=.\src\pthread.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\skype.h
+SOURCE=.\src\skype.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeapi.h
+SOURCE=.\src\skypeapi.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeopt.h
+SOURCE=.\src\skypeopt.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeprofile.h
+SOURCE=.\src\skypeprofile.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypesvc.h
+SOURCE=.\src\skypesvc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\utf8.h
+SOURCE=.\src\utf8.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\util.h
+SOURCE=.\src\util.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\version.h
+SOURCE=.\src\version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\voiceservice.h
+SOURCE=.\src\voiceservice.h
 # End Source File
 # End Group
 # Begin Group "Ressourcendateien"
@@ -283,15 +283,7 @@ SOURCE=.\res\away.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\bitmap1.bmp
-# End Source File
-# Begin Source File
-
 SOURCE=.\res\call.bmp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Call.ico
 # End Source File
 # Begin Source File
 
@@ -315,23 +307,7 @@ SOURCE=.\res\hang_up.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\Hangup.ico
-# End Source File
-# Begin Source File
-
 SOURCE=.\res\hold.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\holdcall.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icon1.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icon2.ico
 # End Source File
 # Begin Source File
 
@@ -371,15 +347,11 @@ SOURCE=.\res\phone.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\Resource.rc
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\resume.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resumecall.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\Skript1.rc
 # End Source File
 # Begin Source File
 

@@ -946,8 +946,8 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="alogon.c" />
-    <ClCompile Include="contacts.c">
+    <ClCompile Include="src\alogon.c" />
+    <ClCompile Include="src\contacts.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -961,7 +961,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="debug.c">
+    <ClCompile Include="src\debug.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -975,7 +975,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="gchat.c">
+    <ClCompile Include="src\gchat.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -989,7 +989,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="memlist.c">
+    <ClCompile Include="src\memlist.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1003,7 +1003,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="msglist.c">
+    <ClCompile Include="src\msglist.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1017,8 +1017,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="msgq.c" />
-    <ClCompile Include="pthread.c">
+    <ClCompile Include="src\msgq.c" />
+    <ClCompile Include="src\pthread.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1032,7 +1032,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="skype.c">
+    <ClCompile Include="src\skype.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1046,7 +1046,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="skypeapi.c">
+    <ClCompile Include="src\skypeapi.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1060,7 +1060,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="skypeopt.c">
+    <ClCompile Include="src\skypeopt.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1074,7 +1074,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="skypeprofile.c">
+    <ClCompile Include="src\skypeprofile.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1088,7 +1088,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="skypesvc.c">
+    <ClCompile Include="src\skypesvc.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1102,7 +1102,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="utf8.c">
+    <ClCompile Include="src\utf8.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1116,8 +1116,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='x64 Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="util.c" />
-    <ClCompile Include="voiceservice.c">
+    <ClCompile Include="src\util.c" />
+    <ClCompile Include="src\voiceservice.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1133,25 +1133,25 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="alogon.h" />
-    <ClInclude Include="contacts.h" />
-    <ClInclude Include="debug.h" />
-    <ClInclude Include="gchat.h" />
-    <ClInclude Include="msgq.h" />
-    <ClInclude Include="m_popup.h" />
-    <ClInclude Include="m_toptoolbar.h" />
-    <ClInclude Include="memlist.h" />
-    <ClInclude Include="msglist.h" />
-    <ClInclude Include="pthread.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="skype.h" />
-    <ClInclude Include="skypeapi.h" />
-    <ClInclude Include="skypeopt.h" />
-    <ClInclude Include="skypeprofile.h" />
-    <ClInclude Include="skypesvc.h" />
-    <ClInclude Include="utf8.h" />
-    <ClInclude Include="util.h" />
-    <ClInclude Include="voiceservice.h" />
+    <ClInclude Include="src\alogon.h" />
+    <ClInclude Include="src\contacts.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\gchat.h" />
+    <ClInclude Include="src\msgq.h" />
+    <ClInclude Include="src\m_popup.h" />
+    <ClInclude Include="src\m_toptoolbar.h" />
+    <ClInclude Include="src\memlist.h" />
+    <ClInclude Include="src\msglist.h" />
+    <ClInclude Include="src\pthread.h" />
+    <ClInclude Include="src\resource.h" />
+    <ClInclude Include="src\skype.h" />
+    <ClInclude Include="src\skypeapi.h" />
+    <ClInclude Include="src\skypeopt.h" />
+    <ClInclude Include="src\skypeprofile.h" />
+    <ClInclude Include="src\skypesvc.h" />
+    <ClInclude Include="src\utf8.h" />
+    <ClInclude Include="src\util.h" />
+    <ClInclude Include="src\voiceservice.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\add.ico" />
@@ -1178,7 +1178,7 @@
     <None Include="changelog.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Skript1.rc">
+    <ResourceCompile Include="res\Resource.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Debug|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ANSI Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
