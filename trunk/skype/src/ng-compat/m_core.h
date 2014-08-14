@@ -32,7 +32,6 @@ typedef HANDLE MCONTACT;
 #define db_event_firstUnread(hContact) (HANDLE)CallService(MS_DB_EVENT_FINDFIRSTUNREAD,(WPARAM)hContact,0)
 #define db_event_markRead(hContact,hDbEvent) CallService(MS_DB_EVENT_MARKREAD,(WPARAM)hContact,(LPARAM)hDbEvent)
 #define db_event_getBlobSize(hEvent) CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hEvent, 0)
-#define db_mc_isSub(hContact) DBGetContactSettingByte(hContact, "MetaContacts", "IsSubcontact", 0)
 #define db_event_next(hContact,hDbEvent) (HANDLE)CallService(MS_DB_EVENT_FINDNEXT,(WPARAM)hDbEvent,0)
 
 #define Thread_Push(a,b) CallService(MS_SYSTEM_THREAD_PUSH, a, b)

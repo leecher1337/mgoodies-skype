@@ -43,7 +43,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\Resource.rc" />
-    <ResourceCompile Include="res\Version.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\alogon.c" />
