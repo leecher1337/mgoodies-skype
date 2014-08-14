@@ -35,8 +35,8 @@ TYP_MSGLENTRY *MsgList_Add(DWORD uMsgNum, HANDLE hEvent)
 	LOG (("MsgList_Add (%d, %08X)", uMsgNum, hEvent));
 	if (!m_hMsgList || !hEvent) return FALSE;
 	bFound = List_BinarySearch(m_hMsgList,CmpProc,(void *)uMsgNum,&iListInd);
-	if (!bFound) pEntry = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TYP_MSGLENTRY));
-	else pEntry = List_ElementAt (m_hMsgList, iListInd);
+	if (!bFound) pEntry = (TYP_MSGLENTRY*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TYP_MSGLENTRY));
+	else pEntry = (TYP_MSGLENTRY*)List_ElementAt (m_hMsgList, iListInd);
 	if (!pEntry) return NULL;
 	pEntry->uMsgNum = uMsgNum;
 	pEntry->hEvent = hEvent;
@@ -55,7 +55,7 @@ TYP_MSGLENTRY *MsgList_FindMessage(DWORD uMsgNum)
 	LOG (("MsgList_FindEvent (%d)", uMsgNum));
 	if (m_hMsgList && List_BinarySearch(m_hMsgList, CmpProc, (void*)uMsgNum, &iPos))
 	{
-		pEntry = List_ElementAt (m_hMsgList, iPos);
+		pEntry = (TYP_MSGLENTRY*)List_ElementAt (m_hMsgList, iPos);
 		time(&pEntry->t);	// Touch it, so that it doesn't get thrown away too soon
 		LOG (("MsgList_FindEvent(%d): %08X", uMsgNum, pEntry->hEvent));
 		return pEntry;
@@ -74,7 +74,7 @@ void MsgList_CollectGarbage(void)
 	t-=MSGLIST_TIMEOUT;
 	for (i=0; i<List_Count(m_hMsgList); i++)
 	{
-		pEntry = List_ElementAt (m_hMsgList, i);
+		pEntry = (TYP_MSGLENTRY*)List_ElementAt (m_hMsgList, i);
 		if (pEntry->t < t)
 		{
 			LOG (("MsgList_CollectGarbage throwing out msg %d", pEntry->uMsgNum));

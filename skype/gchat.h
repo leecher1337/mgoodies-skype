@@ -6,13 +6,18 @@
 
 #pragma warning (push)
 #pragma warning (disable: 4201) // nonstandard extension used : nameless struct/union
-#include "../../include/m_chat.h"
+#include <m_chat.h>
 #pragma warning (pop)
 
 #define MAX_BUF 256    // Buffer for topic-string
 
+// In case this you compile for Miranda NG with a non-Tchar aware Groupchat plugin, null the flag out
+#ifndef GC_TCHAR
+#define GC_TCHAR 0
+#endif
+
 typedef struct {
-	HANDLE hContact;
+	MCONTACT hContact;
 	TCHAR who[33];
 	TCHAR szRole[12];
 } gchat_contact;
@@ -25,10 +30,10 @@ typedef struct {
 
 int ChatInit(WPARAM, LPARAM);
 int  __cdecl ChatStart(char *szChatId, BOOL bJustCreate);
-gchat_contacts *GetChat(TCHAR *szChatId);
-HANDLE find_chat(TCHAR *chatname);
+gchat_contacts *GetChat(LPCTSTR szChatId);
+MCONTACT find_chat(LPCTSTR chatname);
 #ifdef _UNICODE
-HANDLE find_chatA(char *chatname);
+MCONTACT find_chatA(char *chatname);
 #else
 #define find_chatA find_chat
 #endif

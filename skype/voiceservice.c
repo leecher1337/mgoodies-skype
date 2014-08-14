@@ -2,11 +2,13 @@
 #include "skypeapi.h"
 #include "skypesvc.h"
 #include "voiceservice.h"
+#ifdef IS_MIRANDAIM
 #include "sdk/m_voiceservice.h"
+#endif
 
 #pragma warning (push)
 #pragma warning (disable: 4100) // unreferenced formal parameter
-#include "../../include/m_utils.h"
+#include "m_utils.h"
 #pragma warning (pop)
 
 HANDLE hVoiceNotify = NULL;
@@ -20,8 +22,9 @@ BOOL HasVoiceService()
 	return has_voice_service;
 }
 
-void NofifyVoiceService(HANDLE hContact, char *callId, int state) 
+void NofifyVoiceService(MCONTACT hContact, char *callId, int state) 
 {
+#ifdef IS_MIRANDAIM
 	VOICE_CALL vc = {0};
 	vc.cbSize = sizeof(vc);
 	vc.szModule = SKYPE_PROTONAME;
@@ -30,8 +33,10 @@ void NofifyVoiceService(HANDLE hContact, char *callId, int state)
 	vc.state = state;
 	vc.hContact = hContact;
 	NotifyEventHooks(hVoiceNotify, (WPARAM) &vc, 0);
+#endif
 }
 
+#ifdef IS_MIRANDAIM
 static INT_PTR VoiceGetInfo(WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -130,9 +135,11 @@ static INT_PTR VoiceHold(WPARAM wParam, LPARAM lParam)
 
 	return 0;
 }
+#endif
 
 void VoiceServiceInit() 
 {
+#ifdef IS_MIRANDAIM
 	// leecher, 26.03.2011: Did this ever work in the old versions?? 
 	char szEvent[MAXMODULELABELLENGTH];
 
@@ -143,14 +150,20 @@ void VoiceServiceInit()
 	CreateProtoService( PS_VOICE_ANSWERCALL, VoiceAnswer );
 	CreateProtoService( PS_VOICE_DROPCALL, VoiceDrop );
 	CreateProtoService( PS_VOICE_HOLDCALL, VoiceHold );
+#endif
 }
 
 void VoiceServiceExit()
 {
+#ifdef IS_MIRANDAIM
 	DestroyHookableEvent(hVoiceNotify);
+#endif
 }
 
 void VoiceServiceModulesLoaded() 
 {
+#ifdef IS_MIRANDAIM
 	has_voice_service = ServiceExists(MS_VOICESERVICE_REGISTER);
+#endif
 }
+

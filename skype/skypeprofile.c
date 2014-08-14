@@ -8,55 +8,55 @@ extern char g_szProtoName[];
 
 void SkypeProfile_Save(SkypeProfile *pstProf)
 {
-	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", pstProf->Sex);
-	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "HomePhone", pstProf->HomePhone);
-	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "OfficePhone", pstProf->OfficePhone);
-	DBWriteContactSettingString(NULL, SKYPE_PROTONAME, "HomePage", pstProf->HomePage);
-	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Nick", pstProf->FullName);
-	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "City", pstProf->City);
-	DBWriteContactSettingTString(NULL, SKYPE_PROTONAME, "Province", pstProf->Province);
-	DBWriteContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", (WORD)pstProf->Birthday.wYear);
-	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "BirthMonth", (BYTE)pstProf->Birthday.wMonth);
-	DBWriteContactSettingByte(NULL, SKYPE_PROTONAME, "BirthDay", (BYTE)pstProf->Birthday.wDay);
+	db_set_b(NULL, SKYPE_PROTONAME, "Gender", pstProf->Sex);
+	db_set_s(NULL, SKYPE_PROTONAME, "HomePhone", pstProf->HomePhone);
+	db_set_s(NULL, SKYPE_PROTONAME, "OfficePhone", pstProf->OfficePhone);
+	db_set_s(NULL, SKYPE_PROTONAME, "HomePage", pstProf->HomePage);
+	db_set_ts(NULL, SKYPE_PROTONAME, "Nick", pstProf->FullName);
+	db_set_ts(NULL, SKYPE_PROTONAME, "City", pstProf->City);
+	db_set_ts(NULL, SKYPE_PROTONAME, "Province", pstProf->Province);
+	db_set_w(NULL, SKYPE_PROTONAME, "BirthYear", (WORD)pstProf->Birthday.wYear);
+	db_set_b(NULL, SKYPE_PROTONAME, "BirthMonth", (BYTE)pstProf->Birthday.wMonth);
+	db_set_b(NULL, SKYPE_PROTONAME, "BirthDay", (BYTE)pstProf->Birthday.wDay);
 }
 
 void SkypeProfile_Load(SkypeProfile *pstProf)
 {
 	DBVARIANT dbv;
 
-	pstProf->Sex = (BYTE)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "Gender", 0);
-	pstProf->Birthday.wYear = (WORD)DBGetContactSettingWord(NULL, SKYPE_PROTONAME, "BirthYear", 1900);
-	pstProf->Birthday.wMonth = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthMonth", 01);
-	pstProf->Birthday.wDay = (WORD)DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "BirthDay", 01);
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Nick",&dbv)) 
+	pstProf->Sex = (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "Gender", 0);
+	pstProf->Birthday.wYear = (WORD)db_get_w(NULL, SKYPE_PROTONAME, "BirthYear", 1900);
+	pstProf->Birthday.wMonth = (WORD)db_get_b(NULL, SKYPE_PROTONAME, "BirthMonth", 01);
+	pstProf->Birthday.wDay = (WORD)db_get_b(NULL, SKYPE_PROTONAME, "BirthDay", 01);
+	if(!db_get_ts(NULL,SKYPE_PROTONAME,"Nick",&dbv)) 
 	{	
 		_tcsncpy (pstProf->FullName, dbv.ptszVal, sizeof(pstProf->FullName)/sizeof(TCHAR));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
-	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"HomePage",&dbv)) 
+	if(!db_get_s(NULL,SKYPE_PROTONAME,"HomePage",&dbv)) 
 	{	
 		strncpy (pstProf->HomePage, dbv.pszVal, sizeof(pstProf->HomePage));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"Province",&dbv)) 
+	if(!db_get_ts(NULL,SKYPE_PROTONAME,"Province",&dbv)) 
 	{	
 		_tcsncpy (pstProf->Province, dbv.ptszVal, sizeof(pstProf->Province)/sizeof(TCHAR));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
-	if(!DBGetContactSettingTString(NULL,SKYPE_PROTONAME,"City",&dbv)) 
+	if(!db_get_ts(NULL,SKYPE_PROTONAME,"City",&dbv)) 
 	{	
 		_tcsncpy (pstProf->City, dbv.ptszVal, sizeof(pstProf->City)/sizeof(TCHAR));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
-	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"OfficePhone",&dbv)) 
+	if(!db_get_s(NULL,SKYPE_PROTONAME,"OfficePhone",&dbv)) 
 	{	
 		strncpy (pstProf->OfficePhone, dbv.pszVal, sizeof(pstProf->OfficePhone));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
-	if(!DBGetContactSettingString(NULL,SKYPE_PROTONAME,"HomePhone",&dbv)) 
+	if(!db_get_s(NULL,SKYPE_PROTONAME,"HomePhone",&dbv)) 
 	{	
 		strncpy (pstProf->HomePhone, dbv.pszVal, sizeof(pstProf->HomePhone));
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
 }
 

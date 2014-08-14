@@ -25,9 +25,9 @@ BOOL	List_InsertSort(TYP_LIST *hPList,
 	int (*pPFunc)(const void *pstPElement,const void *pstPToFind),
 	void *pItem);
 
-#ifdef _INC_STDLIB
+//#ifdef _INC_STDLIB
 void List_Sort(TYP_LIST *pstHandle, int (*pFunc)(const void*,const void*));
-#else
+/*#else
 #undef RtlMoveMemory
 NTSYSAPI
 VOID
@@ -38,6 +38,6 @@ RtlMoveMemory (
    SIZE_T Length
    );
 
-#endif
+#endif*/
 
 #endif
