@@ -131,7 +131,7 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
 #ifdef MAPDND
 	ret |= PF2_LIGHTDND | PF2_HEAVYDND;
 #endif		
-			if (!DBGetContactSettingByte(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0))
+			if (!db_get_b(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0))
 				ret |= PF2_LONGAWAY | PF2_FREECHAT;
             break;
 
@@ -144,14 +144,13 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
 			if (mirandaVersion >= 0x070000) ret |= PF4_IMSENDUTF;
             break;
         case PFLAG_UNIQUEIDTEXT:
-            ret = (INT_PTR) "NAME";
+            ret = (INT_PTR)Translate("Skype ID");
             break;
         case PFLAG_UNIQUEIDSETTING:
             ret = (INT_PTR) SKYPE_NAME;
             break;
     }
-    return ret;
-		
+    return ret;	
 }
 
 INT_PTR SkypeGetName(WPARAM wParam, LPARAM lParam)
@@ -180,9 +179,9 @@ INT_PTR SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 
 INT_PTR SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
 {	DBVARIANT dbv;
-	if (!DBGetContactSettingString(NULL,SKYPE_PROTONAME, "AvatarFile", &dbv)){
+	if (!db_get_s(NULL,SKYPE_PROTONAME, "AvatarFile", &dbv)){
 		lstrcpynA((char*)wParam, dbv.pszVal, (int)lParam);
-		DBFreeVariant(&dbv);
+		db_free(&dbv);
 	}
 	return 0;
 }

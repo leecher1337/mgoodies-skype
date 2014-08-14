@@ -77,7 +77,7 @@ BOOL List_InsertElementAt(TYP_LIST *pstHandle, void *pItem, unsigned int uiPos)
 		if (!pstHandle->apStorage)
 			apNewStorage = (void **)HeapAlloc(pstHandle->hHeap, 0, sizeof(void *)*uiStep);
 		else
-			apNewStorage = HeapReAlloc (pstHandle->hHeap, 0, pstHandle->apStorage, sizeof(void *)*uiStep);
+			apNewStorage = (void **)HeapReAlloc (pstHandle->hHeap, 0, pstHandle->apStorage, sizeof(void *)*uiStep);
 		if (!apNewStorage)
 		{
 			LeaveCriticalSection (&pstHandle->cs);

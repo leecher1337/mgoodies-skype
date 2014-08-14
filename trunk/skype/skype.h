@@ -5,7 +5,6 @@
 #define CP_ACP		0 
 
 #define code_page CP_ACP;
-#define MIRANDA_CUSTOM_LP
 
 
 // System includes
@@ -14,34 +13,42 @@
 #include <commctrl.h>
 #include <process.h>
 #include <time.h>
-#include "resource.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include <shlobj.h>
 #include <time.h>
+
+#include "resource.h"
+#include "version.h"
 #include "util.h"
 
 #pragma warning (push)
 #pragma warning (disable: 4100) // unreferenced formal parameter
 
 // Miranda Includes
-#include "../../include/newpluginapi.h"
-#include "../../include/m_utils.h"
-#include "../../include/m_protosvc.h"
-#include "../../include/m_protomod.h"
-#include "../../include/m_skin.h"
-#include "../../include/m_message.h"
-#include "../../include/m_database.h"
-#include "../../include/m_clist.h"
-#include "../../include/m_system.h"
-#include "sdk/m_updater.h"
-#include "sdk/m_folders.h"
-#include "../../include/m_options.h"
-#include "../../include/m_langpack.h"
-#include "../../include/m_userinfo.h"
-#include "../../include/m_avatars.h"
-#include "../../include/m_contacts.h"
-#include "../../include/m_popup.h"
+#include <newpluginapi.h>
+#include <m_utils.h>
+#include <m_protosvc.h>
+#include <m_protomod.h>
+#include <m_skin.h>
+#include <m_message.h>
+#include <m_database.h>
+#include <m_clist.h>
+#include <m_system.h>
+#include <m_folders.h>
+#include <m_options.h>
+#include <m_langpack.h>
+#include <m_userinfo.h>
+#include <m_avatars.h>
+#include <m_contacts.h>
+#include <m_metacontacts.h>
+#include <m_popup.h>
+#include <m_core.h>
+#ifdef IS_MIRANDAIM
+#include <m_updater.h>
+#else
+#define MIRANDA_CUSTOM_LP
+#endif
 
 #pragma warning (pop)
 
@@ -139,7 +146,7 @@ int ShowMessageA(int iconID, char *lpzText, int mustShow);
 #define ShowMessageA ShowMessage
 #endif
 void EndCallThread(char *);
-void GetInfoThread(HANDLE);
+void GetInfoThread(void *);
 int OnDetailsInit( WPARAM, LPARAM );
 INT_PTR SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
 INT_PTR SkypeGetAvatarCaps(WPARAM wParam,LPARAM lParam);
@@ -164,18 +171,15 @@ INT_PTR SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeRegisterProxy(WPARAM wParam, LPARAM lParam);
 time_t SkypeTime(time_t *timer);
-void MessageSendWatchThread(HANDLE hContact);
+void MessageSendWatchThread(void*);
 int OkToExit(WPARAM wParam, LPARAM lParam);
 int MirandaExit(WPARAM wParam, LPARAM lParam);
 int __stdcall EnterBitmapFileName( char* szDest );
 void CleanupNicknames(char *dummy);
 int InitVSApi();
 int FreeVSApi();
-HANDLE GetMetaHandle(DWORD dwId);
+MCONTACT GetMetaHandle(DWORD dwId);
 void LaunchSkypeAndSetStatusThread(void *newStatus);
-
-// Write contact setting as UTF-8 for convenience, if possible. Older Miranda IM versions will store it as ANSI
-INT_PTR SkypeDBWriteContactSettingUTF8String(HANDLE hContact,const char *szModule,const char *szSetting,const char *val);
 
 // Structs
 
@@ -183,8 +187,3 @@ typedef struct {
 	char *SkypeSetting;
 	char *MirandaSetting;
 } settings_map;
-
-// Optional includes
-#ifdef USEPOPUP
-  #include "../../include/m_popup.h"
-#endif

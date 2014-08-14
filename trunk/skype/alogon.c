@@ -70,16 +70,16 @@ static  BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam)
 				// Set user name and password
 				DBVARIANT dbv;
 
-				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
+				if(!db_get_ws(NULL,SKYPE_PROTONAME,"LoginUserName",&dbv)) 
 				{
 					SendMessageW(userName, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
-					DBFreeVariant(&dbv);    
+					db_free(&dbv);    
 				}
 
-				if(!DBGetContactSettingWString(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
+				if(!db_get_ws(NULL,SKYPE_PROTONAME,"LoginPassword",&dbv)) 
 				{
 					SendMessageW(password, WM_SETTEXT, 0, (LPARAM)dbv.pwszVal);
-					DBFreeVariant(&dbv);
+					db_free(&dbv);
 					SendMessageW(password, WM_CHAR, 13, 0);
 				}
 
