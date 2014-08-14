@@ -37,63 +37,64 @@ RSC=rc.exe
 LINK32=link.exe
 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /pdb:"$(INTDIR)\skype.pdb" /out:"$(OUTDIR)/skype.dll" /implib:"$(INTDIR)\skype.lib" 
+CPPFL=/nologo /W3 /GX- /GR- /TC /I "src/ng-compat/" /I "../../include" /I "src/sdk/" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 !IF  "$(CFG)" == "Win64 Release"
 OUTDIR=.\Release64
 INTDIR=.\Release64
-CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=$(CPPFL) /MD /O2 /D "NDEBUG"
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 Release"
 OUTDIR=.\Release
 INTDIR=.\Release
-CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=$(CPPFL) /MD /O2 /D "NDEBUG"
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win64 Debug"
 OUTDIR=Debug64
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=$(CPPFL) /MDd /Gm /Zi /Od /D "_DEBUG" /GZ 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "_DEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 Debug"
 OUTDIR=.\Debug
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=$(CPPFL) /MDd /Gm /Zi /Od /D "_DEBUG" /GZ 
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "_DEBUG" 
 !ELSEIF  "$(CFG)" == "Win64 UNICODE Release"
 OUTDIR=.\Release64-UNICODE
 INTDIR=.\Release64-UNICODE
-CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE" /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=$(CPPFL) /MD /O2 /D "NDEBUG" /D "UNICODE" /D "_UNICODE"
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 UNICODE Release"
 OUTDIR=.\Release-UNICODE
 INTDIR=.\Release-UNICODE
-CPP_PROJ=/nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=$(CPPFL) /MD /O2 /D "NDEBUG" /D "UNICODE" /D "_UNICODE"
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:no 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "NDEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "NDEBUG" 
 !ELSEIF  "$(CFG)" == "Win64 UNICODE Debug"
 OUTDIR=Debug64-UNICODE
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c
+CPP_PROJ=$(CPPFL) /MDd /Gm /Zi /Od /D "_DEBUG" /D "UNICODE" /D "_UNICODE"  
 LINK32_FLAGS= $(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "_DEBUG" 
 !ELSEIF  "$(CFG)" == "Win32 UNICODE Debug"
 OUTDIR=.\Debug-UNICODE
 INTDIR=$(OUTDIR)
-CPP_PROJ=/nologo /MDd /W3 /Gm /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /D "UNICODE" /D "_UNICODE"  /Fp"$(INTDIR)\Skype_protocol.pch" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=$(CPPFL) /MDd /Gm /Zi /Od /D "_DEBUG" /D "UNICODE" /D "_UNICODE" /GZ
 LINK32_FLAGS=$(LINK32_FLAGS) /incremental:yes /debug /pdbtype:sept 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Skript1.res" /d "_DEBUG" 
+RSC_PROJ=/l 0xc07 /fo"$(INTDIR)\Resource.res" /d "_DEBUG" 
 !ENDIF
 
 LINK32_OBJS= \
@@ -113,7 +114,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\util.obj" \
 	"$(INTDIR)\msgq.obj" \
 	"$(INTDIR)\alogon.obj" \
-	"$(INTDIR)\Skript1.res"
+	"$(INTDIR)\Resource.res"
 
 ALL : "$(OUTDIR)\skype.dll"
 
@@ -123,7 +124,7 @@ CLEAN :
 	-@erase "$(INTDIR)\debug.obj"
 	-@erase "$(INTDIR)\gchat.obj"
 	-@erase "$(INTDIR)\pthread.obj"
-	-@erase "$(INTDIR)\Skript1.res"
+	-@erase "$(INTDIR)\Resource.res"
 	-@erase "$(INTDIR)\skype.obj"
 	-@erase "$(INTDIR)\skypeapi.obj"
 	-@erase "$(INTDIR)\skypeopt.obj"
@@ -150,7 +151,6 @@ CLEAN :
    $(CPP_PROJ) $< 
 <<
 
-
 "$(OUTDIR)\skype.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
@@ -166,73 +166,88 @@ CLEAN :
 !ENDIF 
 
 
-SOURCE=.\alogon.c
+SOURCE=.\src\alogon.c
 
 "$(INTDIR)\alogon.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\contacts.c
+SOURCE=.\src\contacts.c
 
 "$(INTDIR)\contacts.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\debug.c
+SOURCE=.\src\debug.c
 
 "$(INTDIR)\debug.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\gchat.c
+SOURCE=.\src\gchat.c
 
 "$(INTDIR)\gchat.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\msgq.c
+SOURCE=.\src\msgq.c
 
 "$(INTDIR)\msgq.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=.\src\msglist.c
 
-SOURCE=.\pthread.c
+"$(INTDIR)\msglist.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+SOURCE=.\src\memlist.c
+
+"$(INTDIR)\memlist.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+SOURCE=.\src\pthread.c
 
 "$(INTDIR)\pthread.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\skype.c
+SOURCE=.\src\skype.c
 
 "$(INTDIR)\skype.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\skypeapi.c
+SOURCE=.\src\skypeapi.c
 
 "$(INTDIR)\skypeapi.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\skypeopt.c
+SOURCE=.\src\skypeopt.c
 
 "$(INTDIR)\skypeopt.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\skypeprofile.c
+SOURCE=.\src\skypeprofile.c
 
 "$(INTDIR)\skypeprofile.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\skypesvc.c
+SOURCE=.\src\skypesvc.c
 
 "$(INTDIR)\skypesvc.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-SOURCE=.\utf8.c
+SOURCE=.\src\utf8.c
 
 "$(INTDIR)\utf8.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=.\src\util.c
 
-SOURCE=.\voiceservice.c
+"$(INTDIR)\util.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+SOURCE=.\src\voiceservice.c
 
 "$(INTDIR)\voiceservice.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+SOURCE=.\res\Resource.rc
 
-SOURCE=.\Skript1.rc
-
-"$(INTDIR)\Skript1.res" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\Resource.res" : $(SOURCE) "$(INTDIR)"
 	$(RSC) $(RSC_PROJ) $(SOURCE)
 
