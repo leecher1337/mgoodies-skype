@@ -249,5 +249,5 @@ SOURCE=.\src\voiceservice.c
 SOURCE=.\res\Resource.rc
 
 "$(INTDIR)\Resource.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) $(RSC_PROJ) $(SOURCE)
+	$(RSC) $(RSC_PROJ) /i "src\ng-compat\\" $(SOURCE)
 
