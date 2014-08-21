@@ -8,7 +8,6 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
-#include "..\src\version.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -378,51 +377,7 @@ IDI_INVISIBLE           ICON    DISCARDABLE     "invisible.ico"
 IDI_OFFLINE             ICON    DISCARDABLE     "offline.ico"
 IDI_PHONE               ICON    DISCARDABLE     "phone.ico"
 
-#ifndef _MAC
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,54
- PRODUCTVERSION 0,0,0,54
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x2L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "000004b0"
-        BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "Miranda IM community\0"
-            VALUE "FileDescription", __DESCRIPTION
-            VALUE "FileVersion", "0, 0, 0, 54\0"
-            VALUE "InternalName", __PLUGIN_NAME
-            VALUE "LegalCopyright", __COPYRIGHT
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", __FILENAME
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", __PLUGIN_NAME
-            VALUE "ProductVersion", "0, 0, 0, 54\0"
-            VALUE "SpecialBuild", "\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x0, 1200
-    END
-END
-
-#endif    // !_MAC
-
+#include "version.rc"
 
 /////////////////////////////////////////////////////////////////////////////
 //

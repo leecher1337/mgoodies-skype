@@ -105,7 +105,7 @@ LINK32=xilink6.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc07 /d "_DEBUG"
-# ADD RSC /l 0xc07 /d "_DEBUG"
+# ADD RSC /l 0xc07 /i "src\ng-compat\\" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
