@@ -68,9 +68,11 @@
 
 void Imo2sproxy_Defaults (IMO2SPROXY_CFG *pCfg)
 {
+	IMO2SCFG i2sc = IMO2SCFG_DEFAULT;
 	memset (pCfg, 0, sizeof(IMO2SPROXY_CFG));
 	pCfg->fpLog = stdout;
 	pCfg->logerror = fprintf;
+	pCfg->stImo2sCfg = i2sc;
 }
 
 /* Real implementation is now in socksproxy.c for the socket communication method

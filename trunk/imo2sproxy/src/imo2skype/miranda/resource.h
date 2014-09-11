@@ -26,14 +26,19 @@
 #define IDC_STARTSKYPEPL                1021
 #define IDC_STOPSKYPEPL                 1022
 #define IDC_USENETLIB                   1023
+#define IDC_FRSKIT                      1024
+#define IDC_SKBINDPORT                  1025
+#define IDC_BINDSKIT                    1026
+#define IDC_TXTSKPORT                   1027
+#define IDC_SKBINDIP                    1028
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        102
+#define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_CONTROL_VALUE         1029
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

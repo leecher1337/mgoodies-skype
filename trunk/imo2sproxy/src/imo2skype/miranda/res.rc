@@ -37,27 +37,48 @@ BEGIN
     LTEXT           "Password:",IDC_STATIC,135,20,47,9
     EDITTEXT        IDC_PASSWORD,185,18,56,12,ES_PASSWORD | ES_AUTOHSCROLL
     CONTROL         "Support for Voicecalls via imo.im Flash in Internet Explorer",
-                    IDC_INTERACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,42,
+                    IDC_INTERACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,39,
                     273,9
+    CONTROL         "Use Netlib instead of WinInet (Experimental)",
+                    IDC_USENETLIB,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,7,48,273,9
     CONTROL         "Ignore server timestamp and use current time for messages",
                     IDC_CURRTIMESTAMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    7,60,273,10
+                    7,57,273,10
+    GROUPBOX        "Skypekit",IDC_FRSKIT,7,41,273,27,NOT WS_VISIBLE
+    LTEXT           "Bind to address:",IDC_BINDSKIT,22,52,73,9,NOT 
+                    WS_VISIBLE
+    EDITTEXT        IDC_SKBINDIP,101,50,75,12,ES_AUTOHSCROLL | NOT 
+                    WS_VISIBLE
+    LTEXT           "Port:",IDC_TXTSKPORT,184,52,31,9,NOT WS_VISIBLE
+    EDITTEXT        IDC_SKBINDPORT,216,50,31,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_VISIBLE
     CONTROL         "Log traffic to file:",IDC_LOG,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,7,71,110,10
     EDITTEXT        IDC_LOGFILE,119,71,128,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_OPEN,248,71,14,12
+    CONTROL         "Console",IDC_CONSOLE,"Button",BS_AUTOCHECKBOX | 
+                    BS_PUSHLIKE | WS_TABSTOP,216,87,45,11
+    GROUPBOX        "Skype Plugin 0.0.0.46+ internal communication link",
+                    IDC_STATIC,7,102,273,25
+    CONTROL         "Use plugin link",IDC_USESKYPEPL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,18,113,105,9
+    LTEXT           "Status:",IDC_STATIC,126,113,29,10
+    LTEXT           "Stopped",IDC_STATUSSKYPEPL,158,113,54,9,SS_SUNKEN
+    PUSHBUTTON      "Start",IDC_STARTSKYPEPL,216,110,30,12
+    PUSHBUTTON      "Stop",IDC_STOPSKYPEPL,246,110,30,12,WS_DISABLED
+    GROUPBOX        "Socket Proxy",IDC_STATIC,7,129,273,45
+    CONTROL         "Use Socket Proxy",IDC_USESOCKS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,18,140,81,9
     LTEXT           "Status:",IDC_STATIC,126,140,29,10
     LTEXT           "Stopped",IDC_STATUSSOCKS,157,140,54,9,SS_SUNKEN
-    GROUPBOX        "Socket Proxy",IDC_STATIC,7,129,273,45
+    PUSHBUTTON      "Start",IDC_STARTSOCKS,216,137,30,12
+    PUSHBUTTON      "Stop",IDC_STOPSOCKS,246,137,30,12,WS_DISABLED
     LTEXT           "Bind to address:",IDC_STATIC,17,157,73,9
     COMBOBOX        IDC_BINDIP,95,155,75,12,CBS_DROPDOWN | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
     LTEXT           "Port:",IDC_STATIC,179,157,31,9
     EDITTEXT        IDC_BINDPORT,211,155,31,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Use Socket Proxy",IDC_USESOCKS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,18,140,81,9
-    PUSHBUTTON      "Start",IDC_STARTSOCKS,216,137,30,12
-    PUSHBUTTON      "Stop",IDC_STOPSOCKS,246,137,30,12,WS_DISABLED
     GROUPBOX        "Skype compatible communication API",IDC_STATIC,7,177,
                     273,40
     LTEXT           "Caution: Don't use this if you have the Skype application running!",
@@ -68,19 +89,6 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,18,201,105,9
     PUSHBUTTON      "Start",IDC_STARTCOMM,216,198,30,12
     PUSHBUTTON      "Stop",IDC_STOPCOMM,246,198,30,12,WS_DISABLED
-    CONTROL         "Console",IDC_CONSOLE,"Button",BS_AUTOCHECKBOX | 
-                    BS_PUSHLIKE | WS_TABSTOP,216,87,45,11
-    GROUPBOX        "Skype Plugin 0.0.0.46+ internal communication link",
-                    IDC_STATIC,7,102,273,25
-    LTEXT           "Status:",IDC_STATIC,126,113,29,10
-    LTEXT           "Stopped",IDC_STATUSSKYPEPL,158,113,54,9,SS_SUNKEN
-    CONTROL         "Use plugin link",IDC_USESKYPEPL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,18,113,105,9
-    PUSHBUTTON      "Start",IDC_STARTSKYPEPL,216,110,30,12
-    PUSHBUTTON      "Stop",IDC_STOPSKYPEPL,246,110,30,12,WS_DISABLED
-    CONTROL         "Use Netlib instead of WinInet (Experimental)",
-                    IDC_USENETLIB,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,7,51,273,9
 END
 
 

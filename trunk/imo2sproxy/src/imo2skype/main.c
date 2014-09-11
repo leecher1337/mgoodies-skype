@@ -49,13 +49,24 @@ int main(int argc, char **argv)
 	if (argc<3)
 	{
 		printf ("imo.im Skypeproxy V1.15 - (c) by leecher 2009-2012\n\n"
-			"%s [-d] [-v [-l <Logfile>]] [-t] [-i]\n"
+			"%s [-d] [-v [-l <Logfile>]] "
+#ifndef SKYPEKIT
+			"[-t] [-i]\n"
+#else
+			"[-kh <host>] [-kp <port>]\n"
+#endif
 			"[-m<s|a>] [-h <Bind to IP>] [-p <Port>] <Username> <Password>\n\n"
 			"-d\t- Daemonize (detach from console)\n"
 			"-v\t- Verbose mode, log commands to console\n"
 			"-l\t- Set logfile to redirect verbose log to.\n"
+#ifndef SKYPEKIT
 			"-t\t- Ignore server timestamp and use current time for messages\n"
 			"-i\t- Use interactive mode (starts imo.im flash app upon call)\n"
+#else
+			"-k\t- Specify SkypeKit connection parameters\n"
+			"\t\th\tHost (default: localhost)\n"
+			"\t\tp\tPort (default: 8963)\n"
+#endif
 			"-m\t- Specify connection mode to use:\n"
 			"\t\ts\tSocket mode (SkypeProxy protocol) [default]\n"
 #ifdef WIN32
@@ -108,12 +119,39 @@ int main(int argc, char **argv)
 				}
 				stSocksCfg.sPort = atoi(argv[++i]);
 				break;
+#ifndef SKYPEKIT
 			case 't':
-				stCfg.iFlags |= IMO2S_FLAG_CURRTIMESTAMP;
+				stCfg.stImo2sCfg |= IMO2S_FLAG_CURRTIMESTAMP;
 				break;
 			case 'i':
-				stCfg.iFlags |= IMO2S_FLAG_ALLOWINTERACT;
+				stCfg.stImo2sCfg |= IMO2S_FLAG_ALLOWINTERACT;
 				break;
+#else
+			case 'k':
+				switch (argv[i][2])
+				{
+				case 'h':
+					if (argc<=i+1)
+					{
+						fprintf (stderr, "Please specify host for -kh\n");
+						return EXIT_FAILURE;
+					}
+					lstrcpyn(stCfg.stImo2sCfg.szHost, argv[++i], sizeof(stCfg.stImo2sCfg.szHost));
+					break;
+				case 'p':
+					if (argc<=i+1)
+					{
+						fprintf (stderr, "Please specify port for -kp\n");
+						return EXIT_FAILURE;
+					}
+					stCfg.stImo2sCfg.sPort = atoi(argv[++i]);
+					break;
+				default:
+					fprintf (stderr, "Unknown SkypeKit option: %c\n", argv[i][2]);
+					return EXIT_FAILURE;
+				}
+				break;
+#endif
 			case 'm':
 				switch (argv[i][2])
 				{

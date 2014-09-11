@@ -95,7 +95,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg);
 // Interface
 // -----------------------------------------------------------------------------
 
-IMOSAPI *Imo2S_Init(IMO2SCB Callback, void *pUser, int iFlags)
+IMOSAPI *Imo2S_Init(IMO2SCB Callback, void *pUser, IMO2SCFG iFlags)
 {
 	IMOSAPI *pInst = calloc(1, sizeof(IMOSAPI));
 

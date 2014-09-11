@@ -215,7 +215,7 @@ static LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 					if (hProxy->pCfg->bVerbose && hProxy->pCfg->fpLog)
 						fprintf (hProxy->pCfg->fpLog, "Imo2sproxy::SkypeControlAPIDiscover\n");
 
-					if (!(pInst->hInst = Imo2S_Init(EventHandler, pInst, hProxy->pCfg->iFlags)))
+					if (!(pInst->hInst = Imo2S_Init(EventHandler, pInst, hProxy->pCfg->stImo2sCfg)))
 					{
 						hProxy->pCfg->logerror (stderr, "Connection %08X: Cannot start Imo2Skype instance.\n", pInst->hWnd);
 						free (List_Pop(hProxy->hClients));
