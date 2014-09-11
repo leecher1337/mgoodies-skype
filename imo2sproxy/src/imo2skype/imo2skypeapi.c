@@ -237,12 +237,14 @@ int Imo2S_Send (IMOSAPI *pInst, char *pszMsg)
 			HandleMessage (pInst, pszDup);
 			if (strncasecmp (pszRealMsg+15, "OFFLINE", 7) == 0)
 				Imo2S_Logout(pInst);
+			pInst->pszCmdID = NULL;
 			free (pszDup);
 			return 0;
 		}
 	}
 	if (pInst->iLoginStat != 1) return -1;
 	HandleMessage(pInst, pszDup);
+	pInst->pszCmdID = NULL;
 	free (pszDup);
 	return 0;
 }
@@ -379,7 +381,7 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 						}
 						else BuddyList_SetStatus(pInst->hBuddyList, pItem);
 
-						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0 ||
+						if ((!pGroup || strcmp(pGroup->valuestring, "Skype")==0 || strcmp(pGroup->valuestring, "Buddies")==0 ||
 							strcmp(pGroup->valuestring, "Offline")==0) && !pType)
 						{
 							// Normal user, not groupchat, so output this
@@ -508,6 +510,20 @@ static int StatusCallback (cJSON *pMsg, void *pUser)
 							BuddyList_Remove (pInst->hBuddyList, pNick);
 					}
 				}
+			}
+		}
+		else if (!strcmp(pszName, "buddy_request"))
+		{
+			cJSON *pItem = cJSON_GetObjectItem(pContent,"edata"), *pBuid;
+			char *pszUser;
+
+			if (pItem && (pBuid = cJSON_GetObjectItem(pItem, "buid")) && (pszUser = pBuid->valuestring))
+			{
+				NICKENTRY *pNick = BuddyList_AddTemporaryUser (pInst->hBuddyList, pszUser);
+
+				pNick->pszAuthMsg = strdup(cJSON_GetObjectItem(pItem, "msg")->valuestring);
+				pNick->bIsAuthorized = FALSE;
+				Send (pInst, "USER %s RECEIVEDAUTHREQUEST %s", pszUser, pNick->pszAuthMsg);
 			}
 		}
 		else
@@ -1067,7 +1083,7 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				for (i=0; i<nCount; i++)
 				{
 					NICKENTRY *pEntry = List_ElementAt(pInst->hBuddyList, i);
-					if (!pEntry->pGroup && !pEntry->hGCMembers)
+					if (!pEntry->pGroup && !pEntry->hGCMembers && pEntry->bIsAuthorized)
 					{
 						if (i>0) Fifo_AddString (hFifo, ", ");
 						Fifo_AddString (hFifo, pEntry->pszUser);
@@ -1116,7 +1132,28 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 		}
 		else if (strcasecmp(pszCmd, "USERSWAITINGMYAUTHORIZATION") == 0)
 		{
-			Send (pInst, "USERS");
+			unsigned int nCount;
+			char *pszUsers;
+
+			if ((hFifo=Fifo_Init(128)))
+			{
+				unsigned int i, j=0;
+
+				for (i=0, nCount=List_Count(pInst->hBuddyList); i<nCount; i++)
+				{
+					NICKENTRY *pEntry = List_ElementAt(pInst->hBuddyList, i);
+
+					if (!pEntry->bIsAuthorized)
+					{
+						if (j>0) Fifo_AddString (hFifo, ", ");
+						Fifo_AddString (hFifo, pEntry->pszUser);
+						j++;
+					}
+				}
+				pszUsers = Fifo_Get(hFifo, NULL);
+				Send (pInst, "USERS %s", pszUsers?pszUsers:"");
+				Fifo_Exit(hFifo);
+			}
 		}
 		else if (strcasecmp(pszCmd, "ACTIVECALLS") == 0)
 		{
@@ -1198,8 +1235,10 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 				Send (pInst, "USER %s HASCALLEQUIPMENT TRUE", pUser->pszUser);
 			else if (!strcasecmp (pszCmd, "BUDDYSTATUS"))
 				Send (pInst, "USER %s BUDDYSTATUS %d", pUser->pszUser, pUser->iBuddyStatus);
+			else if (!strcasecmp (pszCmd, "RECEIVEDAUTHREQUEST") && pUser->pszAuthMsg)
+				Send (pInst, "USER %s RECEIVEDAUTHREQUEST %s", pUser->pszUser, pUser->pszAuthMsg);
 			else if (!strcasecmp (pszCmd, "ISAUTHORIZED"))
-				Send (pInst, "USER %s ISAUTHORIZED TRUE", pUser->pszUser);
+				Send (pInst, "USER %s ISAUTHORIZED %s", pUser->pszUser, pUser->bIsAuthorized?"TRUE":"FALSE");
 			else if (!strcasecmp (pszCmd, "MOOD_TEXT"))
 				Send (pInst, "USER %s MOOD_TEXT %s", pUser->pszUser, 
 					pUser->pszStatusText?pUser->pszStatusText:"");
@@ -1551,8 +1590,62 @@ static void HandleMessage(IMOSAPI *pInst, char *pszMsg)
 			}
 			else
 			{
-			// ISAUTHORIZED
-			Send (pInst, "ERROR 7 Not implemented");
+				if (strcasecmp(pszCmd, "ISAUTHORIZED") == 0)
+				{
+					if (!(pszCmd = strtok(NULL, " ")))
+					{
+						Send (pInst, "ERROR 7 Invalid property");
+						return;
+					}
+					if (strcasecmp(pszCmd, "FALSE")==0)
+					{
+						ImoSkype_AuthDeny(pInst->hInst, pszUser);
+						// Remove from Userlist, so that it doesn't show up in awaiting auth list anymode
+						BuddyList_Remove (pInst->hBuddyList, pUser);
+						return;
+					}
+					else if (strcasecmp(pszCmd, "TRUE")==0)
+					{
+						ImoSkype_AuthAdd(pInst->hInst, pszUser);
+						pUser->bIsAuthorized = TRUE;
+						return;
+					}
+					else 
+					{
+						Send (pInst, "ERROR 7 Invalid property");
+						return;
+					}
+				}
+				else if (strcasecmp(pszCmd, "ISBLOCKED") == 0)
+				{
+					if (!(pszCmd = strtok(NULL, " ")))
+					{
+						Send (pInst, "ERROR 7 Invalid property");
+						return;
+					}
+					if (strcasecmp(pszCmd, "FALSE")==0)
+					{
+						ImoSkype_UnblockBuddy(pInst->hInst, pszUser);
+						return;
+					}
+					else if (strcasecmp(pszCmd, "TRUE")==0)
+					{
+						if (pUser->bIsAuthorized == FALSE) {
+							ImoSkype_AuthBlock(pInst->hInst, pszUser);
+							// Remove from Userlist, so that it doesn't show up in awaiting auth list anymode
+							BuddyList_Remove (pInst->hBuddyList, pUser);
+						} else {
+							ImoSkype_BlockBuddy(pInst->hInst, pszUser); 
+						}
+						return;
+					}
+					else 
+					{
+						Send (pInst, "ERROR 7 Invalid property");
+						return;
+					}
+				}
+				else Send (pInst, "ERROR 7 Not implemented");
 			}
 		}
 		else

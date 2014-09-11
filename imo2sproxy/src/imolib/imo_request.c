@@ -154,8 +154,8 @@ char *ImoRq_PostImo(IMORQ *hRq, char *pszMethod, cJSON *data)
 	if (!(pszData = cJSON_Print(data))) return NULL;
 printf ("-> %s\n", pszData);
 #ifdef _WIN32
-OutputDebugString (pszData);
-OutputDebugString ("\n");
+////OutputDebugString (pszData);
+////OutputDebugString ("\n");
 #endif
 	pszEscData = hRq->hIO->EscapeString(hRq->hIO, pszData);
 	free (pszData);

@@ -173,6 +173,10 @@ SOURCE=..\src\imo2skype\w32skypeemu.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\src\imo2skype\avatarlist.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\imo2skype\buddylist.h
 # End Source File
 # Begin Source File

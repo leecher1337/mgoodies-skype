@@ -69,22 +69,25 @@ BOOL BuddyList_Insert(TYP_LIST *hList, cJSON *pNick)
 	}
 	SetEntry(pEntry, pNick);
 	pEntry->iBuddyStatus = 3;
+	pEntry->bIsAuthorized = TRUE;
 	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
 
-BOOL BuddyList_AddTemporaryUser(TYP_LIST *hList, char *pszUser)
+NICKENTRY *BuddyList_AddTemporaryUser(TYP_LIST *hList, char *pszUser)
 {
 	NICKENTRY *pEntry;
 	
-	if (BuddyList_Find (hList, pszUser)) return TRUE;
-	if (!(pEntry = calloc (1, sizeof(NICKENTRY)))) return FALSE;
+	if (pEntry = BuddyList_Find (hList, pszUser)) return pEntry;
+	if (!(pEntry = calloc (1, sizeof(NICKENTRY)))) return NULL;
 	pEntry->pszUser = strdup(pszUser);
 	pEntry->pszAlias = strdup(pszUser);
 	strcpy (pEntry->szStatus, "OFFLINE");
 	pEntry->iBuddyStatus = 2;
-	return List_Push(hList, pEntry);
+	pEntry->bIsAuthorized = TRUE;
+	List_Push(hList, pEntry);
+	return pEntry;
 }
 
 // -----------------------------------------------------------------------------
