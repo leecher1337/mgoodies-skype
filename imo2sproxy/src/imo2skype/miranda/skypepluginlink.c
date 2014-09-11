@@ -132,7 +132,7 @@ static int InitProxy(IMO2SPROXY_INST *hProxy)
 
 	if (!hProxy->stClient.hInst)
 	{
-		if (!(hProxy->stClient.hInst = Imo2S_Init(EventHandler, &hProxy->stClient, hProxy->pCfg->iFlags)))
+		if (!(hProxy->stClient.hInst = Imo2S_Init(EventHandler, &hProxy->stClient, hProxy->pCfg->stImo2sCfg)))
 		{
 			hProxy->pCfg->logerror (stderr, "SkypePluginLink: Cannot start Imo2Skype instance.\n");
 			return -1;

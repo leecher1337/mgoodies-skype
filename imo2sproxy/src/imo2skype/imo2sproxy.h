@@ -8,7 +8,7 @@ typedef struct
 {
 	int bVerbose;
 	FILE *fpLog;
-	int iFlags;
+	IMO2SCFG stImo2sCfg;
 	int (__cdecl *logerror)( FILE *stream, const char *format, ...);
 // FIXME: user+pass from cmdline, until there is a possibility for 
 // a client to authenticate

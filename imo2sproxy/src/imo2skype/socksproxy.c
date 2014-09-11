@@ -179,7 +179,7 @@ static void DispatcherThread(void *pUser)
 	if (pInst->hProxy->pCfg->bVerbose && pInst->hProxy->pCfg->fpLog)
 		fprintf (pInst->hProxy->pCfg->fpLog, "Imo2sproxy::DispatcherThread()\n");
 
-	if (!(pInst->hInst = Imo2S_Init(EventHandler, pInst, pInst->hProxy->pCfg->iFlags)))
+	if (!(pInst->hInst = Imo2S_Init(EventHandler, pInst, pInst->hProxy->pCfg->stImo2sCfg)))
 	{
 		pInst->hProxy->pCfg->logerror (stderr, "Connection %d: Cannot start Imo2Skype instance.\n", pInst->hSock);
 		FreeConnection (pInst);

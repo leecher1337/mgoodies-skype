@@ -15,9 +15,11 @@
 #include <process.h> 
 #pragma comment (lib, "Ws2_32.lib")
 #include <stdio.h>
-#include "io_layer.h"
 #include "imo2sproxy.h"
+#ifndef SKYPEKIT
+#include "io_layer.h"
 #include "imo_request.h"
+#endif
 #include "socksproxy.h"
 #include "w32skypeemu.h"
 #include "skypepluginlink.h"
@@ -165,7 +167,9 @@ static void LoadSettings(void)
 			DBFreeVariant(&dbv); 
 		}
 	}
-	m_stCfg.iFlags = DBGetContactSettingDword(NULL, "IMOPROXY", "Flags", 0);
+#ifndef SKYPEKIT
+	m_stCfg.stImo2sCfg = DBGetContactSettingDword(NULL, "IMOPROXY", "Flags", 0);
+#endif
 	if (DBGetContactSetting(NULL, "IMOPROXY", "User", &dbv)==0)
 	{
 		if (m_stCfg.pszUser) free(m_stCfg.pszUser);
@@ -275,8 +279,9 @@ static BOOL EnumNetInterfaces (HWND hwndControl)
 
 // -----------------------------------------------------------------------------
 
-static DWORD WINAPI ProxyThread(IMO2SPROXY *pProxy)
+static unsigned int WINAPI ProxyThread(void *pPProxy)
 {
+	IMO2SPROXY *pProxy = (IMO2SPROXY *)pPProxy;
 	if (pProxy->Open(pProxy)<0) return -1;
 	SetEvent (m_hEvent);
 	pProxy->Loop(pProxy);
@@ -430,7 +435,8 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	static char szOldHost[64]={0}, szOldLog[MAX_PATH]={0}, szOldUser[64], szOldPass[64];
 	static short sOldPort=0;
 	static BOOL bOldVerbose=FALSE;
-	static int iOldFlags = 0, iOldProxies;
+	static int iOldProxies;
+	static IMO2SCFG stOldImo2sCfg = IMO2SCFG_DEFAULT;
 
 	switch (uMsg)
 	{
@@ -447,9 +453,28 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			} else lstrcpy (szOldHost, "127.0.0.1");
 			SetDlgItemText (hWnd, IDC_BINDIP,szOldHost);
 			SetDlgItemInt (hWnd, IDC_BINDPORT, sOldPort = DBGetContactSettingWord(NULL, "IMOPROXY", "Port", 1401), FALSE);
-			iOldFlags = DBGetContactSettingDword(NULL, "IMOPROXY", "Flags", 0);
-			if (iOldFlags & IMO2S_FLAG_ALLOWINTERACT) CheckDlgButton (hWnd, IDC_INTERACT, BST_CHECKED);
-			if (iOldFlags & IMO2S_FLAG_CURRTIMESTAMP) CheckDlgButton (hWnd, IDC_CURRTIMESTAMP, BST_CHECKED);
+#ifndef SKYPEKIT
+			stOldImo2sCfg = DBGetContactSettingDword(NULL, "IMOPROXY", "Flags", 0);
+			if (stOldImo2sCfg & IMO2S_FLAG_ALLOWINTERACT) CheckDlgButton (hWnd, IDC_INTERACT, BST_CHECKED);
+			if (stOldImo2sCfg & IMO2S_FLAG_CURRTIMESTAMP) CheckDlgButton (hWnd, IDC_CURRTIMESTAMP, BST_CHECKED);
+#else
+			ShowWindow(GetDlgItem(hWnd, IDC_INTERACT), SW_HIDE);
+			ShowWindow(GetDlgItem(hWnd, IDC_CURRTIMESTAMP), SW_HIDE);
+			ShowWindow(GetDlgItem(hWnd, IDC_USENETLIB), SW_HIDE);
+			ShowWindow(GetDlgItem(hWnd, IDC_FRSKIT), SW_SHOW);
+			ShowWindow(GetDlgItem(hWnd, IDC_BINDSKIT), SW_SHOW);
+			ShowWindow(GetDlgItem(hWnd, IDC_TXTSKPORT), SW_SHOW);
+			ShowWindow(GetDlgItem(hWnd, IDC_SKBINDPORT), SW_SHOW);
+			ShowWindow(GetDlgItem(hWnd, IDC_SKBINDIP), SW_SHOW);
+			if (DBGetContactSetting(NULL, "IMOPROXY", "SkypeKitHost", &dbv)==0)
+			{
+				lstrcpyn (stOldImo2sCfg.szHost, dbv.pszVal, sizeof(stOldImo2sCfg.szHost));
+				DBFreeVariant(&dbv); 
+			}
+			SetDlgItemText (hWnd, IDC_SKBINDIP,stOldImo2sCfg.szHost);
+			SetDlgItemInt (hWnd, IDC_SKBINDPORT, 
+				stOldImo2sCfg.sPort = DBGetContactSettingWord(NULL, "IMOPROXY", "SkypeKitPort", stOldImo2sCfg.sPort), FALSE);
+#endif
 			if (DBGetContactSetting(NULL, "IMOPROXY", "Logfile", &dbv)==0)
 			{
 				lstrcpyn (szOldLog, dbv.pszVal, sizeof(szOldLog));
@@ -510,7 +535,8 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				case PSN_APPLY:
 				case PSN_KILLACTIVE:
 				{
-					int iFlags=0, iProxies=0;
+					int iProxies=0;
+					IMO2SCFG stImo2sCfg = IMO2SCFG_DEFAULT;
 					short sPort;
 					char szHost[64], szLog[MAX_PATH], szUser[64], szPass[64];
 					BOOL bVerbose;
@@ -519,15 +545,23 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					DBWriteContactSettingString (NULL, "IMOPROXY", "Host", szHost);
 					DBWriteContactSettingWord (NULL, "IMOPROXY", "Port", 
 						(sPort = GetDlgItemInt (hWnd, IDC_BINDPORT, NULL, FALSE)));
+#ifndef SKYPEKIT
 					if (IsDlgButtonChecked (hWnd, IDC_INTERACT)==BST_CHECKED)
-						iFlags|=IMO2S_FLAG_ALLOWINTERACT;
+						stImo2sCfg|=IMO2S_FLAG_ALLOWINTERACT;
 					if (IsDlgButtonChecked (hWnd, IDC_CURRTIMESTAMP)==BST_CHECKED)
-						iFlags|=IMO2S_FLAG_CURRTIMESTAMP;
+						stImo2sCfg|=IMO2S_FLAG_CURRTIMESTAMP;
+					DBWriteContactSettingDword (NULL, "IMOPROXY", "Flags", stImo2sCfg);
+#else
+					memcpy(&stImo2sCfg, &stOldImo2sCfg, sizeof(stImo2sCfg));
+					GetDlgItemText (hWnd, IDC_SKBINDIP, stImo2sCfg.szHost, sizeof(stImo2sCfg.szHost));
+					DBWriteContactSettingString (NULL, "IMOPROXY", "SkypeKitHost", stImo2sCfg.szHost);
+					DBWriteContactSettingWord (NULL, "IMOPROXY", "SkypeKitPort", 
+						(stImo2sCfg.sPort = GetDlgItemInt (hWnd, IDC_SKBINDPORT, NULL, FALSE)));
+#endif
 					GetDlgItemText (hWnd, IDC_USERNAME, szUser, sizeof(szUser));
 					DBWriteContactSettingString (NULL, "IMOPROXY", "User", szUser);
 					GetDlgItemText (hWnd, IDC_PASSWORD, szPass, sizeof(szPass));
 					DBWriteContactSettingString (NULL, "IMOPROXY", "Password", szPass);
-					DBWriteContactSettingDword (NULL, "IMOPROXY", "Flags", iFlags);
 					DBWriteContactSettingByte(NULL, "IMOPROXY", "Verbose", 
 						(char)(bVerbose = (IsDlgButtonChecked (hWnd, IDC_LOG)==BST_CHECKED)));
 					GetDlgItemText (hWnd, IDC_LOGFILE, szLog, sizeof(szLog));
@@ -547,7 +581,7 @@ static int CALLBACK OptionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 					if (lstrcmp (szOldLog, szLog) || bOldVerbose != bVerbose ||
 						lstrcmp (szOldUser, szUser) || lstrcmp(szOldPass, szPass) ||
-						iFlags != iOldFlags)
+						memcmp(&stImo2sCfg, &stOldImo2sCfg, sizeof(stImo2sCfg)))
 						iProxies=(1<<PROXY_MAX)-1;
 
 					/*
@@ -803,11 +837,13 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam)
 	if (CheckSkype == 2) DBWriteContactSettingByte (NULL, "IMOPROXY", "CheckSkype", 0);
 	RegisterToUpdate();
 
+#ifndef SKYPEKIT
 	// On Miranda 0.0.0.8+ NETLIB suppotrs HTTPS, therefore we can use 
 	// Netlib there
 	if (CallService (MS_SYSTEM_GETVERSION, 0, 0) >= 0x080000 &&
 		DBGetContactSettingByte (NULL, "IMOPROXY", "UseNetlib", 0))
 		ImoRq_SetIOLayer (IoLayerNETLIB_Init);
+#endif
 	StartProxies(-1);
 
 	return 0;
