@@ -65,7 +65,7 @@ void *List_Pop (TYP_LIST *pstHandle)
 
 BOOL List_ReplaceElementAt(TYP_LIST *pstHandle, void *pItem, unsigned int uiPos)
 {
-	if (uiPos >= pstHandle->uiCount) return NULL;
+	if (uiPos >= pstHandle->uiCount) return FALSE;
 	pstHandle->apStorage[uiPos]=pItem;
 	return TRUE;
 }

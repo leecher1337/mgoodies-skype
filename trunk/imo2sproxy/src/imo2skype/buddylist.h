@@ -9,9 +9,11 @@ struct tag_nickentry
 	char *pszUser;
 	char *pszStatusText;
 	char szStatus[16];
+	char *pszAuthMsg;		// If iBuddyStatus = 2 and user requested auth, this is the auth text
 	char *pszAlias;
 	char *pszDisplay;		// Display name, on Groupchat it is topic
 	int  iBuddyStatus;
+	BOOL bIsAuthorized;		// Is user authorized by current user?
 	TYP_LIST *hGCMembers;	// List of groupchat members, if this is a groupchat
 	NICKENTRY *pGroup;		// Uplink to Chatgroup, if Groupchat-Member
 };
@@ -20,7 +22,7 @@ TYP_LIST *BuddyList_Init(void);
 void BuddyList_Exit(TYP_LIST *hList);
 
 BOOL BuddyList_Insert(TYP_LIST *hList, cJSON *pNick);
-BOOL BuddyList_AddTemporaryUser(TYP_LIST *hList, char *pszUser);
+NICKENTRY *BuddyList_AddTemporaryUser(TYP_LIST *hList, char *pszUser);
 BOOL BuddyList_Remove(TYP_LIST *hList, NICKENTRY *pEntry);
 NICKENTRY *BuddyList_Find(TYP_LIST *hList, char *pszUser);
 BOOL BuddyList_SetStatus(TYP_LIST *hList, cJSON *pNick);

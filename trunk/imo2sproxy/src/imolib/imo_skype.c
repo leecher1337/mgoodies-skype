@@ -518,6 +518,31 @@ int ImoSkype_GroupLeave(IMOSKYPE *hSkype, char *pszGroup)
 }
 
 // -----------------------------------------------------------------------------
+
+/* pszMethod:
+ *	auth_add
+ *  auth_deny
+ *  auth_block
+ */
+int ImoSkype_AuthReq(IMOSKYPE *hSkype, char *pszBuddy, char *pszMethod)
+{
+	cJSON *root;
+	char *pszRet;
+	int iRet = -1;
+
+	if (!hSkype->pszUser || !(root=cJSON_CreateObject())) return 0;
+	cJSON_AddStringToObject(root, "ssid", ImoRq_SessId(hSkype->hRq));
+	cJSON_AddStringToObject(root, "uid", hSkype->pszUser);
+	cJSON_AddStringToObject(root, "proto", PROTO);
+	cJSON_AddStringToObject(root, "buid", pszBuddy);
+	if (pszRet = ImoRq_PostAmy(hSkype->hRq, pszMethod, root))
+		iRet = CheckReturn(hSkype, pszRet, "ok")>0;
+	cJSON_Delete(root);
+	return iRet;
+}
+
+
+// -----------------------------------------------------------------------------
 // Static
 // -----------------------------------------------------------------------------
 static void PostDisconnect(IMOSKYPE *hSkype)

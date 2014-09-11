@@ -336,8 +336,8 @@ static char *IoLayer_Post(IOLAYER *hPIO, char *pszURL, char *pszPostFields, unsi
 	InternetCloseHandle (hIO->hRequest);
 	hIO->hRequest = NULL;
 	InternetCloseHandle (hUrl);
-OutputDebugString(p);
-OutputDebugString("\n");
+////OutputDebugString(p);
+////OutputDebugString("\n");
 	return p;
 }
 

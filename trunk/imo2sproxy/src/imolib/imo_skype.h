@@ -29,7 +29,10 @@ int ImoSkype_Ping(IMOSKYPE *hSkype);
 char *ImoSkype_GetAvatar(IMOSKYPE *hSkype, char *pszID, unsigned int *pdwLength);
 int ImoSkype_GetUnreadMsgs(IMOSKYPE *hSkype);
 int ImoSkype_GetAlpha(IMOSKYPE *hSkype);
-
+int ImoSkype_AuthReq(IMOSKYPE *hSkype, char *pszBuddy, char *pszMethod);
+#define ImoSkype_AuthAdd(hSkype,pszBuddy) ImoSkype_AuthReq(hSkype,pszBuddy,"auth_add");
+#define ImoSkype_AuthDeny(hSkype,pszBuddy) ImoSkype_AuthReq(hSkype,pszBuddy,"auth_deny");
+#define ImoSkype_AuthBlock(hSkype,pszBuddy) ImoSkype_AuthReq(hSkype,pszBuddy,"auth_block");
 int ImoSkype_CreateSharedGroup(IMOSKYPE *hSkype, char *pszName);
 int ImoSkype_GroupInvite(IMOSKYPE *hSkype, char *pszGroup, char *pszUser);
 int ImoSkype_GroupKick(IMOSKYPE *hSkype, char *pszGroup, char *pszUser);
