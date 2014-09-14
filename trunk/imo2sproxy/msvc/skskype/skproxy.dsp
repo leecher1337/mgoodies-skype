@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\src\common" /I "..\..\src\imo2skype" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\api" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\ipc" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\types" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading\win" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\VideoBuffers" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\platform\se" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include\openssl" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\ctaocrypt\include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "SKYPEKIT" /D "SSL_LIB_CYASSL" /D "NO_FILESYSTEM" /D "NO_RABBIT" /D "NO_HC128" /D "NO_DES" /D "NO_DSA" /D "HAVE_CONFIG_H" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\src\common" /I "..\..\src\imo2skype" /I "F:\miranda09_src\miranda" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\api" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\ipc" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\types" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading\win" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\VideoBuffers" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\platform\se" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include\openssl" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\ctaocrypt\include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /D "SKYPEKIT" /D "SSL_LIB_CYASSL" /D "NO_FILESYSTEM" /D "NO_RABBIT" /D "NO_HC128" /D "NO_DES" /D "NO_DSA" /D "HAVE_CONFIG_H" /YX /FD /c
 # ADD BASE RSC /l 0x407 /d "NDEBUG"
 # ADD RSC /l 0x407 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -50,7 +50,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /dll /machine:I386 /out:"Release/imoproxy.dll"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "skproxy - Win32 Debug"
 
@@ -66,7 +67,7 @@ LINK32=xilink6.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\src\common" /I "..\..\src\imo2skype" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\api" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\ipc" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\types" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading\win" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\VideoBuffers" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\platform\se" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include\openssl" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\ctaocrypt\include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "SKYPEKIT" /D "SSL_LIB_CYASSL" /D "NO_FILESYSTEM" /D "NO_RABBIT" /D "NO_HC128" /D "NO_DES" /D "NO_DSA" /D "HAVE_CONFIG_H" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\src\common" /I "..\..\src\imo2skype" /I "F:\miranda09_src\miranda" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\api" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\ipc" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\types" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\interfaces\skype\cpp_embedded\src\platform\threading\win" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\VideoBuffers" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\platform\se" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\include\openssl" /I "F:\miranda09_src\miranda-private-keys\SkypeKit\SDK\ipc\cpp\ssl\cyassl\ctaocrypt\include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_USRDLL" /D "imoproxy_EXPORTS" /D "SKYPEKIT" /D "SSL_LIB_CYASSL" /D "NO_FILESYSTEM" /D "NO_RABBIT" /D "NO_HC128" /D "NO_DES" /D "NO_DSA" /D "HAVE_CONFIG_H" /FR /YX /FD /GZ /c
 # ADD BASE RSC /l 0x407 /d "_DEBUG"
 # ADD RSC /l 0x407 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -74,7 +75,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /dll /debug /machine:I386 /out:"F:\miranda09_src\miranda\bin\debug\Plugins\imoproxy.dll" /pdbtype:sept
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -407,7 +409,7 @@ SOURCE=..\..\src\imo2skype\imo2sproxy.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\imo2skype\main.c
+SOURCE=..\..\src\imo2skype\miranda\imoproxy.c
 # End Source File
 # Begin Source File
 
@@ -416,6 +418,10 @@ SOURCE=..\..\src\common\memlist.c
 # Begin Source File
 
 SOURCE=..\..\src\skypekit\skypekit.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\imo2skype\miranda\skypepluginlink.c
 # End Source File
 # Begin Source File
 
@@ -443,6 +449,10 @@ SOURCE=..\..\src\common\memlist.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\imo2skype\miranda\skypepluginlink.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\imo2skype\socksproxy.h
 # End Source File
 # Begin Source File
@@ -453,6 +463,10 @@ SOURCE=..\..\src\imo2skype\w32skypeemu.h
 # Begin Group "Ressourcendateien"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=..\..\src\imo2skype\miranda\res.rc
+# End Source File
 # End Group
 # End Target
 # End Project
