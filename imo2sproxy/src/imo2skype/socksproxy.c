@@ -112,6 +112,7 @@ typedef struct
 {
 	SOCKET hSock;
 	thread_t hThread;
+	BOOL bNotFirstLogin;
 	IMOSAPI *hInst;
 	int iConnectionStat;
 	mutex_t connected;
@@ -144,20 +145,20 @@ static void EventHandler(char *pszMsg, void *pUser)
 {
 	CONNINST *pInst = (CONNINST*)pUser;
 	unsigned int uiLen = strlen (pszMsg);
-	static BOOL bFirstLogin = TRUE;
 
 	if (pInst->hProxy->pCfg->bVerbose && pInst->hProxy->pCfg->fpLog)
 	{
 		fprintf (pInst->hProxy->pCfg->fpLog, "%03d> %s\n", pInst->hSock, pszMsg);
 		fflush (pInst->hProxy->pCfg->fpLog);
 	}
-	if (bFirstLogin && strncmp (pszMsg, "CONNSTATUS", 10) == 0 &&
+	if (!pInst->bNotFirstLogin && strncmp (pszMsg, "CONNSTATUS", 10) == 0 &&
 		strcmp(pszMsg+11, "CONNECTING"))
 	{
 		pInst->iConnectionStat = (strcmp(pszMsg+11, "ONLINE")==0);
 		UnlockMutex (pInst->connected);
-		bFirstLogin = FALSE;
+		pInst->bNotFirstLogin = TRUE;
 	}
+	if (pInst->hSock == -1) return;
 	LockMutex(pInst->sendmutex);
 	if (!(SendPacket (pInst, &uiLen, sizeof(uiLen)) && SendPacket (pInst, pszMsg, uiLen)))
 	{
