@@ -2449,7 +2449,7 @@ static void HandleSET(IMOSAPI *pInst)
 			pszCmd += strlen(pszCmd)+1;
 			user->GiveDisplayName(pszCmd);
 			if (user->GiveDisplayName(pszCmd) && GetPropDisplayname(displayName))
-				Send (root->pInst, "%s %s %s %s", "USER", pszName, "DISPLAYNAME", (const char*)displayName);
+				Send (pInst, "%s %s %s %s", "USER", pszName, "DISPLAYNAME", (const char*)displayName);
 		}
 		else
 		{
