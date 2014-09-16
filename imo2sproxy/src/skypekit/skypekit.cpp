@@ -2442,6 +2442,16 @@ static void HandleSET(IMOSAPI *pInst)
 			Send (pInst, "%s %s %s %s", "USER", pszName, pszCmd, user->SetBuddyStatus(true)?"TRUE":"FALSE");
 		}
 		else
+		if (strcasecmp(pszCmd, "DISPLAYNAME") == 0)
+		{
+			SEString displayName;
+			
+			pszCmd += strlen(pszCmd)+1;
+			user->GiveDisplayName(pszCmd);
+			if (user->GiveDisplayName(pszCmd) && GetPropDisplayname(displayName))
+				Send (root->pInst, "%s %s %s %s", "USER", pszName, "DISPLAYNAME", (const char*)displayName);
+		}
+		else
 		{
 			Send (pInst, "ERROR 7 Not implemented");
 		}
