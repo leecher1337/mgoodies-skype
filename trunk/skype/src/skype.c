@@ -2162,6 +2162,12 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 							else
 								db_set_s(hContact, SKYPE_PROTONAME, "MirVer", "Skype");
 						} else
+						if (!strcmp(ptr, "ISBLOCKED")){
+							if (!_stricmp(ptr + 10, "True"))
+								db_set_b(hContact, SKYPE_PROTONAME, "IsBlocked", 1);
+							else
+								db_unset(hContact, SKYPE_PROTONAME, "IsBlocked");
+						} else
 						if (!strcmp(ptr, "RICH_MOOD_TEXT")) {
 							db_set_s(hContact, SKYPE_PROTONAME, "MirVer", "Skype 3.0");
 													}
@@ -3003,7 +3009,7 @@ char *__skypeauth(WPARAM wParam) {
 	if (!SkypeInitialized) return NULL;
 
 	dbei.cbSize = sizeof(dbei);
-	if ((dbei.cbBlob = db_event_getBlobSize((HANDLE)wParam) == -1 ||
+	if (((dbei.cbBlob = db_event_getBlobSize((HANDLE)wParam)) == -1 ||
 		!(dbei.pBlob = (unsigned char*)malloc(dbei.cbBlob))))
 	{
 		return NULL;
@@ -3483,7 +3489,7 @@ EXPORT int Unload(void)
 
 	LOG(("Unload started"));
 
-	if (Shutdown && ((skype_path && skype_path[0]) || UseCustomCommand)) {
+	if (Shutdown && (skype_path[0] || UseCustomCommand)) {
 
 		if (UseCustomCommand)
 		{

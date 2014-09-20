@@ -38,6 +38,7 @@ void CreateServices(void)
 	CreateServiceName(SkypeOutCallUser);
 	CreateServiceName(CallHangupUser);
 	CreateServiceName(CallUser);
+	CreateServiceName(BlockContact);
 
 	CreateServiceFunction(SKYPE_CALL, SkypeCall);
 	CreateServiceFunction(SKYPE_CALLHANGUP, SkypeCallHangup);
@@ -48,6 +49,7 @@ void CreateServices(void)
 	CreateServiceFunction(SKYPE_ANSWERCALL, SkypeAnswerCall);
 	CreateServiceFunction(SKYPE_SENDFILE, SkypeSendFile);
 	CreateServiceFunction(SKYPE_SETAVATAR, SkypeSetAvatar);
+	CreateServiceFunction(SKYPE_BLOCKCONTACT, SkypeBlockContact);
 
 	CreateProtoService(PS_GETCAPS, SkypeGetCaps);
 	CreateProtoService(PS_GETNAME, SkypeGetName);
@@ -57,6 +59,7 @@ void CreateServices(void)
 	CreateProtoService(PS_ADDTOLIST, SkypeAddToList);
 	CreateProtoService(PS_ADDTOLISTBYEVENT, SkypeAddToListByEvent);
 	CreateProtoService(PS_BASICSEARCH, SkypeBasicSearch);
+	CreateProtoService(PS_SEARCHBYEMAIL, SkypeBasicSearch);
 
 	CreateProtoService(PSS_GETINFO, SkypeGetInfo);
 	CreateProtoService(PSS_MESSAGE, SkypeSendMessage);
@@ -122,7 +125,7 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
 
     switch (wParam) {        
         case PFLAGNUM_1:
-			ret = PF1_BASICSEARCH | PF1_IM | PF1_MODEMSG; // | PF1_AUTHREQ;
+			ret = PF1_BASICSEARCH | PF1_IM | PF1_MODEMSG | PF1_SEARCHBYEMAIL; // | PF1_AUTHREQ;
 			if (protocol>=5) ret |= PF1_ADDSEARCHRES;
             break;
 

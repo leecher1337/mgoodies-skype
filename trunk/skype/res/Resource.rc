@@ -377,8 +377,6 @@ IDI_INVISIBLE           ICON    DISCARDABLE     "invisible.ico"
 IDI_OFFLINE             ICON    DISCARDABLE     "offline.ico"
 IDI_PHONE               ICON    DISCARDABLE     "phone.ico"
 
-#include "version.rc"
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
@@ -386,6 +384,27 @@ IDI_PHONE               ICON    DISCARDABLE     "phone.ico"
 
 IDB_CALL                BITMAP  MOVEABLE PURE   "call.bmp"
 #endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Deutsch (Deutschland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_BLOCKCONTACT        ICON    DISCARDABLE     "blockcon.ico"
+#endif    // Deutsch (Deutschland) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
