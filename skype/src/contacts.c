@@ -22,7 +22,7 @@ extern BOOL bSkypeOut, bIsImoproxy;
 extern char protocol, g_szProtoName[];
 
 // Handles
-static HANDLE hMenuCallItem, hMenuCallHangup, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem;
+static HANDLE hMenuCallItem, hMenuCallHangup, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem, hMenuBlockContactItem;
 
 // Check if alpha blending icons are supported
 // Seems to be not neccessary
@@ -151,6 +151,19 @@ CLISTMENUITEM ChatInitItem(void) {
 	return mi;
 }
 
+CLISTMENUITEM BlockContactItem(void) {
+	CLISTMENUITEM mi = { 0 };
+
+	mi.cbSize = sizeof(mi);
+	mi.position = -2000005000;
+	mi.flags = CMIF_HIDDEN | CMIF_TCHAR;
+	mi.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BLOCKCONTACT));
+	mi.ptszName = LPGENT("Block contact");
+	mi.pszContactOwner = SKYPE_PROTONAME;
+	mi.pszService = SKYPE_BLOCKCONTACT;
+	return mi;
+}
+
 HANDLE add_contextmenu(MCONTACT hContact) {
 	CLISTMENUITEM mi;
 
@@ -179,6 +192,8 @@ HANDLE add_contextmenu(MCONTACT hContact) {
 	mi = ChatInitItem();
 	hMenuChatInitItem = Menu_AddContactMenuItem(&mi);
 
+	mi = BlockContactItem();
+	hMenuBlockContactItem = Menu_AddContactMenuItem(&mi);
 
 	ZeroMemory(&mi, sizeof(mi));
 	mi.cbSize = sizeof(mi);
@@ -265,6 +280,12 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 				mi.flags ^= CMIF_HIDDEN;
 			mi.flags |= CMIM_FLAGS;
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuFileTransferItem, (LPARAM)&mi);
+			mi = BlockContactItem();
+			mi.flags ^= CMIF_HIDDEN;
+			mi.flags |= CMIM_FLAGS | CMIM_NAME;
+			if (db_get_b((MCONTACT)wParam, SKYPE_PROTONAME, "IsBlocked", 0) == 1)
+				mi.ptszName = LPGENT("Unblock contact");
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuBlockContactItem, (LPARAM)&mi);
 		}
 
 		if (protocol >= 5 || bIsImoproxy) {
