@@ -44,7 +44,7 @@ int CloseSkypeAPI(char *skypePath);
 INT_PTR SkypeAdduserDlg(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeAnswerCall(WPARAM wParam, LPARAM lParam);
 int SkypeMsgCollectGarbage(time_t age);
-INT_PTR SkypeSendFile(WPARAM wParam, LPARAM lParam);
+INT_PTR SkypeSendGuiFile(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeBlockContact(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam);
 INT_PTR SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam);
@@ -55,6 +55,7 @@ int SkypeSetProfile(char *szProperty, char *szValue);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
 char *SkypeGetID(char *szWhat, char *szWho, char *szProperty);
 char *SkypeGetErr(char *szWhat, char *szWho, char *szProperty);
+char *SkypeGetErrID(char *szWhat, char *szWho, char *szProperty);
 #ifdef _UNICODE
 WCHAR *SkypeGetW(char *szWhat, WCHAR *szWho, char *szProperty);
 WCHAR *SkypeGetErrW(char *szWhat, TCHAR *szWho, char *szProperty);

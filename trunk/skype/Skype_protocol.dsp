@@ -139,6 +139,10 @@ SOURCE=.\src\debug.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\filexfer.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\gchat.c
 # End Source File
 # Begin Source File
@@ -204,6 +208,10 @@ SOURCE=.\src\contacts.h
 # Begin Source File
 
 SOURCE=.\src\debug.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\filexfer.h
 # End Source File
 # Begin Source File
 
@@ -280,6 +288,10 @@ SOURCE=.\res\add.ico
 # Begin Source File
 
 SOURCE=.\res\away.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\blockcon.ico
 # End Source File
 # Begin Source File
 
