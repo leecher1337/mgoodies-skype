@@ -18,7 +18,7 @@
 
 // Imported Globals
 extern HINSTANCE hInst;
-extern BOOL bSkypeOut, bIsImoproxy;
+extern BOOL bSkypeOut, bIsImoproxy, bHasFileXfer;
 extern char protocol, g_szProtoName[];
 
 // Handles
@@ -186,8 +186,10 @@ HANDLE add_contextmenu(MCONTACT hContact) {
 
 	// We cannot use flag PF1_FILESEND for sending files, as Skype opens its own
 	// sendfile-Dialog.
-	mi = FileTransferItem();
-	hMenuFileTransferItem = Menu_AddContactMenuItem(&mi);
+	if (!bHasFileXfer) {
+		mi = FileTransferItem();
+		hMenuFileTransferItem = Menu_AddContactMenuItem(&mi);
+	}
 
 	mi = ChatInitItem();
 	hMenuChatInitItem = Menu_AddContactMenuItem(&mi);
@@ -275,11 +277,13 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 
 		// File sending and groupchat-creation works starting with protocol version 5
 		if (protocol >= 5) {
-			mi = FileTransferItem();
-			if (db_get_b((MCONTACT)wParam, SKYPE_PROTONAME, "ChatRoom", 0) == 0)
-				mi.flags ^= CMIF_HIDDEN;
-			mi.flags |= CMIM_FLAGS;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuFileTransferItem, (LPARAM)&mi);
+			if (!bHasFileXfer) {
+				mi = FileTransferItem();
+				if (db_get_b((MCONTACT)wParam, SKYPE_PROTONAME, "ChatRoom", 0) == 0)
+					mi.flags ^= CMIF_HIDDEN;
+				mi.flags |= CMIM_FLAGS;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuFileTransferItem, (LPARAM)&mi);
+			}
 			mi = BlockContactItem();
 			mi.flags ^= CMIF_HIDDEN;
 			mi.flags |= CMIM_FLAGS | CMIM_NAME;

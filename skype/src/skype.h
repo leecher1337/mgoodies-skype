@@ -92,7 +92,7 @@
 typedef struct {
 	char	ChatNew[MAXMODULELABELLENGTH];
 	char	SetAvatar[MAXMODULELABELLENGTH];
-	char	SendFile[MAXMODULELABELLENGTH];
+	char	SendGuiFile[MAXMODULELABELLENGTH];
 	char	HoldCall[MAXMODULELABELLENGTH];
 	char	AnswerCall[MAXMODULELABELLENGTH];
 	char	ImportHistory[MAXMODULELABELLENGTH];
@@ -109,7 +109,7 @@ typedef struct {
 #define SKYPE_IMPORTHISTORY g_svcNames.ImportHistory
 #define SKYPE_ANSWERCALL g_svcNames.AnswerCall
 #define SKYPE_HOLDCALL g_svcNames.HoldCall
-#define SKYPE_SENDFILE g_svcNames.SendFile
+#define SKYPE_SENDFILE g_svcNames.SendGuiFile
 #define SKYPE_SETAVATAR g_svcNames.SetAvatar
 #define SKYPE_CHATNEW g_svcNames.ChatNew
 #define SKYPE_BLOCKCONTACT g_svcNames.BlockContact

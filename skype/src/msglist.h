@@ -6,10 +6,12 @@ typedef struct {
 	HANDLE hMetaEvent;
 	time_t t;
 	time_t tEdited;
+	void *pfts;
 } TYP_MSGLENTRY;
 
 void MsgList_Init(void);
 void MsgList_Exit(void);
 TYP_MSGLENTRY *MsgList_Add(DWORD uMsgNum, HANDLE hEvent);
+void MsgList_FreeEntry(TYP_MSGLENTRY *pEntry);
 TYP_MSGLENTRY *MsgList_FindMessage(DWORD uMsgNum);
 void MsgList_CollectGarbage(void);

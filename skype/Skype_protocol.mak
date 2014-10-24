@@ -109,6 +109,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\skypesvc.obj" \
 	"$(INTDIR)\utf8.obj" \
 	"$(INTDIR)\voiceservice.obj" \
+	"$(INTDIR)\filexfer.obj" \
 	"$(INTDIR)\msglist.obj" \
 	"$(INTDIR)\memlist.obj" \
 	"$(INTDIR)\util.obj" \
@@ -138,6 +139,7 @@ CLEAN :
 	-@erase "$(INTDIR)\utf8.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\voiceservice.obj"
+	-@erase "$(INTDIR)\filexfer.obj"
 	-@erase "$(INTDIR)\skype.exp"
 	-@erase "$(INTDIR)\skype.pdb"
 	-@erase "$(INTDIR)\skype.lib"
@@ -244,6 +246,11 @@ SOURCE=.\src\util.c
 SOURCE=.\src\voiceservice.c
 
 "$(INTDIR)\voiceservice.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+SOURCE=.\src\filexfer.c
+
+"$(INTDIR)\filexfer.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 SOURCE=.\res\Resource.rc

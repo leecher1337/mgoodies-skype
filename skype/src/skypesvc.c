@@ -4,6 +4,7 @@
 #include "skypeapi.h"
 #include "skypeopt.h"
 #include "contacts.h"
+#include "filexfer.h"
 #include "m_toptoolbar.h"
 
 // Exports
@@ -11,6 +12,7 @@ SKYPE_SVCNAMES	g_svcNames;
 
 //From skype.c
 extern char protocol, g_szProtoName[];
+extern BOOL bHasFileXfer;
 extern HINSTANCE hInst;
 extern DWORD mirandaVersion;
 static HANDLE m_hPrebuildCMenu=NULL, m_hStatusHookContact=NULL, m_hContactDeleted=NULL, 
@@ -30,7 +32,7 @@ void CreateServices(void)
 {
 	CreateServiceName(ChatNew);
 	CreateServiceName(SetAvatar);
-	CreateServiceName(SendFile);
+	CreateServiceName(SendGuiFile);
 	CreateServiceName(HoldCall);
 	CreateServiceName(AnswerCall);
 	CreateServiceName(ImportHistory);
@@ -47,7 +49,7 @@ void CreateServices(void)
 	CreateServiceFunction(SKYPE_ADDUSER, SkypeAdduserDlg);
 	CreateServiceFunction(SKYPE_IMPORTHISTORY, ImportHistory);
 	CreateServiceFunction(SKYPE_ANSWERCALL, SkypeAnswerCall);
-	CreateServiceFunction(SKYPE_SENDFILE, SkypeSendFile);
+	CreateServiceFunction(SKYPE_SENDFILE, SkypeSendGuiFile);
 	CreateServiceFunction(SKYPE_SETAVATAR, SkypeSetAvatar);
 	CreateServiceFunction(SKYPE_BLOCKCONTACT, SkypeBlockContact);
 
@@ -69,6 +71,11 @@ void CreateServices(void)
 	CreateProtoService(PSR_AUTH, SkypeRecvAuth);
 	CreateProtoService(PS_AUTHALLOW, SkypeAuthAllow);
 	CreateProtoService(PS_AUTHDENY, SkypeAuthDeny);
+	CreateProtoService(PSR_FILE, SkypeRecvFile);
+	CreateProtoService(PSS_FILEALLOWT, SkypeFileAllow);
+	CreateProtoService(PSS_FILEDENY, SkypeFileCancel);
+	CreateProtoService(PSS_FILECANCEL, SkypeFileCancel);
+	CreateProtoService(PSS_FILET, SkypeSendFile);
 
 	CreateProtoService(PS_GETAVATARINFO, SkypeGetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, SkypeGetAvatarCaps);
@@ -127,6 +134,7 @@ INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
         case PFLAGNUM_1:
 			ret = PF1_BASICSEARCH | PF1_IM | PF1_MODEMSG | PF1_SEARCHBYEMAIL; // | PF1_AUTHREQ;
 			if (protocol>=5) ret |= PF1_ADDSEARCHRES;
+			if (bHasFileXfer) ret |= PF1_FILE;
             break;
 
         case PFLAGNUM_2:

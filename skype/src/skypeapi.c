@@ -7,7 +7,7 @@
 #include "utf8.h"
 #include "debug.h"
 #include "contacts.h"
-#include "skypeproxy.h"
+#include "skypeproxy/skypeproxy.h"
 #include "pthread.h"
 #include "gchat.h"
 #include "alogon.h"
@@ -53,13 +53,14 @@ status_map status_codes[] = {
 //status_map 
 
 
-static CRITICAL_SECTION ConnectMutex;
+static CRITICAL_SECTION ConnectMutex, SendMutex;
 static BOOL rcvThreadRunning=FALSE, isConnecting = FALSE;
 static SOCKET ClientSocket=INVALID_SOCKET;
 static HANDLE SkypeMsgToSend=NULL;
 
 static char *m_szSendBuf = NULL;
 static DWORD m_iBufSize = 0;
+static HANDLE m_FileSlots[255]={INVALID_HANDLE_VALUE};
 
 
 static int _ConnectToSkypeAPI(char *path, BOOL bStart);
@@ -81,9 +82,27 @@ INT_PTR SkypeReceivedAPIMessage(WPARAM wParam, LPARAM lParam) {
  * Skype via Socket --> Skype2Socket connection
  */
 
+static int Recv(SOCKET s, char *buf, int len) {
+	int ret,cnt=0;
+
+	do
+	{
+		if ((ret=recv(s,buf,len,0))==SOCKET_ERROR) {
+			LOG(("Recv() Socket error"));
+			return 0;
+		}
+		if (ret==0) break;
+		cnt+=ret;
+		buf+=ret;
+		len-=ret;
+	} while (len);
+	return len?0:cnt;
+}
+
 void rcvThread(char *dummy) {
+	unsigned char cmd=0, nSlot;
 	unsigned int length;
-	char *buf;
+	char *buf=NULL;
 	COPYDATASTRUCT CopyData;
 	int rcv;
 
@@ -95,31 +114,102 @@ void rcvThread(char *dummy) {
 			return;
 		}
 		LOG(("rcvThread Receiving from socket.."));
-		if ((rcv=recv(ClientSocket, (char *)&length, sizeof(length), 0))==SOCKET_ERROR || rcv==0) {
+		if (!(rcv=Recv(ClientSocket, (char *)&length, sizeof(length))) || length>0x10000000) {
 			rcvThreadRunning=FALSE;
 			if (rcv==SOCKET_ERROR) {LOG(("rcvThread Socket error"));}
-			else {LOG(("rcvThread lost connection, graceful shutdown"));}
+			else {LOG(("rcvThread lost connection, graceful shutdown (l=%08X)", length));}
 			return;
+		}
+		EnterCriticalSection(&SendMutex);
+		if (length == 0) {
+			unsigned short lenfn, i;
+			char szFileName[MAX_PATH], *pszUTFFile=NULL;
+
+			// Command mode 
+			if ((rcv = Recv(ClientSocket, &cmd, sizeof(cmd)))) {
+				switch (cmd)
+				{
+				case OPEN_SLOT:
+					LOG(("rcvThread OPEN_SLOT"));
+					if (!(rcv = Recv(ClientSocket, (char*)&lenfn, sizeof(lenfn))) ||
+						!(rcv = Recv(ClientSocket, szFileName, lenfn))) {
+						LOG(("OPEN_SLOT failed: rcv=%d"));
+						rcv=0;
+						break;
+					}
+
+					utf8_decode(szFileName, &pszUTFFile);
+					for (nSlot=0; nSlot<sizeof(m_FileSlots)/sizeof(m_FileSlots[0]); nSlot++)
+						if (m_FileSlots[nSlot]==INVALID_HANDLE_VALUE) break;
+					if (nSlot>=sizeof(m_FileSlots)/sizeof(m_FileSlots[0])) cmd=0;
+					else {
+						if ((m_FileSlots[nSlot] = CreateFileA(pszUTFFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+							!=INVALID_HANDLE_VALUE) nSlot++; else nSlot=0;
+					}
+					free(pszUTFFile);
+					LOG(("rcvThread OPEN_SLOT(%s) -> %d", szFileName, nSlot));
+					if ((rcv=send(ClientSocket, (char *)&nSlot, sizeof(nSlot), 0)) == SOCKET_ERROR || rcv==0) rcv=0;
+					else {
+						LeaveCriticalSection(&SendMutex);
+						continue;
+					}
+					break;
+				case DATA_SLOT:
+					LOG(("rcvThread DATA_SLOT"));
+					if (!(rcv=Recv(ClientSocket, &nSlot, sizeof(nSlot))) || !nSlot || 
+						!(rcv=Recv(ClientSocket, (char *)&length, sizeof(length))) || length>0x10000000) {
+						LOG(("DATA_SLOT failed: rcv=%d", rcv));
+						rcv=0;
+					}
+					break;
+				case CLOSE_SLOT:
+					LOG(("rcvThread CLOSE_SLOT"));
+					if (!(rcv = Recv(ClientSocket, &nSlot, sizeof(nSlot)))) {
+						LOG(("CLOSE_SLOT failed: rcv=%d"));
+						rcv=0; 
+						break;
+					}
+					LOG(("rcvThread CLOSE_SLOT(%d)", nSlot));
+					CloseHandle(m_FileSlots[nSlot-1]);
+					m_FileSlots[nSlot-1]=INVALID_HANDLE_VALUE;
+					if (rcv) {
+						LeaveCriticalSection(&SendMutex);
+						continue;
+					}
+					break;
+				}
+			}
 		}
 		LOG(("rcvThread Received length, recieving message.."));
-		buf=(char *)calloc(1, length+1);
-		if ((rcv = recv(ClientSocket, buf, length, 0))==SOCKET_ERROR || rcv==0) {
+		
+		if (rcv==0 || !(buf=(char *)calloc(1, length+1)) || 
+			!(rcv = Recv(ClientSocket, buf, length))) {
 			rcvThreadRunning=FALSE;
-			if (rcv==SOCKET_ERROR) {LOG(("rcvThread Socket error"));}
-			else {LOG(("rcvThread lost connection, graceful shutdown"));}
+			LOG(("rcvThread lost connection, graceful shutdown"));
 			free(buf);
+			LeaveCriticalSection(&SendMutex);
 			return;
 		}
-		LOG(("Received message: %s", buf));
+		if (cmd==DATA_SLOT) {
+			DWORD dwLength, dwWritten;
 
-		CopyData.dwData=0; 
-		CopyData.lpData=buf; 
-		CopyData.cbData=(DWORD)strlen(buf)+1;
-		if (!SendMessage(g_hWnd, WM_COPYDATALOCAL, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
-		{
-			LOG(("SendMessage failed: %08X", GetLastError()));
+			LOG(("Received data packet with %d bytes", length));
+			if ((cmd = (char)WriteFile(m_FileSlots[nSlot-1], buf, length, &dwWritten, NULL)) && dwWritten!=length)
+				cmd=0;
+			//send(ClientSocket, (char *)&cmd, sizeof(cmd), 0);
+		} else {
+			LOG(("Received message: %s", buf));
+
+			CopyData.dwData=0; 
+			CopyData.lpData=buf; 
+			CopyData.cbData=(DWORD)strlen(buf)+1;
+			if (!SendMessage(g_hWnd, WM_COPYDATALOCAL, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
+			{
+				LOG(("SendMessage failed: %08X", GetLastError()));
+			}
 		}
 		free(buf);
+		LeaveCriticalSection(&SendMutex);
 	}
 }
 
@@ -136,12 +226,15 @@ void sendThread(char *dummy) {
 		length=(unsigned int)strlen(szMsg);
 
 		if (UseSockets) {
+			EnterCriticalSection(&SendMutex);
 			if (send(ClientSocket, (char *)&length, sizeof(length), 0) != SOCKET_ERROR &&
 				send(ClientSocket, szMsg, length, 0) != SOCKET_ERROR) {
 				free (szMsg);
+				LeaveCriticalSection(&SendMutex);
 				continue;
 			}
 			SendResult = 0;
+			LeaveCriticalSection(&SendMutex);
 		} else {
 			CopyData.dwData=0; 
 			CopyData.lpData=szMsg; 
@@ -200,6 +293,7 @@ int SkypeMsgInit(void) {
 	MsgQ_Init(&SkypeMsgs);
 	MsgQ_Init(&SkypeSendQueue);
     InitializeCriticalSection(&ConnectMutex);
+	InitializeCriticalSection(&SendMutex);
 	if (SkypeMsgToSend=CreateSemaphore(NULL, 0, MAX_MSGS, NULL)) {
 		if (m_szSendBuf = (char*)malloc(m_iBufSize=512)) {
 			if (_beginthread(( pThreadFunc )sendThread, 0, NULL)!=-1)
@@ -244,6 +338,7 @@ void SkypeMsgCleanup(void) {
 	MsgQ_Exit(&SkypeMsgs);
 	LeaveCriticalSection(&ConnectMutex);
 	DeleteCriticalSection(&ConnectMutex);
+	DeleteCriticalSection(&SendMutex);
 	CloseHandle(SkypeMsgToSend);
 	SkypeMsgToSend=NULL;
 	MsgQ_Exit(&SkypeSendQueue);
@@ -281,7 +376,7 @@ static int __sendMsg(char *szMsg) {
 	 return 0;
    }
 
-   if (UseSockets && ClientSocket==INVALID_SOCKET) return -1;
+   if (UseSockets && (ClientSocket==INVALID_SOCKET)) return -1;
    if (!MsgQ_Add(&SkypeSendQueue, szMsg) || !ReleaseSemaphore(SkypeMsgToSend, 1, NULL))
 	   return -1;
    return 0;
@@ -561,6 +656,15 @@ WCHAR *SkypeGetErrW(char *szWhat, TCHAR *szWho, char *szProperty) {
 	return ret;
 }
 #endif
+
+char *SkypeGetErrID(char *szWhat, char *szWho, char *szProperty) {
+	char *ret = SkypeGetID(szWhat, szWho, szProperty);
+	if (ret && !strncmp(ret, "ERROR", 5)) {
+		free (ret);
+		return NULL;
+	}
+	return ret;
+}
 
 
 /* SkypeGetProfile
@@ -1133,7 +1237,7 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 }
 
 
-/* SkypeSendFile
+/* SkypeSendGuiFile
  * 
  * Purpose: Opens the Skype-dialog to send a file
  * Params : wParam - Handle to the User 
@@ -1141,7 +1245,7 @@ INT_PTR SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-INT_PTR SkypeSendFile(WPARAM wParam, LPARAM lParam) {
+INT_PTR SkypeSendGuiFile(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	int retval;
 
@@ -1398,6 +1502,7 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 		DBVARIANT dbv;
 		long inet;
 		struct hostent *hp;
+		char reply=0;
 
 		LOG(("ConnectToSkypeAPI: Connecting to Skype2socket socket..."));
         if ((ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))==INVALID_SOCKET) return -1;
@@ -1426,8 +1531,6 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
             
 		if (db_get_b(NULL, SKYPE_PROTONAME, "RequiresPassword", 0) && !db_get_s(NULL, SKYPE_PROTONAME, "Password", &dbv)) 
 		{
-				char reply=0;
-
 				if ((reply=SendSkypeproxyCommand(AUTHENTICATE))==-1) {
 					db_free(&dbv);
 					return -1;
@@ -1454,16 +1557,25 @@ static int _ConnectToSkypeAPI(char *path, int iStart) {
 					}
 				}
 				db_free(&dbv);
+				if ((reply=SendSkypeproxyCommand(CAPABILITIES))==-1) return -1;
 		} 
 		else 
 		{
-			char reply=0;
-
 			if ((reply=SendSkypeproxyCommand(CAPABILITIES))==-1) return -1;
 			if (reply&USE_AUTHENTICATION) {
 				OUTPUT(_T("The server you specified requires authentication, but you have not supplied a password for it. Check the Skype plugin settings and try again."));
 				return -1;
 			}
+		}
+		if (reply&USE_DATASLOTS) {
+			unsigned int length=0;
+			char command=MY_CAPABILITIES, caps=USE_DATASLOTS;
+
+			// The server can send us datafiles, tell him that we support this
+			if (   send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR
+				|| send(ClientSocket, (char *)&command, sizeof(command), 0)==SOCKET_ERROR
+				|| send(ClientSocket, (char *)&caps, sizeof(caps), 0)==SOCKET_ERROR)
+				return -1;
 		}
 
 

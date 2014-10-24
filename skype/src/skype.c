@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "utf8.h"
 #include "pthread.h"
 #include "gchat.h"
+#include "filexfer.h"
 #include "m_toptoolbar.h"
 #include "voiceservice.h"
 #include "msglist.h"
@@ -60,7 +61,7 @@ POPUPDATAT MessagePopup;
 HWND hSkypeWnd = NULL, g_hWnd = NULL, hSkypeWndSecondary = NULL, hForbiddenSkypeWnd = NULL;
 HANDLE SkypeReady, SkypeMsgReceived, hInitChat = NULL, httbButton = NULL, FetchMessageEvent = NULL;
 BOOL SkypeInitialized = FALSE, MirandaShuttingDown = FALSE, PopupServiceExists = FALSE;
-BOOL UseSockets = FALSE, bSkypeOut = FALSE, bProtocolSet = FALSE, bIsImoproxy = FALSE;
+BOOL UseSockets = FALSE, bSkypeOut = FALSE, bProtocolSet = FALSE, bIsImoproxy = FALSE, bHasFileXfer = FALSE;
 char skype_path[MAX_PATH], protocol = 2, *pszProxyCallout = NULL, g_szProtoName[_MAX_FNAME] = SKYPE_DEF_PROTONAME;
 int SkypeStatus = ID_STATUS_OFFLINE, hSearchThread = -1, receivers = 1;
 long sendwatchers = 0, rcvwatchers = 0;
@@ -132,6 +133,7 @@ typedef struct {
 	BOOL bIsRead;
 	BOOL bDontMarkSeen;
 	BOOL QueryMsgDirection;
+	BOOL bUseTimestamp;
 	TYP_MSGLENTRY *pMsgEntry;
 } fetchmsg_arg;
 
@@ -139,6 +141,15 @@ typedef struct {
 	MCONTACT hContact;
 	char szId[16];
 } msgsendwt_arg;
+
+#ifdef USE_REAL_TS
+typedef struct {
+	MCONTACT hContact;
+	time_t timestamp;
+} arg_dbaddevent;
+arg_dbaddevent m_AddEventArg = {0};
+CRITICAL_SECTION AddEventMutex;
+#endif
 
 /*
  * visual styles support (XP+)
@@ -834,6 +845,7 @@ void __cdecl SkypeSystemInit(char *dummy) {
 		if (!Initializing) return;
 	}
 
+
 #ifdef SKYPEBUG_OFFLN
 	if (!ResetEvent(GotUserstatus) || SkypeSend("GET USERSTATUS") == -1 ||
 		WaitForSingleObject(GotUserstatus, INFINITE) == WAIT_FAILED)
@@ -850,9 +862,15 @@ void __cdecl SkypeSystemInit(char *dummy) {
 		return;
 	}
 	if (protocol >= 5 || bIsImoproxy) {
+		char *pszErr;
 		SkypeSend("CREATE APPLICATION libpurple_typing");
 		testfor("CREATE APPLICATION libpurple_typing", 2000);
-	}
+		if (SkypeSend("#FT FILE") == 0 && (pszErr = SkypeRcvTime("#FT ERROR", SkypeTime(NULL), 1000)))
+		{
+			bHasFileXfer = !strncmp(pszErr+4, "ERROR 510", 9);
+			free(pszErr);
+		}
+	} else bHasFileXfer = FALSE;
 	if (protocol>=5) {
 		SearchUsersWaitingMyAuthorization(NULL);
 		if (db_get_b(NULL, SKYPE_PROTONAME, "UseGroupchat", 0))
@@ -1034,14 +1052,21 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 
 	// Get Timestamp
 	if (!args.pMsgEntry || !args.pMsgEntry->tEdited) {
-		if (!(ptr=SkypeGet (cmdMessage, args.msgnum, "TIMESTAMP"))) return;
-		if (strncmp(ptr, "ERROR", 5)) {
-			timestamp=atol(ptr);
-			// Ensure time correction on clock skew...
-			if (timestamp>(DWORD)SkypeTime(NULL)) timestamp=(DWORD)SkypeTime(NULL);
+		timestamp=(DWORD)SkypeTime(NULL);
+		/* We normally don't use the real timestamp, if it's not history import.
+		 * Why? -> Because if you are sending a message while there are still
+		 * incoming messages that get processed, msgs are inserted into the
+		 * DB with correct timestamp, but message sending dialog shows garbled
+		 * messages then because he cannot deal with the situation of incoming
+		 * messages that are prior to last sent message */
+#ifndef USE_REAL_TS
+		if (args.bUseTimestamp)
+#endif
+		{
+			if (!(ptr=SkypeGet (cmdMessage, args.msgnum, "TIMESTAMP"))) return;
+			if (strncmp(ptr, "ERROR", 5)) timestamp=atol(ptr);
+			free(ptr);
 		}
-		else timestamp=(DWORD)SkypeTime(NULL);
-		free(ptr);
 	}
 	else timestamp = (DWORD)(args.pMsgEntry->tEdited);
 
@@ -1309,6 +1334,16 @@ void FetchMessageThread(fetchmsg_arg *pargs) {
 				hContact = add_contact(who, PALF_TEMPORARY);
 			}
 		}
+
+		if (strcmp(type, "FILETRANSFER") == 0)
+		{
+			// Our custom Skypekit FILETRANSFER extension
+			bHasFileXfer = TRUE;
+			pre.timestamp = timestamp;
+			FXHandleRecv(&pre, hContact);
+			__leave;
+		}
+
 		// Text which was sent (on edited msg, BODY may already be in queue, check)
 		sprintf(szBuf, "GET %s %s BODY", cmdMessage, args.msgnum);
 		if (!args.pMsgEntry || !args.pMsgEntry->tEdited || !(ptr = SkypeRcv(szBuf + 4, 1000)))
@@ -1572,6 +1607,7 @@ void MessageListProcessingThread(char *str) {
 		args = (fetchmsg_arg*)List_ElementAt(hListMsgs, i);
 		free(args->pMsgEntry);
 		args->pMsgEntry = NULL;
+		args->bUseTimestamp = TRUE;
 		FetchMessageThreadSync(args);
 	}
 	if (chat) {
@@ -2348,7 +2384,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						bFetchMsg = TRUE;
 					}
 					else bFetchMsg = (strncmp(ptr, " STATUS RE", 10) == 0 && !rcvwatchers) ||
-						(strncmp(ptr, " STATUS SENT", 12) == 0 && !sendwatchers);
+						(strncmp(ptr, " STATUS SENT", 12) == 0 && !sendwatchers && 
+						 !MsgList_FindMessage(strtoul(pMsgNum, NULL, 10)));
 
 					if (bFetchMsg) {
 						// If new message is available, fetch it
@@ -2362,6 +2399,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					}
 				}
 			}
+			if (bHasFileXfer && !strncmp(szSkypeMsg, "FILETRANSFER", 12))
+				FXHandleMessage(szSkypeMsg+13);
 			if (!strncmp(szSkypeMsg, "ERROR 68", 8)) {
 				LOG(("We got a sync problem :( ->  SendMessage() will try to recover..."));
 				break;
@@ -2832,8 +2871,22 @@ INT_PTR SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
 	return (hSearchThread = pthread_create((pThreadFunc)BasicSearchThread, _strdup((char *)lParam)));
 }
 
+#ifdef USE_REAL_TS
+static INT_PTR EventAddHook(WPARAM wParam, LPARAM lParam)
+{	
+	MCONTACT hContact = (MCONTACT)wParam;
+	DBEVENTINFO *dbei=(DBEVENTINFO*)lParam;
+	if (dbei && hContact == m_AddEventArg.hContact && dbei->eventType==EVENTTYPE_MESSAGE && (dbei->flags & DBEF_SENT) &&
+		strcmp(dbei->szModule, SKYPE_PROTONAME) == 0) {
+		dbei->timestamp = m_AddEventArg.timestamp;
+	}
+	return 0;
+}
+#endif
+
 void MessageSendWatchThread(void *a) {
-	char *str, *err;
+	char *str, *err, *ptr, *nexttoken;
+	HANDLE hDBAddEvent = NULL;
 
 	msgsendwt_arg *arg = (msgsendwt_arg*)a;
 
@@ -2852,7 +2905,31 @@ void MessageSendWatchThread(void *a) {
 				LOG(("MessageSendWatchThread terminated."));
 				return;
 			}
+			/* The USE_REAL_TS code would correct our Sent-Timestamp to the real time that the
+			 * event was sent according to the clock of the machine Skype is running on.
+			 * However msg-Dialog has problems with this.
+			 */
+#ifdef USE_REAL_TS
+			EnterCriticalSection(&AddEventMutex);
+#endif
+			if ((ptr=strtok_r(str, " ", &nexttoken)) && (*ptr!='#' || (ptr=strtok_r(NULL, " ", &nexttoken))) &&
+				(ptr=strtok_r(NULL, " ", &nexttoken))) {
+				/* Use this to ensure that main thread doesn't pick up sent message */
+				MsgList_Add(strtoul(ptr, NULL, 10), INVALID_HANDLE_VALUE);
+#ifdef USE_REAL_TS
+				if (err=SkypeGet (cmdMessage, ptr, "TIMESTAMP")) {
+					m_AddEventArg.hContact = arg->hContact;
+					m_AddEventArg.timestamp = atoi(err);
+					free(err);
+					hDBAddEvent = HookEvent(ME_DB_EVENT_FILTER_ADD,EventAddHook);
+				}
+#endif
+			}
 			ProtoBroadcastAck(SKYPE_PROTONAME, arg->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)1, 0);
+#ifdef USE_REAL_TS
+			if (hDBAddEvent) UnhookEvent(hDBAddEvent);
+			LeaveCriticalSection(&AddEventMutex);
+#endif
 		}
 		free(str);
 		LOG(("MessageSendWatchThread terminated gracefully."));
@@ -2937,6 +3014,7 @@ INT_PTR SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
 	MsgList_Add(pre->lParam, db_event_add(ccs->hContact, &dbei));
 	return 0;
 }
+
 
 INT_PTR SkypeUserIsTyping(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv = { 0 };
@@ -3376,6 +3454,9 @@ EXPORT int Load(void)
 	InitializeCriticalSection(&RingAndEndcallMutex);
 	InitializeCriticalSection(&QueryThreadMutex);
 	InitializeCriticalSection(&TimeMutex);
+#ifdef USE_REAL_TS
+	InitializeCriticalSection(&AddEventMutex);
+#endif
 
 
 #ifdef _DEBUG
@@ -3539,6 +3620,9 @@ EXPORT int Unload(void)
 	LOG(("Unload: Shutdown complete"));
 #ifdef _DEBUG
 	end_debug();
+#endif
+#ifdef USE_REAL_TS
+	DeleteCriticalSection(&AddEventMutex);
 #endif
 	DeleteCriticalSection(&TimeMutex);
 	return 0;
