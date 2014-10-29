@@ -122,11 +122,11 @@ void rcvThread(char *dummy) {
 		}
 		EnterCriticalSection(&SendMutex);
 		if (length == 0) {
-			unsigned short lenfn, i;
+			unsigned short lenfn;
 			char szFileName[MAX_PATH], *pszUTFFile=NULL;
 
 			// Command mode 
-			if ((rcv = Recv(ClientSocket, &cmd, sizeof(cmd)))) {
+			if ((rcv = Recv(ClientSocket, (char*)&cmd, sizeof(cmd)))) {
 				switch (cmd)
 				{
 				case OPEN_SLOT:
@@ -156,7 +156,7 @@ void rcvThread(char *dummy) {
 					break;
 				case DATA_SLOT:
 					LOG(("rcvThread DATA_SLOT"));
-					if (!(rcv=Recv(ClientSocket, &nSlot, sizeof(nSlot))) || !nSlot || 
+					if (!(rcv=Recv(ClientSocket, (char*)&nSlot, sizeof(nSlot))) || !nSlot || 
 						!(rcv=Recv(ClientSocket, (char *)&length, sizeof(length))) || length>0x10000000) {
 						LOG(("DATA_SLOT failed: rcv=%d", rcv));
 						rcv=0;
@@ -164,7 +164,7 @@ void rcvThread(char *dummy) {
 					break;
 				case CLOSE_SLOT:
 					LOG(("rcvThread CLOSE_SLOT"));
-					if (!(rcv = Recv(ClientSocket, &nSlot, sizeof(nSlot)))) {
+					if (!(rcv = Recv(ClientSocket, (char*)&nSlot, sizeof(nSlot)))) {
 						LOG(("CLOSE_SLOT failed: rcv=%d"));
 						rcv=0; 
 						break;
@@ -191,7 +191,7 @@ void rcvThread(char *dummy) {
 			return;
 		}
 		if (cmd==DATA_SLOT) {
-			DWORD dwLength, dwWritten;
+			DWORD dwWritten;
 
 			LOG(("Received data packet with %d bytes", length));
 			if ((cmd = (char)WriteFile(m_FileSlots[nSlot-1], buf, length, &dwWritten, NULL)) && dwWritten!=length)
