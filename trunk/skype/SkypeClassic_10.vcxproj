@@ -68,6 +68,7 @@
     <ClCompile Include="src\alogon.c" />
     <ClCompile Include="src\contacts.c" />
     <ClCompile Include="src\debug.c" />
+    <ClCompile Include="src\filexfer.c" />
     <ClCompile Include="src\gchat.c" />
     <ClCompile Include="src\memlist.c" />
     <ClCompile Include="src\msglist.c" />

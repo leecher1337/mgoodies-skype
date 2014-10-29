@@ -22,10 +22,10 @@ void MsgList_Init(void)
 
 void MsgList_Exit(void)
 {
-	void *pEntry;
+	TYP_MSGLENTRY *pEntry;
 
 	if (!m_hMsgList) return;
-	while (pEntry = List_Pop(m_hMsgList))
+	while (pEntry = (TYP_MSGLENTRY*)List_Pop(m_hMsgList))
 		MsgList_FreeEntry(pEntry);
 	List_Exit(m_hMsgList);
 	m_hMsgList = NULL;
@@ -89,7 +89,7 @@ void MsgList_CollectGarbage(void)
 		if (pEntry->t < t)
 		{
 			LOG (("MsgList_CollectGarbage throwing out msg %d", pEntry->uMsgNum));
-			MsgList_FreeEntry(List_RemoveElementAt (m_hMsgList, i));
+			MsgList_FreeEntry((TYP_MSGLENTRY*)List_RemoveElementAt (m_hMsgList, i));
 			i--;
 		}
 	}
