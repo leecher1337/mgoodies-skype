@@ -133,7 +133,7 @@ void rcvThread(char *dummy) {
 					LOG(("rcvThread OPEN_SLOT"));
 					if (!(rcv = Recv(ClientSocket, (char*)&lenfn, sizeof(lenfn))) ||
 						!(rcv = Recv(ClientSocket, szFileName, lenfn))) {
-						LOG(("OPEN_SLOT failed: rcv=%d"));
+						LOG(("OPEN_SLOT failed: rcv=%d", rcv));
 						rcv=0;
 						break;
 					}
@@ -193,7 +193,7 @@ void rcvThread(char *dummy) {
 		if (cmd==DATA_SLOT) {
 			DWORD dwWritten;
 
-			LOG(("Received data packet with %d bytes", length));
+			LOG(("Received data packet with %u bytes", length));
 			if ((cmd = (char)WriteFile(m_FileSlots[nSlot-1], buf, length, &dwWritten, NULL)) && dwWritten!=length)
 				cmd=0;
 			//send(ClientSocket, (char *)&cmd, sizeof(cmd), 0);
@@ -478,10 +478,14 @@ char *SkypeRcvTime(char *what, time_t st, DWORD maxwait) {
 					msg=MsgQ_RemoveMsg(&SkypeMsgs, ptr);
 					LOG(("<SkypeRcv: %s", msg));
 					if (bIsChatMsg) {
-						msg=(char*)realloc(msg, strlen(msg)+5);
-						memmove (msg+4, msg, strlen(msg)+1);
-						memcpy (msg, "CHAT", 4);
+						char *pmsg;
 
+						if (pmsg=(char*)realloc(msg, strlen(msg)+5))
+						{
+							msg=pmsg;
+							memmove (msg+4, msg, strlen(msg)+1);
+							memcpy (msg, "CHAT", 4);
+						}
 						// This may be a sign that protocol negotiation failed, so we can try to send
 						// our supported protocol version again, just in case... (Skype API bug?)
 						//SkypeSend(SKYPE_PROTO); 

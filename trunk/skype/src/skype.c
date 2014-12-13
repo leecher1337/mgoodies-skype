@@ -573,7 +573,7 @@ int SearchFriends(void) {
 	if (SkypeSend("SEARCH FRIENDS") != -1 && (ptr = SkypeRcvTime("USERS", st, INFINITE)))
 	{
 		if (strncmp(ptr, "ERROR", 5)) {
-			if (ptr + 5) {
+			if (ptr[5]) {
 				for (token = strtok_r(ptr + 5, ", ", &nextoken); token; token = strtok_r(NULL, ", ", &nextoken)) {
 					if (!(pStat = SkypeGet("USER", token, "ONLINESTATUS")))
 					{
@@ -1590,12 +1590,12 @@ void MessageListProcessingThread(char *str) {
 	int i, nCount;
 
 	// Frst we need to sort the message timestamps
-	for ((token = strtok_r(str, ", ", &nextoken)); token; token = strtok_r(NULL, ", ", &nextoken)) {
+	for ((token = strtok_r(str+1, ", ", &nextoken)); token; token = strtok_r(NULL, ", ", &nextoken)) {
 		if (args = (fetchmsg_arg*)calloc(1, sizeof(fetchmsg_arg) + sizeof(DWORD))) {
 			strncpy(args->msgnum, token, sizeof(args->msgnum));
 			args->getstatus = TRUE;
-			args->bIsRead = TRUE;
-			args->bDontMarkSeen = TRUE;
+			args->bIsRead = *str;
+			args->bDontMarkSeen = *str;
 			args->QueryMsgDirection = TRUE;
 			args->pMsgEntry = (TYP_MSGLENTRY*)SkypeGet("CHATMESSAGE", token, "TIMESTAMP");
 			if (!chat) chat = SkypeGet("CHATMESSAGE", token, "CHATNAME");
@@ -2122,7 +2122,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						}
 						else
 						if (!strcmp(ptr, "BIRTHDAY")) {
-							unsigned int y, m, d;
+							int y, m, d;
 							if (sscanf(ptr + 9, "%04d%02d%02d", &y, &m, &d) == 3) {
 								db_set_w(hContact, SKYPE_PROTONAME, "BirthYear", (WORD)y);
 								db_set_b(hContact, SKYPE_PROTONAME, "BirthMonth", (BYTE)m);
@@ -2304,10 +2304,16 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						*ptr = ' ';
 						}
 						else
-							if (strncmp(ptr, " CHATMESSAGES ", 14) == 0) {
-						pthread_create((pThreadFunc)MessageListProcessingThread, _strdup(ptr + 14));
-						break;
-							}
+						if (strncmp(ptr, " CHATMESSAGES ", 14) == 0) {
+							char *pParam;
+							int iLen;
+
+							pParam=(char*)calloc((iLen=strlen(ptr+14)+1)+1, 1);
+							*pParam=TRUE;
+							memcpy(pParam+1, ptr+14, iLen);
+							pthread_create((pThreadFunc)MessageListProcessingThread, pParam);
+							break;
+						}
 				}
 			}
 			if (!strncmp(szSkypeMsg, "CALL ", 5)) {
@@ -2357,14 +2363,19 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				break;
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
-				if (strlen(szSkypeMsg) <= (UINT)(strchr(szSkypeMsg, ' ') - szSkypeMsg + 1))
+				char *pMsgs, *pParam;
+				int iLen;
+
+				if (strlen(szSkypeMsg) <= (UINT)((pMsgs=strchr(szSkypeMsg, ' ')) - szSkypeMsg + 1))
 				{
 					LOG(("%s %d %s %d", szSkypeMsg, (UINT)(strchr(szSkypeMsg, ' ') - szSkypeMsg + 1),
 						strchr(szSkypeMsg, ' '), strlen(szSkypeMsg)));
 					break;
 				}
 				LOG(("MessageListProcessingThread launched"));
-				pthread_create((pThreadFunc)MessageListProcessingThread, _strdup(strchr(szSkypeMsg, ' ') + 1));
+				pParam=(char*)calloc((iLen=strlen(pMsgs)+1)+1, 1);
+				memcpy(pParam+1, pMsgs, iLen);
+				pthread_create((pThreadFunc)MessageListProcessingThread, pParam);
 				break;
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGE", 7) || !strncmp(szSkypeMsg, "CHATMESSAGE", 11))
@@ -2977,14 +2988,19 @@ INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
 	db_free(&dbv);
 
 	if (sendok) {
-		msgsendwt_arg *psendarg = (msgsendwt_arg*)calloc(1, sizeof(msgsendwt_arg));
+		if (db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 0))
+			ProtoBroadcastAck(SKYPE_PROTONAME, ccs->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)1, 0);
+		else {
+			msgsendwt_arg *psendarg = (msgsendwt_arg*)calloc(1, sizeof(msgsendwt_arg));
 
-		if (psendarg) {
-			psendarg->hContact = ccs->hContact;
-			strcpy(psendarg->szId, szId);
-			pthread_create(MessageSendWatchThread, psendarg);
+			if (psendarg) {
+				psendarg->hContact = ccs->hContact;
+				strcpy(psendarg->szId, szId);
+				pthread_create(MessageSendWatchThread, psendarg);
+				return 1;
+			}
 		}
-		else InterlockedDecrement(&sendwatchers);
+		InterlockedDecrement(&sendwatchers);
 		return 1;
 	} else InterlockedDecrement(&sendwatchers);
 	if (!bIsChatroom)
@@ -3141,7 +3157,7 @@ INT_PTR SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam) {
 	{
 		MCONTACT hContact = add_contact(pBlob + sizeof(DWORD) + sizeof(HANDLE), LOWORD(wParam));
 		free(pBlob);
-		if (hContact) return (int)hContact;
+		if (hContact) return (INT_PTR)hContact;
 	}
 	return 0;
 }

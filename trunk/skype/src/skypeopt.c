@@ -451,6 +451,7 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			CheckDlgButton(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", 1));
 			CheckDlgButton(hwndDlg, IDC_NOSKYPE3STATS, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0));
 			CheckDlgButton(hwndDlg, IDC_SHOWFULLNAME, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "ShowFullname", 1));
+			CheckDlgButton(hwndDlg, IDC_NOACK, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 1));
 
 			if (ServiceExists(MS_GC_NEWSESSION) && (!bProtocolSet || protocol>=5)) {
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "UseGroupchat", 0));
@@ -497,6 +498,7 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 					db_set_b (NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE), BM_GETCHECK,0,0)));
 					db_set_b (NULL, SKYPE_PROTONAME, "NoSkype3Stats", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOSKYPE3STATS), BM_GETCHECK,0,0)));
 					db_set_b (NULL, SKYPE_PROTONAME, "ShowFullname", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SHOWFULLNAME), BM_GETCHECK,0,0)));
+					db_set_b (NULL, SKYPE_PROTONAME, "NoAck", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOACK), BM_GETCHECK,0,0)));
 					return TRUE;
 			}			
 			break; 
