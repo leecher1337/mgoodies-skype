@@ -56,7 +56,7 @@ static CRITICAL_SECTION m_GCMutex;
 */
 gchat_contacts *GetChat(const TCHAR *szChatId) {
 	int i;
-	char *pchats;
+	gchat_contacts *pchats;
 
 	for (i=0;i<chatcount;i++)
 		if (!_tcscmp(chats[i].szChatName, szChatId)) return &chats[i];
@@ -76,7 +76,7 @@ gchat_contacts *GetChat(const TCHAR *szChatId) {
  */
 void RemChat(TCHAR *szChatId) {
 	int i;
-	char *pchats;
+	gchat_contacts *pchats;
 
 	for (i=0;i<chatcount;i++)
 		if (!_tcscmp(chats[i].szChatName, szChatId)) {
