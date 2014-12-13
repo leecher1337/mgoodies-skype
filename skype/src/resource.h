@@ -64,6 +64,7 @@
 #define IDC_SETAVATAR                   1027
 #define IDC_SHOWFULLNAME                1027
 #define IDC_DELETEAVATAR                1028
+#define IDC_NOACK                       1028
 #define IDC_STARTSKYPE                  1029
 #define IDC_NOTRAY                      1030
 #define IDC_NOSPLASH                    1031

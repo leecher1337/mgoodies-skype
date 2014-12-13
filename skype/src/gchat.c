@@ -56,10 +56,12 @@ static CRITICAL_SECTION m_GCMutex;
 */
 gchat_contacts *GetChat(const TCHAR *szChatId) {
 	int i;
+	char *pchats;
 
 	for (i=0;i<chatcount;i++)
 		if (!_tcscmp(chats[i].szChatName, szChatId)) return &chats[i];
-	if (chats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*(++chatcount))) {
+	if (pchats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*(++chatcount))) {
+		chats=pchats;
 		memset(&chats[chatcount-1], 0, sizeof(gchat_contacts));
 		chats[chatcount-1].szChatName=_tcsdup(szChatId);
 		return &chats[chatcount-1];
@@ -74,13 +76,15 @@ gchat_contacts *GetChat(const TCHAR *szChatId) {
  */
 void RemChat(TCHAR *szChatId) {
 	int i;
+	char *pchats;
 
 	for (i=0;i<chatcount;i++)
 		if (!_tcscmp(chats[i].szChatName, szChatId)) {
 			if (chats[i].szChatName) free(chats[i].szChatName);
 			if (chats[i].mJoinedContacts) free(chats[i].mJoinedContacts);
 			if (i<--chatcount) memmove(&chats[i], &chats[i+1], (chatcount-i)*sizeof(gchat_contacts));
-			chats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*chatcount);
+			if (pchats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*chatcount))
+				chats = pchats;
 			return;
 		}
 }
@@ -242,6 +246,7 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 		!db_get_s(NULL, SKYPE_PROTONAME, SKYPE_NAME, &dbv2))
 	{
 		char *pszMemObjs, *token;
+		BYTE *pcontactmask;
 
 		if (protocol>=7 && (pszMemObjs = SkypeGet ("CHAT", szSkypeMsg+5, "MEMBEROBJECTS"))) {
 			// Add new contacts (protocol 7+ with memberobjects, supports roles)
@@ -261,11 +266,11 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 					i=AddChatContact(gc, who, ptszRole);
 					free_nonutf_tchar_string (ptszRole);
 					if (pszRole) free (pszRole);
-					if (!(contactmask= (unsigned char *) realloc(contactmask, gc->mJoinedCount))) {
+					if (!(pcontactmask= (unsigned char *) realloc(contactmask, gc->mJoinedCount))) {
 						iRet = -1;
 						free (who);
 						break;
-					}
+					} else contactmask = pcontactmask;
 					contactmask[i]=TRUE;
 				}
 				free (who);
@@ -282,10 +287,10 @@ int  __cdecl AddMembers(char *szSkypeMsg) {
 				}
 				if (strcmp(who, dbv2.pszVal)) {
 					i=AddChatContact(gc, who, NULL);
-					if (i<0 || !(contactmask= (unsigned char *) realloc(contactmask, gc->mJoinedCount))) {
+					if (i<0 || !(pcontactmask= (unsigned char *) realloc(contactmask, gc->mJoinedCount))) {
 						iRet = -1;
 						break;
-					}
+					} else contactmask=pcontactmask;
 					contactmask[i]=TRUE;
 				}
 			}
@@ -649,11 +654,11 @@ void SetChatTopic(TCHAR *szChatId, TCHAR *szTopic, BOOL bSet)
 
 int GCEventHook(WPARAM wParam,LPARAM lParam) {
 	GCHOOK *gch = (GCHOOK*) lParam;
-	gchat_contacts *gc = GetChat(gch->pDest->ptszID);
+	gchat_contacts *gc;
 
 	UNREFERENCED_PARAMETER(wParam);
 
-	if(gch) {
+	if(gch && (gc = GetChat(gch->pDest->ptszID))) {
 		if (!_stricmp(gch->pDest->pszModule, SKYPE_PROTONAME)) {
 
 			switch (gch->pDest->iType) {
