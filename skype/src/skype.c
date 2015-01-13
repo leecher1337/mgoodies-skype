@@ -823,9 +823,9 @@ void __cdecl SkypeSystemInit(char *dummy) {
 						{
 							int oldstatus;
 
-							sprintf(szError, "Username '%s' provided by Skype API doesn't match username '%s' in "
+							sprintf(szError, Translate("Username '%s' provided by Skype API doesn't match username '%s' in "
 								"your settings. Please either remove username setting in you configuration or correct "
-								"it. Will not connect!", pszUser, dbv.pszVal);
+								"it. Will not connect!"), pszUser, dbv.pszVal);
 							OUTPUTA(szError);
 							Initializing = FALSE;
 							AttachStatus = -1;
