@@ -126,7 +126,7 @@ void UnhookEvents(void)
 }
 
 INT_PTR SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
-    int ret = 0;
+    INT_PTR ret = 0;
 
 	UNREFERENCED_PARAMETER(lParam);
 

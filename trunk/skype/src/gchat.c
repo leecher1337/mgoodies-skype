@@ -131,7 +131,11 @@ static int AddChatContact(gchat_contacts *gc, char *who, TCHAR *pszRole)
 	LOG (("AddChatContact %s", who));
 	if (!(twho = make_nonutf_tchar_string((const unsigned char*)who)))
 		return -2;
-	if ((i=ExistsChatContact(gc, twho))>=0) return i;
+	if ((i=ExistsChatContact(gc, twho))>=0)
+	{
+		free_nonutf_tchar_string (twho);
+		return i;
+	}
 	hContact=find_contact(who);
 
 	gcd.pszModule = SKYPE_PROTONAME;

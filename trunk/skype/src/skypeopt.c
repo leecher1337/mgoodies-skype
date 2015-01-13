@@ -451,7 +451,7 @@ INT_PTR CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			CheckDlgButton(hwndDlg, IDC_SUPPRESSCALLSUMMARYMESSAGE, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "SuppressCallSummaryMessage", 1));
 			CheckDlgButton(hwndDlg, IDC_NOSKYPE3STATS, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "NoSkype3Stats", 0));
 			CheckDlgButton(hwndDlg, IDC_SHOWFULLNAME, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "ShowFullname", 1));
-			CheckDlgButton(hwndDlg, IDC_NOACK, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 1));
+			CheckDlgButton(hwndDlg, IDC_NOACK, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 0));
 
 			if (ServiceExists(MS_GC_NEWSESSION) && (!bProtocolSet || protocol>=5)) {
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)db_get_b(NULL, SKYPE_PROTONAME, "UseGroupchat", 0));
