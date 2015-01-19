@@ -2903,7 +2903,12 @@ void MessageSendWatchThread(void *a) {
 
 	LOG(("MessageSendWatchThread started."));
 
-	str = SkypeRcvMsg(arg->szId, SkypeTime(NULL) - 1, arg->hContact, db_get_dw(NULL, "SRMsg", "MessageTimeout", TIMEOUT_MSGSEND));
+	if (db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 0))
+	{
+		ProtoBroadcastAck(SKYPE_PROTONAME, arg->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)1, 0);
+		str=NULL;
+	} else
+		str = SkypeRcvMsg(arg->szId, SkypeTime(NULL) - 1, arg->hContact, db_get_dw(NULL, "SRMsg", "MessageTimeout", TIMEOUT_MSGSEND));
 	InterlockedDecrement(&sendwatchers);
 	if (str)
 	{
@@ -2988,17 +2993,13 @@ INT_PTR SkypeSendMessage(WPARAM wParam, LPARAM lParam) {
 	db_free(&dbv);
 
 	if (sendok) {
-		if (db_get_b(NULL, SKYPE_PROTONAME, "NoAck", 0))
-			ProtoBroadcastAck(SKYPE_PROTONAME, ccs->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)1, 0);
-		else {
-			msgsendwt_arg *psendarg = (msgsendwt_arg*)calloc(1, sizeof(msgsendwt_arg));
+		msgsendwt_arg *psendarg = (msgsendwt_arg*)calloc(1, sizeof(msgsendwt_arg));
 
-			if (psendarg) {
-				psendarg->hContact = ccs->hContact;
-				strcpy(psendarg->szId, szId);
-				pthread_create(MessageSendWatchThread, psendarg);
-				return 1;
-			}
+		if (psendarg) {
+			psendarg->hContact = ccs->hContact;
+			strcpy(psendarg->szId, szId);
+			pthread_create(MessageSendWatchThread, psendarg);
+			return 1;
 		}
 		InterlockedDecrement(&sendwatchers);
 		return 1;
